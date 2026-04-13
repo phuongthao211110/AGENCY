@@ -13,7 +13,6 @@ const C_LINK           = '#3B82F6'   // shop name — blue per Figma
 const C_ACTION         = '#FF5200'   // buttons
 const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
-const C_BG_ACTIVE      = '#FFF4ED'
 
 // ── Data ────────────────────────────────────────────────────
 const RAW = allShops.filter((s) => s.agencyId === 'AGN001')

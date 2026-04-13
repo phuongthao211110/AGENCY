@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  CheckCircleFilled,
   PlusOutlined,
   ApiOutlined,
   AppstoreOutlined,
@@ -29,27 +28,6 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'pricing',  label: 'Bảng giá',    icon: <DollarOutlined /> },
 ]
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-function StatusBadge({ connected }: { connected: boolean }) {
-  return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '2px 8px',
-        borderRadius: 12,
-        background: connected ? '#D1FAE5' : '#F3F4F6',
-        color: connected ? '#065F46' : C_TEXT_SECONDARY,
-        fontSize: 12,
-        fontWeight: 500,
-      }}
-    >
-      {connected && <CheckCircleFilled style={{ fontSize: 10 }} />}
-      {connected ? 'Đã kết nối' : 'Chưa kết nối'}
-    </div>
-  )
-}
 
 // ─── Tab: Kết nối NVC ─────────────────────────────────────────────────────────
 const GHN_SHOPS = [
