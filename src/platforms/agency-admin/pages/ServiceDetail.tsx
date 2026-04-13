@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import {
   ArrowLeftOutlined,
   PlusOutlined,
@@ -8,6 +8,8 @@ import {
   InfoCircleOutlined,
   EnvironmentOutlined,
   StopOutlined,
+  SaveOutlined,
+  CloseOutlined,
 } from '@ant-design/icons'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -20,10 +22,18 @@ const C_ACTION         = '#FF5200'
 const C_BG_HEADER      = '#F3F4F6'
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
-const SERVICE_MAP: Record<string, { code: string; name: string; desc: string; shopId: string; shopName: string }> = {
-  'ghn-express':  { code: 'CHUYENNHANH', name: 'Giao hàng nhanh',      desc: 'Dịch vụ giao hàng nhanh trong ngày và hôm sau.', shopId: '5148899', shopName: 'Shop Thời Trang ABC' },
-  'ghn-standard': { code: 'TIETKIEM',    name: 'Giao hàng tiêu chuẩn', desc: 'Dịch vụ giao hàng tiết kiệm, phù hợp hàng không gấp.', shopId: '5148900', shopName: 'Shop Điện Tử XYZ' },
-  'ghn-bulky':    { code: 'HANGCANANG',  name: 'Hàng cồng kềnh',       desc: 'Chuyên xử lý hàng hóa lớn, nặng, cần thiết bị hỗ trợ.', shopId: '5148901', shopName: 'Shop Mỹ Phẩm Hà Nội' },
+const GHN_SHOPS = [
+  { shopId: '5148899', name: 'Shop Thời Trang ABC' },
+  { shopId: '5148900', name: 'Shop Điện Tử XYZ' },
+  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội' },
+  { shopId: '5148902', name: 'Shop Giày Dép Fashion' },
+  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365' },
+]
+
+const SERVICE_MAP: Record<string, { code: string; name: string; desc: string; shopId: string }> = {
+  'ghn-express':  { code: 'CHUYENNHANH', name: 'Giao hàng nhanh',      desc: 'Dịch vụ giao hàng nhanh trong ngày và hôm sau.',          shopId: '5148899' },
+  'ghn-standard': { code: 'TIETKIEM',    name: 'Giao hàng tiêu chuẩn', desc: 'Dịch vụ giao hàng tiết kiệm, phù hợp hàng không gấp.',   shopId: '5148900' },
+  'ghn-bulky':    { code: 'HANGCANANG',  name: 'Hàng cồng kềnh',       desc: 'Chuyên xử lý hàng hóa lớn, nặng, cần thiết bị hỗ trợ.', shopId: '5148901' },
 }
 
 const LINKED_PRICE_TABLES = [
@@ -43,22 +53,41 @@ const DISTRICTS: Record<string, string[]> = {
 }
 
 type LocationEntry = { province: string; district: string }
-
-// ─── Tab types ────────────────────────────────────────────────────────────────
 type Tab = 'info' | 'available' | 'blocked'
+type ServiceInfo = { code: string; name: string; desc: string; shopId: string }
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: 'info',      label: 'Thông tin',            icon: <InfoCircleOutlined /> },
-  { key: 'available', label: 'Địa điểm khả dụng',   icon: <EnvironmentOutlined /> },
-  { key: 'blocked',   label: 'Địa điểm chặn',        icon: <StopOutlined /> },
+  { key: 'info',      label: 'Thông tin',          icon: <InfoCircleOutlined /> },
+  { key: 'available', label: 'Địa điểm khả dụng',  icon: <EnvironmentOutlined /> },
+  { key: 'blocked',   label: 'Địa điểm chặn',       icon: <StopOutlined /> },
 ]
 
-// ─── Info Row helper ──────────────────────────────────────────────────────────
+// ─── LabelValue (view mode) ───────────────────────────────────────────────────
 function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>{label}</span>
       <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, fontWeight: 500, lineHeight: '20px' }}>{value}</span>
+    </div>
+  )
+}
+
+// ─── InputField (edit mode) ───────────────────────────────────────────────────
+function InputField({ label, value, onChange, placeholder, mono = false }: {
+  label: string; value: string; onChange: (v: string) => void
+  placeholder?: string; mono?: boolean
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>{label}</span>
+      <div style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
+        <input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', fontFamily: mono ? 'monospace' : 'inherit' }}
+        />
+      </div>
     </div>
   )
 }
@@ -114,17 +143,13 @@ function AddLocationModal({ title, onClose, onAdd }: { title: string; onClose: (
 
 // ─── Location Section ─────────────────────────────────────────────────────────
 function LocationSection({ title, accentColor, entries, onAdd, onRemove }: {
-  title: string
-  accentColor: string
-  entries: LocationEntry[]
-  onAdd: () => void
-  onRemove: (i: number) => void
+  title: string; accentColor: string; entries: LocationEntry[]
+  onAdd: () => void; onRemove: (i: number) => void
 }) {
   const [hovered, setHovered] = useState<number | null>(null)
 
   return (
     <div style={{ flex: 1, border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-      {/* Section header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#FAFAFA', borderBottom: `1px solid ${C_BORDER}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ width: 3, height: 14, background: accentColor, borderRadius: 2 }} />
@@ -136,26 +161,19 @@ function LocationSection({ title, accentColor, entries, onAdd, onRemove }: {
           Thêm
         </button>
       </div>
-
-      {/* Table header */}
       <div style={{ display: 'flex', background: C_BG_HEADER }}>
         <div style={{ flex: '1 0 0', padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY }}>Tỉnh / Thành phố</div>
         <div style={{ flex: '1 0 0', padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY }}>Quận / Huyện</div>
         <div style={{ width: 40 }} />
       </div>
       <div style={{ height: 1, background: C_BORDER }} />
-
-      {/* Rows */}
       {entries.length === 0 ? (
         <div style={{ padding: '20px 8px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 13 }}>Chưa có địa điểm nào</div>
       ) : (
         entries.map((e, i) => (
           <div key={i}>
-            <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === i ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', background: hovered === i ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
+              onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
               <div style={{ flex: '1 0 0', padding: '8px 8px', fontSize: 14, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{e.province}</div>
               <div style={{ flex: '1 0 0', padding: '8px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>{e.district}</div>
               <div style={{ width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -175,7 +193,7 @@ function LocationSection({ title, accentColor, entries, onAdd, onRemove }: {
 
 // ─── Location Tab (shared by available + blocked) ─────────────────────────────
 function LocationTab({ pickupColor, deliveryColor }: { pickupColor: string; deliveryColor: string }) {
-  const [pickupEntries, setPickupEntries]   = useState<LocationEntry[]>([
+  const [pickupEntries, setPickupEntries]     = useState<LocationEntry[]>([
     { province: 'Hà Nội', district: 'Tất cả quận/huyện' },
     { province: 'TP. Hồ Chí Minh', district: 'Quận 1' },
   ])
@@ -184,41 +202,25 @@ function LocationTab({ pickupColor, deliveryColor }: { pickupColor: string; deli
     { province: 'TP. Hồ Chí Minh', district: 'Tất cả quận/huyện' },
     { province: 'Đà Nẵng', district: 'Tất cả quận/huyện' },
   ])
-
   const [modal, setModal] = useState<'pickup' | 'delivery' | null>(null)
 
   return (
     <>
       {modal === 'pickup' && (
-        <AddLocationModal
-          title="Thêm địa điểm lấy hàng"
-          onClose={() => setModal(null)}
-          onAdd={(e) => setPickupEntries((prev) => [...prev, e])}
-        />
+        <AddLocationModal title="Thêm địa điểm lấy hàng" onClose={() => setModal(null)}
+          onAdd={(e) => setPickupEntries((prev) => [...prev, e])} />
       )}
       {modal === 'delivery' && (
-        <AddLocationModal
-          title="Thêm địa điểm giao hàng"
-          onClose={() => setModal(null)}
-          onAdd={(e) => setDeliveryEntries((prev) => [...prev, e])}
-        />
+        <AddLocationModal title="Thêm địa điểm giao hàng" onClose={() => setModal(null)}
+          onAdd={(e) => setDeliveryEntries((prev) => [...prev, e])} />
       )}
-
       <div style={{ display: 'flex', gap: 16, padding: 16, alignItems: 'flex-start' }}>
-        <LocationSection
-          title="Lấy hàng"
-          accentColor={pickupColor}
-          entries={pickupEntries}
+        <LocationSection title="Lấy hàng" accentColor={pickupColor} entries={pickupEntries}
           onAdd={() => setModal('pickup')}
-          onRemove={(i) => setPickupEntries((prev) => prev.filter((_, idx) => idx !== i))}
-        />
-        <LocationSection
-          title="Giao hàng"
-          accentColor={deliveryColor}
-          entries={deliveryEntries}
+          onRemove={(i) => setPickupEntries((prev) => prev.filter((_, idx) => idx !== i))} />
+        <LocationSection title="Giao hàng" accentColor={deliveryColor} entries={deliveryEntries}
           onAdd={() => setModal('delivery')}
-          onRemove={(i) => setDeliveryEntries((prev) => prev.filter((_, idx) => idx !== i))}
-        />
+          onRemove={(i) => setDeliveryEntries((prev) => prev.filter((_, idx) => idx !== i))} />
       </div>
     </>
   )
@@ -226,38 +228,90 @@ function LocationTab({ pickupColor, deliveryColor }: { pickupColor: string; deli
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ServiceDetail() {
-  const { id } = useParams<{ id: string }>()
+  const { id }   = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState<Tab>('info')
-  const [hovered, setHovered] = useState<string | null>(null)
+  const [hovered, setHovered]     = useState<string | null>(null)
 
-  const service = id ? SERVICE_MAP[id] : undefined
-  const code    = service?.code  ?? id ?? ''
-  const name    = service?.name  ?? id ?? ''
-  const desc    = service?.desc  ?? ''
-  const shopId  = service?.shopId  ?? '—'
-  const shopName = service?.shopName ?? '—'
+  // ── Init service data from navigation state (new) or mock map (existing) ──
+  const locState = location.state as ({ isNew?: boolean } & ServiceInfo) | null
+  const initData: ServiceInfo = locState?.isNew
+    ? { code: locState.code ?? '', name: locState.name ?? '', desc: locState.desc ?? '', shopId: locState.shopId ?? GHN_SHOPS[0].shopId }
+    : (() => {
+        const s = id ? SERVICE_MAP[id] : undefined
+        return { code: s?.code ?? id ?? '', name: s?.name ?? id ?? '', desc: s?.desc ?? '', shopId: s?.shopId ?? GHN_SHOPS[0].shopId }
+      })()
+
+  const [serviceData, setServiceData] = useState<ServiceInfo>(initData)
+  const [isEditing, setIsEditing]     = useState(!!locState?.isNew)
+  const [editForm, setEditForm]       = useState<ServiceInfo>(initData)
+
+  const setEdit = (key: keyof ServiceInfo) => (v: string) => setEditForm(f => ({ ...f, [key]: v }))
+
+  const handleStartEdit = () => {
+    setEditForm(serviceData)
+    setIsEditing(true)
+  }
+
+  const handleSave = () => {
+    setServiceData(editForm)
+    setIsEditing(false)
+  }
+
+  const handleCancel = () => {
+    setEditForm(serviceData)
+    setIsEditing(false)
+  }
+
+  const shopName = GHN_SHOPS.find(s => s.shopId === serviceData.shopId)?.name ?? '—'
+  const editShopName = GHN_SHOPS.find(s => s.shopId === editForm.shopId)?.name ?? '—'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
 
-      {/* Page header */}
+      {/* ── Page header ──────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', flexShrink: 0 }}>
         <ArrowLeftOutlined
           style={{ fontSize: 18, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
           onClick={() => navigate('/agency-admin/carrier-setup')}
         />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 600, color: C_TEXT_PRIMARY, margin: 0, lineHeight: '28px' }}>{name}</h1>
-          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{code}</span>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: C_TEXT_PRIMARY, margin: 0, lineHeight: '28px' }}>
+            {serviceData.name}
+          </h1>
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{serviceData.code}</span>
         </div>
-        <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
-          <EditOutlined />
-          Chỉnh sửa
-        </button>
+
+        {isEditing ? (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={handleCancel}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+            >
+              <CloseOutlined style={{ fontSize: 13 }} />
+              Huỷ
+            </button>
+            <button
+              onClick={handleSave}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', border: 'none', borderRadius: 6, background: C_ACTION, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+            >
+              <SaveOutlined style={{ fontSize: 13 }} />
+              Lưu
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleStartEdit}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+          >
+            <EditOutlined />
+            Chỉnh sửa
+          </button>
+        )}
       </div>
 
-      {/* Tab bar */}
+      {/* ── Tab bar ──────────────────────────────────────────── */}
       <div style={{ display: 'flex', borderBottom: `1px solid ${C_BORDER}`, padding: '0 16px', flexShrink: 0 }}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key
@@ -271,7 +325,7 @@ export default function ServiceDetail() {
         })}
       </div>
 
-      {/* Tab content */}
+      {/* ── Tab content ──────────────────────────────────────── */}
       <div style={{ flex: '1 0 0', overflowY: 'auto' }}>
 
         {/* ── Tab: Thông tin ── */}
@@ -283,20 +337,46 @@ export default function ServiceDetail() {
               <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
                 Thông tin cơ bản
               </div>
-              <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
-                <LabelValue label="Mã gói" value={<span style={{ fontFamily: 'monospace' }}>{code}</span>} />
-                <LabelValue label="Tên gói" value={name} />
-                <LabelValue label="Mô tả" value={desc || <span style={{ color: C_TEXT_SECONDARY }}>—</span>} />
-                <LabelValue
-                  label="Kết nối Shop ID"
-                  value={
-                    <span>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{shopId}</span>
-                      <span style={{ color: C_TEXT_SECONDARY, fontWeight: 400 }}> — {shopName}</span>
-                    </span>
-                  }
-                />
-              </div>
+
+              {isEditing ? (
+                /* ── Edit mode ── */
+                <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
+                  <InputField label="Mã gói" value={editForm.code} onChange={setEdit('code')} placeholder="VD: CHUYENNHANH" mono />
+                  <InputField label="Tên gói" value={editForm.name} onChange={setEdit('name')} placeholder="VD: Giao hàng nhanh" />
+                  <InputField label="Mô tả" value={editForm.desc} onChange={setEdit('desc')} placeholder="Mô tả ngắn về gói dịch vụ..." />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Kết nối Shop ID</span>
+                    <div style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px' }}>
+                      <select
+                        value={editForm.shopId}
+                        onChange={e => setEdit('shopId')(e.target.value)}
+                        style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', cursor: 'pointer' }}
+                      >
+                        {GHN_SHOPS.map(s => (
+                          <option key={s.shopId} value={s.shopId}>{s.shopId} — {s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{editShopName}</span>
+                  </div>
+                </div>
+              ) : (
+                /* ── View mode ── */
+                <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
+                  <LabelValue label="Mã gói" value={<span style={{ fontFamily: 'monospace' }}>{serviceData.code}</span>} />
+                  <LabelValue label="Tên gói" value={serviceData.name} />
+                  <LabelValue label="Mô tả" value={serviceData.desc || <span style={{ color: C_TEXT_SECONDARY }}>—</span>} />
+                  <LabelValue
+                    label="Kết nối Shop ID"
+                    value={
+                      <span>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{serviceData.shopId}</span>
+                        <span style={{ color: C_TEXT_SECONDARY, fontWeight: 400 }}> — {shopName}</span>
+                      </span>
+                    }
+                  />
+                </div>
+              )}
             </div>
 
             {/* Linked price tables */}
@@ -306,8 +386,6 @@ export default function ServiceDetail() {
                   Bảng giá được gắn ({LINKED_PRICE_TABLES.length})
                 </span>
               </div>
-
-              {/* Table header */}
               <div style={{ display: 'flex', background: C_BG_HEADER }}>
                 {[
                   { label: 'Tên bảng giá', flex: '2 0 0', minWidth: 200 },
@@ -319,7 +397,6 @@ export default function ServiceDetail() {
                 ))}
               </div>
               <div style={{ height: 1, background: C_BORDER }} />
-
               {LINKED_PRICE_TABLES.map((pt) => (
                 <div key={pt.id}>
                   <div
@@ -343,7 +420,6 @@ export default function ServiceDetail() {
                   <div style={{ height: 1, background: C_BORDER }} />
                 </div>
               ))}
-
               {LINKED_PRICE_TABLES.length === 0 && (
                 <div style={{ padding: '20px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
                   Chưa có bảng giá nào được gắn

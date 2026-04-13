@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
-import { PlusOutlined, SearchOutlined, CloseOutlined, DownOutlined } from '@ant-design/icons'
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { agenciesList } from '../agencyStore'
 
@@ -173,152 +173,7 @@ function Pagination({ page, total, pageSize, onPageChange, onPageSizeChange }: {
   )
 }
 
-// ── InputField component ──────────────────────────────────────
-function InputField({ label, placeholder, value, onChange }: {
-  label: string; placeholder: string; value: string; onChange: (v: string) => void
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
-      <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px' }}>{label}</span>
-      <div style={{
-        background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
-        padding: '6px 12px', display: 'flex', alignItems: 'center',
-      }}>
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          style={{
-            flex: 1, border: 'none', outline: 'none', fontSize: 14,
-            color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px',
-          }}
-        />
-      </div>
-    </div>
-  )
-}
 
-// ── Create Agency Modal ───────────────────────────────────────
-type FormState = { tenDaiLy: string; hoTen: string; sdt: string; soNha: string; tinhThanh: string }
-const FORM_INIT: FormState = { tenDaiLy: '', hoTen: '', sdt: '', soNha: '', tinhThanh: '' }
-
-function CreateAgencyModal({ onClose, onContinue }: {
-  onClose: () => void
-  onContinue: (data: FormState) => void
-}) {
-  const [form, setForm] = useState<FormState>(FORM_INIT)
-
-  const set = (key: keyof FormState) => (v: string) => setForm((f) => ({ ...f, [key]: v }))
-
-  const handleSubmit = () => {
-    onContinue(form)
-  }
-
-  return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
-      {/* Overlay */}
-      <div
-        style={{ position: 'absolute', inset: 0, background: '#111827', opacity: 0.25 }}
-        onClick={onClose}
-      />
-
-      {/* Modal box */}
-      <div style={{
-        position: 'relative', zIndex: 101,
-        background: '#fff', borderRadius: 12, width: 600,
-        boxShadow: '0px 4px 6px 0px rgba(0,0,0,0.07), 0px 2px 4px 0px rgba(0,0,0,0.06)',
-        display: 'flex', flexDirection: 'column',
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 16px',
-        }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
-            Tạo đại lý mới
-          </span>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-          >
-            <CloseOutlined style={{ fontSize: 16, color: C_TEXT_SECONDARY }} />
-          </button>
-        </div>
-
-        {/* Divider */}
-        <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
-
-        {/* Body */}
-        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
-            Thông tin cơ bản
-          </span>
-
-          <InputField label="Tên đại lý" placeholder="Tên đại lý" value={form.tenDaiLy} onChange={set('tenDaiLy')} />
-          <InputField label="Họ tên chủ đại lý" placeholder="Họ tên chủ đại lý" value={form.hoTen} onChange={set('hoTen')} />
-          <InputField label="Số điện thoại" placeholder="Số điện thoại" value={form.sdt} onChange={set('sdt')} />
-
-          {/* Địa chỉ — two sub-inputs */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
-            <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px' }}>Địa chỉ</span>
-            {/* Row 1: street */}
-            <div style={{
-              background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
-              padding: '6px 12px', display: 'flex', alignItems: 'center',
-            }}>
-              <input
-                value={form.soNha}
-                onChange={(e) => set('soNha')(e.target.value)}
-                placeholder="Số nhà, tên đường"
-                style={{
-                  flex: 1, border: 'none', outline: 'none', fontSize: 14,
-                  color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px',
-                }}
-              />
-            </div>
-            {/* Row 2: province/district dropdown look */}
-            <div style={{
-              background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
-              padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-            }}>
-              <span style={{
-                flex: 1, fontSize: 14, lineHeight: '20px',
-                color: form.tinhThanh ? C_TEXT_PRIMARY : '#9CA3AF',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {form.tinhThanh || 'Tỉnh/Thành, Phường/Xã'}
-              </span>
-              <DownOutlined style={{ fontSize: 14, color: C_TEXT_SECONDARY, flexShrink: 0 }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-          padding: '12px 16px',
-        }}>
-          <button
-            onClick={handleSubmit}
-            style={{
-              background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer',
-              padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px', whiteSpace: 'nowrap' }}>
-              Tiếp tục
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ── Main page ─────────────────────────────────────────────────
 export default function Agencies() {
@@ -326,7 +181,6 @@ export default function Agencies() {
   const [search, setSearch]       = useState('')
   const [page, setPage]           = useState(1)
   const [pageSize, setPageSize]   = useState(50)
-  const [showModal, setShowModal] = useState(false)
 
   // Compute from store on every mount so newly created agencies appear
   const agencies = agenciesList.map((a) => ({
@@ -344,16 +198,7 @@ export default function Agencies() {
 
   return (
     <ConfigProvider theme={superAdminTheme}>
-      {showModal && (
-        <CreateAgencyModal
-          onClose={() => setShowModal(false)}
-          onContinue={(data) => {
-            setShowModal(false)
-            navigate('/super-admin/agencies/create', { state: data })
-          }}
-        />
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
+<div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
 
         {/* Page header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', flexShrink: 0 }}>
@@ -366,7 +211,7 @@ export default function Agencies() {
             </p>
           </div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => navigate('/super-admin/agencies/create')}
             style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px',
               background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0,

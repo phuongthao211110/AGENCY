@@ -261,7 +261,9 @@ function NvcCodeBadge({ code }: { code: string }) {
 }
 
 // ─── Create Service Modal ─────────────────────────────────────────────────────
-function CreateServiceModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+type NewServiceData = { code: string; name: string; desc: string; shopId: string }
+
+function CreateServiceModal({ onClose, onCreated }: { onClose: () => void; onCreated: (data: NewServiceData) => void }) {
   const [code, setCode]         = useState('')
   const [name, setName]         = useState('')
   const [desc, setDesc]         = useState('')
@@ -274,7 +276,7 @@ function CreateServiceModal({ onClose, onCreated }: { onClose: () => void; onCre
 
   const handleSubmit = () => {
     if (!code.trim() || !name.trim()) return
-    onCreated(code.trim())
+    onCreated({ code: code.trim(), name: name.trim(), desc, shopId })
   }
 
   return (
@@ -362,9 +364,9 @@ function TabServices() {
       {showCreateModal && (
         <CreateServiceModal
           onClose={() => setShowCreateModal(false)}
-          onCreated={(id) => {
+          onCreated={(data) => {
             setShowCreateModal(false)
-            navigate(`/agency-admin/carrier-setup/services/${id}`)
+            navigate(`/agency-admin/carrier-setup/services/${data.code}`, { state: { isNew: true, ...data } })
           }}
         />
       )}
