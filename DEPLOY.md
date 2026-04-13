@@ -24,11 +24,7 @@
 
 | # | Tính năng | Platform | Mô tả | Ngày thêm |
 |---|-----------|----------|-------|-----------|
-| 1 | LaunchAgent auto-start dev server | Dev Setup | Tự động chạy `npm run dev` khi login macOS | 2026-04-13 |
-| 2 | Đồng bộ table Agency Admin | Agency Admin | Rebuild Orders/Pricing/Reconciliation sang custom flex table; thêm padding page header chuẩn `12px 16px`; fix layout bg `#fff` | 2026-04-13 |
-| 3 | Fix padding table CarrierSetup | Agency Admin | Wrap table trong `padding: '0 16px'` cho cả 3 tab (Kết nối NVC, Dịch vụ, Bảng giá); xoá paddingLeft rời trên từng row/header | 2026-04-13 |
-| 4 | Đồng bộ padding table toàn bộ 3 platform | All | Fix `paddingLeft: 16` → `padding: '0 16px'` trên 7 table containers; rebuild Shop Pricing + Shop Reconciliation sang custom flex table; fix ServiceDetail bordered-card tables | 2026-04-13 |
-| 5 | Fix horizontal overflow Shop Orders | Web Shop | Add `overflow: hidden` + `minWidth: 0` vào ShopLayout main area div và page wrapper — ngăn table 1400px làm scroll toàn bộ trang | 2026-04-13 |
+| — | *(trống)* | — | — | — |
 
 ---
 
@@ -53,6 +49,7 @@ Dist dir:  dist/
 | Version | Ngày | Nội dung | Người deploy |
 |---------|------|----------|-------------|
 | v0.1.0 | — | Initial commit — toàn bộ 3 platform (Super Admin, Agency Admin, Web Shop) | — |
+| v0.2.0 | 2026-04-13 | Sync table layout toàn bộ 3 platform: rebuild 5 trang sang custom flex table, fix padding 0 16px, fix responsive Shop Orders, add DEPLOY.md | trannlb |
 
 ---
 
