@@ -1,0 +1,142 @@
+[
+  {
+    "id": "PRC001",
+    "name": "Bảng giá tiêu chuẩn 2024",
+    "agencyId": "AGN001",
+    "description": "Áp dụng cho tất cả shop Hà Nội Central",
+    "status": "active",
+    "createdAt": "2024-01-01",
+    "zones": [
+      { "from": "Hà Nội", "to": "Hà Nội", "label": "Nội thành HN" },
+      { "from": "Hà Nội", "to": "TP.HCM", "label": "HN - HCM" },
+      { "from": "Hà Nội", "to": "Đà Nẵng", "label": "HN - ĐN" },
+      { "from": "Hà Nội", "to": "Khác", "label": "HN - Tỉnh khác" }
+    ],
+    "weights": [
+      { "max": 500, "label": "≤500g" },
+      { "max": 1000, "label": "501g-1kg" },
+      { "max": 2000, "label": "1-2kg" },
+      { "max": 5000, "label": "2-5kg" },
+      { "max": 10000, "label": "5-10kg" }
+    ],
+    "prices": [
+      [18000, 25000, 23000, 22000],
+      [22000, 30000, 28000, 26000],
+      [26000, 38000, 35000, 32000],
+      [35000, 50000, 46000, 42000],
+      [48000, 68000, 62000, 56000]
+    ]
+  },
+  {
+    "id": "PRC002",
+    "name": "Bảng giá ưu đãi mùa hè",
+    "agencyId": "AGN001",
+    "description": "Giảm 10% so với bảng tiêu chuẩn, áp dụng 01/06 - 31/08",
+    "status": "inactive",
+    "createdAt": "2024-05-15",
+    "zones": [
+      { "from": "Hà Nội", "to": "Hà Nội", "label": "Nội thành HN" },
+      { "from": "Hà Nội", "to": "TP.HCM", "label": "HN - HCM" },
+      { "from": "Hà Nội", "to": "Đà Nẵng", "label": "HN - ĐN" },
+      { "from": "Hà Nội", "to": "Khác", "label": "HN - Tỉnh khác" }
+    ],
+    "weights": [
+      { "max": 500, "label": "≤500g" },
+      { "max": 1000, "label": "501g-1kg" },
+      { "max": 2000, "label": "1-2kg" },
+      { "max": 5000, "label": "2-5kg" },
+      { "max": 10000, "label": "5-10kg" }
+    ],
+    "prices": [
+      [16200, 22500, 20700, 19800],
+      [19800, 27000, 25200, 23400],
+      [23400, 34200, 31500, 28800],
+      [31500, 45000, 41400, 37800],
+      [43200, 61200, 55800, 50400]
+    ]
+  },
+  {
+    "id": "PRC003",
+    "name": "Bảng giá HCM Bắc 2024",
+    "agencyId": "AGN002",
+    "description": "Áp dụng cho tất cả shop HCM Bắc",
+    "status": "active",
+    "createdAt": "2024-02-01",
+    "zones": [
+      { "from": "TP.HCM", "to": "TP.HCM", "label": "Nội thành HCM" },
+      { "from": "TP.HCM", "to": "Hà Nội", "label": "HCM - HN" },
+      { "from": "TP.HCM", "to": "Đà Nẵng", "label": "HCM - ĐN" },
+      { "from": "TP.HCM", "to": "Khác", "label": "HCM - Tỉnh khác" }
+    ],
+    "weights": [
+      { "max": 500, "label": "≤500g" },
+      { "max": 1000, "label": "501g-1kg" },
+      { "max": 2000, "label": "1-2kg" },
+      { "max": 5000, "label": "2-5kg" },
+      { "max": 10000, "label": "5-10kg" }
+    ],
+    "prices": [
+      [17000, 24000, 22000, 21000],
+      [21000, 29000, 27000, 25000],
+      [25000, 37000, 34000, 31000],
+      [34000, 49000, 45000, 41000],
+      [47000, 67000, 61000, 55000]
+    ]
+  },
+  {
+    "id": "PRC004",
+    "name": "Bảng giá Đà Nẵng 2024",
+    "agencyId": "AGN003",
+    "description": "Áp dụng cho tất cả shop Đà Nẵng",
+    "status": "active",
+    "createdAt": "2024-01-20",
+    "zones": [
+      { "from": "Đà Nẵng", "to": "Đà Nẵng", "label": "Nội thành ĐN" },
+      { "from": "Đà Nẵng", "to": "Hà Nội", "label": "ĐN - HN" },
+      { "from": "Đà Nẵng", "to": "TP.HCM", "label": "ĐN - HCM" },
+      { "from": "Đà Nẵng", "to": "Khác", "label": "ĐN - Tỉnh khác" }
+    ],
+    "weights": [
+      { "max": 500, "label": "≤500g" },
+      { "max": 1000, "label": "501g-1kg" },
+      { "max": 2000, "label": "1-2kg" },
+      { "max": 5000, "label": "2-5kg" },
+      { "max": 10000, "label": "5-10kg" }
+    ],
+    "prices": [
+      [16000, 24000, 23000, 20000],
+      [20000, 29000, 28000, 24000],
+      [24000, 37000, 35000, 30000],
+      [33000, 49000, 46000, 40000],
+      [46000, 67000, 62000, 54000]
+    ]
+  },
+  {
+    "id": "PRC005",
+    "name": "Bảng giá Cần Thơ 2024",
+    "agencyId": "AGN004",
+    "description": "Áp dụng cho tất cả shop Cần Thơ",
+    "status": "active",
+    "createdAt": "2024-03-05",
+    "zones": [
+      { "from": "Cần Thơ", "to": "Cần Thơ", "label": "Nội thành CT" },
+      { "from": "Cần Thơ", "to": "TP.HCM", "label": "CT - HCM" },
+      { "from": "Cần Thơ", "to": "Hà Nội", "label": "CT - HN" },
+      { "from": "Cần Thơ", "to": "Khác", "label": "CT - Tỉnh khác" }
+    ],
+    "weights": [
+      { "max": 500, "label": "≤500g" },
+      { "max": 1000, "label": "501g-1kg" },
+      { "max": 2000, "label": "1-2kg" },
+      { "max": 5000, "label": "2-5kg" },
+      { "max": 10000, "label": "5-10kg" }
+    ],
+    "prices": [
+      [15000, 22000, 26000, 20000],
+      [19000, 27000, 31000, 24000],
+      [23000, 35000, 40000, 30000],
+      [32000, 47000, 53000, 40000],
+      [45000, 65000, 73000, 54000]
+    ]
+  }
+]
