@@ -146,10 +146,12 @@ export default function ShopLayout() {
         <div
           style={{
             flex: 1,
+            minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
             marginLeft: collapsed ? 0 : SIDEBAR_WIDTH,
             transition: 'margin-left 0.2s',
+            overflow: 'hidden',
           }}
         >
           {/* Top header bar */}

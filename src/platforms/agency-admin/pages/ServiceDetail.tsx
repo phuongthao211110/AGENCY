@@ -138,7 +138,7 @@ function LocationSection({ title, accentColor, entries, onAdd, onRemove }: {
       </div>
 
       {/* Table header */}
-      <div style={{ display: 'flex', background: C_BG_HEADER, paddingLeft: 14 }}>
+      <div style={{ display: 'flex', background: C_BG_HEADER }}>
         <div style={{ flex: '1 0 0', padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY }}>Tỉnh / Thành phố</div>
         <div style={{ flex: '1 0 0', padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY }}>Quận / Huyện</div>
         <div style={{ width: 40 }} />
@@ -147,12 +147,12 @@ function LocationSection({ title, accentColor, entries, onAdd, onRemove }: {
 
       {/* Rows */}
       {entries.length === 0 ? (
-        <div style={{ padding: '20px 14px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 13 }}>Chưa có địa điểm nào</div>
+        <div style={{ padding: '20px 8px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 13 }}>Chưa có địa điểm nào</div>
       ) : (
         entries.map((e, i) => (
           <div key={i}>
             <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === i ? '#FAFAFA' : '#fff', transition: 'background 0.1s', paddingLeft: 14 }}
+              style={{ display: 'flex', alignItems: 'center', background: hovered === i ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered(null)}
             >
@@ -308,7 +308,7 @@ export default function ServiceDetail() {
               </div>
 
               {/* Table header */}
-              <div style={{ display: 'flex', background: C_BG_HEADER, paddingLeft: 16 }}>
+              <div style={{ display: 'flex', background: C_BG_HEADER }}>
                 {[
                   { label: 'Tên bảng giá', flex: '2 0 0', minWidth: 200 },
                   { label: 'Tuyến',        flex: '1 0 0', minWidth: 120 },
@@ -323,7 +323,7 @@ export default function ServiceDetail() {
               {LINKED_PRICE_TABLES.map((pt) => (
                 <div key={pt.id}>
                   <div
-                    style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', paddingLeft: 16, cursor: 'pointer' }}
+                    style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', cursor: 'pointer' }}
                     onMouseEnter={() => setHovered(pt.id)}
                     onMouseLeave={() => setHovered(null)}
                   >

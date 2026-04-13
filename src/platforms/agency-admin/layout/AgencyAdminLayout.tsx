@@ -203,7 +203,7 @@ export default function AgencyAdminLayout() {
           </header>
 
           {/* Page content */}
-          <main style={{ marginTop: 40, flex: 1, background: '#f5f5f5', minHeight: 'calc(100vh - 40px)' }}>
+          <main style={{ marginTop: 40, flex: 1, background: '#fff', minHeight: 'calc(100vh - 40px)' }}>
             <Outlet />
           </main>
         </div>

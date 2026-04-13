@@ -278,7 +278,7 @@ export default function Shops() {
         </div>
 
         {/* Table */}
-        <div style={{ flex:'1 0 0', overflowY:'auto', paddingLeft:16 }}>
+        <div style={{ flex:'1 0 0', overflowY:'auto', padding:'0 16px' }}>
           <div style={{ minWidth: 800 }}>
             <THead allChecked={allChecked} onToggleAll={toggleAll} />
             <div style={{ height:1, background: C_BORDER }} />

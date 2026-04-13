@@ -286,7 +286,7 @@ export default function ShopOrders() {
 
   return (
     <ConfigProvider theme={shopTheme}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff', overflow: 'hidden' }}>
 
         {/* Page header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', flexShrink: 0 }}>
@@ -353,7 +353,8 @@ export default function ShopOrders() {
         </div>
 
         {/* Table */}
-        <div style={{ flex: '1 0 0', overflowY: 'auto', overflowX: 'auto', paddingLeft: 16 }}>
+        <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
+          <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
           <div style={{ minWidth: 1400 }}>
             <THead allChecked={allChecked} onToggleAll={toggleAll} />
             <div style={{ height: 1, background: C_BORDER }} />
@@ -370,6 +371,7 @@ export default function ShopOrders() {
                 Không có đơn hàng
               </div>
             )}
+          </div>
           </div>
         </div>
 

@@ -181,8 +181,10 @@ function TabConnect() {
         </div>
       </div>
 
+      {/* Table */}
+      <div style={{ padding: '0 16px' }}>
       {/* Table header */}
-      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center', paddingLeft: 16 }}>
+      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
         {[
           { label: 'Tên cửa hàng', flex: '2 0 0', minWidth: 200 },
           { label: 'Shop ID',      flex: '1 0 0', minWidth: 120 },
@@ -199,12 +201,12 @@ function TabConnect() {
 
       {/* Rows */}
       {filtered.length === 0 ? (
-        <div style={{ padding: '24px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
+        <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
       ) : (
         filtered.map((s) => (
           <React.Fragment key={s.shopId}>
             <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === s.shopId ? '#FAFAFA' : '#fff', transition: 'background 0.1s', paddingLeft: 16 }}
+              style={{ display: 'flex', alignItems: 'center', background: hovered === s.shopId ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
               onMouseEnter={() => setHovered(s.shopId)}
               onMouseLeave={() => setHovered(null)}
             >
@@ -230,6 +232,7 @@ function TabConnect() {
           </React.Fragment>
         ))
       )}
+      </div>{/* /Table */}
     </>
   )
 }
@@ -375,8 +378,10 @@ function TabServices() {
         </button>
       </div>
 
+      {/* Table */}
+      <div style={{ padding: '0 16px' }}>
       {/* Table header */}
-      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center', paddingLeft: 16 }}>
+      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
         {cols.map((col, i) => (
           <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
             <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
@@ -390,7 +395,7 @@ function TabServices() {
         <React.Fragment key={s.id}>
           <div
             onClick={() => navigate(`/agency-admin/carrier-setup/services/${s.id}`)}
-            style={{ display: 'flex', alignItems: 'center', background: hovered === s.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', paddingLeft: 16, cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', background: hovered === s.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', cursor: 'pointer' }}
             onMouseEnter={() => setHovered(s.id)}
             onMouseLeave={() => setHovered(null)}
           >
@@ -416,6 +421,7 @@ function TabServices() {
           <div style={{ height: 1, background: C_BORDER }} />
         </React.Fragment>
       ))}
+      </div>{/* /Table */}
     </>
   )
 }
@@ -477,8 +483,10 @@ function TabPricing() {
         </button>
       </div>
 
+      {/* Table */}
+      <div style={{ padding: '0 16px' }}>
       {/* Table header */}
-      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center', paddingLeft: 16 }}>
+      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
         {cols.map((col, i) => (
           <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
             <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
@@ -489,12 +497,12 @@ function TabPricing() {
 
       {/* Rows */}
       {filtered.length === 0 ? (
-        <div style={{ padding: '24px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Chưa có cấu hình giá</div>
+        <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Chưa có cấu hình giá</div>
       ) : (
         filtered.map((cfg) => (
           <React.Fragment key={cfg.id}>
             <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === cfg.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', paddingLeft: 16 }}
+              style={{ display: 'flex', alignItems: 'center', background: hovered === cfg.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
               onMouseEnter={() => setHovered(cfg.id)}
               onMouseLeave={() => setHovered(null)}
             >
@@ -524,6 +532,7 @@ function TabPricing() {
           </React.Fragment>
         ))
       )}
+      </div>{/* /Table */}
     </>
   )
 }
