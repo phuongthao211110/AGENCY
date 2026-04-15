@@ -356,20 +356,6 @@ export default function AgencyDetail() {
               </div>
             </InfoCard>
 
-            {/* Kết nối tài khoản GHN */}
-            <InfoCard title="Kết nối tài khoản GHN">
-              <InfoRow
-                items={[
-                  { label: 'SĐT tài khoản GHN', value: agency.ghnAccount },
-                  { label: 'Client ID GHN', value: '1234567' },
-                ]}
-              />
-              <div style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>
-                Trạng thái:{' '}
-                <span style={{ color: '#F59E0B', fontWeight: 600 }}>Chưa xác thực</span>
-              </div>
-            </InfoCard>
-
             {/* Cấu hình trang quản trị */}
             <InfoCard title="Cấu hình trang quản trị">
               <CopyRow label="URL trang quản trị" value={agency.adminUrl} onCopy={copyText} />

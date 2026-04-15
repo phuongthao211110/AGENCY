@@ -24,7 +24,8 @@
 
 | # | Tính năng | Platform | Mô tả | Ngày thêm |
 |---|-----------|----------|-------|-----------|
-| — | *(trống)* | — | — | — |
+| 1 | Bỏ section "Kết nối tài khoản GHN" | Super Admin | Xóa InfoCard "Kết nối tài khoản GHN" khỏi trang chi tiết đại lý | 2026-04-15 |
+| 2 | Rebuild trang Chi tiết shop theo Figma | Agency Admin | Rewrite ShopDetail.tsx — 2 card (Thông tin cơ bản, Cấu hình tài khoản), toggle/copy mật khẩu, nút Chỉnh sửa + Xoá; thêm ownerName vào shops.json | 2026-04-15 |
 
 ---
 

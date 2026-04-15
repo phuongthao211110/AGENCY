@@ -1,110 +1,288 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Descriptions, Tag, Button, Table, Typography, Row, Col, Statistic, Space } from 'antd'
-import { ArrowLeftOutlined, InboxOutlined } from '@ant-design/icons'
+import {
+  ArrowLeftOutlined,
+  CopyOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons'
 import allShops from '../../../mock-data/shops.json'
-import allOrders from '../../../mock-data/orders.json'
 
-import { AGENCY_BRAND as BRAND_COLOR } from '../../../theme/tokens'
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const C_TEXT_PRIMARY = '#111827'
+const C_TEXT_LABEL   = '#4B5563'
+const C_BORDER       = '#E5E7EB'
+const C_BG_PAGE      = '#F9FAFB'
+const CARD_SHADOW    = '0 1px 2px rgba(0,0,0,0.05)'
 
-const { Title } = Typography
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function splitAddress(address: string): [string, string] {
+  const idx = address.lastIndexOf(', ')
+  if (idx === -1) return [address, '']
+  return [address.slice(0, idx), address.slice(idx + 2)]
+}
 
+// ─── InfoField: label + plain-text value ──────────────────────────────────────
+function InfoField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>{label}</span>
+      <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{children}</div>
+    </div>
+  )
+}
+
+// ─── CopyField: value + copy icon ─────────────────────────────────────────────
+function CopyField({
+  label,
+  value,
+  onCopy,
+}: {
+  label: string
+  value: string
+  onCopy: (text: string) => void
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>{label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{value}</span>
+        <CopyOutlined
+          style={{ fontSize: 16, color: C_TEXT_LABEL, cursor: 'pointer' }}
+          onClick={() => onCopy(value)}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ─── PasswordField: masked value + toggle + copy ──────────────────────────────
+function PasswordField({
+  label,
+  onCopy,
+}: {
+  label: string
+  onCopy: (text: string) => void
+}) {
+  const [visible, setVisible] = useState(false)
+  const PASSWORD = 'ghn@2024'
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>{label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {visible ? (
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{PASSWORD}</span>
+          ) : (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: C_TEXT_PRIMARY,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+            </span>
+          )}
+          {visible ? (
+            <EyeOutlined
+              style={{ fontSize: 16, color: C_TEXT_LABEL, cursor: 'pointer', marginLeft: 4 }}
+              onClick={() => setVisible(false)}
+            />
+          ) : (
+            <EyeInvisibleOutlined
+              style={{ fontSize: 16, color: C_TEXT_LABEL, cursor: 'pointer', marginLeft: 4 }}
+              onClick={() => setVisible(true)}
+            />
+          )}
+        </div>
+        <CopyOutlined
+          style={{ fontSize: 16, color: C_TEXT_LABEL, cursor: 'pointer' }}
+          onClick={() => onCopy(PASSWORD)}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ─── Section Card ─────────────────────────────────────────────────────────────
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        background: '#fff',
+        border: `1px solid ${C_BORDER}`,
+        borderRadius: 12,
+        boxShadow: CARD_SHADOW,
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        width: '100%',
+      }}
+    >
+      <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+        {title}
+      </span>
+      {children}
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function ShopDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
 
   const shop = allShops.find((s) => s.id === id)
-  const shopOrders = allOrders.filter((o) => o.shopId === id)
+
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text).catch(() => {})
+  }
 
   if (!shop) {
     return (
-      <Card>
-        <Typography.Text type="danger">Không tìm thấy shop.</Typography.Text>
-        <Button onClick={() => navigate('/agency-admin/shops')} style={{ marginLeft: 12 }}>Quay lại</Button>
-      </Card>
+      <div style={{ padding: 24, color: '#ef4444' }}>
+        Không tìm thấy shop.{' '}
+        <span
+          style={{ color: '#3B82F6', cursor: 'pointer' }}
+          onClick={() => navigate('/agency-admin/shops')}
+        >
+          Quay lại
+        </span>
+      </div>
     )
   }
 
-  const orderColumns = [
-    { title: 'Mã vận đơn', dataIndex: 'trackingCode', key: 'trackingCode' },
-    { title: 'Người nhận', dataIndex: 'receiverName', key: 'receiverName' },
-    { title: 'Địa chỉ', dataIndex: 'receiverAddress', key: 'receiverAddress', ellipsis: true },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (s: string) => {
-        const map: Record<string, { color: string; label: string }> = {
-          delivered: { color: 'green', label: 'Đã giao' },
-          in_transit: { color: 'blue', label: 'Đang giao' },
-          pending: { color: 'orange', label: 'Chờ lấy' },
-          failed: { color: 'red', label: 'Thất bại' },
-        }
-        return <Tag color={map[s]?.color}>{map[s]?.label || s}</Tag>
-      },
-    },
-    { title: 'COD', dataIndex: 'cod', key: 'cod', align: 'right' as const, render: (v: number) => `${v.toLocaleString()}đ` },
-    { title: 'Ngày tạo', dataIndex: 'createdAt', key: 'createdAt' },
-  ]
+  const [street, city] = splitAddress(shop.address)
 
   return (
-    <div>
-      <Space style={{ marginBottom: 16 }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/agency-admin/shops')}>Quay lại</Button>
-        <Title level={4} style={{ margin: 0, color: BRAND_COLOR }}>{shop.name}</Title>
-      </Space>
-
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic title="Tổng đơn" value={shopOrders.length} prefix={<InboxOutlined style={{ color: BRAND_COLOR }} />} valueStyle={{ color: BRAND_COLOR }} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Đã giao thành công"
-              value={shopOrders.filter((o) => o.status === 'delivered').length}
-              valueStyle={{ color: '#52C41A' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Tổng COD"
-              value={shopOrders.reduce((s, o) => s + o.cod, 0)}
-              suffix="đ"
-              formatter={(v) => Number(v).toLocaleString()}
-              valueStyle={{ color: '#FA8C16' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      <Card title="Thông tin shop" style={{ marginBottom: 16 }}>
-        <Descriptions bordered column={{ xs: 1, sm: 2 }}>
-          <Descriptions.Item label="Tên shop">{shop.name}</Descriptions.Item>
-          <Descriptions.Item label="Số điện thoại">{shop.phone}</Descriptions.Item>
-          <Descriptions.Item label="Username">{shop.username}</Descriptions.Item>
-          <Descriptions.Item label="Ngày tạo">{shop.createdAt}</Descriptions.Item>
-          <Descriptions.Item label="Trạng thái">
-            <Tag color={shop.status === 'active' ? 'green' : 'red'}>
-              {shop.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="Địa chỉ">{shop.address}</Descriptions.Item>
-        </Descriptions>
-      </Card>
-
-      <Card title={`Lịch sử đơn hàng (${shopOrders.length})`}>
-        <Table
-          dataSource={shopOrders}
-          columns={orderColumns}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-          scroll={{ x: 700 }}
+    <div
+      style={{
+        background: C_BG_PAGE,
+        minHeight: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      {/* ── Page header row ─────────────────────────────────────────── */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 1024,
+          padding: '24px 80px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <ArrowLeftOutlined
+          style={{ fontSize: 20, color: C_TEXT_PRIMARY, cursor: 'pointer', flexShrink: 0 }}
+          onClick={() => navigate('/agency-admin/shops')}
         />
-      </Card>
+        <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>
+          Thông tin shop
+        </span>
+      </div>
+
+      {/* ── Content cards ───────────────────────────────────────────── */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 1024,
+          padding: '0 80px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}
+      >
+        {/* Card 1: Thông tin cơ bản */}
+        <SectionCard title="Thông tin cơ bản">
+          {/* Row: Tên shop + Mã shop */}
+          <div style={{ display: 'flex', gap: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <InfoField label="Tên shop">{shop.name}</InfoField>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <InfoField label="Mã shop">{shop.id}</InfoField>
+            </div>
+          </div>
+
+          <InfoField label="Họ tên chủ shop">{shop.ownerName}</InfoField>
+
+          <InfoField label="Số điện thoại">{shop.phone}</InfoField>
+
+          <InfoField label="Địa chỉ">
+            <div>{street}</div>
+            {city && <div>{city}</div>}
+          </InfoField>
+        </SectionCard>
+
+        {/* Card 2: Cấu hình tài khoản shop đăng nhập */}
+        <SectionCard title="Cấu hình tài khoản shop đăng nhập">
+          <CopyField label="Tên đăng nhập của shop" value={shop.username} onCopy={copyText} />
+          <PasswordField label="Mật khẩu của shop" onCopy={copyText} />
+        </SectionCard>
+
+        {/* Action buttons */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 6,
+            padding: 16,
+          }}
+        >
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#111827',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              padding: '8px 12px',
+              fontSize: 14,
+              fontWeight: 600,
+              lineHeight: '20px',
+              cursor: 'pointer',
+            }}
+          >
+            <EditOutlined style={{ fontSize: 16 }} />
+            Chỉnh sửa
+          </button>
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#EF4444',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              padding: '8px 12px',
+              fontSize: 14,
+              fontWeight: 600,
+              lineHeight: '20px',
+              cursor: 'pointer',
+            }}
+          >
+            <DeleteOutlined style={{ fontSize: 16 }} />
+            Xoá
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
