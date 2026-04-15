@@ -24,8 +24,7 @@
 
 | # | Tính năng | Platform | Mô tả | Ngày thêm |
 |---|-----------|----------|-------|-----------|
-| 1 | Bỏ section "Kết nối tài khoản GHN" | Super Admin | Xóa InfoCard "Kết nối tài khoản GHN" khỏi trang chi tiết đại lý | 2026-04-15 |
-| 2 | Rebuild trang Chi tiết shop theo Figma | Agency Admin | Rewrite ShopDetail.tsx — 2 card (Thông tin cơ bản, Cấu hình tài khoản), toggle/copy mật khẩu, nút Chỉnh sửa + Xoá; thêm ownerName vào shops.json | 2026-04-15 |
+| — | *(trống)* | — | — | — |
 
 ---
 
@@ -53,6 +52,7 @@ Dist dir:  dist/
 | v0.2.0 | 2026-04-13 | Sync table layout toàn bộ 3 platform: rebuild 5 trang sang custom flex table, fix padding 0 16px, fix responsive Shop Orders, add DEPLOY.md | trannlb |
 | v0.3.0 | 2026-04-13 | Web Shop: Drawer Tạo đơn hàng — slide-in 980px full-height, form đầy đủ (người gửi/nhận, sản phẩm, kích thước, dịch vụ vận chuyển, COD, ghi chú), backdrop overlay | trannlb |
 | v0.4.0 | 2026-04-13 | (1) Super Admin: bỏ popup tạo đại lý, navigate thẳng vào create page. (2) Agency Admin: rebuild màn hình Tạo shop mới theo Figma (2 section card, Mã shop auto-gen, copy/toggle password). (3) Agency Admin: edit/view mode cho chi tiết gói dịch vụ — tạo gói mở edit mode, Lưu → view-only, Chỉnh sửa → edit mode | trannlb |
+| v0.5.0 | 2026-04-15 | (1) Super Admin: bỏ section "Kết nối tài khoản GHN" khỏi trang chi tiết đại lý. (2) Agency Admin: rebuild trang Chi tiết shop theo Figma — 2 card (Thông tin cơ bản, Cấu hình tài khoản), toggle/copy mật khẩu, nút Chỉnh sửa + Xoá. (3) Mock data: thêm ownerName vào shops.json | trannlb |
 
 ---
 
