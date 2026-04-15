@@ -9,5 +9,6 @@ export default defineConfig({
   ],
   server: {
     port: 4000,
+    strictPort: true,
   },
 })

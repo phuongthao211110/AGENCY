@@ -1,0 +1,40 @@
+{
+  "platform": "agency-admin",
+  "currentVersion": "0.1.0",
+  "lastUpdated": "2026-04-15",
+  "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe",
+  "sections": [
+    {
+      "key": "login-logout",
+      "title": "Login / Logout",
+      "stories": []
+    },
+    {
+      "key": "shops",
+      "title": "Shop",
+      "stories": []
+    },
+    {
+      "key": "carrier-setup",
+      "title": "Thiết lập NVC",
+      "stories": []
+    },
+    {
+      "key": "dashboard",
+      "title": "Dashboard / Báo cáo",
+      "stories": []
+    },
+    {
+      "key": "settings",
+      "title": "Cài đặt - Thông tin tài khoản",
+      "stories": []
+    }
+  ],
+  "history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-04-15",
+      "summary": "Khởi tạo document"
+    }
+  ]
+}

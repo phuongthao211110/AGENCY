@@ -11,6 +11,10 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.1",
+    "@tiptap/extension-list-keymap": "^3.22.3",
+    "@tiptap/pm": "^3.22.3",
+    "@tiptap/react": "^3.22.3",
+    "@tiptap/starter-kit": "^3.22.3",
     "antd": "^6.3.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

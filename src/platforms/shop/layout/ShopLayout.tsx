@@ -12,6 +12,7 @@ import {
   SettingOutlined,
   LogoutOutlined,
   RightOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
@@ -118,6 +119,35 @@ export default function ShopLayout() {
           </div>
 
           <div style={{ flex: 1 }} />
+
+          {/* Document */}
+          <div style={{ padding: '0 16px 4px' }}>
+            {(() => {
+              const active = isActive('/shop/document')
+              return (
+                <div
+                  onClick={() => navigate('/shop/document')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '5px 8px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: active ? '#FFF3EE' : 'transparent',
+                    color: active ? GHN_ORANGE : '#333',
+                    fontWeight: active ? 600 : 400,
+                    fontSize: 14,
+                  }}
+                >
+                  <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
+                    <FileTextOutlined />
+                  </span>
+                  Document
+                </div>
+              )
+            })()}
+          </div>
 
           <div style={{ height: 1, background: COLOR_BORDER, margin: '0 16px' }} />
 

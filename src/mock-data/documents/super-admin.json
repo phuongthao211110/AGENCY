@@ -1,0 +1,245 @@
+{
+  "platform": "super-admin",
+  "currentVersion": "1.0.0",
+  "lastUpdated": "2026-04-15",
+  "figmaUrl": "https://www.figma.com/design/G33IlXebyXXGxZbbYbKECr/-GSA--GHN-SUPER-ADMIN?node-id=2-449",
+  "sections": [
+    {
+      "key": "login-logout",
+      "title": "Login / Logout",
+      "stories": [
+        {
+          "id": "GSA-LOGIN-1",
+          "jiraKey": "AGENCY-6",
+          "title": "[GSA] Login screen",
+          "userStory": "Là GHN Super Admin, tôi muốn đăng nhập bằng tài khoản được cấp sẵn để có thể truy cập và quản lý hệ thống đại lý.",
+          "notes": [
+            "Tài khoản được cấp bởi hệ thống (chưa hỗ trợ đăng ký)",
+            "Chỉ user hợp lệ mới truy cập được hệ thống",
+            "GHN Super Admin domain: …."
+          ],
+          "userFlow": [
+            "Super Admin truy cập trang đăng nhập (admin domain)",
+            "Nhập Email/Username và Mật khẩu",
+            "Nhấn nút \"Đăng nhập\"",
+            "Hệ thống kiểm tra thông tin đăng nhập",
+            "Nếu hợp lệ → chuyển đến trang Đại Lý",
+            "Nếu không hợp lệ → hiển thị thông báo lỗi"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị màn hình đăng nhập với 2 trường Email/Username và Mật khẩu, cùng nút \"Đăng nhập\".",
+            "AC2: Khi Super Admin nhập đúng tài khoản và mật khẩu, hệ thống cho phép đăng nhập thành công và chuyển hướng đến quản lý đại lý.",
+            "AC3: Khi Super Admin nhập sai tài khoản hoặc mật khẩu, hệ thống hiển thị thông báo lỗi \"Sai tài khoản hoặc mật khẩu\".",
+            "AC4: Các trường Email/Username và Mật khẩu là bắt buộc. Nếu để trống, hệ thống hiển thị lỗi tương ứng.",
+            "AC5: Nếu email nhập không đúng định dạng, hệ thống hiển thị lỗi validate.",
+            "AC6: Hệ thống không cung cấp chức năng đăng ký tài khoản, chỉ cho phép đăng nhập bằng tài khoản đã được cấp.",
+            "AC7: Sau khi đăng nhập thành công, hệ thống tạo và lưu session 7 ngày cho người dùng.",
+            "AC8: Khi session hết hạn, người dùng sẽ bị đăng xuất và được chuyển về màn hình đăng nhập."
+          ]
+        }
+      ]
+    },
+    {
+      "key": "agencies",
+      "title": "Quản lý Đại lý",
+      "stories": [
+        {
+          "id": "GSA-DL-1",
+          "jiraKey": "AGENCY-7",
+          "title": "[GSA] Đại lý - Danh sách đại lý: Xem danh sách đại lý",
+          "userStory": "Là GHN Super Admin, tôi muốn xem danh sách tất cả đại lý trong hệ thống để có thể theo dõi, quản lý và thực hiện các thao tác với đại lý.",
+          "notes": [],
+          "userFlow": [
+            "Super Admin truy cập menu Đại lý",
+            "Hệ thống hiển thị danh sách tất cả đại lý",
+            "Super Admin có thể tìm kiếm theo tên/mã/số điện thoại đại lý",
+            "Super Admin có thể xem thông tin chi tiết từng đại lý"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Khi truy cập màn hình Đại lý, hệ thống hiển thị danh sách đại lý dạng bảng.",
+            "AC2: Mỗi dòng đại lý hiển thị các cột: Tên đại lý - Mã đại lý (agency_id), Chủ đại lý - Số điện thoại, Số shop (tổng số shop thuộc đại lý), Số đơn hàng (tổng số đơn hàng của shop thuộc đại lý), Tổng COD, Doanh thu (tổng doanh thu phí ship đơn hàng của shop thuộc đại lý).",
+            "AC3: Super Admin có thể tìm kiếm theo tên/mã/số điện thoại đại lý.",
+            "AC4: Khi nhập từ khóa tìm kiếm, hệ thống hiển thị danh sách phù hợp với từ khóa.",
+            "AC7: Super Admin có thể xem phân trang danh sách đại lý. Cho phép hiển thị số lượng dòng trên mỗi trang và cho phép thay đổi số lượng hiển thị 20/50/100/150/200, mặc định chọn 20.",
+            "AC11: Super Admin có thể nhấn \"Tạo đại lý mới\" để chuyển sang màn tạo đại lý.",
+            "AC14: Khi không có dữ liệu, hoặc tìm kiếm không có kết quả hệ thống hiển thị trạng thái empty phù hợp."
+          ]
+        },
+        {
+          "id": "GSA-DL-2",
+          "jiraKey": "AGENCY-9",
+          "title": "[GSA] Đại lý - Danh sách đại lý: Search đại lý",
+          "userStory": "Là GHN Super Admin, tôi muốn tìm kiếm đại lý theo tên, mã hoặc số điện thoại để nhanh chóng tìm đúng đại lý cần quản lý.",
+          "notes": [],
+          "userFlow": [],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị ô tìm kiếm tại màn hình danh sách đại lý.",
+            "AC2: Super Admin có thể nhập từ khóa để tìm kiếm đại lý.",
+            "AC3: Hệ thống hỗ trợ tìm kiếm theo: Tên đại lý, Mã đại lý, Tên chủ đại lý, Số điện thoại đại lý.",
+            "AC4: Khi Super Admin nhập từ khóa, hệ thống hiển thị danh sách đại lý phù hợp với từ khóa.",
+            "AC5: Tìm kiếm không phân biệt chữ hoa/thường.",
+            "AC6: Hệ thống hỗ trợ tìm kiếm theo từ khóa một phần (partial match).",
+            "AC7: Khi không có kết quả phù hợp, hệ thống hiển thị trạng thái empty.",
+            "AC8: Khi Super Admin xóa từ khóa tìm kiếm, hệ thống hiển thị lại danh sách ban đầu."
+          ]
+        },
+        {
+          "id": "GSA-DL-3",
+          "jiraKey": "AGENCY-12",
+          "title": "[GSA] Đại lý - Tạo mới đại lý: Thông tin cơ bản",
+          "userStory": "Là GHN Super Admin, tôi muốn nhập thông tin cơ bản của đại lý để có thể tạo mới một đại lý trong hệ thống.",
+          "notes": [],
+          "userFlow": [
+            "Tại màn hình Đại lý, user bấm vào button \"Tạo đại lý mới\" → Mở trang tạo đại lý",
+            "Nhập các thông: Thông tin cơ bản, Tài khoản GHN, Cấu hình trang quản trị của đại lý (Agency Admin), Cấu hình trang của shop",
+            "Nhấn nút \"Lưu\"",
+            "Hệ thống validate dữ liệu",
+            "Nếu hợp lệ → tạo thành công",
+            "Nếu không hợp lệ → hiển thị lỗi"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị form nhập thông tin cơ bản khi tạo đại lý.",
+            "AC2: Super Admin có thể nhập các trường: Tên đại lý, Họ tên chủ đại lý, Số điện thoại, Địa chỉ / Tỉnh/Thành / Quận/Huyện / Phường/Xã (hỗ trợ địa chỉ cũ/mới).",
+            "AC3: Khi Super Admin không nhập các trường bắt buộc, hệ thống hiển thị lỗi tương ứng.",
+            "AC4: Mã đại lý (agency_id) là duy nhất trong hệ thống, được generate random số gồm 6 ký tự số.",
+            "AC5: Validate dữ liệu — Tên đại lý: không được để trống, tối đa 255 ký tự. Tên chủ đại lý: không được để trống, tối đa 255 ký tự. Số điện thoại: không được để trống, định dạng sdt di động, phải unique toàn hệ thống. Địa chỉ: không được để trống, phải chọn đủ Tỉnh/Thành → Quận/Huyện → Phường/Xã.",
+            "AC6: Khi Super Admin nhập đầy đủ và hợp lệ, hệ thống cho phép lưu thành công.",
+            "AC7: Khi có lỗi validation, hệ thống không cho phép tiếp tục và hiển thị rõ lỗi tại từng trường."
+          ]
+        },
+        {
+          "id": "GSA-DL-5",
+          "jiraKey": "AGENCY-14",
+          "title": "[GSA] Đại lý - Tạo mới đại lý: Cấu hình URL trang Agency Admin",
+          "userStory": "Là GHN Super Admin, tôi muốn cấu hình URL trang quản trị của đại lý để tạo tenant riêng cho từng đại lý và giúp họ truy cập hệ thống quản trị của mình.",
+          "notes": [],
+          "userFlow": [
+            "Tại màn hình tạo mới Đại lý → bước \"Cấu hình URL trang Agency Admin\"",
+            "Nhập tên định danh (slug) cho đại lý",
+            "Hệ thống tự động hiển thị URL hoàn chỉnh (preview)",
+            "Super Admin kiểm tra và chỉnh sửa nếu cần"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị trường nhập URL trang quản trị đại lý gồm: Prefix cố định (https://admin-), Trường nhập slug (tên đại lý — prefill bằng tên đại lý, viết thường, không dấu cách, nếu trùng slug thì đánh index 1,2,3,...n), Domain cố định (.chotdon.ai).",
+            "AC2: Super Admin có thể nhập slug để cấu hình URL cho đại lý.",
+            "AC3: Hệ thống hiển thị preview URL hoàn chỉnh theo định dạng: https://admin-[slug].chotdon.ai.",
+            "AC4: Slug chỉ cho phép: Chữ thường (a-z), Số (0-9), Dấu gạch ngang (-).",
+            "AC5: Slug không được để trống.",
+            "AC6: Slug phải là duy nhất trong hệ thống. Nếu trùng, hệ thống hiển thị lỗi.",
+            "AC7: Khi slug không hợp lệ (ký tự đặc biệt, khoảng trắng...), hệ thống hiển thị lỗi validate.",
+            "AC8: Khi nhập hợp lệ, hệ thống cho phép lưu và tiếp tục.",
+            "AC9: Sau khi lưu, URL được gán cho đại lý và dùng để truy cập trang Agency Admin."
+          ]
+        },
+        {
+          "id": "GSA-DL-6",
+          "jiraKey": "AGENCY-15",
+          "title": "[GSA] Đại lý - Tạo mới đại lý: Cấu hình User/Password đăng nhập trang Agency Admin",
+          "userStory": "Là GHN Super Admin, tôi muốn tạo tài khoản đăng nhập (username và password) cho đại lý và gán tài khoản này với URL (slug) của đại lý để đảm bảo đại lý chỉ có thể đăng nhập vào đúng tenant của mình.",
+          "notes": [
+            "Đại lý chỉ được đăng nhập bằng tài khoản do Super Admin cấp",
+            "Không hỗ trợ đăng ký tài khoản",
+            "Mỗi tài khoản được gắn với một slug (tenant) cụ thể",
+            "Đại lý chỉ đăng nhập được tại URL tương ứng với slug đã cấu hình",
+            "Đại lý có thể đổi mật khẩu sau khi đăng nhập (flow thuộc Agency Admin)"
+          ],
+          "userFlow": [
+            "Tại màn hình tạo mới Đại lý → bước \"Cấu hình URL trang Agency Admin\"",
+            "Super Admin nhập: Tên đăng nhập (prefill bằng số điện thoại đại lý), Mật khẩu",
+            "Nhấn \"Lưu\" hoặc \"Hoàn tất tạo đại lý\"",
+            "Hệ thống tạo tài khoản Agency Admin và gán tài khoản với tenant (slug) tương ứng",
+            "Đại lý truy cập URL: https://admin-[slug].chotdon.ai",
+            "Nhập username/password để đăng nhập",
+            "Hệ thống kiểm tra tài khoản hợp lệ và tài khoản thuộc đúng tenant (slug)",
+            "Nếu đúng → login thành công; Nếu sai tenant → từ chối đăng nhập"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống cho phép GHN Super Admin cấu hình tài khoản đăng nhập (username/password) cho Agency Admin khi tạo mới đại lý.",
+            "AC2: Tài khoản Agency Admin bao gồm: Username (bắt buộc), Password (bắt buộc).",
+            "AC3: Username — là bắt buộc, được prefill bằng số điện thoại chủ đại lý (có thể edit lại), unique toàn hệ thống, không chứa ký tự đặc biệt (chỉ a-z, 0-9).",
+            "AC4: Password — là bắt buộc, tối thiểu 8 ký tự, ít nhất 1 ký tự viết hoa, 1 ký tự viết thường, 1 ký tự số và 1 ký tự đặc biệt.",
+            "AC5: Tài khoản Agency Admin phải được gắn với một tenant (agency) thông qua: agency_id, slug (URL Agency Admin đã cấu hình trước đó).",
+            "AC6: Khi GHN Super Admin tạo tài khoản thành công, hệ thống lưu: username, password, agency_id, slug.",
+            "AC7: Khi dữ liệu không hợp lệ — hệ thống hiển thị lỗi tại từng field và không cho phép lưu.",
+            "AC11: Sau khi tạo thành công, tài khoản có thể sử dụng để đăng nhập web Agency Admin (AGENCY-40)."
+          ]
+        },
+        {
+          "id": "GSA-DL-7",
+          "jiraKey": "AGENCY-17",
+          "title": "[GSA] Đại lý - Tạo mới đại lý: Cấu hình UrlWeb shop",
+          "userStory": "Là GHN Super Admin, tôi muốn cấu hình URL Web dành cho shop thuộc đại lý để các shop có thể truy cập vào hệ thống bán hàng và tạo đơn trong phạm vi đúng của đại lý đó.",
+          "notes": [],
+          "userFlow": [
+            "Tại màn hình tạo mới Đại lý → bước \"Cấu hình URL Web shop\"",
+            "Super Admin nhập slug cho shop",
+            "Hệ thống hiển thị URL hoàn chỉnh (preview)",
+            "Super Admin kiểm tra và chỉnh sửa nếu cần",
+            "Hệ thống validate slug",
+            "Nếu hợp lệ → lưu URL và gán vào đại lý",
+            "Shop sử dụng URL này để truy cập hệ thống tạo & quản lý đơn hàng"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị trường cấu hình URL Web/App shop gồm: Prefix cố định (https://shop-), Trường nhập slug (prefill bằng tên đại lý, viết thường, không dấu cách, nếu trùng slug thì đánh index 1,2,3,...n), Domain cố định (.chotdon.ai).",
+            "AC2: Super Admin có thể nhập slug để cấu hình URL cho shop.",
+            "AC3: Hệ thống hiển thị preview URL hoàn chỉnh theo định dạng: https://shop-[slug].chotdon.ai.",
+            "AC4: Slug chỉ cho phép: Chữ thường (a-z), Số (0-9), Dấu gạch ngang (-).",
+            "AC5: Slug là bắt buộc. Nếu để trống, hệ thống hiển thị lỗi.",
+            "AC6: Slug phải là duy nhất trong hệ thống. Nếu trùng, hệ thống hiển thị lỗi.",
+            "AC7: Khi slug không hợp lệ (ký tự đặc biệt, khoảng trắng...), hệ thống hiển thị lỗi validate.",
+            "AC8: Khi slug hợp lệ, hệ thống cho phép lưu và tiếp tục.",
+            "AC9: Sau khi lưu, URL được gán cho đại lý và dùng cho các shop thuộc đại lý truy cập Web.",
+            "AC10: Khi Shop truy cập URL, hệ thống phải resolve đúng tenant (đại lý) tương ứng dựa trên slug.",
+            "AC11: Shop chỉ có thể truy cập và thao tác dữ liệu trong phạm vi tenant (đại lý) được map từ URL."
+          ]
+        },
+        {
+          "id": "GSA-DL-8",
+          "jiraKey": "",
+          "title": "[GSA] Đại lý: View thông tin chi tiết đại lý",
+          "userStory": "",
+          "notes": [],
+          "userFlow": [],
+          "acceptanceCriteria": []
+        }
+      ]
+    },
+    {
+      "key": "service-fee",
+      "title": "Phí dịch vụ",
+      "stories": []
+    },
+    {
+      "key": "permissions",
+      "title": "Phân quyền",
+      "stories": []
+    },
+    {
+      "key": "dashboard",
+      "title": "Dashboard / Báo cáo",
+      "stories": []
+    },
+    {
+      "key": "settings",
+      "title": "Cài đặt - Thông tin tài khoản",
+      "stories": [
+        {
+          "id": "GSA-SETTINGS-1",
+          "jiraKey": "",
+          "title": "[GSA] Thông tin tài khoản: Thay đổi mật khẩu",
+          "userStory": "",
+          "notes": [],
+          "userFlow": [],
+          "acceptanceCriteria": []
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "version": "1.0.0",
+      "date": "2026-04-15",
+      "summary": "Khởi tạo document — Login/Logout, Quản lý Đại lý (7 user stories), Cài đặt"
+    }
+  ]
+}

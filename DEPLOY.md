@@ -24,7 +24,7 @@
 
 | # | Tính năng | Platform | Mô tả | Ngày thêm |
 |---|-----------|----------|-------|-----------|
-| — | *(trống)* | — | — | — |
+| 1 | Document — Master-detail story pages | All | Menu Document ở sidebar 3 platform. Mỗi user story là trang riêng (nested routes). TOC trái: expand/collapse section, hover hiện nút [+]. Detail: title input + Tiptap editor luôn bật (có toolbar). Create: form tiêu đề + editor. Lưu vào localStorage. Tiptap list-keymap cho bullet/nested list. | 2026-04-15 |
 
 ---
 
