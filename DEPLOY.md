@@ -22,9 +22,7 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-| # | Tính năng | Platform | Mô tả | Ngày thêm |
-|---|-----------|----------|-------|-----------|
-| 1 | Document — Master-detail story pages | All | Menu Document ở sidebar 3 platform. Mỗi user story là trang riêng (nested routes). TOC trái: expand/collapse section, hover hiện nút [+]. Detail: title input + Tiptap editor luôn bật (có toolbar). Create: form tiêu đề + editor. Lưu vào localStorage. Tiptap list-keymap cho bullet/nested list. | 2026-04-15 |
+| — | *(trống)* | — | — | — |
 
 ---
 
@@ -53,6 +51,7 @@ Dist dir:  dist/
 | v0.3.0 | 2026-04-13 | Web Shop: Drawer Tạo đơn hàng — slide-in 980px full-height, form đầy đủ (người gửi/nhận, sản phẩm, kích thước, dịch vụ vận chuyển, COD, ghi chú), backdrop overlay | trannlb |
 | v0.4.0 | 2026-04-13 | (1) Super Admin: bỏ popup tạo đại lý, navigate thẳng vào create page. (2) Agency Admin: rebuild màn hình Tạo shop mới theo Figma (2 section card, Mã shop auto-gen, copy/toggle password). (3) Agency Admin: edit/view mode cho chi tiết gói dịch vụ — tạo gói mở edit mode, Lưu → view-only, Chỉnh sửa → edit mode | trannlb |
 | v0.5.0 | 2026-04-15 | (1) Super Admin: bỏ section "Kết nối tài khoản GHN" khỏi trang chi tiết đại lý. (2) Agency Admin: rebuild trang Chi tiết shop theo Figma — 2 card (Thông tin cơ bản, Cấu hình tài khoản), toggle/copy mật khẩu, nút Chỉnh sửa + Xoá. (3) Mock data: thêm ownerName vào shops.json | trannlb |
+| v0.6.0 | 2026-04-15 | Document master-detail cho 3 platform: menu Document ở sidebar, nested routes /story/:id + /new/:sectionKey, TOC expand/collapse, Tiptap editor luôn bật (title input + toolbar), lưu localStorage, tạo/xóa story, 9 user stories Super Admin, list-keymap cho nested bullet | trannlb |
 
 ---
 
