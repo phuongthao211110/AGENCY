@@ -13,6 +13,8 @@ import {
   UnorderedListOutlined,
   UndoOutlined,
   RedoOutlined,
+  LikeOutlined,
+  SendOutlined,
 } from '@ant-design/icons';
 import { useDocument, type DocStory } from '../contexts/DocumentContext';
 
@@ -101,7 +103,7 @@ function ToolbarBtn({ onClick, active, disabled, title, children }: {
 export default function StoryDetailPage() {
   const { storyId } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
-  const { findStory, getStoryContent, saveStoryContent, deleteStory, hasContent, isLocalOnly } = useDocument();
+  const { findStory, getStoryContent, saveStoryContent, deleteStory, hasContent, isLocalOnly, getStatus, updateStatus } = useDocument();
 
   const result = storyId ? findStory(storyId) : null;
 
@@ -110,6 +112,12 @@ export default function StoryDetailPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [saved, setSaved] = useState(false);
   const savedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Status state
+  type StoryStatus = NonNullable<ReturnType<typeof getStatus>>;
+  const [storyStatus, setStoryStatus] = useState<StoryStatus>('draft');
+  const [sentToast, setSentToast] = useState(false);
+  const sentToastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Inject Tiptap styles once
   useEffect(() => {
@@ -165,6 +173,27 @@ export default function StoryDetailPage() {
     setSaved(false);
   }, [storyId, editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync status when story changes
+  useEffect(() => {
+    if (storyId) setStoryStatus(getStatus(storyId));
+  }, [storyId, getStatus]);
+
+  const handleApprove = () => {
+    if (!result) return;
+    const next: StoryStatus = storyStatus === 'draft' ? 'approved' : 'draft';
+    updateStatus(result.story.id, next);
+    setStoryStatus(next);
+  };
+
+  const handleSendToTech = () => {
+    if (!result) return;
+    updateStatus(result.story.id, 'sent-to-tech');
+    setStoryStatus('sent-to-tech');
+    setSentToast(true);
+    if (sentToastRef.current) clearTimeout(sentToastRef.current);
+    sentToastRef.current = setTimeout(() => setSentToast(false), 5000);
+  };
+
   const handleSave = () => {
     if (!result || !editor) return;
     saveStoryContent(result.story.id, { title: title.trim() || result.story.title, html: editor.getHTML() });
@@ -195,7 +224,7 @@ export default function StoryDetailPage() {
   const edited = hasContent(story.id);
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', position: 'relative' }}>
 
       {/* ── Top bar ── */}
       <div style={{
@@ -243,6 +272,21 @@ export default function StoryDetailPage() {
               {story.jiraKey}
             </span>
           )}
+          {storyStatus === 'draft' && (
+            <span style={{ fontSize: 11, color: '#6B7280', background: '#F3F4F6', border: '1px solid #D1D5DB', padding: '2px 7px', borderRadius: 4 }}>
+              Draft
+            </span>
+          )}
+          {storyStatus === 'approved' && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '2px 7px', borderRadius: 4 }}>
+              Approved
+            </span>
+          )}
+          {storyStatus === 'sent-to-tech' && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 7px', borderRadius: 4 }}>
+              Sent to Tech
+            </span>
+          )}
           {edited && !localOnly && (
             <span style={{ fontSize: 11, color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 7px', borderRadius: 4 }}>
               Đã chỉnh sửa
@@ -268,6 +312,37 @@ export default function StoryDetailPage() {
           >
             <DeleteOutlined style={{ fontSize: 11 }} />
             Xóa
+          </button>
+        )}
+
+        {storyStatus !== 'sent-to-tech' && (
+          <button
+            onClick={handleApprove}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '4px 10px', borderRadius: 6,
+              border: storyStatus === 'approved' ? '1px solid #A7F3D0' : '1px solid #D1D5DB',
+              background: storyStatus === 'approved' ? '#ECFDF5' : '#F9FAFB',
+              color: storyStatus === 'approved' ? '#059669' : '#6B7280',
+              fontSize: 12, cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            <LikeOutlined style={{ fontSize: 11 }} />
+            {storyStatus === 'approved' ? 'Bỏ duyệt' : 'Duyệt'}
+          </button>
+        )}
+        {storyStatus === 'approved' && (
+          <button
+            onClick={handleSendToTech}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '4px 10px', borderRadius: 6,
+              border: '1px solid #93C5FD', background: '#EFF6FF',
+              color: '#2563EB', fontSize: 12, cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            <SendOutlined style={{ fontSize: 11 }} />
+            Gửi cho Tech
           </button>
         )}
 
@@ -357,6 +432,20 @@ export default function StoryDetailPage() {
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '20px 24px 48px' }}>
         <EditorContent editor={editor} />
       </div>
+
+      {/* ── Sent-to-tech toast ── */}
+      {sentToast && (
+        <div style={{
+          position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#1F2937', color: '#fff', fontSize: 12, lineHeight: 1.6,
+          padding: '10px 16px', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+          zIndex: 100, whiteSpace: 'nowrap',
+        }}>
+          Story đã được đánh dấu <strong>Sent to Tech</strong>. Nhờ Claude chạy{' '}
+          <code style={{ background: '#374151', padding: '1px 5px', borderRadius: 3 }}>/generate-tech-backlog</code>{' '}
+          để xuất file.
+        </div>
+      )}
     </div>
   );
 }

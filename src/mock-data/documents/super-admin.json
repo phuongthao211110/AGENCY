@@ -197,40 +197,26 @@
           "id": "GSA-DL-8",
           "jiraKey": "",
           "title": "[GSA] Đại lý: View thông tin chi tiết đại lý",
-          "userStory": "",
+          "userStory": "Là GHN Super Admin, tôi muốn xem thông tin chi tiết của một đại lý để kiểm tra thông tin, theo dõi hoạt động và quản lý tài khoản đăng nhập của đại lý đó.",
           "notes": [],
-          "userFlow": [],
-          "acceptanceCriteria": []
-        }
-      ]
-    },
-    {
-      "key": "service-fee",
-      "title": "Phí dịch vụ",
-      "stories": []
-    },
-    {
-      "key": "permissions",
-      "title": "Phân quyền",
-      "stories": []
-    },
-    {
-      "key": "dashboard",
-      "title": "Dashboard / Báo cáo",
-      "stories": []
-    },
-    {
-      "key": "settings",
-      "title": "Cài đặt - Thông tin tài khoản",
-      "stories": [
-        {
-          "id": "GSA-SETTINGS-1",
-          "jiraKey": "",
-          "title": "[GSA] Thông tin tài khoản: Thay đổi mật khẩu",
-          "userStory": "",
-          "notes": [],
-          "userFlow": [],
-          "acceptanceCriteria": []
+          "userFlow": [
+            "Super Admin click vào tên đại lý tại màn danh sách đại lý",
+            "Hệ thống điều hướng đến trang chi tiết đại lý",
+            "Super Admin xem thống kê tổng quan (4 KPIs)",
+            "Super Admin chuyển giữa các tab: Thông tin đại lý / Danh sách shop / Đơn hàng",
+            "Tại tab Thông tin đại lý: Super Admin có thể copy username, ẩn/hiện và copy mật khẩu"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Trang hiển thị 4 KPI tổng quan: Số shop, Số đơn hàng, Tổng COD (₫), Doanh thu (₫).",
+            "AC2: Trang có 3 tab: \"Thông tin đại lý\", \"Danh sách shop\", \"Đơn hàng\".",
+            "AC3: Tab \"Thông tin đại lý\" — section Thông tin cơ bản hiển thị: Tên đại lý, Mã đại lý, Họ tên chủ đại lý, Số điện thoại, Địa chỉ.",
+            "AC4: Tab \"Thông tin đại lý\" — section Cấu hình trang hiển thị URL trang Agency Admin (https://admin-[slug].chotdon.ai) và URL Web/App shop (https://shop-[slug].chotdon.ai).",
+            "AC5: Tab \"Thông tin đại lý\" — section Tài khoản Agency Admin hiển thị: Tên đăng nhập (có nút copy), Mật khẩu (có nút ẩn/hiện + nút copy).",
+            "AC6: Tab \"Danh sách shop\" hiển thị danh sách các shop thuộc đại lý.",
+            "AC7: Tab \"Đơn hàng\" hiển thị danh sách đơn hàng của các shop thuộc đại lý.",
+            "AC8: Khi copy text (username hoặc password), hệ thống hiển thị toast \"Sao chép thành công\" tự ẩn sau 2 giây.",
+            "AC9: Khi không tìm thấy đại lý (ID không hợp lệ), hệ thống hiển thị thông báo lỗi và link quay lại danh sách đại lý."
+          ]
         }
       ]
     }

@@ -10,6 +10,7 @@ export interface DocStory {
   notes?: string[];
   userFlow: string[];
   acceptanceCriteria: string[];
+  status?: 'draft' | 'approved' | 'sent-to-tech';
 }
 
 export interface DocStoryLocal {
@@ -67,6 +68,10 @@ interface DocumentContextValue {
   hasContent: (storyId: string) => boolean;
   /** Check if a story is local-only */
   isLocalOnly: (storyId: string) => boolean;
+  /** Get effective status: localStorage override → JSON status → default */
+  getStatus: (storyId: string) => NonNullable<DocStory['status']>;
+  /** Persist a status override to localStorage */
+  updateStatus: (storyId: string, status: NonNullable<DocStory['status']>) => void;
 }
 
 const DocumentContext = createContext<DocumentContextValue | null>(null);
@@ -81,6 +86,12 @@ export function useDocument() {
 
 function keyLocalStories(platform: string) { return `ghn-stories-${platform}`; }
 function keyContent(platform: string, storyId: string) { return `ghn-story-html-${platform}-${storyId}`; }
+function keyStatus(platform: string, storyId: string) { return `ghn-story-status-${platform}-${storyId}`; }
+function loadStatus(platform: string, storyId: string): DocStory['status'] | null {
+  const raw = localStorage.getItem(keyStatus(platform, storyId));
+  if (raw === 'draft' || raw === 'approved' || raw === 'sent-to-tech') return raw;
+  return null;
+}
 
 function loadLocalStories(platform: string): DocStoryLocal[] {
   try { return JSON.parse(localStorage.getItem(keyLocalStories(platform)) ?? '[]'); }
@@ -202,11 +213,33 @@ export function DocumentProvider({ data, children }: { data: DocumentData; child
     [localStories]
   );
 
+  const getStatus = useCallback(
+    (storyId: string): NonNullable<DocStory['status']> => {
+      const lsStatus = loadStatus(data.platform, storyId);
+      if (lsStatus) return lsStatus;
+      for (const section of data.sections) {
+        const story = section.stories.find(s => s.id === storyId);
+        if (story?.status) return story.status;
+      }
+      return localStories.some(s => s.id === storyId) ? 'draft' : 'approved';
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, localStories, contentVersion]
+  );
+
+  const updateStatus = useCallback(
+    (storyId: string, status: NonNullable<DocStory['status']>) => {
+      localStorage.setItem(keyStatus(data.platform, storyId), status);
+      setContentVersion(v => v + 1);
+    },
+    [data.platform]
+  );
+
   return (
     <DocumentContext.Provider value={{
       data, platform: data.platform, sections,
       findStory, getStoryContent, createStory, saveStoryContent,
-      deleteStory, hasContent, isLocalOnly,
+      deleteStory, hasContent, isLocalOnly, getStatus, updateStatus,
     }}>
       {children}
     </DocumentContext.Provider>

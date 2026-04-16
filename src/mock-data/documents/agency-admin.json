@@ -1,33 +1,259 @@
 {
   "platform": "agency-admin",
-  "currentVersion": "0.1.0",
-  "lastUpdated": "2026-04-15",
-  "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe",
+  "currentVersion": "1.0.0",
+  "lastUpdated": "2026-04-16",
+  "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
       "key": "login-logout",
       "title": "Login / Logout",
-      "stories": []
+      "stories": [
+        {
+          "id": "AGA-AUTH-1",
+          "jiraKey": "AGENCY-40",
+          "title": "[AGA] Login screen",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn đăng nhập vào trang quản trị của đại lý thông qua URL riêng và tài khoản được GHN Super Admin cung cấp để có thể quản lý shop và đơn hàng.",
+          "notes": [
+            "URL đăng nhập được cấu hình tại bước tạo đại lý (AGENCY-14: [GSA] Đại lý - Tạo mới đại lý: Cấu hình URL trang Agency Admin)",
+            "Tài khoản (username/password) được cấp bởi GHN Super Admin (AGENCY-15)",
+            "Chưa hỗ trợ đăng ký tài khoản",
+            "Tài khoản chỉ đăng nhập được trên đúng URL (slug) của đại lý"
+          ],
+          "userFlow": [
+            "Agency Admin truy cập URL trang quản trị đại lý: https://admin-[slug].chotdon.ai",
+            "Hệ thống xác định đại lý mà user đang truy cập dựa trên URL",
+            "Agency Admin nhập Tên đăng nhập và Mật khẩu",
+            "Nhấn \"Đăng nhập\"",
+            "Hệ thống kiểm tra tài khoản hợp lệ và tài khoản thuộc đúng tenant (slug)",
+            "Nếu hợp lệ → đăng nhập thành công và chuyển đến màn hình Quản lý shop",
+            "Nếu không hợp lệ → hiển thị lỗi tương ứng"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị màn hình đăng nhập với các trường: Tên đăng nhập, Mật khẩu, Nút \"Đăng nhập\".",
+            "AC2: Agency Admin chỉ có thể truy cập trang login thông qua URL đã được cấu hình cho đại lý.",
+            "AC3: Khi Agency Admin thực hiện đăng nhập, hệ thống phải kiểm tra đồng thời: Username/password hợp lệ; Tài khoản thuộc đúng agency_id tương ứng với slug trên URL; Hệ thống phải xác định đúng đại lý (tenant) dựa trên slug trong URL.",
+            "AC4: Điều kiện đăng nhập thành công: Username/password đúng VÀ tài khoản thuộc đúng tenant (slug) → Hệ thống cho phép đăng nhập.",
+            "AC5: Trường hợp username/password đúng nhưng sai tenant (slug): Hệ thống từ chối đăng nhập; Hiển thị lỗi \"Tài khoản không thuộc hệ thống này\".",
+            "AC6: Hệ thống không cho phép đăng nhập chéo giữa các tenant. Một tài khoản Agency Admin chỉ đăng nhập được tại đúng URL slug đã được cấu hình.",
+            "AC7: Hệ thống không cung cấp chức năng đăng ký tài khoản.",
+            "AC8: Sau khi đăng nhập thành công, hệ thống tạo và lưu session 7 ngày cho người dùng.",
+            "AC9: Khi session hết hạn, Agency Admin bị đăng xuất và chuyển về màn hình login."
+          ]
+        }
+      ]
     },
     {
       "key": "shops",
-      "title": "Shop",
+      "title": "Quản lý Shop",
+      "stories": [
+        {
+          "id": "AGA-SHOP-1",
+          "jiraKey": "AGENCY-42",
+          "title": "[AGA] Shop - Danh sách shop: Xem danh sách shop",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem và quản lý danh sách các shop thuộc đại lý của mình để có thể theo dõi hoạt động, kiểm soát trạng thái và thực hiện các thao tác quản lý shop.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin truy cập menu Quản lý shop",
+            "Hệ thống hiển thị danh sách tất cả shop thuộc đại lý",
+            "Agency Admin có thể: Xem thông tin từng shop, Tìm kiếm shop (AGENCY-43), Phân trang danh sách, Tạo shop mới (AGENCY-45)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Khi Agency Admin truy cập màn \"Quản lý shop\", hệ thống hiển thị danh sách shop thuộc đúng đại lý.",
+            "AC2: Mỗi shop hiển thị các thông tin: Tên shop - Mã shop (shop_id), Chủ shop - Số điện thoại, Số đơn hàng, Tổng COD, Doanh thu.",
+            "AC3: Agency Admin chỉ có thể xem các shop thuộc đại lý của mình, không thể truy cập shop của đại lý khác.",
+            "AC4: Hệ thống hỗ trợ tìm kiếm không phân biệt chữ hoa/thường và theo từ khóa một phần.",
+            "AC5: Hệ thống hỗ trợ phân trang danh sách shop.",
+            "AC6: Agency Admin có thể chọn số lượng bản ghi hiển thị trên mỗi trang.",
+            "AC7: Agency Admin có thể nhấn \"Tạo shop mới\" để chuyển sang màn tạo shop (AGENCY-45).",
+            "AC8: Khi không có dữ liệu, hệ thống hiển thị trạng thái empty phù hợp."
+          ]
+        },
+        {
+          "id": "AGA-SHOP-2",
+          "jiraKey": "AGENCY-43",
+          "title": "[AGA] Shop - Danh sách shop: Search shop",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn tìm kiếm shop trong danh sách shop thuộc đại lý của mình để nhanh chóng truy cập và quản lý shop cần thiết.",
+          "notes": [],
+          "userFlow": [],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị ô tìm kiếm tại màn \"Quản lý shop\".",
+            "AC2: Agency Admin có thể nhập từ khóa để tìm kiếm shop.",
+            "AC3: Hệ thống thực hiện tìm kiếm theo các trường: Tên shop, Mã shop (shop_id), Tên chủ shop, Số điện thoại shop.",
+            "AC4: Kết quả tìm kiếm chỉ bao gồm các shop thuộc của Agency Admin đang đăng nhập.",
+            "AC5: Hệ thống hỗ trợ tìm kiếm không phân biệt chữ hoa/thường và tìm kiếm theo một phần từ khóa (partial match).",
+            "AC6: Khi không có kết quả phù hợp, hệ thống hiển thị trạng thái không tìm thấy dữ liệu.",
+            "AC7: Khi xóa từ khóa tìm kiếm, hệ thống hiển thị lại toàn bộ danh sách shop."
+          ]
+        },
+        {
+          "id": "AGA-SHOP-3",
+          "jiraKey": "AGENCY-45",
+          "title": "[AGA] Shop - Tạo mới shop: Thông tin cơ bản",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn nhập thông tin cơ bản của shop để tạo mới shop thuộc đại lý của mình, giúp các shop có thể sử dụng hệ thống để lên đơn.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin truy cập màn \"Quản lý shop\"",
+            "Agency Admin click \"Tạo shop mới\"",
+            "Hệ thống hiển thị form \"Thông tin cơ bản\"",
+            "Agency Admin nhập các thông tin: Thông tin chung, Cấu hình tài khoản shop đăng nhập (AGENCY-46)",
+            "Agency Admin click \"Lưu\"",
+            "Hệ thống validate dữ liệu",
+            "Nếu hợp lệ → cho phép lưu shop",
+            "Nếu không hợp lệ → hiển thị lỗi"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Agency Admin có thể truy cập màn tạo shop từ màn \"Quản lý shop\".",
+            "AC2: Hệ thống hiển thị các field: Tên shop (bắt buộc), Tên chủ shop, Số điện thoại (bắt buộc), Địa chỉ lấy hàng (bắt buộc) gồm Số nhà/tên đường, Tỉnh/Thành, Quận/Huyện, Phường/Xã.",
+            "AC3: Mã shop (shop_id) được hệ thống tự động generate. Gồm 6 ký tự, format: 3 chữ cái IN HOA + 3 số (ví dụ: ABC123, XDF908). Unique toàn hệ thống.",
+            "AC5: Validate dữ liệu: Tên shop không được để trống, tối đa 255 ký tự. Số điện thoại không được để trống, đúng định dạng di động, unique trong phạm vi cùng agency. Địa chỉ không được để trống, phải chọn đủ Tỉnh/Thành → Quận/Huyện → Phường/Xã.",
+            "AC6: Khi tạo shop thành công, hệ thống lưu shop_id (system generate), agency_id (từ Agency Admin đang đăng nhập). Trạng thái mặc định: Hoạt động.",
+            "AC7: Hệ thống đảm bảo tenant isolation: Agency Admin chỉ tạo được shop thuộc đại lý của mình.",
+            "AC9: Trường hợp nhập SĐT bị trùng trong cùng agency: Hệ thống hiển thị lỗi số điện thoại đã tồn tại trong đại lý, không cho phép tạo shop.",
+            "AC10: Trường hợp dữ liệu không hợp lệ: Hiển thị message lỗi tại từng field, không cho submit."
+          ]
+        },
+        {
+          "id": "AGA-SHOP-4",
+          "jiraKey": "AGENCY-46",
+          "title": "[AGA] Shop - Tạo mới shop: Cấu hình User/Password cho chủ shop đăng nhập Web/App shop",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn cấu hình tài khoản đăng nhập (username/password) cho shop để chủ shop có thể đăng nhập vào hệ thống Web/App và sử dụng dịch vụ.",
+          "notes": [],
+          "userFlow": [],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị section cấu hình tài khoản đăng nhập trong màn hình tạo shop.",
+            "AC2: Username shop được cấu thành theo format: username = shop_id + \"-\" + {username do Agency Admin nhập}. shop_id do hệ thống generate (6 ký tự: 3 chữ in hoa + 3 số). Phần suffix được prefill sẵn bằng số điện thoại chủ shop, Agency Admin có thể edit lại.",
+            "AC3: Agency Admin không được chỉnh sửa phần shop_id trong username. Chỉ được nhập phần phía sau dấu \"-\".",
+            "AC4: Username là bắt buộc, không chứa ký tự đặc biệt (chỉ a-z, 0-9), unique toàn hệ thống.",
+            "AC5: Khi username bị trùng: Hệ thống hiển thị lỗi \"Tên đăng nhập đã tồn tại\", không cho phép lưu.",
+            "AC6: Password là bắt buộc, tối thiểu 8 ký tự, ít nhất 1 ký tự viết hoa, 1 ký tự viết thường, 1 ký tự số và 1 ký tự đặc biệt.",
+            "AC7: Hệ thống hỗ trợ: Ẩn/hiện mật khẩu, Sao chép username, Sao chép mật khẩu.",
+            "AC8: Khi submit hợp lệ, hệ thống lưu username, password mapping với shop_id và agency_id.",
+            "AC9: Đảm bảo tenant isolation: Shop chỉ đăng nhập được vào hệ thống thuộc agency_id của mình.",
+            "AC10: Khi dữ liệu không hợp lệ: Hiển thị lỗi tại từng field, không cho submit.",
+            "AC11: Sau khi tạo thành công, tài khoản shop có thể sử dụng để đăng nhập Web shop (AGENCY-78) và App shop (AGENCY-79)."
+          ]
+        },
+        {
+          "id": "AGA-SHOP-5",
+          "jiraKey": "",
+          "title": "[AGA] Shop: View thông tin chi tiết shop",
+          "userStory": "",
+          "notes": [],
+          "userFlow": [],
+          "acceptanceCriteria": []
+        }
+      ]
+    },
+    {
+      "key": "orders",
+      "title": "Quản lý đơn hàng",
       "stories": []
     },
     {
       "key": "carrier-setup",
       "title": "Thiết lập NVC",
-      "stories": []
-    },
-    {
-      "key": "dashboard",
-      "title": "Dashboard / Báo cáo",
-      "stories": []
-    },
-    {
-      "key": "settings",
-      "title": "Cài đặt - Thông tin tài khoản",
-      "stories": []
+      "stories": [
+        {
+          "id": "AGA-CARRIER-1",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC: Kết nối Shop ID GHN",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn kết nối tài khoản Shop ID GHN vào hệ thống để có thể sử dụng dịch vụ vận chuyển của Giao Hàng Nhanh cho các shop thuộc đại lý.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin truy cập menu \"Thiết lập NVC\" → tab \"Kết nối NVC\"",
+            "Hệ thống hiển thị danh sách Shop ID GHN đã kết nối",
+            "Agency Admin click \"Thêm Shop ID\"",
+            "Hệ thống hiển thị modal nhập SĐT tài khoản GHN và Client ID",
+            "Agency Admin nhập thông tin và click \"Kết nối\"",
+            "Hệ thống gửi OTP về SĐT đã nhập",
+            "Agency Admin nhập mã OTP 6 chữ số",
+            "Hệ thống xác nhận và thêm Shop ID vào danh sách",
+            "Agency Admin có thể ngắt kết nối một Shop ID bất kỳ"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Kết nối NVC\" hiển thị danh sách Shop ID GHN đã kết nối với các cột: Tên cửa hàng, Shop ID, Số điện thoại, Ngày kết nối, Nút ngắt kết nối.",
+            "AC2: Agency Admin có thể tìm kiếm Shop ID theo tên cửa hàng, Shop ID hoặc số điện thoại.",
+            "AC3: Khi click \"Thêm Shop ID\", hệ thống hiển thị modal gồm 2 bước — Bước 1 (Form): Nhập SĐT tài khoản GHN và Client ID GHN. Bước 2 (OTP): Nhập mã OTP 6 chữ số gửi về SĐT.",
+            "AC4: OTP gồm 6 ô nhập riêng biệt, tự động focus sang ô tiếp theo khi nhập xong.",
+            "AC5: Sau khi gửi OTP, hệ thống bắt đầu đếm ngược 10 phút. Khi hết thời gian, Agency Admin có thể yêu cầu gửi lại OTP.",
+            "AC6: Agency Admin có thể quay lại bước 1 để thay đổi số điện thoại.",
+            "AC7: Khi click nút ngắt kết nối, hệ thống ngắt kết nối Shop ID tương ứng khỏi danh sách.",
+            "AC8: Khi không có kết quả tìm kiếm, hệ thống hiển thị thông báo không tìm thấy."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-2",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC: Quản lý gói dịch vụ",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem và quản lý danh sách các gói dịch vụ vận chuyển để kiểm soát dịch vụ nào đang được kích hoạt cho đại lý và tạo mới gói dịch vụ khi cần.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin truy cập menu \"Thiết lập NVC\" → tab \"Dịch vụ\"",
+            "Hệ thống hiển thị danh sách gói dịch vụ",
+            "Agency Admin có thể bật/tắt kích hoạt từng gói dịch vụ",
+            "Agency Admin click vào tên gói để xem chi tiết (AGA-CARRIER-3)",
+            "Agency Admin click \"Tạo mới dịch vụ\" để tạo gói mới",
+            "Hệ thống hiển thị modal tạo gói dịch vụ",
+            "Sau khi tạo thành công, hệ thống chuyển đến trang chi tiết gói vừa tạo"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Dịch vụ\" hiển thị danh sách gói dịch vụ với các cột: Gói dịch vụ (tên), Mã dịch vụ NVC, NVC (nhà vận chuyển), Tải trọng tối đa, Vùng giao, Toggle kích hoạt.",
+            "AC2: Agency Admin có thể bật/tắt kích hoạt từng gói dịch vụ bằng toggle.",
+            "AC3: Agency Admin có thể click vào tên gói dịch vụ để xem trang chi tiết (AGA-CARRIER-3).",
+            "AC4: Khi click \"Tạo mới dịch vụ\", hệ thống hiển thị modal gồm các trường: Mã gói (bắt buộc, monospace), Tên gói (bắt buộc), Mô tả, Kết nối Shop ID GHN (dropdown chọn từ danh sách đã kết nối).",
+            "AC5: Nút \"Tạo gói dịch vụ\" bị disable khi chưa nhập Mã gói và Tên gói.",
+            "AC6: Sau khi tạo thành công, hệ thống điều hướng đến trang chi tiết gói dịch vụ vừa tạo ở chế độ mới."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-3",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC: Chi tiết gói dịch vụ",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem và chỉnh sửa chi tiết một gói dịch vụ vận chuyển, bao gồm thông tin cơ bản, địa điểm khả dụng và địa điểm bị chặn để cấu hình vùng phủ dịch vụ phù hợp.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin click vào tên gói dịch vụ trong danh sách (AGA-CARRIER-2)",
+            "Hệ thống hiển thị trang chi tiết gói dịch vụ với 3 tab",
+            "Agency Admin xem/chỉnh sửa thông tin tại tab \"Thông tin\"",
+            "Agency Admin quản lý địa điểm khả dụng tại tab \"Địa điểm khả dụng\"",
+            "Agency Admin quản lý địa điểm bị chặn tại tab \"Địa điểm chặn\"",
+            "Agency Admin có thể quay lại danh sách dịch vụ bằng nút back"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Trang chi tiết có 3 tab: \"Thông tin\", \"Địa điểm khả dụng\", \"Địa điểm chặn\".",
+            "AC2: Tab \"Thông tin\" hiển thị ở chế độ xem: Mã gói, Tên gói, Mô tả, Shop ID GHN kết nối, danh sách bảng giá liên kết. Agency Admin có thể click \"Chỉnh sửa\" để chuyển sang chế độ edit.",
+            "AC3: Ở chế độ edit, Agency Admin có thể sửa: Mã gói, Tên gói, Mô tả, Shop ID GHN. Có nút \"Lưu\" và \"Huỷ\".",
+            "AC4: Tab \"Địa điểm khả dụng\" gồm 2 section: Lấy hàng và Giao hàng. Mỗi section hiển thị danh sách địa điểm và nút \"Thêm địa điểm\".",
+            "AC5: Tab \"Địa điểm chặn\" có cấu trúc tương tự tab \"Địa điểm khả dụng\" nhưng dùng để cấu hình địa điểm không phục vụ.",
+            "AC6: Agency Admin có thể thêm địa điểm vào danh sách Lấy hàng hoặc Giao hàng thông qua modal.",
+            "AC7: Agency Admin có thể xoá địa điểm khỏi danh sách bằng nút xoá tương ứng.",
+            "AC8: Nút back điều hướng về trang Thiết lập NVC."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-4",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC: Bảng giá dịch vụ",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem và quản lý cấu hình giá cho từng gói dịch vụ vận chuyển để kiểm soát chi phí ship theo tuyến và khu vực.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin truy cập menu \"Thiết lập NVC\" → tab \"Bảng giá\"",
+            "Hệ thống hiển thị segment chọn gói dịch vụ và bảng cấu hình giá",
+            "Agency Admin chọn gói dịch vụ cần xem",
+            "Hệ thống lọc và hiển thị danh sách cấu hình giá của gói đó",
+            "Agency Admin click \"Chi tiết\" để xem chi tiết một cấu hình giá",
+            "Agency Admin click \"Thêm cấu hình giá\" để tạo mới"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Bảng giá\" hiển thị segment control để chọn gói dịch vụ (Giao hàng nhanh / Giao hàng tiêu chuẩn / Hàng cồng kềnh).",
+            "AC2: Bảng cấu hình giá hiển thị các cột: Tuyến, Khu vực, Tải trọng cơ bản, Giá cơ bản, Số bậc vượt cân, Số loại phụ phí, Nút Chi tiết.",
+            "AC3: Khi Agency Admin chọn gói dịch vụ khác, hệ thống lọc và hiển thị đúng cấu hình giá của gói đó.",
+            "AC4: Khi không có cấu hình giá, hệ thống hiển thị thông báo \"Chưa có cấu hình giá\".",
+            "AC5: Agency Admin có thể click \"Thêm cấu hình giá\" để tạo cấu hình giá mới cho gói đang chọn.",
+            "AC6: Agency Admin có thể click \"Chi tiết\" để xem toàn bộ chi tiết cấu hình giá (bậc vượt cân, phụ phí)."
+          ]
+        }
+      ]
     }
   ],
   "history": [
@@ -35,6 +261,11 @@
       "version": "0.1.0",
       "date": "2026-04-15",
       "summary": "Khởi tạo document"
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-04-16",
+      "summary": "Cập nhật đầy đủ nội dung từ BRD: Login/Logout, Cài đặt GHN, Quản lý Shop (5 stories), và toàn bộ sections còn lại"
     }
   ]
 }

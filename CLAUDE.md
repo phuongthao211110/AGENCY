@@ -5,7 +5,7 @@ Dự án prototype cho hệ thống quản lý đại lý GHN (Giao Hàng Nhanh)
 ## Dev Server
 
 ```bash
-npm run dev   # http://localhost:4002/
+npm run dev   # http://localhost:4000/
 ```
 
 ## 3 Platforms
@@ -40,16 +40,17 @@ Khi nhận yêu cầu mới, **luôn bắt đầu bằng `/project-lead`** để
 /qa-tester         → Test checklist, business rules, UI validation
 /backend-architect → API design, data models, authentication
 /data-analyst      → Dashboard, KPIs, charts, reconciliation
+/story-writer      → Tự động break feature thành user stories, tạo .md + update JSON
 ```
 
 ### Workflow theo loại yêu cầu
 
 ```
 Tính năng mới + Figma URL:
-  product-manager → ui-designer → frontend-dev → qa-tester
+  product-manager → ui-designer → frontend-dev → qa-tester → story-writer
 
 Tính năng mới không có Figma:
-  product-manager → frontend-dev → qa-tester
+  product-manager → frontend-dev → qa-tester → story-writer
 
 Bug / UI sai design:
   qa-tester → [ui-designer nếu cần] → frontend-dev → qa-tester
@@ -63,6 +64,43 @@ API / Backend planning:
 Sprint planning:
   product-manager → qa-tester → project-lead (tổng hợp)
 ```
+
+### Story Lifecycle (Document system)
+
+```
+[story-writer tạo]  →  draft  →  approved  →  sent-to-tech
+                        ↑           ↑              ↑
+                   mới tạo     PM review OK    gửi cho dev
+```
+
+**Cách sử dụng:**
+- Sau khi implement tính năng → chạy `/story-writer` với mô tả feature
+- Story-writer tạo `.md` files trong `docs/` + cập nhật JSON với `status: "draft"`
+- Review story trong Document UI (localhost only) → click "Duyệt" để approve
+- Khi sẵn sàng gửi dev → click "Gửi cho Tech" hoặc yêu cầu Claude update status
+- Để xuất danh sách stories cho dev: `/generate-tech-backlog`
+
+**Files document:**
+```
+docs/
+  README.md                    ← Index 3 platform
+  {platform}/
+    README.md                  ← Index sections + stories
+    {section}/
+      {story-title-kebab}.md   ← 1 story = 1 file
+  TECH-BACKLOG.md              ← Generated: stories sent-to-tech
+src/mock-data/documents/
+  super-admin.json             ← Source data cho Document UI
+  agency-admin.json
+  shop.json
+```
+
+**Quy tắc đồng bộ (BẮT BUỘC):**
+- `.md` file và JSON entry **LUÔN phải được cập nhật cùng lúc** — không được update một bên mà bỏ bên còn lại
+- Mọi thay đổi về nội dung story (userStory, userFlow, acceptanceCriteria, notes) đều phải được phản ánh ở cả 2 nơi
+- Khi thêm story mới: tạo `.md` file → cập nhật JSON
+- Khi sửa story: sửa `.md` → sửa JSON tương ứng
+- Khi xoá story: xoá `.md` → xoá entry trong JSON
 
 ## File Structure
 
@@ -90,6 +128,7 @@ src/
     qa-tester.md
     backend-architect.md
     data-analyst.md
+    story-writer.md
 ```
 
 ## Figma Files

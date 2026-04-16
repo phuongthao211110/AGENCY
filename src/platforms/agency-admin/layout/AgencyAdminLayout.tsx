@@ -6,9 +6,7 @@ import {
   BellOutlined,
   UserOutlined,
   ShopOutlined,
-  SettingOutlined,
   LogoutOutlined,
-  RightOutlined,
   TruckOutlined,
   FileTextOutlined,
 } from '@ant-design/icons'
@@ -23,7 +21,6 @@ const NAV_ITEMS = [
   { key: '/agency-admin/carrier-setup', icon: <TruckOutlined />, label: 'Thiết lập NVC' },
 ]
 
-const SETTINGS_ITEM = { key: '/agency-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }
 
 export default function AgencyAdminLayout() {
   const navigate = useNavigate()
@@ -85,32 +82,6 @@ export default function AgencyAdminLayout() {
                 </div>
               )
             })}
-          </div>
-
-          <div style={{ height: 1, background: COLOR_BORDER, margin: '10px 16px' }} />
-
-          {/* CÀI ĐẶT section */}
-          <div style={{ padding: '0 16px' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: 0.5, marginBottom: 6 }}>
-              CÀI ĐẶT
-            </div>
-            <div
-              onClick={() => navigate(SETTINGS_ITEM.key)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '5px 8px',
-                borderRadius: 6,
-                cursor: 'pointer',
-                color: '#333',
-                fontSize: 14,
-              }}
-            >
-              <span style={{ fontSize: 20, display: 'flex', color: '#555' }}>{SETTINGS_ITEM.icon}</span>
-              <span style={{ flex: 1 }}>{SETTINGS_ITEM.label}</span>
-              <RightOutlined style={{ fontSize: 12, color: '#999' }} />
-            </div>
           </div>
 
           <div style={{ flex: 1 }} />

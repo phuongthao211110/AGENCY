@@ -16,9 +16,6 @@ import AgencyAdminLogin from './platforms/agency-admin/pages/Login'
 import Shops from './platforms/agency-admin/pages/Shops'
 import ShopCreate from './platforms/agency-admin/pages/ShopCreate'
 import ShopDetail from './platforms/agency-admin/pages/ShopDetail'
-import Orders from './platforms/agency-admin/pages/Orders'
-import Pricing from './platforms/agency-admin/pages/Pricing'
-import Reconciliation from './platforms/agency-admin/pages/Reconciliation'
 import CarrierSetup from './platforms/agency-admin/pages/CarrierSetup'
 import ServiceDetail from './platforms/agency-admin/pages/ServiceDetail'
 import AgencyAdminDocument from './platforms/agency-admin/pages/Document'
@@ -56,13 +53,9 @@ export default function App() {
         {/* Agency Admin */}
         <Route path="/agency-admin/login" element={<AgencyAdminLogin />} />
         <Route path="/agency-admin" element={<AgencyAdminLayout />}>
-          <Route path="dashboard" element={<Navigate to="/agency-admin/shops" replace />} />
           <Route path="shops" element={<Shops />} />
           <Route path="shops/create" element={<ShopCreate />} />
           <Route path="shops/:id" element={<ShopDetail />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="pricing" element={<Pricing />} />
-          <Route path="reconciliation" element={<Reconciliation />} />
           <Route path="carrier-setup" element={<CarrierSetup />} />
           <Route path="carrier-setup/services/:id" element={<ServiceDetail />} />
           <Route path="document" element={<AgencyAdminDocument />}>
