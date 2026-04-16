@@ -120,7 +120,8 @@ export default function ShopLayout() {
 
           <div style={{ flex: 1 }} />
 
-          {/* Document */}
+          {/* Document — localhost only */}
+          {window.location.hostname === 'localhost' && (
           <div style={{ padding: '0 16px 4px' }}>
             {(() => {
               const active = isActive('/shop/document')
@@ -148,6 +149,7 @@ export default function ShopLayout() {
               )
             })()}
           </div>
+          )}
 
           <div style={{ height: 1, background: COLOR_BORDER, margin: '0 16px' }} />
 
