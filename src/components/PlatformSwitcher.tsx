@@ -6,7 +6,7 @@ import { SHADOW_FLOAT } from '../theme/tokens'
 
 const PLATFORMS = [
   { key: 'super-admin', label: 'Super Admin', color: '#F05521', path: '/super-admin/agencies' },
-  { key: 'agency-admin', label: 'Agency Admin', color: '#F05521', path: '/agency-admin/dashboard' },
+  { key: 'agency-admin', label: 'Agency Admin', color: '#F05521', path: '/agency-admin/shops' },
   { key: 'shop', label: 'Shop Portal', color: '#F05521', path: '/shop/orders' },
 ]
 
