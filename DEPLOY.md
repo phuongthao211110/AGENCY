@@ -22,7 +22,7 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-| v0.8.0 | 2026-04-17 | Cấu trúc mới Service–Shop–PriceTable: (1) Tạo services.json với field ghnShopId + priceTableId. (2) CarrierSetup TabServices thêm cột Shop ID GHN, TabPricing đơn giản chỉ còn tên + Chi tiết. (3) ServiceDetail: section Bảng giá 1:1 (gắn/thay đổi). (4) ShopCreate: thêm section Cấu hình dịch vụ — chọn bảng giá cho từng dịch vụ khi tạo shop. | trannlb |
+| v0.8.1 | 2026-04-17 | Đổi tên cột "Shop ID" → "Shop ID GHN" trong tab Kết nối NVC (CarrierSetup) để đồng bộ tên cột với tab Dịch vụ. | trannlb |
 
 ---
 
@@ -54,6 +54,7 @@ Dist dir:  dist/
 | v0.6.0 | 2026-04-15 | Document master-detail cho 3 platform: menu Document ở sidebar, nested routes /story/:id + /new/:sectionKey, TOC expand/collapse, Tiptap editor luôn bật (title input + toolbar), lưu localStorage, tạo/xóa story, 9 user stories Super Admin, list-keymap cho nested bullet | trannlb |
 | v0.6.1 | 2026-04-16 | Ẩn menu Document trên production — chỉ hiển thị khi hostname === 'localhost' (3 platform) | trannlb |
 | v0.7.0 | 2026-04-16 | Dọn dẹp Agency Admin (xoá Dashboard/Orders/Pricing/Reconciliation chưa phát triển, xoá menu Cài đặt), bổ sung story lifecycle (draft→approved→sent-to-tech), thêm 4 user stories Thiết lập NVC, đồng bộ toàn bộ docs/ với JSON | trannlb |
+| v0.8.0 | 2026-04-17 | Cấu trúc mới Service–Shop–PriceTable: (1) Tạo services.json với field ghnShopId + priceTableId. (2) CarrierSetup TabServices thêm cột Shop ID GHN, TabPricing đơn giản chỉ còn tên + Chi tiết. (3) ServiceDetail: section Bảng giá 1:1 (gắn/thay đổi). (4) ShopCreate: thêm section Cấu hình dịch vụ — chọn bảng giá cho từng dịch vụ khi tạo shop. | trannlb |
 
 ---
 

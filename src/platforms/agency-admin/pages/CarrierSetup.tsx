@@ -189,7 +189,7 @@ function TabConnect() {
       <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
         {[
           { label: 'Tên cửa hàng', flex: '2 0 0', minWidth: 200 },
-          { label: 'Shop ID',      flex: '1 0 0', minWidth: 120 },
+          { label: 'Shop ID GHN',   flex: '1 0 0', minWidth: 120 },
           { label: 'Số điện thoại', flex: '1 0 0', minWidth: 140 },
           { label: 'Ngày kết nối', flex: '1 0 0', minWidth: 120 },
           { label: '',             flex: '0 0 60px', minWidth: 60 },
