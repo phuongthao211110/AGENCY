@@ -10,7 +10,11 @@ import {
   StopOutlined,
   SaveOutlined,
   CloseOutlined,
+  SwapOutlined,
+  WarningOutlined,
 } from '@ant-design/icons'
+import allServices from '../../../mock-data/services.json'
+import allPriceTables from '../../../mock-data/pricing.json'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -20,26 +24,6 @@ const C_LINK           = '#3B82F6'
 const C_BORDER         = '#E5E7EB'
 const C_ACTION         = '#FF5200'
 const C_BG_HEADER      = '#F3F4F6'
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-const GHN_SHOPS = [
-  { shopId: '5148899', name: 'Shop Thời Trang ABC' },
-  { shopId: '5148900', name: 'Shop Điện Tử XYZ' },
-  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội' },
-  { shopId: '5148902', name: 'Shop Giày Dép Fashion' },
-  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365' },
-]
-
-const SERVICE_MAP: Record<string, { code: string; name: string; desc: string; shopId: string }> = {
-  'ghn-express':  { code: 'CHUYENNHANH', name: 'Giao hàng nhanh',      desc: 'Dịch vụ giao hàng nhanh trong ngày và hôm sau.',          shopId: '5148899' },
-  'ghn-standard': { code: 'TIETKIEM',    name: 'Giao hàng tiêu chuẩn', desc: 'Dịch vụ giao hàng tiết kiệm, phù hợp hàng không gấp.',   shopId: '5148900' },
-  'ghn-bulky':    { code: 'HANGCANANG',  name: 'Hàng cồng kềnh',       desc: 'Chuyên xử lý hàng hóa lớn, nặng, cần thiết bị hỗ trợ.', shopId: '5148901' },
-}
-
-const LINKED_PRICE_TABLES = [
-  { id: 'pt-1', name: 'Bảng giá nội tỉnh 2025',    route: 'Nội tỉnh',  configs: 4, updatedAt: '01/04/2025' },
-  { id: 'pt-2', name: 'Bảng giá liên tỉnh Q1/2025', route: 'Liên tỉnh', configs: 6, updatedAt: '15/03/2025' },
-]
 
 const PROVINCES = [
   'Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ',
@@ -54,7 +38,16 @@ const DISTRICTS: Record<string, string[]> = {
 
 type LocationEntry = { province: string; district: string }
 type Tab = 'info' | 'available' | 'blocked'
-type ServiceInfo = { code: string; name: string; desc: string; shopId: string }
+// GHN Shop IDs (from CarrierSetup > Kết nối NVC)
+const GHN_SHOPS = [
+  { shopId: '5148899', name: 'Shop Thời Trang ABC' },
+  { shopId: '5148900', name: 'Shop Điện Tử XYZ' },
+  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội' },
+  { shopId: '5148902', name: 'Shop Giày Dép Fashion' },
+  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365' },
+]
+
+type ServiceInfo = { code: string; name: string; desc: string; ghnShopId: string; priceTableId: string | null }
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'info',      label: 'Thông tin',          icon: <InfoCircleOutlined /> },
@@ -232,15 +225,14 @@ export default function ServiceDetail() {
   const navigate = useNavigate()
   const location = useLocation()
   const [activeTab, setActiveTab] = useState<Tab>('info')
-  const [hovered, setHovered]     = useState<string | null>(null)
 
-  // ── Init service data from navigation state (new) or mock map (existing) ──
+  // ── Init service data from navigation state (new) or services.json (existing) ──
   const locState = location.state as ({ isNew?: boolean } & ServiceInfo) | null
   const initData: ServiceInfo = locState?.isNew
-    ? { code: locState.code ?? '', name: locState.name ?? '', desc: locState.desc ?? '', shopId: locState.shopId ?? GHN_SHOPS[0].shopId }
+    ? { code: locState.code ?? '', name: locState.name ?? '', desc: locState.desc ?? '', ghnShopId: (locState as ServiceInfo).ghnShopId ?? GHN_SHOPS[0].shopId, priceTableId: null }
     : (() => {
-        const s = id ? SERVICE_MAP[id] : undefined
-        return { code: s?.code ?? id ?? '', name: s?.name ?? id ?? '', desc: s?.desc ?? '', shopId: s?.shopId ?? GHN_SHOPS[0].shopId }
+        const s = id ? allServices.find((svc) => svc.id === id) : undefined
+        return { code: s?.code ?? id ?? '', name: s?.name ?? id ?? '', desc: s?.desc ?? '', ghnShopId: s?.ghnShopId ?? GHN_SHOPS[0].shopId, priceTableId: s?.priceTableId ?? null }
       })()
 
   const [serviceData, setServiceData] = useState<ServiceInfo>(initData)
@@ -264,8 +256,8 @@ export default function ServiceDetail() {
     setIsEditing(false)
   }
 
-  const shopName = GHN_SHOPS.find(s => s.shopId === serviceData.shopId)?.name ?? '—'
-  const editShopName = GHN_SHOPS.find(s => s.shopId === editForm.shopId)?.name ?? '—'
+  const shopName = GHN_SHOPS.find(s => s.shopId === serviceData.ghnShopId)?.name ?? '—'
+  const editShopName = GHN_SHOPS.find(s => s.shopId === editForm.ghnShopId)?.name ?? '—'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
@@ -345,11 +337,11 @@ export default function ServiceDetail() {
                   <InputField label="Tên gói" value={editForm.name} onChange={setEdit('name')} placeholder="VD: Giao hàng nhanh" />
                   <InputField label="Mô tả" value={editForm.desc} onChange={setEdit('desc')} placeholder="Mô tả ngắn về gói dịch vụ..." />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Kết nối Shop ID</span>
+                    <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Shop ID GHN</span>
                     <div style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px' }}>
                       <select
-                        value={editForm.shopId}
-                        onChange={e => setEdit('shopId')(e.target.value)}
+                        value={editForm.ghnShopId}
+                        onChange={e => setEdit('ghnShopId')(e.target.value)}
                         style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', cursor: 'pointer' }}
                       >
                         {GHN_SHOPS.map(s => (
@@ -367,10 +359,10 @@ export default function ServiceDetail() {
                   <LabelValue label="Tên gói" value={serviceData.name} />
                   <LabelValue label="Mô tả" value={serviceData.desc || <span style={{ color: C_TEXT_SECONDARY }}>—</span>} />
                   <LabelValue
-                    label="Kết nối Shop ID"
+                    label="Shop ID GHN"
                     value={
                       <span>
-                        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{serviceData.shopId}</span>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{serviceData.ghnShopId}</span>
                         <span style={{ color: C_TEXT_SECONDARY, fontWeight: 400 }}> — {shopName}</span>
                       </span>
                     }
@@ -379,53 +371,49 @@ export default function ServiceDetail() {
               )}
             </div>
 
-            {/* Linked price tables */}
-            <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}` }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
-                  Bảng giá được gắn ({LINKED_PRICE_TABLES.length})
-                </span>
-              </div>
-              <div style={{ display: 'flex', background: C_BG_HEADER }}>
-                {[
-                  { label: 'Tên bảng giá', flex: '2 0 0', minWidth: 200 },
-                  { label: 'Tuyến',        flex: '1 0 0', minWidth: 120 },
-                  { label: 'Số cấu hình', flex: '1 0 0', minWidth: 100 },
-                  { label: 'Cập nhật',    flex: '1 0 0', minWidth: 120 },
-                ].map((col, i) => (
-                  <div key={i} style={{ flex: col.flex, minWidth: col.minWidth, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</div>
-                ))}
-              </div>
-              <div style={{ height: 1, background: C_BORDER }} />
-              {LINKED_PRICE_TABLES.map((pt) => (
-                <div key={pt.id}>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', cursor: 'pointer' }}
-                    onMouseEnter={() => setHovered(pt.id)}
-                    onMouseLeave={() => setHovered(null)}
-                  >
-                    <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK }}>{pt.name}</span>
-                    </div>
-                    <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{pt.route}</span>
-                    </div>
-                    <div style={{ flex: '1 0 0', minWidth: 100, padding: '6px 8px' }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{pt.configs}</span>
-                    </div>
-                    <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>{pt.updatedAt}</span>
-                    </div>
+            {/* Price table card */}
+            {(() => {
+              const priceTable = serviceData.priceTableId
+                ? allPriceTables.find((pt) => pt.id === serviceData.priceTableId)
+                : null
+              return (
+                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
+                    Bảng giá
                   </div>
-                  <div style={{ height: 1, background: C_BORDER }} />
+                  <div style={{ padding: 16 }}>
+                    {priceTable ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', border: `1px solid ${C_BORDER}`, borderRadius: 8, background: '#FAFAFA' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK }}>{priceTable.name}</span>
+                          <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
+                            {priceTable.zones.length} tuyến · Cập nhật {priceTable.createdAt}
+                          </span>
+                        </div>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                          <SwapOutlined style={{ fontSize: 13 }} />
+                          Thay đổi
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', border: `1px dashed #FDE68A`, borderRadius: 8, background: '#FFFBEB' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <WarningOutlined style={{ color: '#D97706', fontSize: 16 }} />
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 500, color: '#92400E' }}>Chưa có bảng giá</div>
+                            <div style={{ fontSize: 12, color: '#B45309', marginTop: 2 }}>Shop được gắn dịch vụ này sẽ không thể sử dụng</div>
+                          </div>
+                        </div>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: 'none', borderRadius: 6, background: C_ACTION, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                          <PlusOutlined style={{ fontSize: 12 }} />
+                          Gắn bảng giá
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
-              {LINKED_PRICE_TABLES.length === 0 && (
-                <div style={{ padding: '20px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
-                  Chưa có bảng giá nào được gắn
-                </div>
-              )}
-            </div>
+              )
+            })()}
           </div>
         )}
 

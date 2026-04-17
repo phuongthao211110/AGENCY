@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ghn-express",
+    "code": "CHUYENNHANH",
+    "name": "Giao hàng nhanh",
+    "desc": "Dịch vụ giao hàng nhanh trong ngày và hôm sau.",
+    "carrier": "GHN",
+    "maxWeight": "20 kg",
+    "deliveryZones": "Toàn quốc",
+    "enabled": true,
+    "ghnShopId": "5148899",
+    "priceTableId": "PRC001"
+  },
+  {
+    "id": "ghn-standard",
+    "code": "TIETKIEM",
+    "name": "Giao hàng tiêu chuẩn",
+    "desc": "Dịch vụ giao hàng tiết kiệm, phù hợp hàng không gấp.",
+    "carrier": "GHN",
+    "maxWeight": "30 kg",
+    "deliveryZones": "Toàn quốc",
+    "enabled": true,
+    "ghnShopId": "5148900",
+    "priceTableId": "PRC002"
+  },
+  {
+    "id": "ghn-bulky",
+    "code": "HANGCANANG",
+    "name": "Hàng cồng kềnh",
+    "desc": "Chuyên xử lý hàng hóa lớn, nặng, cần thiết bị hỗ trợ.",
+    "carrier": "GHN",
+    "maxWeight": "50 kg",
+    "deliveryZones": "HCM, HN",
+    "enabled": false,
+    "ghnShopId": "5148901",
+    "priceTableId": null
+  }
+]

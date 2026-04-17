@@ -8,6 +8,8 @@ import {
   EyeInvisibleOutlined,
   DownOutlined,
 } from '@ant-design/icons'
+import allServices from '../../../mock-data/services.json'
+import allPriceTables from '../../../mock-data/pricing.json'
 
 const C_ACTION         = '#FF5200'
 const C_TEXT_PRIMARY   = '#111827'
@@ -74,6 +76,13 @@ export default function ShopCreate() {
 
   const set = (key: keyof FormState) => (v: string) => setForm(f => ({ ...f, [key]: v }))
   const copy = (text: string) => navigator.clipboard.writeText(text).catch(() => {})
+
+  // serviceId → priceTableId (null = chưa chọn)
+  const [servicePriceTables, setServicePriceTables] = useState<Record<string, string | null>>(
+    () => Object.fromEntries(allServices.map((s) => [s.id, null]))
+  )
+  const setPriceTable = (serviceId: string, val: string | null) =>
+    setServicePriceTables(prev => ({ ...prev, [serviceId]: val }))
 
   const cardStyle: React.CSSProperties = {
     background: '#fff',
@@ -234,6 +243,69 @@ export default function ShopCreate() {
                 </span>
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Section 3: Cấu hình dịch vụ */}
+        <div style={cardStyle}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+            Cấu hình dịch vụ
+          </span>
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, lineHeight: '18px', marginTop: -8 }}>
+            Chọn bảng giá cho từng dịch vụ. Dịch vụ chưa gắn bảng giá sẽ không khả dụng với shop này.
+          </span>
+
+          {/* Header */}
+          <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', background: '#F3F4F6', padding: '6px 12px' }}>
+              <div style={{ flex: '2 0 0', minWidth: 160, fontSize: 13, color: C_TEXT_SECONDARY }}>Dịch vụ</div>
+              <div style={{ flex: '1.2 0 0', minWidth: 120, fontSize: 13, color: C_TEXT_SECONDARY }}>Mã NVC</div>
+              <div style={{ flex: '2 0 0', minWidth: 200, fontSize: 13, color: C_TEXT_SECONDARY }}>Bảng giá áp dụng</div>
+            </div>
+            <div style={{ height: 1, background: C_BORDER }} />
+
+            {allServices.map((svc, idx) => {
+              const selected = servicePriceTables[svc.id]
+              return (
+                <div key={svc.id}>
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', background: '#fff' }}>
+                    {/* Dịch vụ */}
+                    <div style={{ flex: '2 0 0', minWidth: 160 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{svc.name}</div>
+                      <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{svc.desc}</div>
+                    </div>
+
+                    {/* Mã NVC */}
+                    <div style={{ flex: '1.2 0 0', minWidth: 120 }}>
+                      <span style={{ fontSize: 12, fontFamily: 'monospace', background: '#F3F4F6', padding: '2px 7px', borderRadius: 4, color: C_TEXT_PRIMARY }}>
+                        {svc.code}
+                      </span>
+                    </div>
+
+                    {/* Bảng giá selector */}
+                    <div style={{ flex: '2 0 0', minWidth: 200 }}>
+                      <div style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <select
+                          value={selected ?? ''}
+                          onChange={e => setPriceTable(svc.id, e.target.value || null)}
+                          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: selected ? C_TEXT_PRIMARY : C_TEXT_SECONDARY, background: 'transparent', cursor: 'pointer' }}
+                        >
+                          <option value="">— Chưa chọn bảng giá —</option>
+                          {allPriceTables.map(pt => (
+                            <option key={pt.id} value={pt.id}>{pt.name}</option>
+                          ))}
+                        </select>
+                        <DownOutlined style={{ fontSize: 10, color: C_TEXT_SECONDARY, flexShrink: 0, pointerEvents: 'none' }} />
+                      </div>
+                      {!selected && (
+                        <div style={{ fontSize: 11, color: '#D97706', marginTop: 3 }}>Dịch vụ sẽ không khả dụng</div>
+                      )}
+                    </div>
+                  </div>
+                  {idx < allServices.length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
+                </div>
+              )
+            })}
           </div>
         </div>
 

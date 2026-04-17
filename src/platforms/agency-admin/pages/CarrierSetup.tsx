@@ -9,6 +9,8 @@ import {
   DisconnectOutlined,
   CloseOutlined,
 } from '@ant-design/icons'
+import allServices from '../../../mock-data/services.json'
+import allPriceTables from '../../../mock-data/pricing.json'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -238,11 +240,6 @@ function TabConnect() {
 }
 
 // ─── Tab: Dịch vụ ─────────────────────────────────────────────────────────────
-const SERVICE_PACKAGES = [
-  { id: 'ghn-express',  name: 'Giao hàng nhanh',     nvcCode: 'CHUYENNHANH', carrier: 'GHN', maxWeight: '20 kg', deliveryZones: 'Toàn quốc', enabled: true  },
-  { id: 'ghn-standard', name: 'Giao hàng tiêu chuẩn', nvcCode: 'TIETKIEM',   carrier: 'GHN', maxWeight: '30 kg', deliveryZones: 'Toàn quốc', enabled: true  },
-  { id: 'ghn-bulky',    name: 'Hàng cồng kềnh',       nvcCode: 'HANGCANANG', carrier: 'GHN', maxWeight: '50 kg', deliveryZones: 'HCM, HN',   enabled: false },
-]
 
 function Toggle({ enabled }: { enabled: boolean }) {
   return (
@@ -350,13 +347,12 @@ function TabServices() {
   const navigate = useNavigate()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [hovered, setHovered] = useState<string | null>(null)
+
   const cols = [
-    { label: 'Gói dịch vụ',    flex: '2 0 0', minWidth: 180 },
-    { label: 'Mã dịch vụ NVC', flex: '1.5 0 0', minWidth: 150 },
-    { label: 'NVC',            flex: '1 0 0', minWidth: 80  },
-    { label: 'Tải trọng',      flex: '1 0 0', minWidth: 100 },
-    { label: 'Vùng giao',      flex: '1 0 0', minWidth: 120 },
-    { label: 'Kích hoạt',      flex: '0 0 80px', minWidth: 80 },
+    { label: 'Gói dịch vụ', flex: '2 0 0',    minWidth: 200 },
+    { label: 'Mã NVC',      flex: '1.2 0 0',  minWidth: 150 },
+    { label: 'Shop ID GHN', flex: '2 0 0',    minWidth: 180 },
+    { label: 'Kích hoạt',   flex: '0 0 90px', minWidth: 90  },
   ]
 
   return (
@@ -382,149 +378,94 @@ function TabServices() {
 
       {/* Table */}
       <div style={{ padding: '0 16px' }}>
-      {/* Table header */}
-      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-        {cols.map((col, i) => (
-          <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
-            <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ height: 1, background: C_BORDER }} />
+        <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
+          {cols.map((col, i) => (
+            <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
+              <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ height: 1, background: C_BORDER }} />
 
-      {/* Rows */}
-      {SERVICE_PACKAGES.map((s) => (
-        <React.Fragment key={s.id}>
-          <div
-            onClick={() => navigate(`/agency-admin/carrier-setup/services/${s.id}`)}
-            style={{ display: 'flex', alignItems: 'center', background: hovered === s.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', cursor: 'pointer' }}
-            onMouseEnter={() => setHovered(s.id)}
-            onMouseLeave={() => setHovered(null)}
-          >
-            <div style={{ flex: '2 0 0', minWidth: 180, padding: '6px 8px' }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
-            </div>
-            <div style={{ flex: '1.5 0 0', minWidth: 150, padding: '6px 8px' }}>
-              <NvcCodeBadge code={s.nvcCode} />
-            </div>
-            <div style={{ flex: '1 0 0', minWidth: 80, padding: '6px 8px' }}>
-              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.carrier}</span>
-            </div>
-            <div style={{ flex: '1 0 0', minWidth: 100, padding: '6px 8px' }}>
-              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.maxWeight}</span>
-            </div>
-            <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.deliveryZones}</span>
-            </div>
-            <div style={{ flex: '0 0 80px', minWidth: 80, padding: '6px 8px' }}>
-              <Toggle enabled={s.enabled} />
-            </div>
-          </div>
-          <div style={{ height: 1, background: C_BORDER }} />
-        </React.Fragment>
-      ))}
-      </div>{/* /Table */}
+        {allServices.map((s) => {
+          const ghnShop = GHN_SHOPS.find((sh) => sh.shopId === s.ghnShopId)
+          return (
+            <React.Fragment key={s.id}>
+              <div
+                onClick={() => navigate(`/agency-admin/carrier-setup/services/${s.id}`)}
+                style={{ display: 'flex', alignItems: 'center', background: hovered === s.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', cursor: 'pointer' }}
+                onMouseEnter={() => setHovered(s.id)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
+                </div>
+                <div style={{ flex: '1.2 0 0', minWidth: 150, padding: '6px 8px' }}>
+                  <NvcCodeBadge code={s.code} />
+                </div>
+                <div style={{ flex: '2 0 0', minWidth: 180, padding: '6px 8px' }}>
+                  {ghnShop ? (
+                    <div>
+                      <div style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{ghnShop.name}</div>
+                      <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{s.ghnShopId}</div>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{s.ghnShopId}</span>
+                  )}
+                </div>
+                <div style={{ flex: '0 0 90px', minWidth: 90, padding: '6px 8px' }}>
+                  <Toggle enabled={s.enabled} />
+                </div>
+              </div>
+              <div style={{ height: 1, background: C_BORDER }} />
+            </React.Fragment>
+          )
+        })}
+      </div>
     </>
   )
 }
 
 // ─── Tab: Bảng giá ────────────────────────────────────────────────────────────
-const SERVICE_PACKAGE_NAMES = ['Giao hàng nhanh', 'Giao hàng tiêu chuẩn', 'Hàng cồng kềnh']
-
-const PRICE_CONFIGS = [
-  { id: 'pc-1', servicePackage: 'Giao hàng nhanh',     route: 'Nội tỉnh',  zone: 'Nội thành',  baseWeight: 0.5, basePrice: 15000, overageTierCount: 3, surchargeCount: 3 },
-  { id: 'pc-2', servicePackage: 'Giao hàng nhanh',     route: 'Nội tỉnh',  zone: 'Ngoại thành', baseWeight: 0.5, basePrice: 20000, overageTierCount: 3, surchargeCount: 3 },
-  { id: 'pc-3', servicePackage: 'Giao hàng nhanh',     route: 'Liên tỉnh', zone: 'Cùng vùng',  baseWeight: 0.5, basePrice: 25000, overageTierCount: 4, surchargeCount: 3 },
-  { id: 'pc-4', servicePackage: 'Giao hàng nhanh',     route: 'Liên tỉnh', zone: 'Khác vùng',  baseWeight: 0.5, basePrice: 30000, overageTierCount: 4, surchargeCount: 3 },
-  { id: 'pc-5', servicePackage: 'Giao hàng tiêu chuẩn', route: 'Nội tỉnh', zone: 'Nội thành',  baseWeight: 0.5, basePrice: 12000, overageTierCount: 3, surchargeCount: 3 },
-  { id: 'pc-6', servicePackage: 'Giao hàng tiêu chuẩn', route: 'Liên tỉnh', zone: 'Cùng vùng', baseWeight: 0.5, basePrice: 20000, overageTierCount: 3, surchargeCount: 3 },
-  { id: 'pc-7', servicePackage: 'Hàng cồng kềnh',      route: 'Nội tỉnh',  zone: 'Nội thành',  baseWeight: 1,   basePrice: 25000, overageTierCount: 2, surchargeCount: 2 },
-]
-
-function CountBadge({ count, color }: { count: number; color: string }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 22, height: 22, borderRadius: 11, background: color + '1A', color, fontSize: 12, fontWeight: 600, padding: '0 6px' }}>
-      {count}
-    </span>
-  )
-}
-
-const fmtVND = (n: number) => n.toLocaleString('vi-VN') + ' đ'
-
 function TabPricing() {
-  const [selectedPackage, setSelectedPackage] = useState(SERVICE_PACKAGE_NAMES[0])
   const [hovered, setHovered] = useState<string | null>(null)
 
-  const filtered = PRICE_CONFIGS.filter((c) => c.servicePackage === selectedPackage)
-
   const cols = [
-    { label: 'Tuyến',         flex: '1 0 0',    minWidth: 100 },
-    { label: 'Khu vực',       flex: '1.2 0 0',  minWidth: 120 },
-    { label: 'TL cơ bản',     flex: '1 0 0',    minWidth: 100 },
-    { label: 'Giá cơ bản',    flex: '1 0 0',    minWidth: 110 },
-    { label: 'Vượt cân',      flex: '0 0 80px', minWidth: 80  },
-    { label: 'Phụ phí',       flex: '0 0 80px', minWidth: 80  },
-    { label: '',              flex: '0 0 80px', minWidth: 80  },
+    { label: 'Tên bảng giá', flex: '1 0 0', minWidth: 240 },
+    { label: '',             flex: '0 0 80px', minWidth: 80 },
   ]
 
   return (
     <>
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', gap: 0, border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-          {SERVICE_PACKAGE_NAMES.map((pkg) => (
-            <div key={pkg} onClick={() => setSelectedPackage(pkg)}
-              style={{ padding: '6px 14px', fontSize: 13, fontWeight: selectedPackage === pkg ? 600 : 400, color: selectedPackage === pkg ? C_ACTION : C_TEXT_SECONDARY, background: selectedPackage === pkg ? '#FFF4ED' : '#fff', cursor: 'pointer', borderRight: `1px solid ${C_BORDER}`, userSelect: 'none', transition: 'background 0.15s, color 0.15s' }}>
-              {pkg}
-            </div>
-          ))}
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '8px 16px', flexShrink: 0 }}>
         <button style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer' }}>
           <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Thêm cấu hình giá</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo bảng giá</span>
         </button>
       </div>
 
       {/* Table */}
       <div style={{ padding: '0 16px' }}>
-      {/* Table header */}
-      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-        {cols.map((col, i) => (
-          <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
-            <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ height: 1, background: C_BORDER }} />
+        <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
+          {cols.map((col, i) => (
+            <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
+              <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ height: 1, background: C_BORDER }} />
 
-      {/* Rows */}
-      {filtered.length === 0 ? (
-        <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Chưa có cấu hình giá</div>
-      ) : (
-        filtered.map((cfg) => (
-          <React.Fragment key={cfg.id}>
+        {allPriceTables.map((pt) => (
+          <React.Fragment key={pt.id}>
             <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === cfg.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
-              onMouseEnter={() => setHovered(cfg.id)}
+              style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
+              onMouseEnter={() => setHovered(pt.id)}
               onMouseLeave={() => setHovered(null)}
             >
-              <div style={{ flex: '1 0 0', minWidth: 100, padding: '6px 8px' }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{cfg.route}</span>
-              </div>
-              <div style={{ flex: '1.2 0 0', minWidth: 120, padding: '6px 8px' }}>
-                <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{cfg.zone}</span>
-              </div>
-              <div style={{ flex: '1 0 0', minWidth: 100, padding: '6px 8px' }}>
-                <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{cfg.baseWeight} kg</span>
-              </div>
-              <div style={{ flex: '1 0 0', minWidth: 110, padding: '6px 8px' }}>
-                <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{fmtVND(cfg.basePrice)}</span>
-              </div>
-              <div style={{ flex: '0 0 80px', minWidth: 80, padding: '6px 8px' }}>
-                <CountBadge count={cfg.overageTierCount} color="#3B82F6" />
-              </div>
-              <div style={{ flex: '0 0 80px', minWidth: 80, padding: '6px 8px' }}>
-                <CountBadge count={cfg.surchargeCount} color="#F59E0B" />
+              <div style={{ flex: '1 0 0', minWidth: 240, padding: '6px 8px' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{pt.name}</div>
+                <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{pt.description}</div>
               </div>
               <div style={{ flex: '0 0 80px', minWidth: 80, padding: '6px 8px' }}>
                 <button style={{ padding: '4px 10px', borderRadius: 5, border: `1px solid ${C_BORDER}`, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 12, cursor: 'pointer' }}>Chi tiết</button>
@@ -532,9 +473,8 @@ function TabPricing() {
             </div>
             <div style={{ height: 1, background: C_BORDER }} />
           </React.Fragment>
-        ))
-      )}
-      </div>{/* /Table */}
+        ))}
+      </div>
     </>
   )
 }
