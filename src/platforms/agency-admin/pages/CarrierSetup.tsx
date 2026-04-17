@@ -428,18 +428,22 @@ function TabServices() {
 
 // ─── Tab: Bảng giá ────────────────────────────────────────────────────────────
 function TabPricing() {
+  const navigate = useNavigate()
   const [hovered, setHovered] = useState<string | null>(null)
 
   const cols = [
-    { label: 'Tên bảng giá', flex: '1 0 0', minWidth: 240 },
-    { label: '',             flex: '0 0 80px', minWidth: 80 },
+    { label: 'Tên bảng giá', flex: '2 0 0', minWidth: 200 },
+    { label: 'Ngày tạo',     flex: '1 0 0', minWidth: 110 },
+    { label: 'Mô tả',        flex: '3 0 0', minWidth: 180 },
   ]
 
   return (
     <>
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '8px 16px', flexShrink: 0 }}>
-        <button style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+        <button
+          onClick={() => navigate('/agency-admin/carrier-setup/pricing/create')}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer' }}>
           <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
           <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo bảng giá</span>
         </button>
@@ -456,19 +460,25 @@ function TabPricing() {
         </div>
         <div style={{ height: 1, background: C_BORDER }} />
 
-        {allPriceTables.map((pt) => (
+        {allPriceTables.map((pt: any) => (
           <React.Fragment key={pt.id}>
             <div
               style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
               onMouseEnter={() => setHovered(pt.id)}
               onMouseLeave={() => setHovered(null)}
             >
-              <div style={{ flex: '1 0 0', minWidth: 240, padding: '6px 8px' }}>
+              <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{pt.name}</div>
-                <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{pt.description}</div>
               </div>
-              <div style={{ flex: '0 0 80px', minWidth: 80, padding: '6px 8px' }}>
-                <button style={{ padding: '4px 10px', borderRadius: 5, border: `1px solid ${C_BORDER}`, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 12, cursor: 'pointer' }}>Chi tiết</button>
+              <div style={{ flex: '1 0 0', minWidth: 110, padding: '6px 8px' }}>
+                <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>
+                  {pt.createdAt ? pt.createdAt.split('-').reverse().join('/') : '—'}
+                </span>
+              </div>
+              <div style={{ flex: '3 0 0', minWidth: 180, padding: '6px 8px', overflow: 'hidden' }}>
+                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {pt.description || ''}
+                </span>
               </div>
             </div>
             <div style={{ height: 1, background: C_BORDER }} />

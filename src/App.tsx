@@ -18,6 +18,7 @@ import ShopCreate from './platforms/agency-admin/pages/ShopCreate'
 import ShopDetail from './platforms/agency-admin/pages/ShopDetail'
 import CarrierSetup from './platforms/agency-admin/pages/CarrierSetup'
 import ServiceDetail from './platforms/agency-admin/pages/ServiceDetail'
+import PricingCreate from './platforms/agency-admin/pages/PricingCreate'
 import AgencyAdminDocument from './platforms/agency-admin/pages/Document'
 
 // Shop
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="shops/create" element={<ShopCreate />} />
           <Route path="shops/:id" element={<ShopDetail />} />
           <Route path="carrier-setup" element={<CarrierSetup />} />
+          <Route path="carrier-setup/pricing/create" element={<PricingCreate />} />
           <Route path="carrier-setup/services/:id" element={<ServiceDetail />} />
           <Route path="document" element={<AgencyAdminDocument />}>
             <Route index element={<DocumentIndex />} />
