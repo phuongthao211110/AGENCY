@@ -22,7 +22,8 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-_(trống)_
+_(Hiện không có tính năng pending)_
+
 
 ---
 
@@ -58,6 +59,7 @@ Dist dir:  dist/
 | v0.8.1 | 2026-04-17 | Đổi tên cột "Shop ID" → "Shop ID GHN" trong tab Kết nối NVC (CarrierSetup) để đồng bộ tên cột với tab Dịch vụ. | trannlb |
 | v0.9.0 | 2026-04-17 | Agency Admin: trang Tạo bảng giá mới (`/agency-admin/carrier-setup/pricing/create`) — form Tên + Mô tả, danh sách tuyến (4 loại: Nội tỉnh / Nội vùng / Liên vùng / Liên tỉnh), cấu hình phạm vi áp dụng toggle cho Liên tỉnh (Từ/Đến: Vùng, Tỉnh, Quận, Xã), khối lượng chuẩn + giá chuẩn, thêm ngưỡng vượt cân inline. UI đồng nhất với ShopCreate. Tab Bảng giá bỏ cột NVC + Trạng thái. | trannlb |
 | v0.9.1 | 2026-04-22 | Web Shop: Section Dịch vụ trong drawer Tạo đơn — card "Dịch vụ" radio chọn dịch vụ vận chuyển từ Agency Admin, data từ `configuredServices` trong shops.json, refactor Action card bỏ row "Phí ship". | trannlb |
+| v0.10.0 | 2026-04-22 | (1) Agency Admin: ShopDetail thêm Card "Cấu hình dịch vụ" — bảng read-only 3 cột (Dịch vụ / Mã NVC / Bảng giá áp dụng), dịch vụ chưa gắn bảng giá hiển thị cảnh báo amber. (2) Agency Admin: Thêm menu "Đơn hàng", trang danh sách đơn từ các shop thuộc đại lý (2 tab: Tất cả đơn / Đã huỷ), drawer tạo đơn hàng 980px có card "Shop tạo đơn" với dropdown chọn shop, fix scroll ngang. (3) Fix: row divider hiện đúng trên màn hình HiDPI (thay `height:1` bằng `borderBottom` trên row div) — 5 trang danh sách (Agencies, Orders, Reconciliation, Pricing, Shops). | trannlb |
 
 ---
 

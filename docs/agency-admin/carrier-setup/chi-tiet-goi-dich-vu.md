@@ -26,7 +26,7 @@ Là Agency Admin (Đại lý), tôi muốn xem và chỉnh sửa chi tiết mộ
 
 **AC1:** Trang chi tiết có 3 tab: "Thông tin", "Địa điểm khả dụng", "Địa điểm chặn".
 
-**AC2:** Tab "Thông tin" hiển thị ở chế độ xem (view): Mã gói, Tên gói, Mô tả, Shop ID GHN kết nối, danh sách bảng giá liên kết. Agency Admin có thể click "Chỉnh sửa" để chuyển sang chế độ edit.
+**AC2:** Tab "Thông tin" hiển thị ở chế độ xem (view): Mã gói, Tên gói, Mô tả, Shop ID GHN kết nối. Phần Bảng giá hiển thị dạng card 1:1 — nếu đã gắn bảng giá thì hiện tên bảng giá, số tuyến, ngày tạo và nút "Thay đổi"; nếu chưa có bảng giá thì hiện cảnh báo màu vàng "Chưa có bảng giá" cùng nút "Gắn bảng giá". Agency Admin có thể click "Chỉnh sửa" để chuyển sang chế độ edit thông tin cơ bản.
 
 **AC3:** Ở chế độ edit, Agency Admin có thể sửa: Mã gói, Tên gói, Mô tả, Shop ID GHN. Có nút "Lưu" và "Huỷ".
 

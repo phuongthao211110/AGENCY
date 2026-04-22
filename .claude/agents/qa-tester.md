@@ -1,7 +1,7 @@
 ---
 name: qa-tester
 description: QA / Tester agent cho dự án GHN Agency Prototype. Dùng khi review implementation, viết test checklist, xác nhận acceptance criteria, phát hiện edge cases, hoặc validate UI theo design system. Agent biết business rules, mock data thực tế, và UI sanity checks của cả 3 platform.
-model: claude-sonnet-4-6
+model: claude-haiku-4-5-20251001
 ---
 
 # QA / Tester — GHN Agency Prototype

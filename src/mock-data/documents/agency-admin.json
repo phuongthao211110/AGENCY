@@ -1,7 +1,7 @@
 {
   "platform": "agency-admin",
-  "currentVersion": "1.0.0",
-  "lastUpdated": "2026-04-16",
+  "currentVersion": "1.1.0",
+  "lastUpdated": "2026-04-17",
   "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
@@ -141,6 +141,37 @@
           "notes": [],
           "userFlow": [],
           "acceptanceCriteria": []
+        },
+        {
+          "id": "AGA-SHOP-6",
+          "jiraKey": "",
+          "title": "[AGA] Shop - Tạo mới shop: Cấu hình dịch vụ",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn cấu hình dịch vụ vận chuyển cho shop ngay khi tạo mới để xác định shop đó có thể sử dụng những dịch vụ nào và theo bảng giá nào.",
+          "notes": [
+            "Mỗi dịch vụ (Service) được kết nối với 1 GHN Shop ID — đây là Shop ID của tài khoản GHN, khác với shop_id của agency shop",
+            "Shop có thể được gắn với nhiều dịch vụ, mỗi dịch vụ dùng 1 bảng giá riêng",
+            "Nếu một dịch vụ không được chọn bảng giá → dịch vụ đó không khả dụng với shop này",
+            "Section \"Cấu hình dịch vụ\" là Section 3 trong form tạo shop mới, sau \"Thông tin cơ bản\" (AGA-SHOP-3) và \"Cấu hình tài khoản\" (AGA-SHOP-4)"
+          ],
+          "userFlow": [
+            "Agency Admin truy cập màn tạo shop mới",
+            "Sau khi điền thông tin cơ bản và tài khoản đăng nhập, Agency Admin kéo xuống Section 3 \"Cấu hình dịch vụ\"",
+            "Hệ thống hiển thị danh sách tất cả dịch vụ đang được cấu hình trong đại lý",
+            "Với mỗi dịch vụ, Agency Admin chọn bảng giá từ dropdown",
+            "Nếu không chọn bảng giá cho một dịch vụ, hệ thống hiển thị cảnh báo màu vàng \"Dịch vụ sẽ không khả dụng\"",
+            "Agency Admin hoàn tất và submit form tạo shop"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Màn hình tạo shop mới có Section 3 \"Cấu hình dịch vụ\" nằm sau Section 1 (Thông tin cơ bản) và Section 2 (Cấu hình tài khoản).",
+            "AC2: Section \"Cấu hình dịch vụ\" hiển thị danh sách tất cả dịch vụ vận chuyển đang active trong đại lý. Mỗi dịch vụ hiện tên dịch vụ, mã dịch vụ và dropdown chọn bảng giá.",
+            "AC3: Dropdown bảng giá của mỗi dịch vụ chỉ liệt kê các bảng giá đang thuộc dịch vụ đó (không trộn bảng giá của dịch vụ khác).",
+            "AC4: Khi Agency Admin chưa chọn bảng giá cho một dịch vụ, hệ thống hiển thị cảnh báo màu vàng bên dưới dịch vụ đó: \"Dịch vụ sẽ không khả dụng nếu không có bảng giá\".",
+            "AC5: Agency Admin có thể bỏ qua việc chọn bảng giá cho một hoặc nhiều dịch vụ — không bắt buộc phải chọn đủ tất cả dịch vụ để submit form.",
+            "AC6: Sau khi tạo shop thành công, hệ thống lưu mapping giữa shop và từng dịch vụ kèm bảng giá đã chọn. Dịch vụ không được chọn bảng giá sẽ không khả dụng với shop đó.",
+            "AC7: Hệ thống đảm bảo tenant isolation: danh sách dịch vụ và bảng giá trong dropdown chỉ bao gồm dịch vụ/bảng giá thuộc đại lý của Agency Admin đang đăng nhập.",
+            "AC8: Khi không có dịch vụ nào được cấu hình trong đại lý, Section \"Cấu hình dịch vụ\" hiển thị thông báo hướng dẫn Agency Admin thiết lập dịch vụ tại màn \"Thiết lập NVC\" trước."
+          ],
+          "status": "draft"
         }
       ]
     },
@@ -197,7 +228,7 @@
             "Sau khi tạo thành công, hệ thống chuyển đến trang chi tiết gói vừa tạo"
           ],
           "acceptanceCriteria": [
-            "AC1: Tab \"Dịch vụ\" hiển thị danh sách gói dịch vụ với các cột: Gói dịch vụ (tên), Mã dịch vụ NVC, NVC (nhà vận chuyển), Tải trọng tối đa, Vùng giao, Toggle kích hoạt.",
+            "AC1: Tab \"Dịch vụ\" hiển thị danh sách gói dịch vụ với các cột: Gói dịch vụ (tên), Mã dịch vụ NVC, NVC (nhà vận chuyển), Shop ID GHN (tên cửa hàng + ID), Vùng giao, Toggle kích hoạt. Cột Bảng giá và Tải trọng không hiển thị trên màn danh sách (được quản lý ở chi tiết dịch vụ).",
             "AC2: Agency Admin có thể bật/tắt kích hoạt từng gói dịch vụ bằng toggle.",
             "AC3: Agency Admin có thể click vào tên gói dịch vụ để xem trang chi tiết (AGA-CARRIER-3).",
             "AC4: Khi click \"Tạo mới dịch vụ\", hệ thống hiển thị modal gồm các trường: Mã gói (bắt buộc, monospace), Tên gói (bắt buộc), Mô tả, Kết nối Shop ID GHN (dropdown chọn từ danh sách đã kết nối).",
@@ -221,7 +252,7 @@
           ],
           "acceptanceCriteria": [
             "AC1: Trang chi tiết có 3 tab: \"Thông tin\", \"Địa điểm khả dụng\", \"Địa điểm chặn\".",
-            "AC2: Tab \"Thông tin\" hiển thị ở chế độ xem: Mã gói, Tên gói, Mô tả, Shop ID GHN kết nối, danh sách bảng giá liên kết. Agency Admin có thể click \"Chỉnh sửa\" để chuyển sang chế độ edit.",
+            "AC2: Tab \"Thông tin\" hiển thị ở chế độ xem (view): Mã gói, Tên gói, Mô tả, Shop ID GHN kết nối. Phần Bảng giá hiển thị dạng card 1:1 — nếu đã gắn bảng giá thì hiện tên bảng giá, số tuyến, ngày tạo và nút \"Thay đổi\"; nếu chưa có bảng giá thì hiện cảnh báo màu vàng \"Chưa có bảng giá\" cùng nút \"Gắn bảng giá\". Agency Admin có thể click \"Chỉnh sửa\" để chuyển sang chế độ edit thông tin cơ bản.",
             "AC3: Ở chế độ edit, Agency Admin có thể sửa: Mã gói, Tên gói, Mô tả, Shop ID GHN. Có nút \"Lưu\" và \"Huỷ\".",
             "AC4: Tab \"Địa điểm khả dụng\" gồm 2 section: Lấy hàng và Giao hàng. Mỗi section hiển thị danh sách địa điểm và nút \"Thêm địa điểm\".",
             "AC5: Tab \"Địa điểm chặn\" có cấu trúc tương tự tab \"Địa điểm khả dụng\" nhưng dùng để cấu hình địa điểm không phục vụ.",
@@ -246,7 +277,7 @@
           ],
           "acceptanceCriteria": [
             "AC1: Tab \"Bảng giá\" hiển thị segment control để chọn gói dịch vụ (Giao hàng nhanh / Giao hàng tiêu chuẩn / Hàng cồng kềnh).",
-            "AC2: Bảng cấu hình giá hiển thị các cột: Tuyến, Khu vực, Tải trọng cơ bản, Giá cơ bản, Số bậc vượt cân, Số loại phụ phí, Nút Chi tiết.",
+            "AC2: Bảng giá hiển thị dạng đơn giản với 2 cột: Tên bảng giá và nút Chi tiết. Các thông tin chi tiết (số tuyến, trạng thái, dịch vụ được gắn) được xem trong trang chi tiết bảng giá, không hiển thị trên danh sách.",
             "AC3: Khi Agency Admin chọn gói dịch vụ khác, hệ thống lọc và hiển thị đúng cấu hình giá của gói đó.",
             "AC4: Khi không có cấu hình giá, hệ thống hiển thị thông báo \"Chưa có cấu hình giá\".",
             "AC5: Agency Admin có thể click \"Thêm cấu hình giá\" để tạo cấu hình giá mới cho gói đang chọn.",
@@ -266,6 +297,11 @@
       "version": "1.0.0",
       "date": "2026-04-16",
       "summary": "Cập nhật đầy đủ nội dung từ BRD: Login/Logout, Cài đặt GHN, Quản lý Shop (5 stories), và toàn bộ sections còn lại"
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-04-17",
+      "summary": "v0.8.0 — Cấu trúc Service–Shop–PriceTable: thêm AGA-SHOP-6, cập nhật AC cho AGA-CARRIER-2, AGA-CARRIER-3, AGA-CARRIER-4"
     }
   ]
 }

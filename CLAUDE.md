@@ -30,33 +30,58 @@ npm run dev   # http://localhost:4000/
 
 Khi nhận yêu cầu mới, **luôn bắt đầu bằng `/project-lead`** để xác định workflow phối hợp.
 
+### Model Assignment (BẮT BUỘC tuân thủ)
+
+| Role | Agent | Model |
+|------|-------|-------|
+| Users Story | story-writer | Sonnet 4.6 |
+| BA / Product | product-manager | Sonnet 4.6 |
+| R&D / Analysis | data-analyst | Sonnet 4.6 |
+| Tech Spec / API | backend-architect | **Opus 4.7** |
+| Design UI/UX | ui-designer | Sonnet 4.6 |
+| Coding | frontend-dev | **Opus 4.7** |
+| Read-only (scan) | codebase-reader, qa-tester, agency-logistics-domain, platform-integrator | **Haiku 4.5** |
+
 ### Các skill agents có sẵn
 
 ```
-/project-lead      → Orchestrator: phân tích yêu cầu, điều phối team
-/product-manager   → BRD, user stories, acceptance criteria, sprint plan
-/ui-designer       → Figma-to-code, design system, component patterns
-/frontend-dev      → Routing, pages, mock data, TypeScript
-/qa-tester         → Test checklist, business rules, UI validation
-/backend-architect → API design, data models, authentication
-/data-analyst      → Dashboard, KPIs, charts, reconciliation
-/story-writer      → Tự động break feature thành user stories, tạo .md + update JSON
+/project-lead              → Orchestrator: phân tích yêu cầu, điều phối team [Sonnet]
+/codebase-reader [Haiku]   → Scan codebase, trả về compact briefing trước khi implement
+/agency-logistics-domain [Haiku] → Business rules: đại lý, vận chuyển, COD, đối soát, phí
+/platform-integrator [Haiku] → Cross-platform guard: kết nối 3 platform, không feature mồ côi
+/product-manager [Sonnet]  → BRD, user stories, acceptance criteria, sprint plan
+/ui-designer [Sonnet]      → Figma-to-code, design system, component patterns
+/frontend-dev [Opus 4.7]   → Routing, pages, mock data, TypeScript — CODING
+/qa-tester [Haiku]         → Test checklist, business rules, UI validation
+/backend-architect [Opus 4.7] → Tech Spec, API design, data models, authentication
+/data-analyst [Sonnet]     → Dashboard, KPIs, charts, reconciliation
+/story-writer [Sonnet]     → Break feature thành user stories, tạo .md + update JSON
 ```
+
+### Token Optimization — Scout → Build Pattern
+
+**Luôn chạy codebase-reader (Haiku) SONG SONG với product-manager trước khi implement.**  
+Frontend-dev và ui-designer nhận compact briefing từ codebase-reader thay vì tự đọc files.
+
+**story-writer chỉ chạy khi user explicitly yêu cầu** — không tự động sau mỗi feature.
+
+**Bug rõ ràng (sai màu, typo, sai số)** → fix trực tiếp bằng Edit tool, không spawn agent.
 
 ### Workflow theo loại yêu cầu
 
 ```
 Tính năng mới + Figma URL:
-  product-manager → ui-designer → frontend-dev → qa-tester → story-writer
+  [codebase-reader / Haiku] ← SONG SONG → product-manager → ui-designer → frontend-dev → qa-tester → UAT
+  [agency-logistics-domain / Haiku] ← SONG SONG (nếu liên quan COD/đối soát)
 
 Tính năng mới không có Figma:
-  product-manager → frontend-dev → qa-tester → story-writer
+  [codebase-reader / Haiku] ← SONG SONG → product-manager → frontend-dev → qa-tester → UAT
 
 Bug / UI sai design:
-  qa-tester → [ui-designer nếu cần] → frontend-dev → qa-tester
+  [codebase-reader / Haiku] → frontend-dev → qa-tester (bug rõ ràng: bỏ qua codebase-reader)
 
 Dashboard / Báo cáo:
-  data-analyst → ui-designer → frontend-dev → qa-tester
+  data-analyst → ui-designer → frontend-dev → qa-tester → UAT
 
 API / Backend planning:
   product-manager → backend-architect → frontend-dev
@@ -64,6 +89,21 @@ API / Backend planning:
 Sprint planning:
   product-manager → qa-tester → project-lead (tổng hợp)
 ```
+
+### QC Process (BẮT BUỘC sau mỗi implementation)
+
+1. **qa-tester [Haiku]** chạy test checklist: business rules, UI tokens, edge cases
+2. qa-tester xuất danh sách issues → frontend-dev fix nếu có
+3. Lặp lại đến khi qa-tester confirm PASS
+
+### UAT Process (BẮT BUỘC trước khi báo hoàn thành)
+
+Claude tự UAT theo các bước:
+1. Start dev server (`npm run dev`)
+2. Mở browser, duyệt golden path của tính năng
+3. Kiểm tra 3 platform liên quan (Super Admin, Agency Admin, Web Shop)
+4. Confirm không có regression ở các trang lân cận
+5. Báo cáo kết quả UAT trước khi kết thúc task
 
 ### Story Lifecycle (Document system)
 

@@ -80,17 +80,17 @@ function TRow({ shop, checked, onToggle, onClick }: {
 }) {
   const [hover, setHover] = useState(false)
   return (
-    <>
-      <div
-        style={{
-          display: 'flex', alignItems: 'center', cursor: 'pointer',
-          background: hover ? '#FAFAFA' : '#fff',
-          transition: 'background 0.1s',
-        }}
-        onClick={onClick}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', cursor: 'pointer',
+        background: hover ? '#FAFAFA' : '#fff',
+        transition: 'background 0.1s',
+        borderBottom: `1px solid ${C_BORDER}`,
+      }}
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
         {/* Checkbox */}
         <div style={{ width:32, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', alignSelf:'stretch', padding:'6px 8px' }}>
           <Checkbox checked={checked} onChange={onToggle} />
@@ -117,9 +117,7 @@ function TRow({ shop, checked, onToggle, onClick }: {
         <div style={{ flex:'1 0 0', minWidth:160, padding:'6px 8px', textAlign:'right' }}>
           <span style={{ fontSize:14, color: C_TEXT_PRIMARY, lineHeight:'20px' }}>{fmt(shop.revenue)}</span>
         </div>
-      </div>
-      <div style={{ height:1, background: C_BORDER }} />
-    </>
+    </div>
   )
 }
 

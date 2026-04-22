@@ -9,13 +9,16 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons'
 import allShops from '../../../mock-data/shops.json'
+import allServices from '../../../mock-data/services.json'
+import allPriceTables from '../../../mock-data/pricing.json'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const C_TEXT_PRIMARY = '#111827'
-const C_TEXT_LABEL   = '#4B5563'
-const C_BORDER       = '#E5E7EB'
-const C_BG_PAGE      = '#F9FAFB'
-const CARD_SHADOW    = '0 1px 2px rgba(0,0,0,0.05)'
+const C_TEXT_PRIMARY   = '#111827'
+const C_TEXT_SECONDARY = '#6B7280'
+const C_TEXT_LABEL     = '#4B5563'
+const C_BORDER         = '#E5E7EB'
+const C_BG_PAGE        = '#F9FAFB'
+const CARD_SHADOW      = '0 1px 2px rgba(0,0,0,0.05)'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function splitAddress(address: string): [string, string] {
@@ -232,6 +235,62 @@ export default function ShopDetail() {
         <SectionCard title="Cấu hình tài khoản shop đăng nhập">
           <CopyField label="Tên đăng nhập của shop" value={shop.username} onCopy={copyText} />
           <PasswordField label="Mật khẩu của shop" onCopy={copyText} />
+        </SectionCard>
+
+        {/* Card 3: Cấu hình dịch vụ */}
+        <SectionCard title="Cấu hình dịch vụ">
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, lineHeight: '18px', marginTop: -8 }}>
+            Bảng giá áp dụng cho từng dịch vụ. Dịch vụ chưa gắn bảng giá sẽ không khả dụng với shop này.
+          </span>
+          <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            {/* Table header */}
+            <div style={{ display: 'flex', background: '#F3F4F6', padding: '6px 12px' }}>
+              <div style={{ flex: '2 0 0', minWidth: 160, fontSize: 13, color: C_TEXT_SECONDARY }}>Dịch vụ</div>
+              <div style={{ flex: '1.2 0 0', minWidth: 120, fontSize: 13, color: C_TEXT_SECONDARY }}>Mã NVC</div>
+              <div style={{ flex: '2 0 0', minWidth: 200, fontSize: 13, color: C_TEXT_SECONDARY }}>Bảng giá áp dụng</div>
+            </div>
+            <div style={{ height: 1, background: C_BORDER }} />
+
+            {(() => {
+              const configuredIds = new Set(shop.configuredServices.map((cs) => cs.serviceId))
+              return allServices.map((svc, idx) => {
+                const isConfigured = configuredIds.has(svc.id)
+                const priceTable = svc.priceTableId
+                  ? allPriceTables.find((pt) => pt.id === svc.priceTableId)
+                  : null
+                return (
+                  <div key={svc.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', background: '#fff' }}>
+                      {/* Dịch vụ */}
+                      <div style={{ flex: '2 0 0', minWidth: 160 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{svc.name}</div>
+                        <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{svc.desc}</div>
+                      </div>
+
+                      {/* Mã NVC */}
+                      <div style={{ flex: '1.2 0 0', minWidth: 120 }}>
+                        <span style={{ fontSize: 12, fontFamily: 'monospace', background: '#F3F4F6', padding: '2px 7px', borderRadius: 4, color: C_TEXT_PRIMARY }}>
+                          {svc.code}
+                        </span>
+                      </div>
+
+                      {/* Bảng giá */}
+                      <div style={{ flex: '2 0 0', minWidth: 200 }}>
+                        {isConfigured && priceTable ? (
+                          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{priceTable.name}</span>
+                        ) : isConfigured ? (
+                          <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>—</span>
+                        ) : (
+                          <span style={{ fontSize: 13, color: '#D97706' }}>Dịch vụ không khả dụng</span>
+                        )}
+                      </div>
+                    </div>
+                    {idx < allServices.length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
+                  </div>
+                )
+              })
+            })()}
+          </div>
         </SectionCard>
 
         {/* Action buttons */}

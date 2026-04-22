@@ -1,7 +1,7 @@
 ---
 name: frontend-dev
 description: Frontend Developer agent cho dự án GHN Agency Prototype. Dùng khi thêm trang mới, thêm route, refactor component, xử lý mock data, hoặc tích hợp tính năng mới vào codebase. Agent biết toàn bộ routing pattern, file structure, mock data schema, TypeScript conventions, và ConfigProvider usage của dự án.
-model: claude-sonnet-4-6
+model: claude-opus-4-7
 ---
 
 # Frontend Developer — GHN Agency Prototype
@@ -62,6 +62,8 @@ src/
     orders.json
     pricing.json
     reconciliation.json
+    geography.json             ← 63 tỉnh thành + 4 route types + 3 delivery zones
+    districts.json             ← 705 quận/huyện, mỗi item có provinceId
 ```
 
 ## Routing Pattern (App.tsx)
@@ -106,84 +108,95 @@ export default function MyPage() {
 
 Themes: `superAdminTheme`, `agencyAdminTheme`, `shopTheme` từ `src/theme/platforms.ts`.
 
-## Mock Data Schemas
+## Mock Data
 
-### agencies.json
+Files tại `src/mock-data/`: `agencies.json`, `shops.json`, `orders.json`, `pricing.json`, `reconciliation.json`, `geography.json`, `districts.json`.
+
+Đọc trực tiếp file khi cần biết schema. Computed fields (không có trong JSON):
 ```typescript
-interface Agency {
-  id: string           // "AGN001"
-  name: string         // "Đại lý Hà Nội Central"
-  code: string         // "HNC"
-  status: 'active' | 'inactive'
-  ghnAccount: string   // "hn_central_ghn"
-  adminUrl: string     // "hn-central.agency.ghn.vn"
-  shopUrl: string      // "hn-central.shop.ghn.vn"
-  createdAt: string    // "2024-01-15"
-  totalShops: number
-  totalOrders: number
-  representative: string
-  phone: string
-  address: string
-  email: string
+const cod = agency.totalOrders * 35_000   // COD demo
+const revenue = cod * 0.028               // 2.8% doanh thu
+const netAmount = totalCOD - totalFee     // đối soát
+```
+
+### Geography Data Schema
+
+```typescript
+// geography.json — top-level keys: routeTypes, zones, provinces
+interface Province {
+  id: number          // 1-63
+  code: string        // "HAN", "HCM", "DAN"...
+  name: string        // "Hà Nội", "TP. Hồ Chí Minh"
+  type: 'Thành phố' | 'Tỉnh'
+  region: 'Miền Bắc' | 'Miền Trung' | 'Tây Nguyên' | 'Miền Nam'
+  zone: 1 | 2 | 3    // Delivery zone (1=Nam hub, 2=Trung, 3=Bắc+others)
+}
+
+// districts.json — flat array, ~705 records
+interface District {
+  id: number          // sequential 1-705
+  provinceId: number  // FK → Province.id
+  name: string        // "Quận Ba Đình", "Huyện Đông Anh"
+  type: 'Quận' | 'Huyện' | 'Thành phố' | 'Thị xã'
 }
 ```
 
-### shops.json
+### Route Determination Logic (dùng khi tạo đơn)
+
 ```typescript
-interface Shop {
-  id: string           // "SHP001"
-  agencyId: string     // "AGN001"
-  name: string         // "Shop Minh Anh"
-  code: string         // "MA001"
-  phone: string
-  totalOrders: number
-  status: 'active' | 'inactive'
-  createdAt: string
-  email: string
-  address: string
+import geographyData from '../../../mock-data/geography.json'
+
+// Adjacency pairs cho liên vùng (order doesn't matter)
+const ADJACENT_REGION_PAIRS = [
+  ['Miền Bắc', 'Miền Trung'],
+  ['Miền Nam', 'Miền Trung'],
+  ['Tây Nguyên', 'Miền Trung'],
+  ['Tây Nguyên', 'Miền Nam'],
+]
+
+function determineRouteType(fromProvinceId: number, toProvinceId: number): string {
+  const provinces = geographyData.provinces
+  const from = provinces.find(p => p.id === fromProvinceId)!
+  const to = provinces.find(p => p.id === toProvinceId)!
+
+  if (fromProvinceId === toProvinceId) return 'noi-tinh'
+  if (from.region === to.region) return 'noi-vung'
+
+  const isAdjacent = ADJACENT_REGION_PAIRS.some(([a, b]) =>
+    (from.region === a && to.region === b) || (from.region === b && to.region === a)
+  )
+  return isAdjacent ? 'lien-vung' : 'lien-tinh'
 }
 ```
 
-### orders.json
-```typescript
-interface Order {
-  id: string           // "ORD001"
-  shopId: string       // "SHP001"
-  trackingCode: string // "GHN00123456"
-  senderName: string
-  senderPhone: string
-  receiverName: string
-  receiverPhone: string
-  receiverAddress: string
-  weight: number       // grams
-  cod: number          // VND
-  fee: number          // VND
-  status: 'pending' | 'in_transit' | 'delivered' | 'failed'
-  createdAt: string
-}
+### Service & Pricing Concepts (Agency Admin + Web Shop)
+
+```
+AGENCY
+ ├── GHN Shop Connection   — tài khoản GHN thật để đẩy đơn
+ ├── Service               — mỗi service gắn 1 GHN Shop Connection
+ ├── Pricing Table         — bảng giá theo 4 tuyến + vượt cân
+ └── Shop (internal)
+       └── ShopServicePricing  ← gán service + pricing cho từng shop TẠI ĐÂY
 ```
 
-### reconciliation.json
-```typescript
-interface Reconciliation {
-  id: string           // "REC001"
-  agencyId: string
-  shopId: string
-  period: string       // "01/03/2024 - 15/03/2024"
-  totalOrders: number
-  totalCOD: number     // VND
-  totalFee: number     // VND
-  netAmount: number    // totalCOD - totalFee
-  status: 'completed' | 'processing' | 'pending'
-  transferDate: string | null
-  createdAt: string
-}
-```
+- **Service ≠ Pricing**: Service xác định đơn đẩy qua GHN Shop ID nào; Pricing xác định giá tiền
+- **1 service, nhiều pricing**: Mỗi shop có thể được gán pricing khác nhau cho cùng 1 service
+- Dịch vụ chỉ **khả dụng** cho shop khi: đã được gán + có bảng giá + bảng giá có route tương ứng
 
-### Computed Fields (không có trong JSON, tính khi render)
+### Overweight Fee Formula
+
 ```typescript
-const cod = agency.totalOrders * 35_000       // Super Admin display
-const revenue = cod * 0.028                    // 2.8% doanh thu đại lý
+function calcFee(weight: number, route: PricingRoute): number {
+  const extraWeight = Math.max(0, weight - route.baseWeight)
+  // find applicable overweight rule (rules sorted by fromWeight ascending)
+  const rule = route.overweightRules
+    .filter(r => extraWeight >= r.fromWeight)
+    .at(-1)  // last matching rule = highest tier
+  if (!rule || extraWeight === 0) return route.basePrice
+  const extraSteps = Math.ceil(extraWeight / rule.stepWeight)
+  return route.basePrice + extraSteps * rule.stepPrice
+}
 ```
 
 ## State Management Patterns

@@ -69,12 +69,11 @@ function THead() {
 function TRow({ rec, onView }: { rec: RecSession; onView: () => void }) {
   const [hover, setHover] = useState(false)
   return (
-    <>
-      <div
-        style={{ display: 'flex', alignItems: 'center', background: hover ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
+    <div
+      style={{ display: 'flex', alignItems: 'center', background: hover ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}` }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
         <div style={{ flex: '0 0 90px', minWidth: 90, padding: '6px 8px' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C_LINK }}>{rec.id}</span>
         </div>
@@ -105,9 +104,7 @@ function TRow({ rec, onView }: { rec: RecSession; onView: () => void }) {
             Xem
           </button>
         </div>
-      </div>
-      <div style={{ height: 1, background: C_BORDER }} />
-    </>
+    </div>
   )
 }
 

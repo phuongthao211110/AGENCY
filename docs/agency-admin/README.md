@@ -21,6 +21,7 @@
 | [AGA] Shop - Tạo mới shop: Thông tin cơ bản | [tao-moi-shop-thong-tin-co-ban.md](./shops/tao-moi-shop-thong-tin-co-ban.md) | AGENCY-45 | ✅ |
 | [AGA] Shop - Tạo mới shop: Cấu hình User/Password | [tao-moi-shop-cau-hinh-user-password.md](./shops/tao-moi-shop-cau-hinh-user-password.md) | AGENCY-46 | ✅ |
 | [AGA] Shop: View thông tin chi tiết shop | [view-chi-tiet-shop.md](./shops/view-chi-tiet-shop.md) | — | ✅ |
+| [AGA] Shop - Tạo mới shop: Cấu hình dịch vụ | [tao-moi-shop-cau-hinh-dich-vu.md](./shops/tao-moi-shop-cau-hinh-dich-vu.md) | — | [Draft] |
 
 ## Quản lý đơn hàng
 

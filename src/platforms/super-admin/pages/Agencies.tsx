@@ -46,17 +46,17 @@ type Agency = (typeof agenciesList[0]) & { cod: number; revenue: number }
 function TRow({ agency, onClick }: { agency: Agency; onClick: () => void }) {
   const [hover, setHover] = useState(false)
   return (
-    <>
-      <div
-        style={{
-          display: 'flex', alignItems: 'center', cursor: 'pointer',
-          background: hover ? '#FAFAFA' : '#fff',
-          transition: 'background 0.1s',
-        }}
-        onClick={onClick}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', cursor: 'pointer',
+        background: hover ? '#FAFAFA' : '#fff',
+        transition: 'background 0.1s',
+        borderBottom: `1px solid ${C_BORDER}`,
+      }}
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
         {/* Đại lý */}
         <div style={{ flex: '1 0 0', minWidth: 240, padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{agency.name}</span>
@@ -83,9 +83,7 @@ function TRow({ agency, onClick }: { agency: Agency; onClick: () => void }) {
         <div style={{ flex: '1 0 0', minWidth: 160, padding: '6px 8px', textAlign: 'right' }}>
           <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{fmt(agency.revenue)}</span>
         </div>
-      </div>
-      <div style={{ height: 1, background: C_BORDER }} />
-    </>
+    </div>
   )
 }
 

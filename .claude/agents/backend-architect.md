@@ -1,7 +1,7 @@
 ---
 name: backend-architect
 description: Backend Architect / API Designer agent cho dự án GHN Agency Prototype. Dùng khi thiết kế API endpoints, data models, authentication flows, multi-tenant architecture, hoặc chuẩn bị production backend cho hệ thống GHN Agency. Agent biết schema mock data hiện tại và business logic của hệ thống.
-model: claude-sonnet-4-6
+model: claude-opus-4-7
 ---
 
 # Backend Architect / API Designer — GHN Agency Prototype
@@ -131,20 +131,124 @@ interface Reconciliation {
 }
 ```
 
-### Pricing Rule
+### GHN Shop Connection (Shop ID GHN)
 ```typescript
+interface GHNShopConnection {
+  id: string              // "GHNS001"
+  agencyId: string        // FK → Agency.id
+  ghnShopId: string       // Shop ID trên hệ thống GHN
+  name: string            // Tên hiển thị nội bộ
+  status: 'active' | 'inactive'
+  createdAt: string
+}
+```
+
+### Service (Dịch vụ vận chuyển của Agency)
+```typescript
+interface Service {
+  id: string              // "SVC001"
+  agencyId: string        // FK → Agency.id (multi-tenant isolation)
+  ghnShopConnectionId: string  // FK → GHNShopConnection.id — routing target
+  name: string            // Tên hiển thị cho shop (vd: "Giao hàng nhanh")
+  code: string            // Mã gói GHN: "CHUYENNHANH" | "TIETKIEM" | ...
+  status: 'active' | 'inactive'
+  createdAt: string
+}
+```
+
+### Pricing Table (Bảng giá)
+```typescript
+interface PricingTable {
+  id: string              // "PRC001"
+  agencyId: string        // FK → Agency.id (multi-tenant isolation)
+  name: string            // Tên bảng giá
+  description: string
+  status: 'active' | 'inactive'
+  routes: PricingRoute[]  // Danh sách tuyến được cấu hình
+  createdAt: string
+}
+
+interface PricingRoute {
+  routeType: 'noi-tinh' | 'noi-vung' | 'lien-vung' | 'lien-tinh'
+  baseWeight: number      // gram — khối lượng chuẩn bao gồm trong giá
+  basePrice: number       // VND — giá chuẩn
+  overweightRules: OverweightRule[]
+}
+
+interface OverweightRule {
+  fromWeight: number      // gram — áp dụng từ mức cân này trở lên
+  stepWeight: number      // gram — mỗi bước tính thêm
+  stepPrice: number       // VND — giá mỗi bước
+}
+```
+
+### Shop–Service–Pricing Mapping
+```typescript
+// Gán bảng giá vào dịch vụ theo từng shop
+interface ShopServicePricing {
+  shopId: string          // FK → Shop.id
+  serviceId: string       // FK → Service.id
+  pricingTableId: string  // FK → PricingTable.id — null = dịch vụ không khả dụng
+}
+```
+
+### Geography Master Data (src/mock-data/)
+```typescript
+// geography.json — 63 tỉnh + zone + routeTypes
+interface Province {
+  id: number
+  code: string            // "HAN", "HCM"...
+  name: string
+  type: 'Thành phố' | 'Tỉnh'
+  region: 'Miền Bắc' | 'Miền Trung' | 'Tây Nguyên' | 'Miền Nam'
+  zone: 1 | 2 | 3        // Delivery zone (1=Nam hub, 2=Trung, 3=Bắc+others)
+}
+
+// districts.json — 705 quận/huyện
+interface District {
+  id: number
+  provinceId: number
+  name: string
+  type: 'Quận' | 'Huyện' | 'Thành phố' | 'Thị xã'
+}
+```
+
+### Route Determination Algorithm
+```
+// Routing zone mapping:
+// Miền Bắc = routingZone 1 (Bắc)
+// Miền Trung + Tây Nguyên = routingZone 2 (Trung)
+// Miền Nam = routingZone 3 (Nam)
+
+function determineRouteType(senderProvinceId, receiverProvinceId):
+  if senderProvinceId == receiverProvinceId → 'noi-tinh'
+  
+  senderZone = getRoutingZone(senderProvince.region)
+  receiverZone = getRoutingZone(receiverProvince.region)
+  
+  if senderZone == receiverZone → 'noi-vung'
+  if |senderZone - receiverZone| == 1 → 'lien-vung'   // 1↔2 hoặc 2↔3
+  else → 'lien-tinh'   // 1↔3 = Bắc↔Nam
+
+// Fee calculation:
+total_fee = base_price + ceil((weight - base_weight) / step_weight) * step_price
+```
+
+### Pricing Rule (Legacy — replaced by PricingTable above)
+```typescript
+// Cấu trúc cũ — đã được thay thế bởi PricingTable + PricingRoute + OverweightRule
 interface PricingRule {
   id: string
-  agencyId: string | null  // null = default GHN pricing
-  fromZone: string         // origin zone/province code
-  toZone: string           // destination zone/province code
-  weightMin: number        // grams
-  weightMax: number        // grams
-  baseFee: number          // VND
-  additionalFeePerKg: number  // VND per kg over weightMax
+  agencyId: string | null
+  fromZone: string
+  toZone: string
+  weightMin: number
+  weightMax: number
+  baseFee: number
+  additionalFeePerKg: number
   serviceType: 'standard' | 'express' | 'economy'
   effectiveFrom: string
-  effectiveTo: string | null  // null = still active
+  effectiveTo: string | null
 }
 ```
 

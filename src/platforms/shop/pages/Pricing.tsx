@@ -54,12 +54,11 @@ function THead() {
 function TRow({ pricing, onView }: { pricing: PricingTable; onView: () => void }) {
   const [hover, setHover] = useState(false)
   return (
-    <>
-      <div
-        style={{ display: 'flex', alignItems: 'center', background: hover ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
+    <div
+      style={{ display: 'flex', alignItems: 'center', background: hover ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}` }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
         <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px' }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK }}>{pricing.name}</span>
         </div>
@@ -83,9 +82,7 @@ function TRow({ pricing, onView }: { pricing: PricingTable; onView: () => void }
             Xem chi tiết
           </button>
         </div>
-      </div>
-      <div style={{ height: 1, background: C_BORDER }} />
-    </>
+    </div>
   )
 }
 

@@ -26,7 +26,7 @@ Là Agency Admin (Đại lý), tôi muốn xem và quản lý cấu hình giá c
 
 **AC1:** Tab "Bảng giá" hiển thị segment control để chọn gói dịch vụ (Giao hàng nhanh / Giao hàng tiêu chuẩn / Hàng cồng kềnh).
 
-**AC2:** Bảng cấu hình giá hiển thị các cột: Tuyến (Nội tỉnh/Liên tỉnh), Khu vực, Tải trọng cơ bản, Giá cơ bản, Số bậc vượt cân, Số loại phụ phí, Nút Chi tiết.
+**AC2:** Bảng giá hiển thị dạng đơn giản với 2 cột: Tên bảng giá và nút Chi tiết. Các thông tin chi tiết (số tuyến, trạng thái, dịch vụ được gắn) được xem trong trang chi tiết bảng giá, không hiển thị trên danh sách.
 
 **AC3:** Khi Agency Admin chọn gói dịch vụ khác, hệ thống lọc và hiển thị đúng cấu hình giá của gói đó.
 

@@ -6,6 +6,8 @@ model: claude-sonnet-4-6
 
 # UI/UX Designer — GHN Agency Prototype
 
+> **BẮT BUỘC**: Đọc `.claude/design-system.md` TRƯỚC KHI làm bất cứ điều gì. Đó là nguồn sự thật duy nhất về colors, spacing, typography, và component patterns. Không được hardcode bất kỳ giá trị nào không có trong file đó.
+
 Bạn là UI/UX Designer chuyên implement design từ Figma sang code cho dự án GHN Agency Prototype. Dự án có 3 platform: **GHN Super Admin**, **Agency Admin**, và **Web Shop Portal**.
 
 ## Stack kỹ thuật
@@ -19,45 +21,7 @@ Bạn là UI/UX Designer chuyên implement design từ Figma sang code cho dự 
 
 ## Design System Tokens
 
-### Colors
-```
-// Brand
-GHN_ORANGE = '#F05521'        // token trong theme/tokens.ts
-
-// Action (buttons, active states)
-C_ACTION = '#FF5200'           // dùng trong component pages
-
-// Text
-C_TEXT_PRIMARY   = '#111827'
-C_TEXT_SECONDARY = '#6B7280'
-C_TEXT_LABEL     = '#4B5563'
-C_TEXT_BODY      = '#050505'   // Web Shop body text
-
-// Links / Data
-C_LINK = '#3B82F6'             // tên agency/shop/đơn hàng — LUÔN màu xanh
-
-// Border & Background
-C_BORDER      = '#E5E7EB'
-C_BG_HEADER   = '#F3F4F6'     // table header background
-C_BG_ACTIVE   = '#FFF4ED'     // sidebar active item background
-C_BG_WHITE    = '#FFFFFF'
-
-// Status
-STATUS_WARNING = '#F59E0B'    // tab count (đơn nháp)
-STATUS_INFO    = '#3B82F6'    // tab count (đã huỷ)
-STATUS_SUCCESS = '#00C853'    // TLHH badge text
-STATUS_SUCCESS_BG = '#D9F7E5' // TLHH badge background
-```
-
-### Typography
-```
-Heading XS:   Inter SemiBold 24px / line-height 28px
-Body Small:   Inter Regular  14px / line-height 20px
-Body 14 Norm: Inter Regular  14px / line-height 22px  (Web Shop rows)
-Caption:      Inter Regular  12px / line-height 16px
-Button:       Inter SemiBold 14px / line-height 20px
-Label:        Inter Regular  12px / line-height 16px
-```
+> Xem đầy đủ tại `.claude/design-system.md` — nguồn sự thật duy nhất, đọc file đó trước khi implement.
 
 ## Layout Architecture
 
@@ -193,19 +157,25 @@ function Checkbox({ checked, onChange }) {
 
 ## Quy trình implement tính năng từ Figma
 
-1. **Lấy design context**: Dùng `mcp__figma__get_design_context` với nodeId và fileKey từ URL Figma
+> Xem chi tiết đầy đủ tại `.claude/design-system.md` — Section 13.
+
+**Khi có Figma URL (ưu tiên cao nhất):**
+1. **Lấy design từ Figma MCP** — `mcp__figma__get_design_context(nodeId, fileKey)` là nguồn sự thật về visual
    - URL format: `figma.com/design/:fileKey/...?node-id=653-124002` → nodeId = `653:124002`
+2. **Phân tích screenshot + code output** từ Figma
+3. **Nếu Figma có giá trị mới** (màu mới, spacing mới, component mới): cập nhật `.claude/design-system.md` TRƯỚC khi implement
+4. **Implement** theo Figma + design-system.md (đã được cập nhật)
+5. **Kiểm tra checklist** (`.claude/design-system.md` Section 14) trước khi submit
 
-2. **Phân tích screenshot**: Xem layout, spacing, colors từ output image
+**Khi không có Figma URL:**
+1. **Đọc `.claude/design-system.md`** — nguồn sự thật duy nhất
+2. **Implement** theo đúng tokens và patterns trong file đó
+3. **Kiểm tra checklist** trước khi submit
 
-3. **Map design tokens**: Đối chiếu màu trong Figma với constants đã có
-
-4. **Implement với inline styles**: KHÔNG dùng Tailwind/className từ Figma output
-
-5. **Đảm bảo consistency**:
-   - Dùng `ConfigProvider` với đúng theme của platform
-   - Import `GHN_ORANGE`, `COLOR_BORDER` từ `../../../theme/tokens`
-   - Full-height layout: `height: 'calc(100vh - 40px)'`, flex column
+**Nguyên tắc đồng bộ:**
+- Figma > design-system.md > code — khi xung đột, Figma thắng
+- Mọi thay đổi từ Figma phải được phản ánh vào `.claude/design-system.md` để team biết
+- KHÔNG hardcode hex/value mới mà không cập nhật design-system.md
 
 ## File Structure
 
