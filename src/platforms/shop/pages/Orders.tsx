@@ -3,6 +3,8 @@ import { ConfigProvider } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
 import allOrders from '../../../mock-data/orders.json'
+import allShops from '../../../mock-data/shops.json'
+import allServices from '../../../mock-data/services.json'
 
 // ── Icons (Tabler-style SVG) ─────────────────────────────────
 const IC = '#6B7280' // icon stroke color
@@ -23,6 +25,9 @@ function IcClipboard() {
 }
 function IcChevronDown({ size = 20 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+}
+function IcTruck() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>
 }
 function IcHelp() {
   return (
@@ -78,6 +83,13 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const [partialDeliver, setPartialDeliver]     = useState(false)
   const [collectOnFail, setCollectOnFail]       = useState(true)
   const [collectOnFailAmt, setCollectOnFailAmt] = useState(0)
+
+  const currentShop = allShops.find(s => s.id === 'SHP001')!
+  const shopServices = ((currentShop as any).configuredServices ?? []).map((cs: { serviceId: string; demoFee: number }) => ({
+    ...cs,
+    service: allServices.find(sv => sv.id === cs.serviceId),
+  })).filter((cs: any) => cs.service)
+  const [selectedServiceId, setSelectedServiceId] = useState<string>(shopServices[0]?.serviceId ?? '')
 
   const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
   const now = new Date()
@@ -494,40 +506,74 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               </div>
             </div>
 
-            {/* ── Phí ship / Action card ── */}
-            <div style={{ ...card, flexShrink: 0, gap: 8, padding: 8 }}>
-              {/* Inner gray box */}
-              <div style={{ background: '#F9FAFB', borderRadius: 6, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {/* Phí ship row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Phí ship</span>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3, cursor: 'pointer' }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', textAlign: 'right' }}>Shop trả 10,000đ</span>
-                    <IcChevronDown size={18} />
-                  </div>
-                </div>
-                {/* Tổng thu row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Tổng thu khách hàng</span>
-                    <IcHelp />
-                  </div>
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#EF4444', lineHeight: '20px', textAlign: 'right' }}>10,000đ</span>
+            {/* ── Dịch vụ card ── */}
+            <div style={{ ...card, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+                <IcTruck />
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Dịch vụ</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', flexShrink: 0 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Shop trả phí ship</span>
+                  <IcChevronDown size={18} />
                 </div>
               </div>
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                {shopServices.map((cs: any) => {
+                  const selected = selectedServiceId === cs.serviceId
+                  return (
+                    <div
+                      key={cs.serviceId}
+                      onClick={() => setSelectedServiceId(cs.serviceId)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
+                        border: `1px solid ${selected ? '#111827' : C_BORDER}`,
+                      }}
+                    >
+                      <div style={{
+                        width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                        border: `2px solid ${selected ? '#111827' : C_BORDER}`,
+                        background: selected ? '#111827' : '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {selected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px' }}>Dịch vụ</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{cs.service.name}</span>
+                      </div>
+                      <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px', flexShrink: 0 }}>Phí ship:</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                        {cs.demoFee.toLocaleString('vi-VN')}đ
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
 
-              {/* Action buttons */}
+            {/* ── Action card ── */}
+            <div style={{ ...card, flexShrink: 0, gap: 8, padding: 8 }}>
+              <div style={{ background: '#F9FAFB', borderRadius: 6, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Tổng thu khách hàng</span>
+                  <IcHelp />
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#EF4444', lineHeight: '20px', textAlign: 'right' }}>
+                    {(cod || 0).toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                >
+                  Lưu nháp
+                </button>
                 <button
                   onClick={onClose}
                   style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
                 >
                   Tạo đơn
-                </button>
-                <button
-                  style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
-                >
-                  Lưu nháp
                 </button>
               </div>
             </div>
