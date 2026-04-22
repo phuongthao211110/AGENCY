@@ -10,6 +10,7 @@ import {
   TruckOutlined,
   FileTextOutlined,
   OrderedListOutlined,
+  AuditOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
@@ -18,9 +19,10 @@ import PlatformSwitcher from '../../../components/PlatformSwitcher'
 const SIDEBAR_WIDTH = 240
 
 const NAV_ITEMS = [
-  { key: '/agency-admin/orders', icon: <OrderedListOutlined />, label: 'Đơn hàng' },
   { key: '/agency-admin/shops', icon: <ShopOutlined />, label: 'Shop' },
+  { key: '/agency-admin/orders', icon: <OrderedListOutlined />, label: 'Đơn hàng' },
   { key: '/agency-admin/carrier-setup', icon: <TruckOutlined />, label: 'Thiết lập NVC' },
+  { key: '/agency-admin/reconciliation', icon: <AuditOutlined />, label: 'Đối soát NVC' },
 ]
 
 

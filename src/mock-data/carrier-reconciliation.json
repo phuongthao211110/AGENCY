@@ -1,0 +1,72 @@
+[
+  {
+    "id": "NVC001",
+    "agencyId": "AGN001",
+    "carrier": "GHN",
+    "paymentDate": "2024-03-15",
+    "totalOrders": 45,
+    "totalCOD": 15750000,
+    "totalFee": 900000,
+    "totalMismatch": 3,
+    "status": "confirmed",
+    "fileName": "ghn-export-20240315.xlsx",
+    "note": "Kỳ 1-15/3/2024",
+    "createdAt": "2024-03-15T08:00:00"
+  },
+  {
+    "id": "NVC002",
+    "agencyId": "AGN001",
+    "carrier": "GHN",
+    "paymentDate": "2024-03-31",
+    "totalOrders": 62,
+    "totalCOD": 21700000,
+    "totalFee": 1240000,
+    "totalMismatch": 0,
+    "status": "confirmed",
+    "fileName": "ghn-export-20240331.xlsx",
+    "note": "Kỳ 16-31/3/2024",
+    "createdAt": "2024-03-31T09:30:00"
+  },
+  {
+    "id": "NVC003",
+    "agencyId": "AGN001",
+    "carrier": "GHN",
+    "paymentDate": "2024-04-15",
+    "totalOrders": 38,
+    "totalCOD": 13300000,
+    "totalFee": 760000,
+    "totalMismatch": 1,
+    "status": "pending",
+    "fileName": "ghn-export-20240415.xlsx",
+    "note": "Kỳ 1-15/4/2024",
+    "createdAt": "2024-04-15T08:15:00"
+  },
+  {
+    "id": "NVC004",
+    "agencyId": "AGN001",
+    "carrier": "GHN",
+    "paymentDate": "2024-04-30",
+    "totalOrders": 29,
+    "totalCOD": 10150000,
+    "totalFee": 580000,
+    "totalMismatch": 5,
+    "status": "pending",
+    "fileName": "ghn-export-20240430.xlsx",
+    "note": "",
+    "createdAt": "2024-04-30T10:00:00"
+  },
+  {
+    "id": "NVC005",
+    "agencyId": "AGN002",
+    "carrier": "GHN",
+    "paymentDate": "2024-03-15",
+    "totalOrders": 20,
+    "totalCOD": 7000000,
+    "totalFee": 400000,
+    "totalMismatch": 0,
+    "status": "confirmed",
+    "fileName": "ghn-export-agn002-20240315.xlsx",
+    "note": "Kỳ 1-15/3/2024",
+    "createdAt": "2024-03-15T11:00:00"
+  }
+]
