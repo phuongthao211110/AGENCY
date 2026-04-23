@@ -8,7 +8,7 @@
     "maxWeight": "20 kg",
     "deliveryZones": "Toàn quốc",
     "enabled": true,
-    "ghnShopId": "5148899",
+    "ghnShopIds": ["5148899", "5148900"],
     "priceTableId": "PRC001"
   },
   {
@@ -20,7 +20,7 @@
     "maxWeight": "30 kg",
     "deliveryZones": "Toàn quốc",
     "enabled": true,
-    "ghnShopId": "5148900",
+    "ghnShopIds": ["5148901"],
     "priceTableId": "PRC002"
   },
   {
@@ -32,7 +32,7 @@
     "maxWeight": "50 kg",
     "deliveryZones": "HCM, HN",
     "enabled": false,
-    "ghnShopId": "5148901",
+    "ghnShopIds": ["5148901", "5148902", "5148903"],
     "priceTableId": null
   }
 ]

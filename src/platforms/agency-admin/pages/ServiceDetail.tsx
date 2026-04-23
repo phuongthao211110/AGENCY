@@ -235,7 +235,8 @@ export default function ServiceDetail() {
     ? { code: (locState as any).code ?? '', name: (locState as any).name ?? '', desc: (locState as any).desc ?? '', shopConnections: locState.shopConnections ?? [{ shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }], priceTableId: null }
     : (() => {
         const s = id ? allServices.find((svc) => svc.id === id) : undefined
-        const defaultConn: ShopConnection[] = s?.ghnShopId ? [{ shopId: s.ghnShopId, selectedGoiCuoc: [] }] : [{ shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }]
+        const ids = (s as any)?.ghnShopIds as string[] | undefined
+        const defaultConn: ShopConnection[] = ids?.length ? ids.map(id => ({ shopId: id, selectedGoiCuoc: [] })) : [{ shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }]
         return { code: s?.code ?? id ?? '', name: s?.name ?? id ?? '', desc: s?.desc ?? '', shopConnections: defaultConn, priceTableId: s?.priceTableId ?? null }
       })()
 

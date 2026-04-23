@@ -302,13 +302,6 @@ function Toggle({ enabled }: { enabled: boolean }) {
   )
 }
 
-function NvcCodeBadge({ code }: { code: string }) {
-  return (
-    <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4, background: '#F3F4F6', color: C_TEXT_PRIMARY, fontSize: 12, fontFamily: 'monospace', fontWeight: 500, letterSpacing: 0.3 }}>
-      {code}
-    </span>
-  )
-}
 
 // ─── Create Service Modal ─────────────────────────────────────────────────────
 type ShopConnection = { shopId: string; selectedGoiCuoc: string[] }
@@ -475,12 +468,17 @@ function CreateServiceModal({ onClose, onCreated }: { onClose: () => void; onCre
 function TabServices() {
   const navigate = useNavigate()
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [hovered, setHovered] = useState<string | null>(null)
+  const [hovered, setHovered]     = useState<string | null>(null)
+  const [shopHover, setShopHover] = useState<string | null>(null)
+  const [search, setSearch]       = useState('')
+
+  const filtered = allServices.filter(
+    (s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.code.toLowerCase().includes(search.toLowerCase())
+  )
 
   const cols = [
     { label: 'Gói dịch vụ', flex: '2 0 0',    minWidth: 200 },
-    { label: 'Mã NVC',      flex: '1.2 0 0',  minWidth: 150 },
-    { label: 'Shop ID GHN', flex: '2 0 0',    minWidth: 180 },
+    { label: 'Shop ID GHN', flex: '2 0 0',    minWidth: 200 },
     { label: 'Kích hoạt',   flex: '0 0 90px', minWidth: 90  },
   ]
 
@@ -497,12 +495,22 @@ function TabServices() {
       )}
 
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '8px 16px', flexShrink: 0 }}>
-        <button onClick={() => setShowCreateModal(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
-          <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo mới dịch vụ</span>
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
+          Danh sách dịch vụ ({filtered.length})
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6 }}>
+            <SearchOutlined style={{ color: C_TEXT_SECONDARY, fontSize: 16, flexShrink: 0 }} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm kiếm"
+              style={{ border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', width: 200 }} />
+          </div>
+          <button onClick={() => setShowCreateModal(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
+            <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo mới dịch vụ</span>
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -516,37 +524,62 @@ function TabServices() {
         </div>
         <div style={{ height: 1, background: C_BORDER }} />
 
-        {allServices.map((s) => {
-          const ghnShop = GHN_SHOPS.find((sh) => sh.shopId === s.ghnShopId)
+        {filtered.length === 0 ? (
+          <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
+        ) : filtered.map((s) => {
+          const shopIds: string[] = (s as any).ghnShopIds ?? []
+          const shops = shopIds.map(id => GHN_SHOPS.find(sh => sh.shopId === id)).filter(Boolean) as typeof GHN_SHOPS
           return (
             <React.Fragment key={s.id}>
               <div
                 onClick={() => navigate(`/agency-admin/carrier-setup/services/${s.id}`)}
-                style={{ display: 'flex', alignItems: 'center', background: hovered === s.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', background: hovered === s.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', cursor: 'pointer', borderBottom: `1px solid ${C_BORDER}` }}
                 onMouseEnter={() => setHovered(s.id)}
                 onMouseLeave={() => setHovered(null)}
               >
                 <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
                 </div>
-                <div style={{ flex: '1.2 0 0', minWidth: 150, padding: '6px 8px' }}>
-                  <NvcCodeBadge code={s.code} />
-                </div>
-                <div style={{ flex: '2 0 0', minWidth: 180, padding: '6px 8px' }}>
-                  {ghnShop ? (
+
+                {/* Shop ID GHN cell */}
+                <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px', position: 'relative' }}
+                  onMouseEnter={(e) => { e.stopPropagation(); setShopHover(s.id) }}
+                  onMouseLeave={(e) => { e.stopPropagation(); setShopHover(null) }}
+                >
+                  {shops.length === 0 ? (
+                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>—</span>
+                  ) : shops.length === 1 ? (
                     <div>
-                      <div style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{ghnShop.name}</div>
-                      <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{s.ghnShopId}</div>
+                      <div style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{shops[0].name}</div>
+                      <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{shops[0].shopId}</div>
                     </div>
                   ) : (
-                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{s.ghnShopId}</span>
+                    <>
+                      <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, cursor: 'default' }}>
+                        {shops.length} Shop ID GHN
+                      </span>
+                      {shopHover === s.id && (
+                        <div style={{
+                          position: 'absolute', top: '100%', left: 0, zIndex: 100,
+                          background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 8,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.12)', padding: '6px 0', minWidth: 220,
+                        }}>
+                          {shops.map((sh) => (
+                            <div key={sh.shopId} style={{ padding: '6px 14px' }}>
+                              <div style={{ fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{sh.name}</div>
+                              <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{sh.shopId}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
+
                 <div style={{ flex: '0 0 90px', minWidth: 90, padding: '6px 8px' }}>
                   <Toggle enabled={s.enabled} />
                 </div>
               </div>
-              <div style={{ height: 1, background: C_BORDER }} />
             </React.Fragment>
           )
         })}
@@ -555,10 +588,15 @@ function TabServices() {
   )
 }
 
-// ─── Tab: Bảng giá ────────────────────────────────────────────────────────────
+// ─── Tab: Bảng giá ───────────────────────────────────────────────────────────
 function TabPricing() {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState<string | null>(null)
+  const [search, setSearch]   = useState('')
+
+  const filtered = allPriceTables.filter(
+    (pt) => pt.name.toLowerCase().includes(search.toLowerCase()) || (pt.description ?? '').toLowerCase().includes(search.toLowerCase())
+  )
 
   const cols = [
     { label: 'Tên bảng giá', flex: '2 0 0', minWidth: 200 },
@@ -569,13 +607,23 @@ function TabPricing() {
   return (
     <>
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '8px 16px', flexShrink: 0 }}>
-        <button
-          onClick={() => navigate('/agency-admin/carrier-setup/pricing/create')}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-          <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo bảng giá</span>
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
+          Danh sách bảng giá ({filtered.length})
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6 }}>
+            <SearchOutlined style={{ color: C_TEXT_SECONDARY, fontSize: 16, flexShrink: 0 }} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm kiếm"
+              style={{ border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', width: 200 }} />
+          </div>
+          <button
+            onClick={() => navigate('/agency-admin/carrier-setup/pricing/create')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
+            <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo bảng giá</span>
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -589,10 +637,12 @@ function TabPricing() {
         </div>
         <div style={{ height: 1, background: C_BORDER }} />
 
-        {allPriceTables.map((pt: any) => (
+        {filtered.length === 0 ? (
+          <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
+        ) : filtered.map((pt: any) => (
           <React.Fragment key={pt.id}>
             <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
+              style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}` }}
               onMouseEnter={() => setHovered(pt.id)}
               onMouseLeave={() => setHovered(null)}
             >
@@ -610,7 +660,6 @@ function TabPricing() {
                 </span>
               </div>
             </div>
-            <div style={{ height: 1, background: C_BORDER }} />
           </React.Fragment>
         ))}
       </div>
