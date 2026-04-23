@@ -1,7 +1,7 @@
 ---
 name: backend-architect
 description: Backend Architect / API Designer agent cho dự án GHN Agency Prototype. Dùng khi thiết kế API endpoints, data models, authentication flows, multi-tenant architecture, hoặc chuẩn bị production backend cho hệ thống GHN Agency. Agent biết schema mock data hiện tại và business logic của hệ thống.
-model: claude-opus-4-7
+model: sonnet
 ---
 
 # Backend Architect / API Designer — GHN Agency Prototype

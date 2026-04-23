@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import {
   FileTextOutlined,
@@ -96,14 +96,46 @@ function TCell({ children, width, flex = '0 0 auto', align = 'left', isHeader = 
   )
 }
 
+// ─── Checkbox ─────────────────────────────────────────────────────────────────
+function Checkbox({ checked, disabled, onChange }: {
+  checked: boolean; disabled?: boolean; onChange?: () => void
+}) {
+  return (
+    <div
+      onClick={() => !disabled && onChange?.()}
+      style={{
+        width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        border: checked ? 'none' : `1.5px solid ${disabled ? '#D1D5DB' : C_BORDER}`,
+        background: checked ? C_ACTION : disabled ? '#F9FAFB' : '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      {checked && (
+        <svg width="10" height="8" viewBox="0 0 12 9" fill="none">
+          <path d="M1 4L4.5 7.5L11 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+    </div>
+  )
+}
+
 // ─── Tab: Phiên nhà vận chuyển ────────────────────────────────────────────────
 function TabCarrier() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const navState = location.state as { deletedId?: string; confirmedId?: string } | null
+
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed'>('all')
-  const [sessions, setSessions] = useState<CarrierSession[]>(
-    carrierSessions.filter((s) => s.agencyId === 'AGN001') as CarrierSession[]
-  )
+  const [sessions, setSessions] = useState<CarrierSession[]>(() => {
+    let s = (carrierSessions as CarrierSession[]).filter(s => s.agencyId === 'AGN001')
+    if (navState?.deletedId)  s = s.filter(x => x.id !== navState.deletedId)
+    if (navState?.confirmedId) s = s.map(x => x.id === navState.confirmedId ? { ...x, status: 'confirmed' as const } : x)
+    return s
+  })
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const total = sessions.length
   const confirmed = sessions.filter((s) => s.status === 'confirmed').length
@@ -112,6 +144,31 @@ function TabCarrier() {
   const filteredSessions = sessions.filter((s) =>
     filterStatus === 'all' ? true : s.status === filterStatus
   )
+
+  const pendingIds = filteredSessions.filter(s => s.status === 'pending').map(s => s.id)
+  const allPendingSelected = pendingIds.length > 0 && pendingIds.every(id => selectedIds.has(id))
+
+  const toggleSelectAll = () => {
+    if (allPendingSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(pendingIds))
+    }
+  }
+
+  const toggleOne = (id: string) => {
+    const next = new Set(selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedIds(next)
+  }
+
+  const handleConfirm = () => {
+    setSessions(prev => prev.map(s =>
+      selectedIds.has(s.id) ? { ...s, status: 'confirmed' as const } : s
+    ))
+    setSelectedIds(new Set())
+  }
 
   const cardStyle: React.CSSProperties = {
     flex: 1, padding: '14px 16px', border: `1px solid ${C_BORDER}`,
@@ -173,10 +230,36 @@ function TabCarrier() {
         </select>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 12px', marginBottom: 8,
+          background: '#FFF4ED', borderRadius: 8,
+          border: '1px solid #FDBA74',
+        }}>
+          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>
+            Đã chọn <strong>{selectedIds.size}</strong> phiên
+          </span>
+          <button
+            onClick={handleConfirm}
+            style={{
+              padding: '6px 16px', background: C_ACTION, border: 'none',
+              borderRadius: 6, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Xác nhận phiên đã chọn
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div style={{ minWidth: 900 }}>
         {/* Header */}
         <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
+          <div style={{ width: 40, flexShrink: 0, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Checkbox checked={allPendingSelected} onChange={toggleSelectAll} />
+          </div>
           <TCell width={120} isHeader>Mã phiên</TCell>
           <TCell width={120} isHeader>Ngày TT GHN</TCell>
           <TCell flex='1 0 0' isHeader>Tên file</TCell>
@@ -196,7 +279,13 @@ function TabCarrier() {
         )}
 
         {filteredSessions.map((s) => (
-          <SessionRow key={s.id} session={s} onNavigate={() => navigate(`/agency-admin/reconciliation/${s.id}`)} />
+          <SessionRow
+            key={s.id}
+            session={s}
+            onNavigate={() => navigate(`/agency-admin/reconciliation/${s.id}`)}
+            selected={selectedIds.has(s.id)}
+            onToggle={() => toggleOne(s.id)}
+          />
         ))}
       </div>
 
@@ -227,20 +316,35 @@ function TabCarrier() {
   )
 }
 
-function SessionRow({ session: s, onNavigate }: { session: CarrierSession; onNavigate: () => void }) {
+function SessionRow({ session: s, onNavigate, selected, onToggle }: {
+  session: CarrierSession
+  onNavigate: () => void
+  selected: boolean
+  onToggle: () => void
+}) {
   const [hover, setHover] = useState(false)
   return (
     <div
       onClick={onNavigate}
       style={{
         display: 'flex', alignItems: 'center', cursor: 'pointer',
-        background: hover ? '#FAFAFA' : '#fff',
+        background: selected ? '#FFF4ED' : hover ? '#FAFAFA' : '#fff',
         borderBottom: `1px solid ${C_BORDER}`,
         transition: 'background 0.1s',
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
+      <div
+        style={{ width: 40, flexShrink: 0, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Checkbox
+          checked={selected}
+          disabled={s.status !== 'pending'}
+          onChange={onToggle}
+        />
+      </div>
       <TCell width={120}>
         <span style={{ color: C_LINK, fontWeight: 600 }}>{s.id}</span>
       </TCell>

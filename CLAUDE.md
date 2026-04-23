@@ -37,7 +37,7 @@ Khi nhận yêu cầu mới, **luôn bắt đầu bằng `/project-lead`** để
 | Users Story | story-writer | Sonnet 4.6 |
 | BA / Product | product-manager | Sonnet 4.6 |
 | R&D / Analysis | data-analyst | Sonnet 4.6 |
-| Tech Spec / API | backend-architect | **Opus 4.7** |
+| Tech Spec / API | backend-architect | Sonnet 4.6 |
 | Design UI/UX | ui-designer | Sonnet 4.6 |
 | Coding | frontend-dev | **Opus 4.7** |
 | Read-only (scan) | codebase-reader, qa-tester, agency-logistics-domain, platform-integrator | **Haiku 4.5** |
