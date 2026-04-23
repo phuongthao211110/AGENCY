@@ -143,14 +143,35 @@ interface GHNShopConnection {
 }
 ```
 
+### Gói Cước GHN (Rate Package per GHN Shop ID)
+```typescript
+// GHN cấp cho mỗi GHN Shop ID 1-2 gói cước:
+// TMĐT = Thương mại điện tử, CPTT = Chi phí thực tế
+interface GoiCuoc {
+  loai: 'TMĐT' | 'CPTT'
+  id: string              // vd: "GHN-TM-123456"
+  ten: string             // vd: "Gói TMĐT"
+}
+```
+
+### Service Shop Connection (1 Service → N GHN Shop IDs)
+```typescript
+interface ServiceShopConnection {
+  shopId: string          // GHN Shop ID (ghnShopId string)
+  selectedGoiCuoc: string[]  // IDs of selected gói cước (1-2 per shop)
+}
+```
+
 ### Service (Dịch vụ vận chuyển của Agency)
 ```typescript
 interface Service {
   id: string              // "SVC001"
   agencyId: string        // FK → Agency.id (multi-tenant isolation)
-  ghnShopConnectionId: string  // FK → GHNShopConnection.id — routing target
+  // 1 service kết nối với NHIỀU GHN Shop IDs, mỗi shop có 1-2 gói cước
+  shopConnections: ServiceShopConnection[]
   name: string            // Tên hiển thị cho shop (vd: "Giao hàng nhanh")
   code: string            // Mã gói GHN: "CHUYENNHANH" | "TIETKIEM" | ...
+  priceTableId: string | null  // FK → PricingTable.id
   status: 'active' | 'inactive'
   createdAt: string
 }
@@ -317,10 +338,25 @@ GET    /api/shop/reconciliation/:id
 
 ```
 GET    /api/agency-admin/pricing
+POST   /api/agency-admin/pricing             Create new pricing table
 PUT    /api/agency-admin/pricing/:id
 POST   /api/agency-admin/pricing/calculate   { weight, fromZone, toZone }
 
 GET    /api/shop/pricing                     Pricing rules for this shop's agency
+
+// Best-price selection: tìm GHN Shop ID + Gói cước rẻ nhất cho 1 đơn
+POST   /api/shop/services/best-price
+  Body: { serviceId, weight, fromProvinceId, toProvinceId }
+  Response: {
+    serviceId: string,
+    routeType: 'noi-tinh' | 'noi-vung' | 'lien-vung' | 'lien-tinh',
+    bestFee: number,
+    selectedGhnShopId: string,
+    selectedGoiCuocId: string,
+  }
+  // Logic: với mỗi (ghnShopId, goiCuocId) trong service.shopConnections,
+  // tính phí theo bảng giá, chọn combination rẻ nhất.
+  // Kết quả này được dùng khi tạo đơn (POST /api/shop/orders).
 ```
 
 ## Business Logic

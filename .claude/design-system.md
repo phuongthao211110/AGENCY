@@ -255,6 +255,23 @@ Nội dung (trái → phải):
 
 ## 7. Component Patterns
 
+### 7.0 Import tokens — BẮT BUỘC
+
+**KHÔNG được define local const cho design tokens.** Luôn import từ `src/theme/tokens.ts`:
+
+```tsx
+import {
+  C_ACTION, C_LINK,
+  C_TEXT_PRIMARY, C_TEXT_SECONDARY, C_TEXT_LABEL,
+  C_BORDER, C_BG_HEADER, C_BG_ACTIVE, C_BG_WHITE,
+  STATUS_SUCCESS, STATUS_SUCCESS_BG, STATUS_WARNING,
+} from '../../../theme/tokens'
+```
+
+Mọi hex value như `'#3B82F6'`, `'#FF5200'`, `'#E5E7EB'`, `'#F3F4F6'` **phải được thay bằng token** tương ứng. Không được viết `const C_LINK = '#3B82F6'` trong file page.
+
+---
+
 ### 7.1 Custom Table
 
 **KHÔNG BAO GIỜ dùng `<Table>` của Ant Design.** Mọi list page phải dùng custom flex table.
@@ -815,9 +832,11 @@ Figma là nguồn sự thật về visual. File này là nguồn sự thật khi
 - [ ] Inline styles only (không có className với CSS)
 - [ ] Không dùng Ant Design `<Table>`
 - [ ] Sidebar = 240px, header = 40px (nếu có layout)
-- [ ] Entity names = `#3B82F6` + `fontWeight: 700`
-- [ ] Action buttons = `#FF5200`
-- [ ] Page content background = `#fff`
-- [ ] Table header background = `#F3F4F6`
+- [ ] Entity names = `C_LINK` (`#3B82F6`) + `fontWeight: 700` — **không phải 600**
+- [ ] Action buttons = `C_ACTION` (`#FF5200`)
+- [ ] Page content background = `C_BG_WHITE` (`#fff`)
+- [ ] Table header background = `C_BG_HEADER` (`#F3F4F6`)
 - [ ] Wrap với `<ConfigProvider theme={platformTheme}>`
-- [ ] Import tokens từ `../../../theme/tokens` thay vì hardcode hex
+- [ ] **KHÔNG có `const C_*` local** — tất cả tokens được import từ `../../../theme/tokens`
+- [ ] **KHÔNG hardcode hex value** như `'#3B82F6'`, `'#FF5200'`, `'#E5E7EB'` — dùng token name
+- [ ] Hover row = `C_BG_WHITE` → `'#FAFAFA'` (không phải `#f5f5f5`)

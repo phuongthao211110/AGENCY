@@ -116,31 +116,44 @@ Trong đó:
 ### Tách biệt Service vs Pricing — Design Decision quan trọng
 
 ```
-Service  = routing   → đẩy đơn qua GHN Shop ID nào
+Service  = routing   → đẩy đơn qua GHN Shop ID nào (có thể nhiều)
 Pricing  = tiền      → agency kiểm soát giá, ăn chênh lệch khi gom đơn
 ```
 
+- **1 Service** có thể kết nối **nhiều GHN Shop ID** (1:N — thay đổi từ 1:1)
+- **Mỗi GHN Shop ID** có **1-2 gói cước** (do GHN cấp: TMĐT và/hoặc CPTT)
 - **1 Service** có thể dùng **nhiều Pricing** (mỗi shop có thể deal giá khác nhau)
 - **1 Pricing** có thể gán cho **nhiều Shop**
 - Pricing attach ở **level Shop** — KHÔNG attach global vào Service
 
-### Cấu trúc phân cấp đầy đủ
+### Cấu trúc phân cấp đầy đủ (cập nhật)
 
 ```
 AGENCY
- ├── Shop GHN (1→N)       — tài khoản GHN thật, nơi đẩy đơn
- ├── Service (1→N)        — mỗi service gắn 1 Shop GHN
- ├── Pricing Table (1→N)  — bảng giá theo tuyến + vượt cân
+ ├── GHN Shop ID (1→N)        — tài khoản GHN thật, nơi đẩy đơn
+ │     └── Gói cước (1-2)     — TMĐT và/hoặc CPTT, do GHN cấp cho shop ID đó
+ ├── Service (1→N)             — gói dịch vụ của đại lý, kết nối NHIỀU GHN Shop ID
+ │     └── ShopConnection[]   — mỗi connection: { ghnShopId, selectedGoiCuoc[] }
+ ├── Pricing Table (1→N)       — bảng giá theo tuyến + vượt cân
  └── Shop (internal, 1→N)
        └── Service + Pricing mapping  ← gán tại đây
 ```
 
-### Service (Dịch vụ vận chuyển)
+### Service (Dịch vụ vận chuyển) — ĐÃ CẬP NHẬT
 
-- Gắn với **1 Shop GHN** — xác định đơn đẩy qua tài khoản GHN nào
+- Kết nối với **nhiều GHN Shop ID** (ghnShopIds: string[])
+- Mỗi kết nối có thể chọn 1-2 gói cước GHN (selectedGoiCuoc: string[])
+- **Loại gói cước GHN:** TMĐT (thương mại điện tử) và CPTT (chi phí thực tế)
 - Có: Tên dịch vụ (hiển thị cho shop), Mã gói (`CHUYENNHANH`, `TIETKIEM`…)
-- Khi shop tạo đơn chọn dịch vụ → hệ thống biết đẩy qua Shop GHN nào
 - **Nếu dịch vụ KHÔNG có bảng giá được gán → Shop KHÔNG được dùng dịch vụ đó**
+
+### Gói cước GHN (GoiCuoc)
+
+- Do **GHN cấp** cho từng GHN Shop ID của đại lý
+- Mỗi GHN Shop ID có tối đa **2 gói cước**: TMĐT và CPTT
+- **TMĐT** (Thương mại điện tử): Gói cam kết số lượng đơn, giá theo sản lượng
+- **CPTT** (Chi phí thực tế): Gói tính phí theo thực tế vận chuyển
+- Đại lý **không tự tạo** gói cước — chỉ chọn gói cước GHN đã cấp khi tạo dịch vụ
 
 ### Pricing Table (Bảng giá)
 
@@ -202,7 +215,7 @@ total_fee    = 21.000 + 5.000 = 26.000đ
 
 ---
 
-## Flow tạo đơn của Shop (Address → Route → Service → Pricing)
+## Flow tạo đơn của Shop (Address → Route → Service → Multi-Shop Best-Price → Pricing)
 
 ```
 B1: Shop nhập địa chỉ gửi + nhận
@@ -211,8 +224,15 @@ B3: Lọc dịch vụ hợp lệ:
     - Service phải thuộc shop (được agency gán)
     - Service phải có bảng giá được gán cho shop
     - Bảng giá phải CÓ cấu hình route tương ứng với tuyến vừa xác định
-B4: Hiển thị danh sách dịch vụ + giá tương ứng
-B5: Shop chọn dịch vụ → tính phí → tạo đơn → đẩy qua GHN
+B4: Với mỗi dịch vụ hợp lệ — tìm combination rẻ nhất:
+    - Service có 1+ shopConnections (mỗi connection = 1 GHN Shop ID + danh sách gói cước đã chọn)
+    - Với mỗi (ghnShopId, goiCuocId) trong service:
+        → Tính phí theo bảng giá của dịch vụ cho tuyến hiện tại
+    - Chọn (ghnShopId, goiCuocId) có phí thấp nhất
+    - Đây là "giá hiển thị" của dịch vụ đó cho shop
+B5: Hiển thị danh sách dịch vụ + giá thấp nhất tương ứng
+B6: Shop chọn dịch vụ → hệ thống dùng ghnShopId + goiCuoc rẻ nhất đã tính ở B4
+    → Tạo đơn → đẩy đơn qua GHN với đúng ghnShopId + goiCuocId
 ```
 
 ### Validation dịch vụ
@@ -221,6 +241,30 @@ Một dịch vụ được coi là **khả dụng** khi:
 1. Service thuộc `shop_services` (đã được agency gán cho shop)
 2. Service được gắn bảng giá
 3. `pricing.routes` chứa `current_route` (bảng giá có cấu hình cho tuyến của đơn)
+4. Service có ít nhất 1 `shopConnection` với ít nhất 1 gói cước được chọn
+
+### Best-Price Selection Algorithm
+
+```
+function getBestPriceForService(service, routeType, weight):
+  bestPrice = Infinity
+  bestConnection = null
+
+  for each connection in service.shopConnections:
+    for each goiCuocId in connection.selectedGoiCuoc:
+      fee = calcFee(weight, service.pricingTable.routes[routeType])
+      // Ghi chú: trong prototype, tất cả goiCuoc của 1 service dùng chung 1 bảng giá.
+      // Production: mỗi goiCuoc có thể có bảng giá riêng → cần query per goiCuoc
+      if fee < bestPrice:
+        bestPrice = fee
+        bestConnection = { ghnShopId: connection.shopId, goiCuocId }
+
+  return { price: bestPrice, ghnShopId: bestConnection.ghnShopId, goiCuocId: bestConnection.goiCuocId }
+```
+
+**Lưu ý quan trọng:**
+- Prototype hiện tại: 1 service có 1 bảng giá duy nhất → tất cả Shop ID + gói cước cho cùng route đều trả về cùng phí → best-price selection không ảnh hưởng giá hiển thị, nhưng vẫn phải chọn đúng combination để đẩy đơn
+- Production: mỗi GHN Shop ID có thể có cấu trúc phí riêng từ GHN → cần tính phí thực từ GHN API cho từng combination
 
 ---
 

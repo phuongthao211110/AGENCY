@@ -259,7 +259,6 @@ export default function ShopCreate() {
           <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
             <div style={{ display: 'flex', background: '#F3F4F6', padding: '6px 12px' }}>
               <div style={{ flex: '2 0 0', minWidth: 160, fontSize: 13, color: C_TEXT_SECONDARY }}>Dịch vụ</div>
-              <div style={{ flex: '1.2 0 0', minWidth: 120, fontSize: 13, color: C_TEXT_SECONDARY }}>Mã NVC</div>
               <div style={{ flex: '2 0 0', minWidth: 200, fontSize: 13, color: C_TEXT_SECONDARY }}>Bảng giá áp dụng</div>
             </div>
             <div style={{ height: 1, background: C_BORDER }} />
@@ -273,13 +272,6 @@ export default function ShopCreate() {
                     <div style={{ flex: '2 0 0', minWidth: 160 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{svc.name}</div>
                       <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{svc.desc}</div>
-                    </div>
-
-                    {/* Mã NVC */}
-                    <div style={{ flex: '1.2 0 0', minWidth: 120 }}>
-                      <span style={{ fontSize: 12, fontFamily: 'monospace', background: '#F3F4F6', padding: '2px 7px', borderRadius: 4, color: C_TEXT_PRIMARY }}>
-                        {svc.code}
-                      </span>
                     </div>
 
                     {/* Bảng giá selector */}

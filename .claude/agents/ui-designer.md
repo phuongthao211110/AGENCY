@@ -23,6 +23,20 @@ Bạn là UI/UX Designer chuyên implement design từ Figma sang code cho dự 
 
 > Xem đầy đủ tại `.claude/design-system.md` — nguồn sự thật duy nhất, đọc file đó trước khi implement.
 
+**BẮT BUỘC — Import tokens, KHÔNG define local:**
+
+```tsx
+import {
+  C_ACTION, C_LINK,
+  C_TEXT_PRIMARY, C_TEXT_SECONDARY, C_TEXT_LABEL,
+  C_BORDER, C_BG_HEADER, C_BG_ACTIVE, C_BG_WHITE,
+  STATUS_SUCCESS, STATUS_SUCCESS_BG, STATUS_WARNING,
+  SIDER_WIDTH, HEADER_HEIGHT,
+} from '../../../theme/tokens'
+```
+
+**KHÔNG được viết** `const C_LINK = '#3B82F6'` hay bất kỳ local token const nào trong file page. Mọi hex value đều phải dùng qua token name.
+
 ## Layout Architecture
 
 ### Shared Layout Pattern (3 platforms)

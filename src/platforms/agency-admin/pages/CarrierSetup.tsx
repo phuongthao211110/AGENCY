@@ -40,7 +40,7 @@ const GHN_SHOPS: { shopId: string; name: string; phone: string; connectedAt: str
   { shopId: '5148900', name: 'Shop Điện Tử XYZ',      phone: '0912345678', connectedAt: '15/01/2025', goiCuoc: [{ loai: 'TMĐT', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }] },
   { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  phone: '0923456789', connectedAt: '20/02/2025', goiCuoc: [{ loai: 'CPTT', id: '201', ten: 'Bảng giá CPTT Mỹ Phẩm Standard' }, { loai: 'TMĐT', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
   { shopId: '5148902', name: 'Shop Giày Dép Fashion', phone: '0934567890', connectedAt: '05/03/2025', goiCuoc: [{ loai: 'TMĐT', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  phone: '0945678901', connectedAt: '12/03/2025', goiCuoc: [] },
+  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  phone: '0945678901', connectedAt: '12/03/2025', goiCuoc: [{ loai: 'TMĐT', id: '421', ten: 'CAM KẾT TỪ 500 ĐƠN - 19,500Đ CHO ĐƠN TỪ 1KG' }] },
 ]
 
 // ─── Add Shop ID Modal (2 steps) ─────────────────────────────────────────────
@@ -201,7 +201,8 @@ function TabConnect() {
         <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
           {[
             { label: '',             flex: '0 0 32px', minWidth: 32 },
-            { label: 'Tên cửa hàng', flex: '2 0 0',   minWidth: 200 },
+            { label: 'Cửa hàng GHN',  flex: '2 0 0',   minWidth: 200 },
+            { label: 'Gói cước GHN', flex: '1 0 0',   minWidth: 100 },
             { label: 'Shop ID GHN',  flex: '1 0 0',   minWidth: 120 },
             { label: 'Số điện thoại',flex: '1 0 0',   minWidth: 140 },
             { label: 'Ngày kết nối', flex: '1 0 0',   minWidth: 120 },
@@ -233,23 +234,21 @@ function TabConnect() {
                 >
                   {/* Expand toggle */}
                   <div style={{ flex: '0 0 32px', minWidth: 32, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {hasGoiCuoc ? (
-                      <button
-                        onClick={() => toggleExpand(s.shopId)}
-                        title={isExpanded ? 'Thu gọn' : 'Xem gói cước'}
-                        style={{ width: 20, height: 20, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: C_TEXT_SECONDARY, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                      >
-                        <RightOutlined style={{ fontSize: 11 }} />
-                      </button>
-                    ) : null}
+                    <button
+                      onClick={() => toggleExpand(s.shopId)}
+                      title={isExpanded ? 'Thu gọn' : 'Xem gói cước'}
+                      style={{ width: 20, height: 20, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: C_TEXT_SECONDARY, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                    >
+                      <RightOutlined style={{ fontSize: 11 }} />
+                    </button>
                   </div>
                   <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
-                    {hasGoiCuoc && (
-                      <span style={{ marginLeft: 8, fontSize: 11, color: C_TEXT_SECONDARY }}>
-                        {goiCuoc.length} gói cước
-                      </span>
-                    )}
+                  </div>
+                  <div style={{ flex: '1 0 0', minWidth: 100, padding: '6px 8px' }}>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+                      {goiCuoc.length} gói cước
+                    </span>
                   </div>
                   <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
                     <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, fontFamily: 'monospace', lineHeight: '20px' }}>{s.shopId}</span>
@@ -477,8 +476,8 @@ function TabServices() {
   )
 
   const cols = [
-    { label: 'Gói dịch vụ', flex: '2 0 0',    minWidth: 200 },
-    { label: 'Shop ID GHN', flex: '2 0 0',    minWidth: 200 },
+    { label: 'Dịch vụ',      flex: '2 0 0',    minWidth: 200 },
+    { label: 'Gói cước GHN', flex: '2 0 0',    minWidth: 200 },
     { label: 'Kích hoạt',   flex: '0 0 90px', minWidth: 90  },
   ]
 
@@ -528,7 +527,7 @@ function TabServices() {
           <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
         ) : filtered.map((s) => {
           const shopIds: string[] = (s as any).ghnShopIds ?? []
-          const shops = shopIds.map(id => GHN_SHOPS.find(sh => sh.shopId === id)).filter(Boolean) as typeof GHN_SHOPS
+          const allGoiCuoc = shopIds.flatMap(id => GHN_SHOPS.find(sh => sh.shopId === id)?.goiCuoc ?? [])
           return (
             <React.Fragment key={s.id}>
               <div
@@ -541,33 +540,30 @@ function TabServices() {
                   <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
                 </div>
 
-                {/* Shop ID GHN cell */}
+                {/* Gói cước GHN cell */}
                 <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px', position: 'relative' }}
                   onMouseEnter={(e) => { e.stopPropagation(); setShopHover(s.id) }}
                   onMouseLeave={(e) => { e.stopPropagation(); setShopHover(null) }}
                 >
-                  {shops.length === 0 ? (
+                  {allGoiCuoc.length === 0 ? (
                     <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>—</span>
-                  ) : shops.length === 1 ? (
-                    <div>
-                      <div style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{shops[0].name}</div>
-                      <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{shops[0].shopId}</div>
-                    </div>
+                  ) : allGoiCuoc.length === 1 ? (
+                    <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{allGoiCuoc[0].ten}</span>
                   ) : (
                     <>
                       <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, cursor: 'default' }}>
-                        {shops.length} Shop ID GHN
+                        {allGoiCuoc.length} gói cước
                       </span>
                       {shopHover === s.id && (
                         <div style={{
                           position: 'absolute', top: '100%', left: 0, zIndex: 100,
                           background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 8,
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.12)', padding: '6px 0', minWidth: 220,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.12)', padding: '6px 0', minWidth: 260,
                         }}>
-                          {shops.map((sh) => (
-                            <div key={sh.shopId} style={{ padding: '6px 14px' }}>
-                              <div style={{ fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{sh.name}</div>
-                              <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{sh.shopId}</div>
+                          {allGoiCuoc.map((gc, i) => (
+                            <div key={i} style={{ padding: '6px 14px' }}>
+                              <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginBottom: 1 }}>Gói {gc.loai}</div>
+                              <div style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{gc.ten}</div>
                             </div>
                           ))}
                         </div>

@@ -173,16 +173,34 @@ function determineRouteType(fromProvinceId: number, toProvinceId: number): strin
 
 ```
 AGENCY
- ├── GHN Shop Connection   — tài khoản GHN thật để đẩy đơn
- ├── Service               — mỗi service gắn 1 GHN Shop Connection
+ ├── GHN Shop Connection   — tài khoản GHN thật (mỗi shop có 1-2 gói cước: TMĐT/CPTT)
+ ├── Service               — 1 service kết nối NHIỀU GHN Shop IDs + gói cước
+ │     └── shopConnections: [{ shopId, selectedGoiCuoc: string[] }]
  ├── Pricing Table         — bảng giá theo 4 tuyến + vượt cân
  └── Shop (internal)
-       └── ShopServicePricing  ← gán service + pricing cho từng shop TẠI ĐÂY
+       └── configuredServices: [{ serviceId, priceTableId }]  ← gán service + pricing TẠI ĐÂY
 ```
 
 - **Service ≠ Pricing**: Service xác định đơn đẩy qua GHN Shop ID nào; Pricing xác định giá tiền
-- **1 service, nhiều pricing**: Mỗi shop có thể được gán pricing khác nhau cho cùng 1 service
-- Dịch vụ chỉ **khả dụng** cho shop khi: đã được gán + có bảng giá + bảng giá có route tương ứng
+- **1 service, nhiều GHN Shop IDs**: Agency kết nối 1 service với nhiều tài khoản GHN khác nhau
+- **Gói cước**: GHN cấp 1-2 gói cước cho mỗi GHN Shop ID — loại `TMĐT` hoặc `CPTT`
+- **Best-price routing**: Khi shop tạo đơn qua service có nhiều Shop IDs, hệ thống tự chọn (ghnShopId + goiCuocId) có phí thấp nhất cho tuyến của đơn
+- Dịch vụ chỉ **khả dụng** cho shop khi: đã được gán + có bảng giá + bảng giá có route tương ứng + service có ít nhất 1 shopConnection với ít nhất 1 gói cước
+
+**Schema services.json (mock data):**
+```typescript
+interface Service {
+  id: string          // "ghn-express"
+  code: string        // "CHUYENNHANH"
+  name: string
+  carrier: string     // "GHN"
+  ghnShopIds: string[]    // danh sách GHN Shop ID đã kết nối (1+)
+  priceTableId: string | null
+  enabled: boolean
+}
+// Lưu ý: mock data dùng ghnShopIds[] flat array.
+// Full shopConnections (với gói cước) được lưu trong GHN_SHOPS constant tại CarrierSetup.tsx
+```
 
 ### Overweight Fee Formula
 
@@ -229,17 +247,39 @@ const item = data.find(d => d.id === id)
 if (!item) return <div>Không tìm thấy</div>
 ```
 
+## Design Token Import — BẮT BUỘC
+
+**KHÔNG được define local const cho design tokens trong từng file page.** Mọi token phải được import từ `src/theme/tokens.ts`:
+
+```tsx
+import {
+  C_ACTION, C_LINK,
+  C_TEXT_PRIMARY, C_TEXT_SECONDARY, C_TEXT_LABEL,
+  C_BORDER, C_BG_HEADER, C_BG_ACTIVE, C_BG_WHITE,
+  STATUS_SUCCESS, STATUS_SUCCESS_BG, STATUS_WARNING,
+  SIDER_WIDTH, HEADER_HEIGHT,
+} from '../../../theme/tokens'
+```
+
+**Vi phạm phổ biến cần tránh:**
+- ❌ `const C_LINK = '#3B82F6'` — local const
+- ❌ `color: '#3B82F6'` — hardcode hex
+- ✅ `color: C_LINK` — token name
+
+Entity name LUÔN `fontWeight: 700` (không phải 600).
+
+---
+
 ## Layout Pattern (Layout components)
 
 Layout dùng fixed positioning — KHÔNG dùng Ant Design Layout:
 
 ```tsx
-const SIDEBAR_WIDTH = 240
-const HEADER_HEIGHT = 40
+import { SIDER_WIDTH, HEADER_HEIGHT } from '../../../theme/tokens'
 
 // Header: fixed, height 40px, zIndex 20
 <header style={{
-  position: 'fixed', top: 0, left: 0, right: 0, height: HEADER_HEIGHT,
+  position: 'fixed', top: 0, left: 0, right: 0, height: HEADER_HEIGHT,  // 40
   background: '#fff', borderBottom: '1px solid #E5E7EB', zIndex: 20,
   display: 'flex', alignItems: 'center', padding: '0 16px',
 }} />

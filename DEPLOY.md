@@ -22,7 +22,11 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-_(Hiện không có tính năng pending)_
+### v0.15.0
+- **Tab Kết nối NVC**: Thêm cột "Gói cước GHN" (số gói cước per Shop ID), đổi tên cột "Tên cửa hàng" → "Cửa hàng GHN". Shop Đồ Gia Dụng 365 được thêm 1 gói cước TMĐT (luôn có tối thiểu 1 gói cước). Tất cả 5 shops đều hiện mũi tên expand.
+- **Tab Dịch vụ**: Đổi tên cột "Gói dịch vụ" → "Dịch vụ", "Shop ID GHN" → "Gói cước GHN". Cell hiển thị tên gói cước nếu 1, "n gói cước" + hover tooltip nếu ≥2.
+- **ShopCreate + ShopDetail**: Bỏ cột Mã NVC khỏi section Cấu hình dịch vụ.
+- **Agent knowledge**: Cập nhật `agency-logistics-domain.md`, `backend-architect.md`, `frontend-dev.md` với logic best-price multi-shop selection khi tạo đơn.
 
 
 ---
