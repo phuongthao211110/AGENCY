@@ -64,6 +64,7 @@ export default function App() {
           <Route path="reconciliation" element={<AgencyReconciliation />} />
           <Route path="reconciliation/:id" element={<AgencyReconciliationDetail />} />
           <Route path="carrier-setup" element={<CarrierSetup />} />
+          <Route path="carrier-setup/:tab" element={<CarrierSetup />} />
           <Route path="carrier-setup/pricing/create" element={<PricingCreate />} />
           <Route path="carrier-setup/services/:id" element={<ServiceDetail />} />
           <Route path="document" element={<AgencyAdminDocument />}>

@@ -38,16 +38,19 @@ const DISTRICTS: Record<string, string[]> = {
 
 type LocationEntry = { province: string; district: string }
 type Tab = 'info' | 'available' | 'blocked'
-// GHN Shop IDs (from CarrierSetup > Kết nối NVC)
-const GHN_SHOPS = [
-  { shopId: '5148899', name: 'Shop Thời Trang ABC' },
-  { shopId: '5148900', name: 'Shop Điện Tử XYZ' },
-  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội' },
-  { shopId: '5148902', name: 'Shop Giày Dép Fashion' },
-  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365' },
+
+type GoiCuoc = { loai: string; id: string; ten: string }
+type ShopConnection = { shopId: string; selectedGoiCuoc: string[] }
+
+const GHN_SHOPS: { shopId: string; name: string; goiCuoc: GoiCuoc[] }[] = [
+  { shopId: '5148899', name: 'Shop Thời Trang ABC',   goiCuoc: [{ loai: 'TMĐT', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'CPTT', id: '150', ten: 'Bảng giá CPTT XIAOMI for a Chính' }] },
+  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      goiCuoc: [{ loai: 'TMĐT', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  goiCuoc: [{ loai: 'CPTT', id: '201', ten: 'Bảng giá CPTT Mỹ Phẩm Standard' }, { loai: 'TMĐT', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148902', name: 'Shop Giày Dép Fashion', goiCuoc: [{ loai: 'TMĐT', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  goiCuoc: [] },
 ]
 
-type ServiceInfo = { code: string; name: string; desc: string; ghnShopId: string; priceTableId: string | null }
+type ServiceInfo = { code: string; name: string; desc: string; shopConnections: ShopConnection[]; priceTableId: string | null }
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'info',      label: 'Thông tin',          icon: <InfoCircleOutlined /> },
@@ -227,37 +230,42 @@ export default function ServiceDetail() {
   const [activeTab, setActiveTab] = useState<Tab>('info')
 
   // ── Init service data from navigation state (new) or services.json (existing) ──
-  const locState = location.state as ({ isNew?: boolean } & ServiceInfo) | null
+  const locState = location.state as ({ isNew?: boolean } & Partial<ServiceInfo> & { shopConnections?: ShopConnection[] }) | null
   const initData: ServiceInfo = locState?.isNew
-    ? { code: locState.code ?? '', name: locState.name ?? '', desc: locState.desc ?? '', ghnShopId: (locState as ServiceInfo).ghnShopId ?? GHN_SHOPS[0].shopId, priceTableId: null }
+    ? { code: (locState as any).code ?? '', name: (locState as any).name ?? '', desc: (locState as any).desc ?? '', shopConnections: locState.shopConnections ?? [{ shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }], priceTableId: null }
     : (() => {
         const s = id ? allServices.find((svc) => svc.id === id) : undefined
-        return { code: s?.code ?? id ?? '', name: s?.name ?? id ?? '', desc: s?.desc ?? '', ghnShopId: s?.ghnShopId ?? GHN_SHOPS[0].shopId, priceTableId: s?.priceTableId ?? null }
+        const defaultConn: ShopConnection[] = s?.ghnShopId ? [{ shopId: s.ghnShopId, selectedGoiCuoc: [] }] : [{ shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }]
+        return { code: s?.code ?? id ?? '', name: s?.name ?? id ?? '', desc: s?.desc ?? '', shopConnections: defaultConn, priceTableId: s?.priceTableId ?? null }
       })()
 
   const [serviceData, setServiceData] = useState<ServiceInfo>(initData)
   const [isEditing, setIsEditing]     = useState(!!locState?.isNew)
   const [editForm, setEditForm]       = useState<ServiceInfo>(initData)
 
-  const setEdit = (key: keyof ServiceInfo) => (v: string) => setEditForm(f => ({ ...f, [key]: v }))
+  const setEdit = (key: 'code' | 'name' | 'desc') => (v: string) => setEditForm(f => ({ ...f, [key]: v }))
 
-  const handleStartEdit = () => {
-    setEditForm(serviceData)
-    setIsEditing(true)
-  }
+  const addConnection = () =>
+    setEditForm(f => ({ ...f, shopConnections: [...f.shopConnections, { shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }] }))
 
-  const handleSave = () => {
-    setServiceData(editForm)
-    setIsEditing(false)
-  }
+  const removeConnection = (idx: number) =>
+    setEditForm(f => ({ ...f, shopConnections: f.shopConnections.filter((_, i) => i !== idx) }))
 
-  const handleCancel = () => {
-    setEditForm(serviceData)
-    setIsEditing(false)
-  }
+  const updateConnectionShop = (idx: number, shopId: string) =>
+    setEditForm(f => ({ ...f, shopConnections: f.shopConnections.map((c, i) => i === idx ? { shopId, selectedGoiCuoc: [] } : c) }))
 
-  const shopName = GHN_SHOPS.find(s => s.shopId === serviceData.ghnShopId)?.name ?? '—'
-  const editShopName = GHN_SHOPS.find(s => s.shopId === editForm.ghnShopId)?.name ?? '—'
+  const toggleGoiCuoc = (idx: number, gcId: string) =>
+    setEditForm(f => ({ ...f, shopConnections: f.shopConnections.map((c, i) => {
+      if (i !== idx) return c
+      const has = c.selectedGoiCuoc.includes(gcId)
+      if (has) return { ...c, selectedGoiCuoc: c.selectedGoiCuoc.filter(id => id !== gcId) }
+      if (c.selectedGoiCuoc.length >= 2) return c
+      return { ...c, selectedGoiCuoc: [...c.selectedGoiCuoc, gcId] }
+    })}))
+
+  const handleStartEdit = () => { setEditForm(serviceData); setIsEditing(true) }
+  const handleSave      = () => { setServiceData(editForm); setIsEditing(false) }
+  const handleCancel    = () => { setEditForm(serviceData); setIsEditing(false) }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
@@ -266,7 +274,7 @@ export default function ServiceDetail() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', flexShrink: 0 }}>
         <ArrowLeftOutlined
           style={{ fontSize: 18, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
-          onClick={() => navigate('/agency-admin/carrier-setup')}
+          onClick={() => navigate('/agency-admin/carrier-setup/services')}
         />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <h1 style={{ fontSize: 20, fontWeight: 600, color: C_TEXT_PRIMARY, margin: 0, lineHeight: '28px' }}>
@@ -332,41 +340,108 @@ export default function ServiceDetail() {
 
               {isEditing ? (
                 /* ── Edit mode ── */
-                <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
-                  <InputField label="Mã gói" value={editForm.code} onChange={setEdit('code')} placeholder="VD: CHUYENNHANH" mono />
-                  <InputField label="Tên gói" value={editForm.name} onChange={setEdit('name')} placeholder="VD: Giao hàng nhanh" />
-                  <InputField label="Mô tả" value={editForm.desc} onChange={setEdit('desc')} placeholder="Mô tả ngắn về gói dịch vụ..." />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Shop ID GHN</span>
-                    <div style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px' }}>
-                      <select
-                        value={editForm.ghnShopId}
-                        onChange={e => setEdit('ghnShopId')(e.target.value)}
-                        style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', cursor: 'pointer' }}
-                      >
-                        {GHN_SHOPS.map(s => (
-                          <option key={s.shopId} value={s.shopId}>{s.shopId} — {s.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{editShopName}</span>
+                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
+                    <InputField label="Mã gói" value={editForm.code} onChange={setEdit('code')} placeholder="VD: CHUYENNHANH" mono />
+                    <InputField label="Tên gói" value={editForm.name} onChange={setEdit('name')} placeholder="VD: Giao hàng nhanh" />
+                    <InputField label="Mô tả" value={editForm.desc} onChange={setEdit('desc')} placeholder="Mô tả ngắn về gói dịch vụ..." />
+                  </div>
+
+                  {/* Shop connections */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</span>
+                    {editForm.shopConnections.map((conn, idx) => {
+                      const shop = GHN_SHOPS.find(s => s.shopId === conn.shopId)
+                      const availableGoiCuoc = shop?.goiCuoc ?? []
+                      return (
+                        <div key={idx} style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px', flex: 1 }}>
+                              <select
+                                value={conn.shopId}
+                                onChange={e => updateConnectionShop(idx, e.target.value)}
+                                style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', cursor: 'pointer' }}
+                              >
+                                {GHN_SHOPS.map(s => (
+                                  <option key={s.shopId} value={s.shopId}>{s.shopId} — {s.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            {editForm.shopConnections.length > 1 && (
+                              <button onClick={() => removeConnection(idx)}
+                                style={{ flexShrink: 0, width: 20, height: 20, border: 'none', background: 'transparent', color: '#EF4444', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                                <CloseOutlined />
+                              </button>
+                            )}
+                          </div>
+                          {availableGoiCuoc.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chọn gói cước áp dụng (tối đa 2)</span>
+                              {availableGoiCuoc.map((gc) => {
+                                const checked = conn.selectedGoiCuoc.includes(gc.id)
+                                const disabled = !checked && conn.selectedGoiCuoc.length >= 2
+                                return (
+                                  <label key={gc.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.45 : 1 }}>
+                                    <input type="checkbox" checked={checked} disabled={disabled}
+                                      onChange={() => toggleGoiCuoc(idx, gc.id)}
+                                      style={{ marginTop: 2, accentColor: C_ACTION, flexShrink: 0 }} />
+                                    <div>
+                                      <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>Gói cước {gc.loai}</div>
+                                      <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.id} — {gc.ten}</div>
+                                    </div>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: 12, color: '#D97706' }}>Shop ID này chưa có gói cước từ GHN</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                    <button onClick={addConnection}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', border: `1px dashed ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_SECONDARY, fontSize: 13, cursor: 'pointer', alignSelf: 'flex-start' }}>
+                      <PlusOutlined style={{ fontSize: 12 }} />
+                      Thêm Shop ID GHN
+                    </button>
                   </div>
                 </div>
               ) : (
                 /* ── View mode ── */
-                <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
-                  <LabelValue label="Mã gói" value={<span style={{ fontFamily: 'monospace' }}>{serviceData.code}</span>} />
-                  <LabelValue label="Tên gói" value={serviceData.name} />
-                  <LabelValue label="Mô tả" value={serviceData.desc || <span style={{ color: C_TEXT_SECONDARY }}>—</span>} />
-                  <LabelValue
-                    label="Shop ID GHN"
-                    value={
-                      <span>
-                        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{serviceData.ghnShopId}</span>
-                        <span style={{ color: C_TEXT_SECONDARY, fontWeight: 400 }}> — {shopName}</span>
-                      </span>
-                    }
-                  />
+                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
+                    <LabelValue label="Mã gói" value={<span style={{ fontFamily: 'monospace' }}>{serviceData.code}</span>} />
+                    <LabelValue label="Tên gói" value={serviceData.name} />
+                    <LabelValue label="Mô tả" value={serviceData.desc || <span style={{ color: C_TEXT_SECONDARY }}>—</span>} />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</span>
+                    {serviceData.shopConnections.map((conn, idx) => {
+                      const shop = GHN_SHOPS.find(s => s.shopId === conn.shopId)
+                      const selectedGc = shop?.goiCuoc.filter(gc => conn.selectedGoiCuoc.includes(gc.id)) ?? []
+                      return (
+                        <div key={idx} style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ fontSize: 14, fontWeight: 500, color: C_TEXT_PRIMARY }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{conn.shopId}</span>
+                            <span style={{ color: C_TEXT_SECONDARY, fontWeight: 400 }}> — {shop?.name ?? '—'}</span>
+                          </div>
+                          {selectedGc.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {selectedGc.map(gc => (
+                                <div key={gc.id}>
+                                  <div style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>Gói cước {gc.loai}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>{gc.id} — {gc.ten}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa chọn gói cước</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
             </div>

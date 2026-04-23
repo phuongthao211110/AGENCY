@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   PlusOutlined,
   ApiOutlined,
@@ -8,6 +8,7 @@ import {
   SearchOutlined,
   DisconnectOutlined,
   CloseOutlined,
+  RightOutlined,
 } from '@ant-design/icons'
 import allServices from '../../../mock-data/services.json'
 import allPriceTables from '../../../mock-data/pricing.json'
@@ -32,12 +33,14 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
 
 
 // ─── Tab: Kết nối NVC ─────────────────────────────────────────────────────────
-const GHN_SHOPS = [
-  { shopId: '5148899', name: 'Shop Thời Trang ABC',   phone: '0901234567', connectedAt: '10/01/2025' },
-  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      phone: '0912345678', connectedAt: '15/01/2025' },
-  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  phone: '0923456789', connectedAt: '20/02/2025' },
-  { shopId: '5148902', name: 'Shop Giày Dép Fashion', phone: '0934567890', connectedAt: '05/03/2025' },
-  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365', phone: '0945678901', connectedAt: '12/03/2025' },
+type GoiCuoc = { loai: string; id: string; ten: string }
+
+const GHN_SHOPS: { shopId: string; name: string; phone: string; connectedAt: string; goiCuoc: GoiCuoc[] }[] = [
+  { shopId: '5148899', name: 'Shop Thời Trang ABC',   phone: '0901234567', connectedAt: '10/01/2025', goiCuoc: [{ loai: 'TMĐT', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'CPTT', id: '150', ten: 'Bảng giá CPTT XIAOMI for a Chính' }] },
+  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      phone: '0912345678', connectedAt: '15/01/2025', goiCuoc: [{ loai: 'TMĐT', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  phone: '0923456789', connectedAt: '20/02/2025', goiCuoc: [{ loai: 'CPTT', id: '201', ten: 'Bảng giá CPTT Mỹ Phẩm Standard' }, { loai: 'TMĐT', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148902', name: 'Shop Giày Dép Fashion', phone: '0934567890', connectedAt: '05/03/2025', goiCuoc: [{ loai: 'TMĐT', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  phone: '0945678901', connectedAt: '12/03/2025', goiCuoc: [] },
 ]
 
 // ─── Add Shop ID Modal (2 steps) ─────────────────────────────────────────────
@@ -152,9 +155,18 @@ function AddShopModal({ onClose }: { onClose: () => void }) {
 
 // ─── Tab: Kết nối NVC ─────────────────────────────────────────────────────────
 function TabConnect() {
-  const [search, setSearch]     = useState('')
+  const [search, setSearch]       = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [hovered, setHovered]   = useState<string | null>(null)
+  const [hovered, setHovered]     = useState<string | null>(null)
+  const [expanded, setExpanded]   = useState<Set<string>>(new Set())
+
+  const toggleExpand = (shopId: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      next.has(shopId) ? next.delete(shopId) : next.add(shopId)
+      return next
+    })
+  }
 
   const filtered = GHN_SHOPS.filter(
     (s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.shopId.includes(search) || s.phone.includes(search)
@@ -185,55 +197,96 @@ function TabConnect() {
 
       {/* Table */}
       <div style={{ padding: '0 16px' }}>
-      {/* Table header */}
-      <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-        {[
-          { label: 'Tên cửa hàng', flex: '2 0 0', minWidth: 200 },
-          { label: 'Shop ID GHN',   flex: '1 0 0', minWidth: 120 },
-          { label: 'Số điện thoại', flex: '1 0 0', minWidth: 140 },
-          { label: 'Ngày kết nối', flex: '1 0 0', minWidth: 120 },
-          { label: '',             flex: '0 0 60px', minWidth: 60 },
-        ].map((col, i) => (
-          <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
-            <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ height: 1, background: C_BORDER }} />
-
-      {/* Rows */}
-      {filtered.length === 0 ? (
-        <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
-      ) : (
-        filtered.map((s) => (
-          <React.Fragment key={s.shopId}>
-            <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === s.shopId ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
-              onMouseEnter={() => setHovered(s.shopId)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
-              </div>
-              <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-                <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, fontFamily: 'monospace', lineHeight: '20px' }}>{s.shopId}</span>
-              </div>
-              <div style={{ flex: '1 0 0', minWidth: 140, padding: '6px 8px' }}>
-                <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.phone}</span>
-              </div>
-              <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-                <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.connectedAt}</span>
-              </div>
-              <div style={{ flex: '0 0 60px', minWidth: 60, padding: '6px 8px' }}>
-                <button title="Ngắt kết nối" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1px solid #FCA5A5', borderRadius: 6, background: '#FFF5F5', color: '#EF4444', fontSize: 14, cursor: 'pointer' }}>
-                  <DisconnectOutlined />
-                </button>
-              </div>
+        {/* Table header */}
+        <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
+          {[
+            { label: '',             flex: '0 0 32px', minWidth: 32 },
+            { label: 'Tên cửa hàng', flex: '2 0 0',   minWidth: 200 },
+            { label: 'Shop ID GHN',  flex: '1 0 0',   minWidth: 120 },
+            { label: 'Số điện thoại',flex: '1 0 0',   minWidth: 140 },
+            { label: 'Ngày kết nối', flex: '1 0 0',   minWidth: 120 },
+            { label: '',             flex: '0 0 60px', minWidth: 60 },
+          ].map((col, i) => (
+            <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
+              <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
             </div>
-            <div style={{ height: 1, background: C_BORDER }} />
-          </React.Fragment>
-        ))
-      )}
+          ))}
+        </div>
+        <div style={{ height: 1, background: C_BORDER }} />
+
+        {/* Rows */}
+        {filtered.length === 0 ? (
+          <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
+        ) : (
+          filtered.map((s) => {
+            const goiCuoc = s.goiCuoc
+            const isExpanded = expanded.has(s.shopId)
+            const hasGoiCuoc = goiCuoc.length > 0
+
+            return (
+              <React.Fragment key={s.shopId}>
+                {/* Main row */}
+                <div
+                  style={{ display: 'flex', alignItems: 'center', background: hovered === s.shopId ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
+                  onMouseEnter={() => setHovered(s.shopId)}
+                  onMouseLeave={() => setHovered(null)}
+                >
+                  {/* Expand toggle */}
+                  <div style={{ flex: '0 0 32px', minWidth: 32, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {hasGoiCuoc ? (
+                      <button
+                        onClick={() => toggleExpand(s.shopId)}
+                        title={isExpanded ? 'Thu gọn' : 'Xem gói cước'}
+                        style={{ width: 20, height: 20, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: C_TEXT_SECONDARY, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                      >
+                        <RightOutlined style={{ fontSize: 11 }} />
+                      </button>
+                    ) : null}
+                  </div>
+                  <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
+                    {hasGoiCuoc && (
+                      <span style={{ marginLeft: 8, fontSize: 11, color: C_TEXT_SECONDARY }}>
+                        {goiCuoc.length} gói cước
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, fontFamily: 'monospace', lineHeight: '20px' }}>{s.shopId}</span>
+                  </div>
+                  <div style={{ flex: '1 0 0', minWidth: 140, padding: '6px 8px' }}>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.phone}</span>
+                  </div>
+                  <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.connectedAt}</span>
+                  </div>
+                  <div style={{ flex: '0 0 60px', minWidth: 60, padding: '6px 8px' }}>
+                    <button title="Ngắt kết nối" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1px solid #FCA5A5', borderRadius: 6, background: '#FFF5F5', color: '#EF4444', fontSize: 14, cursor: 'pointer' }}>
+                      <DisconnectOutlined />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded: gói cước list */}
+                {isExpanded && hasGoiCuoc && (
+                  <div>
+                    {goiCuoc.map((gc: GoiCuoc) => (
+                      <div
+                        key={gc.id}
+                        style={{ padding: '7px 8px 7px 40px' }}
+                      >
+                        <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Gói cước {gc.loai}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>{gc.id} — {gc.ten}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ height: 1, background: C_BORDER }} />
+              </React.Fragment>
+            )
+          })
+        )}
       </div>{/* /Table */}
     </>
   )
@@ -258,30 +311,51 @@ function NvcCodeBadge({ code }: { code: string }) {
 }
 
 // ─── Create Service Modal ─────────────────────────────────────────────────────
-type NewServiceData = { code: string; name: string; desc: string; shopId: string }
+type ShopConnection = { shopId: string; selectedGoiCuoc: string[] }
+type NewServiceData = { code: string; name: string; desc: string; shopConnections: ShopConnection[] }
 
 function CreateServiceModal({ onClose, onCreated }: { onClose: () => void; onCreated: (data: NewServiceData) => void }) {
-  const [code, setCode]         = useState('')
-  const [name, setName]         = useState('')
-  const [desc, setDesc]         = useState('')
-  const [shopId, setShopId]     = useState(GHN_SHOPS[0].shopId)
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [desc, setDesc] = useState('')
+  const [connections, setConnections] = useState<ShopConnection[]>([{ shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }])
 
   const inputStyle: React.CSSProperties = {
     border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px',
     fontSize: 14, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box',
   }
 
+  const addConnection = () =>
+    setConnections((prev) => [...prev, { shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }])
+
+  const removeConnection = (idx: number) =>
+    setConnections((prev) => prev.filter((_, i) => i !== idx))
+
+  const updateShopId = (idx: number, shopId: string) =>
+    setConnections((prev) => prev.map((c, i) => i === idx ? { shopId, selectedGoiCuoc: [] } : c))
+
+  const toggleGoiCuoc = (idx: number, gcId: string) =>
+    setConnections((prev) => prev.map((c, i) => {
+      if (i !== idx) return c
+      const has = c.selectedGoiCuoc.includes(gcId)
+      if (has) return { ...c, selectedGoiCuoc: c.selectedGoiCuoc.filter((id) => id !== gcId) }
+      if (c.selectedGoiCuoc.length >= 2) return c  // max 2
+      return { ...c, selectedGoiCuoc: [...c.selectedGoiCuoc, gcId] }
+    }))
+
+  const canSubmit = code.trim() && name.trim()
+
   const handleSubmit = () => {
-    if (!code.trim() || !name.trim()) return
-    onCreated({ code: code.trim(), name: name.trim(), desc, shopId })
+    if (!canSubmit) return
+    onCreated({ code: code.trim(), name: name.trim(), desc, shopConnections: connections })
   }
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -3px rgba(0,0,0,0.04)', width: 480, position: 'relative', overflow: 'hidden' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -3px rgba(0,0,0,0.04)', width: 560, position: 'relative', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
           <span style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Tạo gói dịch vụ mới</span>
           <button onClick={onClose} style={{ width: 28, height: 28, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C_TEXT_SECONDARY, fontSize: 14, borderRadius: 4 }}>
             <CloseOutlined />
@@ -289,52 +363,107 @@ function CreateServiceModal({ onClose, onCreated }: { onClose: () => void; onCre
         </div>
 
         {/* Body */}
-        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+          {/* Mã gói + Tên gói */}
           <div style={{ display: 'flex', gap: 12 }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>Mã gói <span style={{ color: '#EF4444' }}>*</span></label>
-              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="VD: GHN_EXPRESS" style={{ ...inputStyle, fontFamily: 'monospace' }}
+              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="VD: GHN_EXPRESS"
+                style={{ ...inputStyle, fontFamily: 'monospace' }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
                 onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>Tên gói <span style={{ color: '#EF4444' }}>*</span></label>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Giao hàng nhanh" style={inputStyle}
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Giao hàng nhanh"
+                style={inputStyle}
                 onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
                 onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
             </div>
           </div>
 
+          {/* Mô tả */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>Mô tả</label>
-            <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Mô tả ngắn về gói dịch vụ..."
-              rows={3}
+            <textarea value={desc} onChange={(e) => setDesc(e.target.value)}
+              placeholder="Mô tả ngắn về gói dịch vụ..." rows={2}
               style={{ ...inputStyle, resize: 'vertical', lineHeight: '20px' }}
               onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
               onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* Kết nối Shop ID GHN */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</label>
-            <select value={shopId} onChange={(e) => setShopId(e.target.value)}
-              style={{ ...inputStyle, cursor: 'pointer', background: '#fff' }}>
-              {GHN_SHOPS.map((s) => (
-                <option key={s.shopId} value={s.shopId}>
-                  {s.shopId} — {s.name}
-                </option>
-              ))}
-            </select>
+
+            {connections.map((conn, idx) => {
+              const shop = GHN_SHOPS.find((s) => s.shopId === conn.shopId)
+              const availableGoiCuoc = shop?.goiCuoc ?? []
+              return (
+                <div key={idx} style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
+                  {/* Shop ID row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <select
+                      value={conn.shopId}
+                      onChange={(e) => updateShopId(idx, e.target.value)}
+                      style={{ ...inputStyle, cursor: 'pointer', background: '#fff', flex: 1 }}
+                    >
+                      {GHN_SHOPS.map((s) => (
+                        <option key={s.shopId} value={s.shopId}>{s.shopId} — {s.name}</option>
+                      ))}
+                    </select>
+                    {connections.length > 1 && (
+                      <button onClick={() => removeConnection(idx)}
+                        style={{ flexShrink: 0, width: 20, height: 20, border: 'none', background: 'transparent', color: '#EF4444', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                        <CloseOutlined />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Gói cước checkboxes */}
+                  {availableGoiCuoc.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chọn gói cước áp dụng (tối đa 2)</span>
+                      {availableGoiCuoc.map((gc) => {
+                        const checked = conn.selectedGoiCuoc.includes(gc.id)
+                        const disabled = !checked && conn.selectedGoiCuoc.length >= 2
+                        return (
+                          <label key={gc.id}
+                            style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.45 : 1 }}>
+                            <input type="checkbox" checked={checked} disabled={disabled}
+                              onChange={() => toggleGoiCuoc(idx, gc.id)}
+                              style={{ marginTop: 2, accentColor: C_ACTION, flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>Gói cước {gc.loai}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.id} — {gc.ten}</div>
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 12, color: '#D97706' }}>Shop ID này chưa có gói cước từ GHN</span>
+                  )}
+                </div>
+              )
+            })}
+
+            <button onClick={addConnection}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', border: `1px dashed ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_SECONDARY, fontSize: 13, cursor: 'pointer', alignSelf: 'flex-start' }}>
+              <PlusOutlined style={{ fontSize: 12 }} />
+              Thêm Shop ID GHN
+            </button>
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C_BORDER}` }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
           <button onClick={onClose}
             style={{ padding: '8px 16px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
             Huỷ
           </button>
-          <button onClick={handleSubmit} disabled={!code.trim() || !name.trim()}
-            style={{ padding: '8px 16px', border: 'none', borderRadius: 6, background: !code.trim() || !name.trim() ? '#F3F4F6' : C_ACTION, color: !code.trim() || !name.trim() ? '#9CA3AF' : '#fff', fontSize: 14, fontWeight: 600, cursor: !code.trim() || !name.trim() ? 'default' : 'pointer' }}>
+          <button onClick={handleSubmit} disabled={!canSubmit}
+            style={{ padding: '8px 16px', border: 'none', borderRadius: 6, background: canSubmit ? C_ACTION : '#F3F4F6', color: canSubmit ? '#fff' : '#9CA3AF', fontSize: 14, fontWeight: 600, cursor: canSubmit ? 'pointer' : 'default' }}>
             Tạo gói dịch vụ
           </button>
         </div>
@@ -491,7 +620,10 @@ function TabPricing() {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function CarrierSetup() {
-  const [activeTab, setActiveTab] = useState<Tab>('connect')
+  const { tab } = useParams<{ tab?: string }>()
+  const navigate = useNavigate()
+  const activeTab: Tab = (tab === 'services' || tab === 'pricing') ? tab : 'connect'
+  const setActiveTab = (t: Tab) => navigate(`/agency-admin/carrier-setup/${t}`, { replace: true })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
