@@ -22,11 +22,7 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-### v0.15.0
-- **Tab Kết nối NVC**: Thêm cột "Gói cước GHN" (số gói cước per Shop ID), đổi tên cột "Tên cửa hàng" → "Cửa hàng GHN". Shop Đồ Gia Dụng 365 được thêm 1 gói cước TMĐT (luôn có tối thiểu 1 gói cước). Tất cả 5 shops đều hiện mũi tên expand.
-- **Tab Dịch vụ**: Đổi tên cột "Gói dịch vụ" → "Dịch vụ", "Shop ID GHN" → "Gói cước GHN". Cell hiển thị tên gói cước nếu 1, "n gói cước" + hover tooltip nếu ≥2.
-- **ShopCreate + ShopDetail**: Bỏ cột Mã NVC khỏi section Cấu hình dịch vụ.
-- **Agent knowledge**: Cập nhật `agency-logistics-domain.md`, `backend-architect.md`, `frontend-dev.md` với logic best-price multi-shop selection khi tạo đơn.
+_(Hiện không có tính năng pending)_
 
 
 ---
@@ -67,6 +63,7 @@ Dist dir:  dist/
 | v0.11.0 | 2026-04-22 | Agency Admin: Đối soát NVC — Sprint 1: menu "Đối soát NVC" (thứ tự Shop→Đơn hàng→Thiết lập NVC→Đối soát NVC), trang 5 tabs (Phiên nhà vận chuyển / Phiên shop / Chuyển khoản / Dự trù / Tách phiên NVC), mock data carrier-reconciliation.json. Sprint 2: Tab Phiên nhà vận chuyển full — stats cards, filter, custom flex table (Số lệch đỏ nếu > 0, Tổng cước, Tổng COD), upload modal drag-drop zone (.xlsx/.xls/.csv) tạo phiên pending, navigate đến detail page placeholder. | trannlb |
 | v0.12.0 | 2026-04-23 | Agency Admin: Đối soát NVC Sprint 3 — (1) Multi-select confirm: checkbox column (chỉ enable pending), select-all header, bulk action bar "Xác nhận phiên đã chọn", row highlight #FFF4ED khi chọn. (2) Detail page đầy đủ: breadcrumb, 4 summary cards, filter MATCH/MISMATCH/NOT_FOUND, custom flex table highlight đỏ ô COD/phí lệch, badges Khớp/Lệch/Không tìm thấy. (3) Action buttons pending: "Xoá phiên" + "Xác nhận phiên" với confirm modal, navigate back cập nhật list qua location.state. | trannlb |
 | v0.14.0 | 2026-04-23 | Agency Admin — Thiết lập NVC tiếp: (1) Tab Dịch vụ + Bảng giá thêm title + search bar đồng nhất với tab Kết nối NVC. (2) Tab Dịch vụ bỏ cột Mã NVC; cột Shop ID GHN: 1 shop hiển thị trực tiếp, nhiều shop hiển thị "n Shop ID GHN" text xám + hover tooltip danh sách. (3) Fix divider HiDPI cho TabServices và TabPricing (borderBottom thay height:1). (4) services.json đổi ghnShopId → ghnShopIds array. | trannlb |
+| v0.15.0 | 2026-04-23 | Tab Kết nối NVC: thêm cột "Gói cước GHN", đổi tên cột "Cửa hàng GHN", tất cả shops có tối thiểu 1 gói cước. Tab Dịch vụ: đổi tên cột "Dịch vụ" + "Gói cước GHN", cell hiển thị tên nếu 1 / "n gói cước" + hover nếu ≥2. ShopCreate + ShopDetail: bỏ cột Mã NVC khỏi section Cấu hình dịch vụ. | trannlb |
 | v0.13.0 | 2026-04-23 | Agency Admin — Thiết lập NVC cải tiến: (1) ShopDetail thêm Card "Cấu hình dịch vụ" read-only (Dịch vụ / Mã NVC / Bảng giá áp dụng). (2) Tab Kết nối NVC: expand/collapse từng Shop ID xem danh sách gói cước GHN (TMĐT/CPTT), mock data goiCuoc cho 5 shop. (3) Tạo gói dịch vụ mới: thay dropdown đơn bằng multi-shop connections — mỗi shop chọn 1-2 gói cước GHN bằng checkbox, nút Thêm/Xoá Shop ID. (4) ServiceDetail: đồng bộ logic multi-shop + gói cước ở cả view và edit mode. (5) URL-based tab routing cho CarrierSetup (`/carrier-setup/connect`, `/carrier-setup/services`, `/carrier-setup/pricing`) — back từ ServiceDetail về đúng tab Dịch vụ. | trannlb |
 
 ---
