@@ -1,7 +1,7 @@
 ---
 name: frontend-dev
 description: Frontend Developer agent cho dự án GHN Agency Prototype. Dùng khi thêm trang mới, thêm route, refactor component, xử lý mock data, hoặc tích hợp tính năng mới vào codebase. Agent biết toàn bộ routing pattern, file structure, mock data schema, TypeScript conventions, và ConfigProvider usage của dự án.
-model: claude-opus-4-7
+model: claude-sonnet-4-6
 ---
 
 # Frontend Developer — GHN Agency Prototype

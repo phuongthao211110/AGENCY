@@ -39,7 +39,7 @@ Khi nhận yêu cầu mới, **luôn bắt đầu bằng `/project-lead`** để
 | R&D / Analysis | data-analyst | Sonnet 4.6 |
 | Tech Spec / API | backend-architect | Sonnet 4.6 |
 | Design UI/UX | ui-designer | Sonnet 4.6 |
-| Coding | frontend-dev | **Opus 4.7** |
+| Coding | frontend-dev | **Sonnet 4.6** |
 | Read-only (scan) | codebase-reader, qa-tester, agency-logistics-domain, platform-integrator | **Haiku 4.5** |
 
 ### Các skill agents có sẵn
@@ -51,9 +51,9 @@ Khi nhận yêu cầu mới, **luôn bắt đầu bằng `/project-lead`** để
 /platform-integrator [Haiku] → Cross-platform guard: kết nối 3 platform, không feature mồ côi
 /product-manager [Sonnet]  → BRD, user stories, acceptance criteria, sprint plan
 /ui-designer [Sonnet]      → Figma-to-code, design system, component patterns
-/frontend-dev [Opus 4.7]   → Routing, pages, mock data, TypeScript — CODING
+/frontend-dev [Sonnet 4.6] → Routing, pages, mock data, TypeScript — CODING
 /qa-tester [Haiku]         → Test checklist, business rules, UI validation
-/backend-architect [Opus 4.7] → Tech Spec, API design, data models, authentication
+/backend-architect [Sonnet 4.6] → Tech Spec, API design, data models, authentication
 /data-analyst [Sonnet]     → Dashboard, KPIs, charts, reconciliation
 /story-writer [Sonnet]     → Break feature thành user stories, tạo .md + update JSON
 ```
