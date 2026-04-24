@@ -36,11 +36,11 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
 type GoiCuoc = { loai: string; id: string; ten: string }
 
 const GHN_SHOPS: { shopId: string; name: string; phone: string; connectedAt: string; goiCuoc: GoiCuoc[] }[] = [
-  { shopId: '5148899', name: 'Shop Thời Trang ABC',   phone: '0901234567', connectedAt: '10/01/2025', goiCuoc: [{ loai: 'TMĐT', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'CPTT', id: '150', ten: 'Bảng giá CPTT XIAOMI for a Chính' }] },
-  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      phone: '0912345678', connectedAt: '15/01/2025', goiCuoc: [{ loai: 'TMĐT', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  phone: '0923456789', connectedAt: '20/02/2025', goiCuoc: [{ loai: 'CPTT', id: '201', ten: 'Bảng giá CPTT Mỹ Phẩm Standard' }, { loai: 'TMĐT', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148902', name: 'Shop Giày Dép Fashion', phone: '0934567890', connectedAt: '05/03/2025', goiCuoc: [{ loai: 'TMĐT', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  phone: '0945678901', connectedAt: '12/03/2025', goiCuoc: [{ loai: 'TMĐT', id: '421', ten: 'CAM KẾT TỪ 500 ĐƠN - 19,500Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148899', name: 'Shop Thời Trang ABC',   phone: '0901234567', connectedAt: '10/01/2025', goiCuoc: [{ loai: 'Hàng nhẹ', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '150', ten: 'Bảng giá Hàng nặng XIAOMI for a Chính' }] },
+  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      phone: '0912345678', connectedAt: '15/01/2025', goiCuoc: [{ loai: 'Hàng nhẹ', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '162', ten: 'Bảng giá Hàng nặng Điện Tử Standard' }] },
+  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  phone: '0923456789', connectedAt: '20/02/2025', goiCuoc: [{ loai: 'Hàng nặng', id: '201', ten: 'Bảng giá Hàng nặng Mỹ Phẩm Standard' }, { loai: 'Hàng nhẹ', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148902', name: 'Shop Giày Dép Fashion', phone: '0934567890', connectedAt: '05/03/2025', goiCuoc: [{ loai: 'Hàng nhẹ', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '178', ten: 'Bảng giá Hàng nặng Giày Dép Standard' }] },
+  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  phone: '0945678901', connectedAt: '12/03/2025', goiCuoc: [{ loai: 'Hàng nhẹ', id: '421', ten: 'CAM KẾT TỪ 500 ĐƠN - 19,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '195', ten: 'Bảng giá Hàng nặng Gia Dụng Standard' }] },
 ]
 
 // ─── Add Shop ID Modal (2 steps) ─────────────────────────────────────────────
@@ -274,7 +274,7 @@ function TabConnect() {
                         key={gc.id}
                         style={{ padding: '7px 8px 7px 40px' }}
                       >
-                        <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Gói cước {gc.loai}</div>
+                        <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginBottom: 2 }}>{gc.loai}</div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>{gc.id} — {gc.ten}</div>
                       </div>
                     ))}
@@ -426,7 +426,7 @@ function CreateServiceModal({ onClose, onCreated }: { onClose: () => void; onCre
                               onChange={() => toggleGoiCuoc(idx, gc.id)}
                               style={{ marginTop: 2, accentColor: C_ACTION, flexShrink: 0 }} />
                             <div>
-                              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>Gói cước {gc.loai}</div>
+                              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>{gc.loai}</div>
                               <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.id} — {gc.ten}</div>
                             </div>
                           </label>
@@ -562,7 +562,7 @@ function TabServices() {
                         }}>
                           {allGoiCuoc.map((gc, i) => (
                             <div key={i} style={{ padding: '6px 14px' }}>
-                              <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginBottom: 1 }}>Gói {gc.loai}</div>
+                              <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginBottom: 1 }}>{gc.loai}</div>
                               <div style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{gc.ten}</div>
                             </div>
                           ))}
