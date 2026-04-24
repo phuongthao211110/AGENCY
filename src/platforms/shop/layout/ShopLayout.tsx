@@ -71,7 +71,7 @@ export default function ShopLayout() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
+                    gap: 12,
                     padding: '5px 8px',
                     borderRadius: 6,
                     cursor: 'pointer',
@@ -98,23 +98,30 @@ export default function ShopLayout() {
             <div style={{ fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: 0.5, marginBottom: 6 }}>
               CÀI ĐẶT
             </div>
-            <div
-              onClick={() => navigate(SETTINGS_ITEM.key)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '5px 8px',
-                borderRadius: 6,
-                cursor: 'pointer',
-                color: '#333',
-                fontSize: 14,
-              }}
-            >
-              <span style={{ fontSize: 20, display: 'flex', color: '#555' }}>{SETTINGS_ITEM.icon}</span>
-              <span style={{ flex: 1 }}>{SETTINGS_ITEM.label}</span>
-              <RightOutlined style={{ fontSize: 12, color: '#999' }} />
-            </div>
+            {(() => {
+              const active = isActive(SETTINGS_ITEM.key)
+              return (
+                <div
+                  onClick={() => navigate(SETTINGS_ITEM.key)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '5px 8px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: active ? '#FFF3EE' : 'transparent',
+                    color: active ? GHN_ORANGE : '#333',
+                    fontWeight: active ? 600 : 400,
+                    fontSize: 14,
+                  }}
+                >
+                  <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>{SETTINGS_ITEM.icon}</span>
+                  <span style={{ flex: 1 }}>{SETTINGS_ITEM.label}</span>
+                  <RightOutlined style={{ fontSize: 12, color: active ? GHN_ORANGE : '#999' }} />
+                </div>
+              )
+            })()}
           </div>
 
           <div style={{ flex: 1 }} />
@@ -130,7 +137,7 @@ export default function ShopLayout() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
+                    gap: 12,
                     padding: '5px 8px',
                     borderRadius: 6,
                     cursor: 'pointer',
@@ -159,7 +166,7 @@ export default function ShopLayout() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 12,
                 padding: '5px 8px',
                 borderRadius: 6,
                 cursor: 'pointer',

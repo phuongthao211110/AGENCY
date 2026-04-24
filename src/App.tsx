@@ -9,6 +9,10 @@ import Agencies from './platforms/super-admin/pages/Agencies'
 import AgencyCreate from './platforms/super-admin/pages/AgencyCreate'
 import AgencyDetail from './platforms/super-admin/pages/AgencyDetail'
 import SuperAdminDocument from './platforms/super-admin/pages/Document'
+import SuperAdminSettings from './platforms/super-admin/pages/Settings'
+import AccountInfo from './platforms/super-admin/pages/settings/AccountInfo'
+import UserManagement from './platforms/super-admin/pages/settings/UserManagement'
+import Permissions from './platforms/super-admin/pages/settings/Permissions'
 
 // Agency Admin
 import AgencyAdminLayout from './platforms/agency-admin/layout/AgencyAdminLayout'
@@ -23,6 +27,10 @@ import AgencyAdminDocument from './platforms/agency-admin/pages/Document'
 import AgencyOrders from './platforms/agency-admin/pages/AgencyOrders'
 import AgencyReconciliation from './platforms/agency-admin/pages/AgencyReconciliation'
 import AgencyReconciliationDetail from './platforms/agency-admin/pages/AgencyReconciliationDetail'
+import AgencyAdminSettings from './platforms/agency-admin/pages/Settings'
+import AccountInfoAgency from './platforms/agency-admin/pages/settings/AccountInfo'
+import UserManagementAgency from './platforms/agency-admin/pages/settings/UserManagement'
+import PermissionsAgency from './platforms/agency-admin/pages/settings/Permissions'
 
 // Shop
 import ShopLayout from './platforms/shop/layout/ShopLayout'
@@ -32,6 +40,9 @@ import ShopReconciliation from './platforms/shop/pages/Reconciliation'
 import ShopPricing from './platforms/shop/pages/Pricing'
 import ShopSupport from './platforms/shop/pages/Support'
 import ShopDocument from './platforms/shop/pages/Document'
+import ShopSettings from './platforms/shop/pages/Settings'
+import AccountInfoShop from './platforms/shop/pages/settings/AccountInfo'
+import ShopSettingsPricing from './platforms/shop/pages/settings/ShopSettingsPricing'
 
 export default function App() {
   return (
@@ -46,6 +57,12 @@ export default function App() {
           <Route path="agencies" element={<Agencies />} />
           <Route path="agencies/create" element={<AgencyCreate />} />
           <Route path="agencies/:id" element={<AgencyDetail />} />
+          <Route path="settings" element={<SuperAdminSettings />}>
+            <Route path="account" element={<AccountInfo />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="permissions" element={<Permissions />} />
+            <Route index element={<Navigate to="account" replace />} />
+          </Route>
           <Route path="document" element={<SuperAdminDocument />}>
             <Route index element={<DocumentIndex />} />
             <Route path="story/:storyId" element={<StoryDetailPage />} />
@@ -67,6 +84,12 @@ export default function App() {
           <Route path="carrier-setup/:tab" element={<CarrierSetup />} />
           <Route path="carrier-setup/pricing/create" element={<PricingCreate />} />
           <Route path="carrier-setup/services/:id" element={<ServiceDetail />} />
+          <Route path="settings" element={<AgencyAdminSettings />}>
+            <Route path="account" element={<AccountInfoAgency />} />
+            <Route path="users" element={<UserManagementAgency />} />
+            <Route path="permissions" element={<PermissionsAgency />} />
+            <Route index element={<Navigate to="account" replace />} />
+          </Route>
           <Route path="document" element={<AgencyAdminDocument />}>
             <Route index element={<DocumentIndex />} />
             <Route path="story/:storyId" element={<StoryDetailPage />} />
@@ -82,6 +105,11 @@ export default function App() {
           <Route path="reconciliation" element={<ShopReconciliation />} />
           <Route path="pricing" element={<ShopPricing />} />
           <Route path="support" element={<ShopSupport />} />
+          <Route path="settings" element={<ShopSettings />}>
+            <Route path="account" element={<AccountInfoShop />} />
+            <Route path="pricing" element={<ShopSettingsPricing />} />
+            <Route index element={<Navigate to="account" replace />} />
+          </Route>
           <Route path="document" element={<ShopDocument />}>
             <Route index element={<DocumentIndex />} />
             <Route path="story/:storyId" element={<StoryDetailPage />} />

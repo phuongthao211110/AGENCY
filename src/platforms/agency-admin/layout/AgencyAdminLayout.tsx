@@ -11,6 +11,8 @@ import {
   FileTextOutlined,
   OrderedListOutlined,
   AuditOutlined,
+  SettingOutlined,
+  RightOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
@@ -24,6 +26,8 @@ const NAV_ITEMS = [
   { key: '/agency-admin/carrier-setup', icon: <TruckOutlined />, label: 'Thiết lập NVC' },
   { key: '/agency-admin/reconciliation', icon: <AuditOutlined />, label: 'Đối soát NVC' },
 ]
+
+const SETTINGS_ITEM = { key: '/agency-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }
 
 
 export default function AgencyAdminLayout() {
@@ -69,7 +73,7 @@ export default function AgencyAdminLayout() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
+                    gap: 12,
                     padding: '5px 8px',
                     borderRadius: 6,
                     cursor: 'pointer',
@@ -88,6 +92,41 @@ export default function AgencyAdminLayout() {
             })}
           </div>
 
+          <div style={{ height: 1, background: COLOR_BORDER, margin: '10px 16px' }} />
+
+          {/* CÀI ĐẶT section */}
+          <div style={{ padding: '0 16px' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: 0.5, marginBottom: 6 }}>
+              CÀI ĐẶT
+            </div>
+            {(() => {
+              const active = isActive(SETTINGS_ITEM.key)
+              return (
+                <div
+                  onClick={() => navigate(SETTINGS_ITEM.key)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '5px 8px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: active ? '#FFF3EE' : 'transparent',
+                    color: active ? GHN_ORANGE : '#333',
+                    fontWeight: active ? 600 : 400,
+                    fontSize: 14,
+                  }}
+                >
+                  <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
+                    {SETTINGS_ITEM.icon}
+                  </span>
+                  <span style={{ flex: 1 }}>{SETTINGS_ITEM.label}</span>
+                  <RightOutlined style={{ fontSize: 12, color: active ? GHN_ORANGE : '#999' }} />
+                </div>
+              )
+            })()}
+          </div>
+
           <div style={{ flex: 1 }} />
 
           {/* Document — localhost only */}
@@ -101,7 +140,7 @@ export default function AgencyAdminLayout() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
+                    gap: 12,
                     padding: '5px 8px',
                     borderRadius: 6,
                     cursor: 'pointer',
@@ -130,7 +169,7 @@ export default function AgencyAdminLayout() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 12,
                 padding: '5px 8px',
                 borderRadius: 6,
                 cursor: 'pointer',
