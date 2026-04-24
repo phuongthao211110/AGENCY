@@ -60,12 +60,29 @@ Khi nhận yêu cầu mới, **luôn bắt đầu bằng `/project-lead`** để
 
 ### Token Optimization — Scout → Build Pattern
 
-**Luôn chạy codebase-reader (Haiku) SONG SONG với product-manager trước khi implement.**  
+**Luôn chạy codebase-reader (Haiku) SONG PARALLEL với product-manager trước khi implement.**  
 Frontend-dev và ui-designer nhận compact briefing từ codebase-reader thay vì tự đọc files.
 
 **story-writer chỉ chạy khi user explicitly yêu cầu** — không tự động sau mỗi feature.
 
 **Bug rõ ràng (sai màu, typo, sai số)** → fix trực tiếp bằng Edit tool, không spawn agent.
+
+### Quota Optimization Rules (BẮT BUỘC tuân thủ)
+
+| Situation | ❌ Sai | ✅ Đúng | Tiết kiệm |
+|-----------|--------|--------|----------|
+| **Bug UI (sai màu, typo, số)** | Spawn agent | Edit tool trực tiếp | ~Opus 1 call |
+| **Tính năng < 1 file** | codebase-reader + dev | Direct frontend-dev | ~Haiku 1 call |
+| **Story edit** | story-writer 3-4 lần | story-writer 1 lần → Document UI review | ~Sonnet 2-3 calls |
+| **UAT + Document** | Tuần tự (UAT → story-writer) | Song PARALLEL | ~30% thời gian |
+| **QC loop fail** | qa-tester chạy lại từ đầu | 1-2 cycles max rồi frontend-dev fix | ~Haiku 2+ calls |
+| **Story status update** | Chat Claude request | Document UI approve/reject (không re-spawn) | ~Sonnet 1 call |
+
+**Anti-patterns (tuyệt đối TRÁNH):**
+- Auto-spawn story-writer sau mỗi feature fix
+- Run codebase-reader + product-manager + 1 agent khác tuần tự (nếu independent → PARALLEL)
+- QC lặp lại > 2 cycles: chuyển fronted-dev fix trực tiếp
+- Story-writer tạo draft → edit lại 3-4 lần (tạo 1 lần → Document UI approve)
 
 ### Workflow theo loại yêu cầu
 
