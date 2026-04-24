@@ -7,7 +7,6 @@ import {
   UserOutlined,
   InboxOutlined,
   ReconciliationOutlined,
-  DollarOutlined,
   CustomerServiceOutlined,
   SettingOutlined,
   LogoutOutlined,
