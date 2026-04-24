@@ -71,18 +71,24 @@ Frontend-dev và ui-designer nhận compact briefing từ codebase-reader thay v
 
 | Situation | ❌ Sai | ✅ Đúng | Tiết kiệm |
 |-----------|--------|--------|----------|
-| **Bug UI (sai màu, typo, số)** | Spawn agent | Edit tool trực tiếp | ~Opus 1 call |
+| **Bug UI (sai màu, typo, số)** | Spawn agent | Edit tool trực tiếp | ~Sonnet 1 call |
 | **Tính năng < 1 file** | codebase-reader + dev | Direct frontend-dev | ~Haiku 1 call |
 | **Story edit** | story-writer 3-4 lần | story-writer 1 lần → Document UI review | ~Sonnet 2-3 calls |
 | **UAT + Document** | Tuần tự (UAT → story-writer) | Song PARALLEL | ~30% thời gian |
 | **QC loop fail** | qa-tester chạy lại từ đầu | 1-2 cycles max rồi frontend-dev fix | ~Haiku 2+ calls |
 | **Story status update** | Chat Claude request | Document UI approve/reject (không re-spawn) | ~Sonnet 1 call |
+| **Dashboard: KPI clear** | data-analyst → ui-designer → frontend-dev | Skip data-analyst, ui-designer direct từ mock | ~Sonnet 1 call |
+| **Bug UI simple tweak** | frontend-dev → qa-tester (parallel) | Skip qa-tester nếu < 5 min fix | ~Haiku 1 call |
+| **Backend planning: pure tech** | product-manager → backend-architect → frontend-dev | Skip product-manager, backend-architect direct | ~Sonnet 1 call |
 
 **Anti-patterns (tuyệt đối TRÁNH):**
 - Auto-spawn story-writer sau mỗi feature fix
 - Run codebase-reader + product-manager + 1 agent khác tuần tự (nếu independent → PARALLEL)
 - QC lặp lại > 2 cycles: chuyển fronted-dev fix trực tiếp
 - Story-writer tạo draft → edit lại 3-4 lần (tạo 1 lần → Document UI approve)
+- Spawn data-analyst cho dashboard nếu KPI logic rõ ràng (< 5 lines calc)
+- Spawn qa-tester cho UI tweak nhỏ (spacing, size, color)
+- Spawn product-manager cho pure tech spec (API design, schema)
 
 ### Workflow theo loại yêu cầu
 
@@ -100,14 +106,15 @@ Tính năng mới không có Figma:
 Bug / UI sai design:
   Bug rõ ràng (sai màu, typo) → Edit tool
   Bug logic → frontend-dev → qa-tester (parallel at 70%)
+  Bug UI simple (spacing, size) → frontend-dev (skip qa-tester)
 
 Dashboard / Báo cáo:
-  data-analyst → ui-designer → frontend-dev
-                                ↓ (70%) ↓
-                            qa-tester ← SONG SONG → UAT
+  KPI logic rõ ràng (< 5 lines) → ui-designer → frontend-dev (skip data-analyst)
+  Complex analytics → data-analyst → ui-designer → frontend-dev
 
 API / Backend planning:
-  product-manager → backend-architect → frontend-dev
+  Pure tech spec (no PM input) → backend-architect → frontend-dev (skip product-manager)
+  Feature with acceptance criteria → product-manager → backend-architect → frontend-dev
 
 Sprint planning:
   product-manager → qa-tester → project-lead (tổng hợp)
