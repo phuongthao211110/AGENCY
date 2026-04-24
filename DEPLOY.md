@@ -22,9 +22,7 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-| Tính năng | Mô tả | Người phát triển |
-|-----------|-------|-----------------|
-| **Settings Menu (v0.17.0)** | Super Admin + Agency Admin + Shop Portal: Settings page với 3 tabs (Thông tin tài khoản, Quản lý người dùng, Phân quyền) cho Super Admin & Agency Admin; 2 tabs (Thông tin tài khoản, Cài đặt giá bán) cho Shop Portal. Layout: dual sidebar (240px + 240px) + centered form (560px), custom password field với eye toggle, divider line + arrow icon ở sidebar, consistent styling qua 3 platform. Routes: `/*/settings/{account,users,permissions}` hoặc `/shop/settings/{account,pricing}`. Active state highlighting, tab navigation working, zero errors. | trannlb |
+_(Hiện không có tính năng pending)_
 
 
 ---
