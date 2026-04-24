@@ -276,19 +276,21 @@ export default function Shops() {
         </div>
 
         {/* Table */}
-        <div style={{ flex:'1 0 0', overflowY:'auto', padding:'0 16px' }}>
-          <div style={{ minWidth: 800 }}>
-            <THead allChecked={allChecked} onToggleAll={toggleAll} />
-            <div style={{ height:1, background: C_BORDER }} />
-            {paginated.map((shop) => (
-              <TRow
-                key={shop.id}
-                shop={shop}
-                checked={selected.has(shop.id)}
-                onToggle={() => toggleOne(shop.id)}
-                onClick={() => navigate(`/agency-admin/shops/${shop.id}`)}
-              />
-            ))}
+        <div style={{ flex:'1 0 0', overflow:'hidden', padding:'0 16px' }}>
+          <div style={{ height:'100%', overflowY:'auto', overflowX:'auto' }}>
+            <div style={{ minWidth: 800 }}>
+              <THead allChecked={allChecked} onToggleAll={toggleAll} />
+              <div style={{ height:1, background: C_BORDER }} />
+              {paginated.map((shop) => (
+                <TRow
+                  key={shop.id}
+                  shop={shop}
+                  checked={selected.has(shop.id)}
+                  onToggle={() => toggleOne(shop.id)}
+                  onClick={() => navigate(`/agency-admin/shops/${shop.id}`)}
+                />
+              ))}
+            </div>
           </div>
         </div>
 

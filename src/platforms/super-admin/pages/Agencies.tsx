@@ -240,17 +240,19 @@ export default function Agencies() {
         </div>
 
         {/* Table */}
-        <div style={{ flex: '1 0 0', overflowY: 'auto', padding: '0 16px' }}>
-          <div style={{ minWidth: 800 }}>
-            <THead />
-            <div style={{ height: 1, background: C_BORDER }} />
-            {paginated.map((agency) => (
-              <TRow
-                key={agency.id}
-                agency={agency}
-                onClick={() => navigate(`/super-admin/agencies/${agency.id}`)}
-              />
-            ))}
+        <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
+          <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
+            <div style={{ minWidth: 800 }}>
+              <THead />
+              <div style={{ height: 1, background: C_BORDER }} />
+              {paginated.map((agency) => (
+                <TRow
+                  key={agency.id}
+                  agency={agency}
+                  onClick={() => navigate(`/super-admin/agencies/${agency.id}`)}
+                />
+              ))}
+            </div>
           </div>
         </div>
 

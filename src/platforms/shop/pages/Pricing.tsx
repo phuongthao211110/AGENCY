@@ -106,13 +106,15 @@ export default function ShopPricing() {
       </div>
 
       {/* Table */}
-      <div style={{ flex: '1 0 0', overflowY: 'auto', padding: '0 16px' }}>
-        <div style={{ minWidth: 760 }}>
-          <THead />
-          <div style={{ height: 1, background: C_BORDER }} />
-          {myPricing.map((p) => (
-            <TRow key={p.id} pricing={p} onView={() => setSelected(p)} />
-          ))}
+      <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
+        <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
+          <div style={{ minWidth: 760 }}>
+            <THead />
+            <div style={{ height: 1, background: C_BORDER }} />
+            {myPricing.map((p) => (
+              <TRow key={p.id} pricing={p} onView={() => setSelected(p)} />
+            ))}
+          </div>
         </div>
       </div>
 

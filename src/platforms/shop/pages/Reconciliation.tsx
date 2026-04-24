@@ -326,31 +326,33 @@ export default function ShopReconciliation() {
       </div>
 
       {/* Table */}
-      <div style={{ flex: '1 0 0', overflowY: 'auto', padding: '0 16px' }}>
-        <div style={{ minWidth: 900 }}>
-          {/* Header */}
-          <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-            <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Mã phiên</div>
-            <div style={{ flex: '0 0 120px', minWidth: 120, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Phiên NVC</div>
-            <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Ngày</div>
-            <div style={{ flex: '0 0 70px', minWidth: 70, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Số đơn</div>
-            <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Tổng COD</div>
-            <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Phí ship</div>
-            <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Nhận về</div>
-            <div style={{ flex: '0 0 140px', minWidth: 140, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Trạng thái</div>
-            <div style={{ flex: '0 0 72px', minWidth: 72 }} />
-          </div>
-          <div style={{ height: 1, background: C_BORDER }} />
-
-          {mySessions.length === 0 && (
-            <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
-              Chưa có phiên đối soát nào
+      <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
+        <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
+          <div style={{ minWidth: 900 }}>
+            {/* Header */}
+            <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
+              <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Mã phiên</div>
+              <div style={{ flex: '0 0 120px', minWidth: 120, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Phiên NVC</div>
+              <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Ngày</div>
+              <div style={{ flex: '0 0 70px', minWidth: 70, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Số đơn</div>
+              <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Tổng COD</div>
+              <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Phí ship</div>
+              <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Nhận về</div>
+              <div style={{ flex: '0 0 140px', minWidth: 140, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Trạng thái</div>
+              <div style={{ flex: '0 0 72px', minWidth: 72 }} />
             </div>
-          )}
+            <div style={{ height: 1, background: C_BORDER }} />
 
-          {mySessions.map(s => (
-            <TRow key={s.id} session={s} onView={() => setSelected(s)} />
-          ))}
+            {mySessions.length === 0 && (
+              <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
+                Chưa có phiên đối soát nào
+              </div>
+            )}
+
+            {mySessions.map(s => (
+              <TRow key={s.id} session={s} onView={() => setSelected(s)} />
+            ))}
+          </div>
         </div>
       </div>
 

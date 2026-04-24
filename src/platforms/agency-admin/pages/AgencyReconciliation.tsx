@@ -105,16 +105,17 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ─── Table cell helper ────────────────────────────────────────────────────────
-function TCell({ children, width, flex = '0 0 auto', align = 'left', isHeader = false }: {
+function TCell({ children, width, flex = '0 0 auto', align = 'left', isHeader = false, minWidth }: {
   children: React.ReactNode
   width?: number
   flex?: string
   align?: 'left' | 'right' | 'center'
   isHeader?: boolean
+  minWidth?: number
 }) {
   return (
     <div style={{
-      width, flex, flexShrink: 0, padding: '6px 8px',
+      width, flex, minWidth, flexShrink: 0, padding: '6px 8px',
       display: 'flex', alignItems: 'center',
       justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
       fontSize: 14,
@@ -254,7 +255,7 @@ function TabCarrier({
   }
 
   return (
-    <div style={{ flex: '1 0 0', overflowY: 'auto', padding: '0 16px' }}>
+    <div style={{ flex: '1 0 0', display: 'flex', flexDirection: 'column', padding: '0 16px' }}>
       {/* Header actions */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', flexShrink: 0 }}>
         <div style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>
@@ -274,7 +275,7 @@ function TabCarrier({
       </div>
 
       {/* Stats cards */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexShrink: 0 }}>
         <div style={cardStyle}>
           <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Tổng phiên</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY }}>{total}</div>
@@ -290,7 +291,7 @@ function TabCarrier({
       </div>
 
       {/* Filter bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexShrink: 0 }}>
         <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Trạng thái:</span>
         <select
           value={filterStatus}
@@ -313,7 +314,7 @@ function TabCarrier({
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '10px 12px', marginBottom: 8,
-          background: '#FFF4ED', borderRadius: 8, border: '1px solid #FDBA74',
+          background: '#FFF4ED', borderRadius: 8, border: '1px solid #FDBA74', flexShrink: 0,
         }}>
           <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>
             Đã chọn <strong>{selectedIds.size}</strong> phiên
@@ -331,38 +332,42 @@ function TabCarrier({
       )}
 
       {/* Table */}
-      <div style={{ minWidth: 900 }}>
-        <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-          <div style={{ width: 40, flexShrink: 0, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Checkbox checked={allPendingSelected} onChange={toggleSelectAll} />
+      <div style={{ flex: '1 0 0', overflow: 'hidden' }}>
+        <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
+          <div style={{ minWidth: 900 }}>
+            <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
+              <div style={{ width: 40, flexShrink: 0, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Checkbox checked={allPendingSelected} onChange={toggleSelectAll} />
+              </div>
+              <TCell width={120} isHeader>Mã phiên</TCell>
+              <TCell width={120} isHeader>Ngày TT GHN</TCell>
+              <TCell flex='1 0 0' minWidth={220} isHeader>Tên file</TCell>
+              <TCell width={80}  align='right' isHeader>Số đơn</TCell>
+              <TCell width={90}  align='right' isHeader>Số lệch</TCell>
+              <TCell width={150} align='right' isHeader>Tổng cước</TCell>
+              <TCell width={160} align='right' isHeader>Tổng COD</TCell>
+              <TCell width={150} align='center' isHeader>Trạng thái</TCell>
+              <TCell width={100} align='center' isHeader>Action</TCell>
+            </div>
+            <div style={{ height: 1, background: C_BORDER }} />
+
+            {filteredSessions.length === 0 && (
+              <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
+                Chưa có phiên nào
+              </div>
+            )}
+
+            {filteredSessions.map(s => (
+              <SessionRow
+                key={s.id}
+                session={s}
+                onNavigate={() => navigate(`/agency-admin/reconciliation/${s.id}`)}
+                selected={selectedIds.has(s.id)}
+                onToggle={() => toggleOne(s.id)}
+              />
+            ))}
           </div>
-          <TCell width={120} isHeader>Mã phiên</TCell>
-          <TCell width={120} isHeader>Ngày TT GHN</TCell>
-          <TCell flex='1 0 0' isHeader>Tên file</TCell>
-          <TCell width={80}  align='right' isHeader>Số đơn</TCell>
-          <TCell width={90}  align='right' isHeader>Số lệch</TCell>
-          <TCell width={150} align='right' isHeader>Tổng cước</TCell>
-          <TCell width={160} align='right' isHeader>Tổng COD</TCell>
-          <TCell width={150} align='center' isHeader>Trạng thái</TCell>
-          <TCell width={100} align='center' isHeader>Action</TCell>
         </div>
-        <div style={{ height: 1, background: C_BORDER }} />
-
-        {filteredSessions.length === 0 && (
-          <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
-            Chưa có phiên nào
-          </div>
-        )}
-
-        {filteredSessions.map(s => (
-          <SessionRow
-            key={s.id}
-            session={s}
-            onNavigate={() => navigate(`/agency-admin/reconciliation/${s.id}`)}
-            selected={selectedIds.has(s.id)}
-            onToggle={() => toggleOne(s.id)}
-          />
-        ))}
       </div>
 
       {showUploadModal && (
@@ -425,7 +430,7 @@ function SessionRow({ session: s, onNavigate, selected, onToggle }: {
         <span style={{ color: C_LINK, fontWeight: 600 }}>{s.id}</span>
       </TCell>
       <TCell width={120}>{fmtDate(s.paymentDate)}</TCell>
-      <TCell flex='1 0 0'>
+      <TCell flex='1 0 0' minWidth={220}>
         <span style={{ color: C_TEXT_SECONDARY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {s.fileName}
         </span>
@@ -630,7 +635,7 @@ function TabShop({
   }
 
   return (
-    <div style={{ flex: '1 0 0', overflowY: 'auto', padding: '0 16px' }}>
+    <div style={{ flex: '1 0 0', display: 'flex', flexDirection: 'column', padding: '0 16px' }}>
       {/* Header */}
       <div style={{ padding: '12px 0', flexShrink: 0 }}>
         <div style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>
@@ -639,7 +644,7 @@ function TabShop({
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexShrink: 0 }}>
         <div style={cardStyle}>
           <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Tổng phiên shop</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY }}>{total}</div>
@@ -655,7 +660,7 @@ function TabShop({
       </div>
 
       {/* Filter bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Trạng thái:</span>
           <select
@@ -696,7 +701,7 @@ function TabShop({
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '10px 12px', marginBottom: 8,
-          background: '#FFF4ED', borderRadius: 8, border: '1px solid #FDBA74',
+          background: '#FFF4ED', borderRadius: 8, border: '1px solid #FDBA74', flexShrink: 0,
         }}>
           <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>
             Đã chọn <strong>{selectedIds.size}</strong> phiên
@@ -714,38 +719,42 @@ function TabShop({
       )}
 
       {/* Table */}
-      <div style={{ minWidth: 1100 }}>
-        <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-          <div style={{ width: 40, flexShrink: 0, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Checkbox checked={allPendingSelected} onChange={toggleSelectAll} />
+      <div style={{ flex: '1 0 0', overflow: 'hidden' }}>
+        <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
+          <div style={{ minWidth: 1100 }}>
+            <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
+              <div style={{ width: 40, flexShrink: 0, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Checkbox checked={allPendingSelected} onChange={toggleSelectAll} />
+              </div>
+              <TCell width={200} isHeader>Mã phiên shop</TCell>
+              <TCell flex='1 0 0' minWidth={180} isHeader>Tên shop</TCell>
+              <TCell width={120} isHeader>Phiên NVC</TCell>
+              <TCell width={70}  align='right' isHeader>Số đơn</TCell>
+              <TCell width={140} align='right' isHeader>Tổng COD</TCell>
+              <TCell width={120} align='right' isHeader>Phí shop</TCell>
+              <TCell width={110} align='right' isHeader>Phí GHN</TCell>
+              <TCell width={130} align='right' isHeader>Lợi nhuận ĐL</TCell>
+              <TCell width={80}  align='right' isHeader>Số lệch</TCell>
+              <TCell width={140} align='center' isHeader>Trạng thái</TCell>
+            </div>
+            <div style={{ height: 1, background: C_BORDER }} />
+
+            {filtered.length === 0 && (
+              <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
+                Không có phiên nào
+              </div>
+            )}
+
+            {filtered.map(s => (
+              <ShopSessionRow
+                key={s.id}
+                session={s}
+                selected={selectedIds.has(s.id)}
+                onToggle={() => toggleOne(s.id)}
+              />
+            ))}
           </div>
-          <TCell width={200} isHeader>Mã phiên shop</TCell>
-          <TCell flex='1 0 0' isHeader>Tên shop</TCell>
-          <TCell width={120} isHeader>Phiên NVC</TCell>
-          <TCell width={70}  align='right' isHeader>Số đơn</TCell>
-          <TCell width={140} align='right' isHeader>Tổng COD</TCell>
-          <TCell width={120} align='right' isHeader>Phí shop</TCell>
-          <TCell width={110} align='right' isHeader>Phí GHN</TCell>
-          <TCell width={130} align='right' isHeader>Lợi nhuận ĐL</TCell>
-          <TCell width={80}  align='right' isHeader>Số lệch</TCell>
-          <TCell width={140} align='center' isHeader>Trạng thái</TCell>
         </div>
-        <div style={{ height: 1, background: C_BORDER }} />
-
-        {filtered.length === 0 && (
-          <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
-            Không có phiên nào
-          </div>
-        )}
-
-        {filtered.map(s => (
-          <ShopSessionRow
-            key={s.id}
-            session={s}
-            selected={selectedIds.has(s.id)}
-            onToggle={() => toggleOne(s.id)}
-          />
-        ))}
       </div>
     </div>
   )
@@ -781,7 +790,7 @@ function ShopSessionRow({ session: s, selected, onToggle }: {
       <TCell width={200}>
         <span style={{ color: C_LINK, fontWeight: 600, fontSize: 13 }}>{s.id}</span>
       </TCell>
-      <TCell flex='1 0 0'>
+      <TCell flex='1 0 0' minWidth={180}>
         <span style={{ fontWeight: 500 }}>{s.shopName}</span>
       </TCell>
       <TCell width={120}>
