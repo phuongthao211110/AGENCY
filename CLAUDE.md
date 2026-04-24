@@ -88,17 +88,23 @@ Frontend-dev và ui-designer nhận compact briefing từ codebase-reader thay v
 
 ```
 Tính năng mới + Figma URL:
-  [codebase-reader / Haiku] ← SONG SONG → product-manager → ui-designer → frontend-dev → qa-tester → UAT
-  [agency-logistics-domain / Haiku] ← SONG SONG (nếu liên quan COD/đối soát)
+  [codebase-reader / Haiku] ← SONG SONG → product-manager → ui-designer → frontend-dev
+                                            ↓ (70% done) ↓
+                                        qa-tester ← SONG SONG → UAT
 
 Tính năng mới không có Figma:
-  [codebase-reader / Haiku] ← SONG SONG → product-manager → frontend-dev → qa-tester → UAT
+  [codebase-reader / Haiku] ← SONG SONG → product-manager → frontend-dev
+                                          ↓ (70% done) ↓
+                                      qa-tester ← SONG SONG → UAT
 
 Bug / UI sai design:
-  [codebase-reader / Haiku] → frontend-dev → qa-tester (bug rõ ràng: bỏ qua codebase-reader)
+  Bug rõ ràng (sai màu, typo) → Edit tool
+  Bug logic → frontend-dev → qa-tester (parallel at 70%)
 
 Dashboard / Báo cáo:
-  data-analyst → ui-designer → frontend-dev → qa-tester → UAT
+  data-analyst → ui-designer → frontend-dev
+                                ↓ (70%) ↓
+                            qa-tester ← SONG SONG → UAT
 
 API / Backend planning:
   product-manager → backend-architect → frontend-dev
@@ -107,11 +113,23 @@ Sprint planning:
   product-manager → qa-tester → project-lead (tổng hợp)
 ```
 
+**Key:** qa-tester start khi frontend-dev ~70% done (parallel, không tuần tự) → rút 20-30% delivery time
+
 ### QC Process (BẮT BUỘC sau mỗi implementation)
 
-1. **qa-tester [Haiku]** chạy test checklist: business rules, UI tokens, edge cases
-2. qa-tester xuất danh sách issues → frontend-dev fix nếu có
-3. Lặp lại đến khi qa-tester confirm PASS
+**Sequential (traditional):**
+1. frontend-dev 100% done
+2. qa-tester [Haiku] chạy test checklist: business rules, UI tokens, edge cases
+3. qa-tester xuất danh sách issues → frontend-dev fix nếu có
+4. Lặp lại đến khi qa-tester confirm PASS (max 2 cycles)
+
+**Parallel (Optimized for speed):**
+1. frontend-dev ~70% done → qa-tester [Haiku] START search + UI validation
+2. frontend-dev FINISH 100% → qa-tester continue final checks
+3. qa-tester xuất danh sách issues → frontend-dev fix
+4. Lặp lại max 1 cycle (vì early feedback)
+
+**Why parallel:** Rút thời gian delivery ~20-30%, find bugs sớm, fix faster. Quota không thay đổi (Haiku calls vẫn 1-2 lần).
 
 ### UAT Process (BẮT BUỘC trước khi báo hoàn thành)
 

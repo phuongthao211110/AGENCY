@@ -23,7 +23,6 @@ const SIDEBAR_WIDTH = 240
 const NAV_ITEMS = [
   { key: '/shop/orders',         icon: <InboxOutlined />,           label: 'Đơn hàng' },
   { key: '/shop/reconciliation', icon: <ReconciliationOutlined />,  label: 'Đối soát' },
-  { key: '/shop/pricing',        icon: <DollarOutlined />,          label: 'Bảng giá' },
   { key: '/shop/support',        icon: <CustomerServiceOutlined />, label: 'Hỗ trợ' },
 ]
 
