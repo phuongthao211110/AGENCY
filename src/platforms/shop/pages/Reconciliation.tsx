@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { EyeOutlined, CheckCircleOutlined, WarningOutlined } from '@ant-design/icons'
+import { EyeOutlined, CheckCircleOutlined, WarningOutlined, CalendarOutlined } from '@ant-design/icons'
 import allCarrierSessions from '../../../mock-data/carrier-reconciliation.json'
 import allItemsData from '../../../mock-data/carrier-reconciliation-items.json'
+import allShops from '../../../mock-data/shops.json'
 
 // ── Design tokens ────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -45,8 +46,27 @@ type ShopSession = {
   items: ItemRecord[]
 }
 
-// ── Derive shop sessions từ confirmed NVC sessions ────────────
+// ── Shop data ─────────────────────────────────────────────────
 const MY_SHOP_ID = 'SHP001'
+const myShop = (allShops as any[]).find(s => s.id === MY_SHOP_ID)
+
+// ── COD Schedule options ──────────────────────────────────────
+const SCHEDULE_OPTIONS = [
+  'Thứ 2, 3, 4, 5, 6',
+  'Thứ 6',
+  'Thứ 5',
+  'Thứ 4',
+  'Thứ 3',
+  'Thứ 2',
+  'Thứ 3, 5',
+  'Thứ 3, 5, 6',
+  'Thứ 3, 4, 6',
+  'Thứ 2, 4, 6',
+  'Thứ 2, 5',
+  'Thứ 2, 4',
+]
+
+// ── Derive shop sessions từ confirmed NVC sessions ────────────
 
 function buildShopSessions(): ShopSession[] {
   const confirmedIds = new Set(
@@ -295,9 +315,106 @@ function DetailModal({ session, onClose }: { session: ShopSession; onClose: () =
   )
 }
 
+// ── Schedule Modal ────────────────────────────────────────────
+function ScheduleModal({ current, onSave, onClose }: {
+  current: string
+  onSave: (v: string) => void
+  onClose: () => void
+}) {
+  const [selected, setSelected] = useState(current)
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: 400, background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }}
+      >
+        {/* Header */}
+        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Đổi lịch nhận COD</span>
+          <button
+            onClick={onClose}
+            style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: C_TEXT_SECONDARY, lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '20px 24px' }}>
+          <label style={{ fontSize: 13, color: C_TEXT_SECONDARY, display: 'block', marginBottom: 8 }}>
+            Chọn ngày nhận tiền COD trong tuần
+          </label>
+          <select
+            value={selected}
+            onChange={e => setSelected(e.target.value)}
+            style={{
+              width: '100%', padding: '8px 12px', fontSize: 14, color: C_TEXT_PRIMARY,
+              border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff',
+              cursor: 'pointer', outline: 'none',
+            }}
+          >
+            {SCHEDULE_OPTIONS.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '12px 24px', borderTop: `1px solid ${C_BORDER}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button
+            onClick={onClose}
+            style={{ padding: '7px 18px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 14, color: C_TEXT_PRIMARY }}
+          >
+            Huỷ
+          </button>
+          <button
+            onClick={() => { onSave(selected); onClose() }}
+            style={{ padding: '7px 18px', border: 'none', borderRadius: 6, background: C_ACTION, cursor: 'pointer', fontSize: 14, color: '#fff', fontWeight: 600 }}
+          >
+            Lưu
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Schedule Section ──────────────────────────────────────────
+function ScheduleSection({ schedule, onEdit }: { schedule: string; onEdit: () => void }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      margin: '0 16px 12px', padding: '12px 16px',
+      border: `1px solid ${C_BORDER}`, borderRadius: 8, background: '#FAFAFA',
+      flexShrink: 0,
+    }}>
+      <CalendarOutlined style={{ fontSize: 18, color: C_TEXT_SECONDARY, flexShrink: 0 }} />
+      <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Lịch nhận COD</span>
+      <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>{schedule}</span>
+      <div style={{ flex: 1 }} />
+      <button
+        onClick={onEdit}
+        style={{
+          padding: '7px 16px', border: 'none',
+          borderRadius: 6, background: C_ACTION, cursor: 'pointer',
+          fontSize: 14, color: '#fff', fontWeight: 600,
+        }}
+      >
+        Đổi lịch
+      </button>
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────
 export default function ShopReconciliation() {
   const [selected, setSelected] = useState<ShopSession | null>(null)
+  const [codSchedule, setCodSchedule] = useState<string>(myShop?.codSchedule ?? 'Thứ 2, 3, 4, 5, 6')
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
 
   const totalNetAmount = mySessions.reduce((s, r) => s + r.netAmount, 0)
   const totalMismatch  = mySessions.reduce((s, r) => s + r.totalMismatch, 0)
@@ -314,6 +431,9 @@ export default function ShopReconciliation() {
           </p>
         </div>
       </div>
+
+      {/* COD Schedule */}
+      <ScheduleSection schedule={codSchedule} onEdit={() => setShowScheduleModal(true)} />
 
       {/* Stat cards */}
       <div style={{ display: 'flex', gap: 12, padding: '0 16px 12px', flexShrink: 0 }}>
@@ -357,6 +477,14 @@ export default function ShopReconciliation() {
       </div>
 
       {selected && <DetailModal session={selected} onClose={() => setSelected(null)} />}
+
+      {showScheduleModal && (
+        <ScheduleModal
+          current={codSchedule}
+          onSave={v => setCodSchedule(v)}
+          onClose={() => setShowScheduleModal(false)}
+        />
+      )}
     </div>
   )
 }

@@ -181,6 +181,11 @@ export default function AgencyAdminLayout() {
               Đăng xuất
             </div>
           </div>
+
+          {/* Version */}
+          <div style={{ padding: '0 16px 10px', textAlign: 'center' }}>
+            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.19.0</span>
+          </div>
         </aside>
 
         {/* ── Main area ─────────────────────────────────────── */}

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "BA001",
+    "shopId": "SHP001",
+    "bankCode": "TPB",
+    "bankName": "Tien Phong Bank - Ngân hàng TMCP Tiên Phong",
+    "bankShortName": "Tien Phong Bank",
+    "accountName": "NGUYEN LAM BAO TRAN",
+    "accountNumber": "03048853201",
+    "isActive": true,
+    "createdAt": "2024-02-01"
+  }
+]

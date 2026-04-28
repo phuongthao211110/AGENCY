@@ -1,5 +1,5 @@
 import { ConfigProvider } from 'antd'
-import { UserOutlined, DollarOutlined } from '@ant-design/icons'
+import { UserOutlined, BankOutlined } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { shopTheme } from '../../../theme/platforms'
 import {
@@ -17,7 +17,7 @@ import {
 
 const SETTINGS_NAV = [
   { key: '/shop/settings/account', icon: <UserOutlined />, label: 'Thông tin tài khoản' },
-  { key: '/shop/settings/pricing', icon: <DollarOutlined />, label: 'Cài đặt giá bán' },
+  { key: '/shop/settings/bank',    icon: <BankOutlined />,  label: 'Tài khoản ngân hàng' },
 ]
 
 export default function Settings() {

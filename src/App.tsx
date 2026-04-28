@@ -43,6 +43,7 @@ import ShopDocument from './platforms/shop/pages/Document'
 import ShopSettings from './platforms/shop/pages/Settings'
 import AccountInfoShop from './platforms/shop/pages/settings/AccountInfo'
 import ShopSettingsPricing from './platforms/shop/pages/settings/ShopSettingsPricing'
+import BankAccounts from './platforms/shop/pages/settings/BankAccounts'
 
 export default function App() {
   return (
@@ -108,6 +109,7 @@ export default function App() {
           <Route path="settings" element={<ShopSettings />}>
             <Route path="account" element={<AccountInfoShop />} />
             <Route path="pricing" element={<ShopSettingsPricing />} />
+            <Route path="bank" element={<BankAccounts />} />
             <Route index element={<Navigate to="account" replace />} />
           </Route>
           <Route path="document" element={<ShopDocument />}>
