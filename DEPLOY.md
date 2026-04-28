@@ -14,7 +14,9 @@
 5. Deploy: git push → CI/CD hoặc manual upload dist/
 ```
 
-> **Quy tắc:** KHÔNG push production nếu chưa có confirm rõ ràng từ user. Mọi feature mới đều vào Pending trước.
+> **Quy tắc:** 
+> - KHÔNG push production nếu chưa có confirm rõ ràng từ user. Mọi feature mới đều vào Pending trước.
+> - **Documentation changes (.md, CLAUDE.md) không cần tạo version mới** — chỉ commit + push. Chỉ tạo version khi có code/feature changes (src/, vite.config, mock-data).
 
 ---
 
