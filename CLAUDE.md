@@ -8,6 +8,31 @@ Dự án prototype cho hệ thống quản lý đại lý GHN (Giao Hàng Nhanh)
 npm run dev   # http://localhost:4000/
 ```
 
+## Auto-Optimization: Every Session (No Setup Needed)
+
+⚡ **Claude automatically applies optimization rules without being asked:**
+
+1. **Load Context**: Read CLAUDE.md + `.claude/projects/.../memory/QUOTA-OPTIMIZATION-MASTER.md`
+2. **Apply Rules**: Auto-detect 13 optimization rules from request scope
+3. **Generate Plan**: Use `/planning-workflow` skill for feature requests
+4. **No Reminder Needed**: Just request feature → Claude optimizes automatically ✓
+
+**What happens when you request a feature:**
+```
+You: "Implement revenue dashboard for Agency Admin"
+  ↓
+Claude: Analyzes scope → Detects "KPI < 5 lines" (Rule 7)
+  ↓
+Claude: Recommends optimized workflow (skip data-analyst)
+  ↓
+Claude: Shows plan + estimated cost
+```
+
+**13 Optimization Rules Always Active:**
+Rules 1-13 from QUOTA-OPTIMIZATION-MASTER.md — see memory files for details.
+
+---
+
 ## 3 Platforms
 
 | Platform | Entry | Login |
