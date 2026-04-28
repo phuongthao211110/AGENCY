@@ -1,0 +1,527 @@
+{
+  "feature": {
+    "id": "multi-shop-service-connection",
+    "name": "Multi-Shop Service Connection",
+    "version": "v0.19.0",
+    "platform": "agency-admin",
+    "created": "2026-04-28",
+    "status": "ready-for-development",
+    "priority": "high",
+    "complexity": "medium"
+  },
+  "scope": {
+    "pages_affected": [
+      {
+        "route": "/agency-admin/carrier-setup/services",
+        "name": "ServiceManagement",
+        "file": "src/platforms/agency-admin/pages/ServiceManagement.tsx",
+        "type": "new",
+        "description": "New page for managing service-to-shop connections"
+      },
+      {
+        "route": "/agency-admin/carrier-setup/service/:id",
+        "name": "ServiceDetail",
+        "file": "src/platforms/agency-admin/pages/ServiceDetail.tsx",
+        "type": "extend",
+        "description": "Add 'Kết nối shop' tab and edit mode for service config"
+      },
+      {
+        "route": "/agency-admin/shops/:id",
+        "name": "ShopDetail",
+        "file": "src/platforms/agency-admin/pages/ShopDetail.tsx",
+        "type": "extend",
+        "description": "Add edit mode to 'Cấu hình dịch vụ' card"
+      }
+    ],
+    "cross_platform_impact": "none",
+    "breaking_changes": false,
+    "backward_compatible": true
+  },
+  "current_state": {
+    "version_baseline": "v0.16.0",
+    "services_model": {
+      "fields": [
+        { "name": "id", "type": "string", "example": "ghn-express" },
+        { "name": "code", "type": "string", "example": "CHUYENNHANH" },
+        { "name": "name", "type": "string", "example": "Giao hàng nhanh" },
+        { "name": "desc", "type": "string", "description": "Service description" },
+        { "name": "carrier", "type": "string", "example": "GHN" },
+        { "name": "maxWeight", "type": "string", "example": "20 kg" },
+        { "name": "deliveryZones", "type": "string", "example": "Toàn quốc" },
+        { "name": "enabled", "type": "boolean", "description": "Service active status" },
+        { "name": "ghnShopIds", "type": "string[]", "description": "Array of shop IDs (v0.16.0)" },
+        { "name": "priceTableId", "type": "string | null", "description": "Single price table reference" }
+      ],
+      "enhancement": {
+        "new_field": "shopConfigs",
+        "type": "object[]",
+        "structure": [
+          { "name": "shopId", "type": "string" },
+          { "name": "goiCuoc", "type": "string[]", "description": "Array of tier IDs per shop" }
+        ],
+        "migration_strategy": "populate from ghnShopIds + existing goiCuoc on first edit"
+      }
+    },
+    "existing_features": [
+      {
+        "name": "TabServices in CarrierSetup",
+        "status": "existing",
+        "detail": "Read-only table showing services with shop count and pricing"
+      },
+      {
+        "name": "CreateServiceModal (v0.16.0)",
+        "status": "to-refactor",
+        "detail": "2-step modal with multi-shop selection and per-shop tier checkboxes"
+      },
+      {
+        "name": "ServiceDetail page (v0.16.0)",
+        "status": "to-extend",
+        "detail": "3 tabs (Info, Available zones, Blocked zones) - add 4th tab for shop connections"
+      }
+    ]
+  },
+  "tasks": {
+    "phase_1": {
+      "name": "ServiceManagement Page (NEW)",
+      "effort_hours": 12,
+      "file": "src/platforms/agency-admin/pages/ServiceManagement.tsx",
+      "route": "/agency-admin/carrier-setup/services",
+      "subtasks": [
+        {
+          "id": "1.1",
+          "name": "Page Layout",
+          "effort": 3,
+          "description": "Title, search bar, filter toolbar, custom flex table with 3-level scroll pattern",
+          "deliverables": ["Page component with toolbar", "Table header and structure"]
+        },
+        {
+          "id": "1.2",
+          "name": "Table Columns",
+          "effort": 4,
+          "description": "6 columns: Dịch vụ, Shop kết nối, Gói cước, Bảng giá, Trạng thái, Hành động",
+          "columns": [
+            {
+              "label": "Dịch vụ",
+              "type": "primary",
+              "width_px": 240,
+              "flex": true,
+              "content": "name (bold blue) + code (gray)"
+            },
+            {
+              "label": "Shop kết nối",
+              "type": "numeric",
+              "width_px": 120,
+              "content": "count (clickable expands inline list)"
+            },
+            {
+              "label": "Gói cước",
+              "type": "status",
+              "width_px": 160,
+              "content": "single-name or 'n gói cước' with tooltip"
+            },
+            {
+              "label": "Bảng giá",
+              "type": "text",
+              "width_px": 140,
+              "content": "price table name or warning"
+            },
+            {
+              "label": "Trạng thái",
+              "type": "badge",
+              "width_px": 100,
+              "content": "Active (green) / Inactive (gray)"
+            },
+            {
+              "label": "Hành động",
+              "type": "action",
+              "width_px": 80,
+              "content": "Edit + Delete icons"
+            }
+          ],
+          "deliverables": ["Table row component", "Cell renderers for each column"]
+        },
+        {
+          "id": "1.3",
+          "name": "Create/Edit Service Modal",
+          "effort": 4,
+          "description": "Refactor from v0.16.0 CreateServiceModal with 2-step flow",
+          "steps": [
+            {
+              "step": 1,
+              "name": "Basic Info Form",
+              "fields": ["code", "name", "desc", "carrier"]
+            },
+            {
+              "step": 2,
+              "name": "Shop Selector",
+              "content": "List shops with checkboxes, per-shop goiCuoc tier multi-select"
+            }
+          ],
+          "deliverables": ["2-step modal component", "Form validation"]
+        },
+        {
+          "id": "1.4",
+          "name": "Inline Shop List Popover",
+          "effort": 1,
+          "description": "Click '2 shops' in table to expand shop names + tiers",
+          "deliverables": ["Popover component", "Shop list renderer"]
+        }
+      ]
+    },
+    "phase_2": {
+      "name": "ServiceDetail Page Enhancement",
+      "effort_hours": 8,
+      "file": "src/platforms/agency-admin/pages/ServiceDetail.tsx",
+      "route": "/agency-admin/carrier-setup/service/:id",
+      "subtasks": [
+        {
+          "id": "2.1",
+          "name": "Add 'Kết nối shop' Tab",
+          "effort": 3,
+          "description": "New 4th tab showing shops connected to service",
+          "content": [
+            "Columns: Shop ID GHN, Tên shop, Gói cước GHN, Hành động (Edit, Delete)",
+            "Read-only in view mode",
+            "Editable table in edit mode"
+          ],
+          "deliverables": ["Tab component", "Editable table structure"]
+        },
+        {
+          "id": "2.2",
+          "name": "Edit Mode UX Integration",
+          "effort": 3,
+          "description": "All tabs become editable when 'Chỉnh sửa' clicked",
+          "features": [
+            "Tier selector active in edit mode",
+            "Validation: each shop must have ≥1 gói cước",
+            "Save updates shopConfigs, ghnShopIds, priceTableId",
+            "Cancel reverts changes"
+          ],
+          "deliverables": ["Edit mode toggle logic", "Validation rules"]
+        },
+        {
+          "id": "2.3",
+          "name": "ShopTierSelector Component",
+          "effort": 2,
+          "description": "Reusable component for selecting goiCuoc per shop",
+          "props": [
+            { "name": "shopId", "type": "string" },
+            { "name": "selectedGoiCuoc", "type": "string[]" },
+            { "name": "onChangeGoiCuoc", "type": "function" },
+            { "name": "editable", "type": "boolean" }
+          ],
+          "deliverables": ["Component definition", "Mock goiCuoc data integration"]
+        }
+      ]
+    },
+    "phase_3": {
+      "name": "ShopDetail Page Enhancement",
+      "effort_hours": 6,
+      "file": "src/platforms/agency-admin/pages/ShopDetail.tsx",
+      "route": "/agency-admin/shops/:id",
+      "subtasks": [
+        {
+          "id": "3.1",
+          "name": "Enhance 'Cấu hình dịch vụ' Card",
+          "effort": 3,
+          "description": "Add edit mode to read-only card",
+          "view_mode": [
+            "Existing read-only table",
+            "+ 'Chỉnh sửa' button"
+          ],
+          "edit_mode": [
+            "Service dropdown selector",
+            "Per-service goiCuoc checkboxes",
+            "Delete button per row",
+            "+ 'Thêm dịch vụ' button",
+            "Save + Cancel buttons"
+          ],
+          "deliverables": ["Edit mode toggle", "Service selector UI", "Inline edit form"]
+        },
+        {
+          "id": "3.2",
+          "name": "Data Binding Logic",
+          "effort": 2,
+          "description": "Bind shop's configuredServices to service config array",
+          "operations": [
+            "Fetch shop.configuredServices on load",
+            "On save: update shop's service assignments",
+            "Validate: no duplicate services per shop"
+          ],
+          "deliverables": ["Service list fetcher", "Update handler", "Validation rules"]
+        },
+        {
+          "id": "3.3",
+          "name": "Data Consistency Check",
+          "effort": 1,
+          "description": "Warn if shop-service mapping mismatch",
+          "warning": "Shop has service but service doesn't list shop in ghnShopIds",
+          "deliverables": ["Validation warning", "Auto-sync option"]
+        }
+      ]
+    },
+    "phase_4": {
+      "name": "QC & UAT",
+      "effort_hours": 4,
+      "subtasks": [
+        {
+          "id": "4.1",
+          "name": "Test Checklist",
+          "effort": 2,
+          "test_levels": [
+            {
+              "level": "User Story",
+              "tests": [
+                "Create service with 2+ shops, each with different goiCuoc",
+                "Edit service: add/remove shops",
+                "Delete service: verify all refs removed",
+                "ServiceDetail: all 4 tabs load in view + edit mode",
+                "ShopDetail: add 2 services with different tiers"
+              ]
+            },
+            {
+              "level": "UI/UX",
+              "tests": [
+                "Table scroll: horizontal overflow in table only",
+                "Entity names: bold + #3B82F6 color",
+                "Action buttons: #FF5200 color + consistent icons",
+                "Modal/Drawer: proper z-index, keyboard close (Esc)",
+                "Validation: prevent save with missing fields",
+                "Responsive: 1280px+ desktop"
+              ]
+            },
+            {
+              "level": "Business Rules",
+              "tests": [
+                "Each shop can have ≥1 service with ≥1 goiCuoc per service",
+                "Deleting service removes from all shops",
+                "Price table applied correctly on order creation",
+                "No orphan services"
+              ]
+            },
+            {
+              "level": "Edge Cases",
+              "tests": [
+                "Create service with 0 shops",
+                "Service has shop but shop doesn't list service",
+                "Concurrent edits (last-save-wins acceptable)"
+              ]
+            }
+          ],
+          "deliverables": ["QC checklist document", "Test result report"]
+        },
+        {
+          "id": "4.2",
+          "name": "UAT Automation Steps",
+          "effort": 2,
+          "steps": [
+            {
+              "step": 1,
+              "action": "Start dev server",
+              "command": "npm run dev"
+            },
+            {
+              "step": 2,
+              "action": "Login as Agency Admin",
+              "url": "http://localhost:4000/agency-admin/login"
+            },
+            {
+              "step": 3,
+              "action": "Navigate to ServiceManagement",
+              "url": "/agency-admin/carrier-setup?tab=services",
+              "checks": [
+                "Page loads",
+                "Table shows existing services",
+                "Create modal works"
+              ]
+            },
+            {
+              "step": 4,
+              "action": "Test create/edit service workflow"
+            },
+            {
+              "step": 5,
+              "action": "Navigate to ServiceDetail",
+              "checks": ["All 4 tabs load", "Edit mode toggles correctly"]
+            },
+            {
+              "step": 6,
+              "action": "Navigate to ShopDetail",
+              "checks": ["Service config card loads", "Edit mode works"]
+            },
+            {
+              "step": 7,
+              "action": "Regression check: other Agency Admin pages",
+              "pages": ["Shops list", "Orders", "Pricing"]
+            }
+          ],
+          "deliverables": ["UAT automation script", "Regression test suite"]
+        }
+      ]
+    }
+  },
+  "components_hierarchy": {
+    "service_management": {
+      "path": "src/platforms/agency-admin/pages/ServiceManagement.tsx",
+      "children": [
+        "SearchBar",
+        "FilterToolbar",
+        "CustomTable (service list)",
+        "CreateServiceModal (refactored)"
+      ]
+    },
+    "service_detail": {
+      "path": "src/platforms/agency-admin/pages/ServiceDetail.tsx",
+      "tabs": [
+        "TabInfo (existing)",
+        "TabAvailable (existing)",
+        "TabBlocked (existing)",
+        "TabShopConnections (new)"
+      ],
+      "children": [
+        "ShopTierSelector",
+        "EditableServiceRow",
+        "AddShopModal"
+      ]
+    },
+    "shop_detail": {
+      "path": "src/platforms/agency-admin/pages/ShopDetail.tsx",
+      "enhancements": [
+        "ServiceConfigCard (edit mode added)"
+      ],
+      "children": [
+        "ServiceSelector",
+        "ServiceRow[]"
+      ]
+    }
+  },
+  "reusable_components": [
+    {
+      "name": "ShopTierSelector",
+      "purpose": "Select goiCuoc (package tier) for a specific shop",
+      "used_in": ["ServiceManagement modal", "ServiceDetail tab", "ShopDetail card"],
+      "props": [
+        { "name": "shopId", "type": "string" },
+        { "name": "selectedGoiCuoc", "type": "string[]" },
+        { "name": "onChangeGoiCuoc", "type": "function" },
+        { "name": "editable", "type": "boolean" }
+      ]
+    },
+    {
+      "name": "EditableServiceRow",
+      "purpose": "Render editable row in shop connections table",
+      "used_in": ["ServiceDetail tab", "ShopDetail card"],
+      "props": [
+        { "name": "service", "type": "ServiceInfo" },
+        { "name": "shopId", "type": "string" },
+        { "name": "onUpdateTier", "type": "function" },
+        { "name": "onDelete", "type": "function" },
+        { "name": "editable", "type": "boolean" }
+      ]
+    }
+  ],
+  "effort_estimate": {
+    "phase_1_service_management": 12,
+    "phase_2_service_detail": 8,
+    "phase_3_shop_detail": 6,
+    "phase_4_qc_uat": 4,
+    "total_hours": 30,
+    "parallelizable": true,
+    "critical_path_days": "2-3 days (with parallel QC at 70%)"
+  },
+  "deployment": {
+    "pre_deploy_steps": [
+      "npm run build (verify no errors)",
+      "npm run lint (check warnings)",
+      "Manual UAT on localhost:4000"
+    ],
+    "deploy_steps": [
+      "git add . && git commit -m 'feat: v0.19.0 — multi-shop service connection'",
+      "git push origin main",
+      "CI/CD pipeline or manual dist/ upload"
+    ],
+    "post_deploy_steps": [
+      "Update DEPLOY.md with v0.19.0 entry",
+      "Note feature summary in DEPLOY.md",
+      "Monitor production errors"
+    ],
+    "rollback": "git revert [commit-hash], redeploy (fallback: ghnShopIds + priceTableId)"
+  },
+  "cost_estimate": {
+    "frontend_dev_sonnet": "30 hours",
+    "codebase_reader_haiku": "~Haiku 1 call (parallel)",
+    "ui_designer_sonnet": "~Sonnet 1 call (if Figma available)",
+    "qa_tester_haiku": "~Haiku 2 calls (2 QC cycles)",
+    "estimated_tokens": "18,000–22,000 tokens",
+    "vs_no_planning": "35,000+ tokens (saved ~45% via planning)"
+  },
+  "risks": [
+    {
+      "id": "risk_1",
+      "title": "Data Sync (service ↔ shop)",
+      "probability": "medium",
+      "impact": "high",
+      "mitigation": "Bidirectional update logic + validation warnings"
+    },
+    {
+      "id": "risk_2",
+      "title": "Performance (100+ services × 50+ shops)",
+      "probability": "low",
+      "impact": "medium",
+      "mitigation": "Implement pagination + lazy-load in table (Phase 2)"
+    },
+    {
+      "id": "risk_3",
+      "title": "Backward Compatibility",
+      "probability": "low",
+      "impact": "medium",
+      "mitigation": "Keep ghnShopIds + priceTableId as fallback; auto-migrate on first edit"
+    },
+    {
+      "id": "risk_4",
+      "title": "Cross-platform Regression",
+      "probability": "low",
+      "impact": "medium",
+      "mitigation": "QC includes full regression sweep (Shops, Orders, Pricing)"
+    },
+    {
+      "id": "risk_5",
+      "title": "Figma Mismatch",
+      "probability": "medium",
+      "impact": "low",
+      "mitigation": "Confirm Figma before Phase 1; update design-system.md if needed"
+    }
+  ],
+  "success_criteria": [
+    "All 3 pages implement multi-shop connection UI",
+    "User can create service with 2+ shops, each with own goiCuoc",
+    "User can edit service to add/remove shops and change tiers",
+    "User can manage service assignments from shop detail",
+    "QC: all test cases pass (user story + UI + business rules + edge cases)",
+    "UAT: no regressions on other Agency Admin pages",
+    "DEPLOY.md updated with v0.19.0 entry",
+    "Design tokens enforced (inline styles, no Tailwind, correct colors)"
+  ],
+  "clarifications_needed": [
+    "Figma design: mockups available for ServiceManagement page? (file key + nodeId)",
+    "goiCuoc selection: single-select (radio) or multi-select (checkbox) per shop?",
+    "Price table logic: auto-update WebShop order pricing or just tagging for now?",
+    "Concurrent edits: accept 'last-save-wins' or need optimistic locking?",
+    "Performance scope: expect 100+ services? 50+ shops? Pagination needed?"
+  ],
+  "next_steps": [
+    "Confirm clarifications above",
+    "If Figma available: parallel codebase-reader (Haiku) + get_design_context",
+    "Start Phase 1: ServiceManagement page (frontend-dev Sonnet 4.6)",
+    "Phase 2–3 follow sequentially",
+    "QC parallel at 70% Phase 3 complete",
+    "UAT + DEPLOY.md update after QC pass",
+    "Deploy to production"
+  ],
+  "document": {
+    "version": "1.0",
+    "created": "2026-04-28",
+    "created_by": "Claude Code (Haiku 4.5)",
+    "format": "JSON (machine-parseable) + Markdown (human-readable)"
+  }
+}

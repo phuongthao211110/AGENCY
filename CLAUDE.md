@@ -28,7 +28,9 @@ npm run dev   # http://localhost:4000/
 
 ## Team Workflow — Dùng Skill Agent Đúng Role
 
-Khi nhận yêu cầu mới, **luôn bắt đầu bằng `/project-lead`** để xác định workflow phối hợp.
+Khi nhận yêu cầu mới:
+- **Scope rõ ràng** (user nói "plan feature", "bug fix", "dashboard") → dùng **`/planning-workflow`** skill trực tiếp (skip project-lead)
+- **Scope mơ hồ/phức tạp** → dùng **`/project-lead`** để phân loại + lên kế hoạch
 
 ### Model Assignment (BẮT BUỘC tuân thủ)
 
@@ -80,6 +82,10 @@ Frontend-dev và ui-designer nhận compact briefing từ codebase-reader thay v
 | **Dashboard: KPI clear** | data-analyst → ui-designer → frontend-dev | Skip data-analyst, ui-designer direct từ mock | ~Sonnet 1 call |
 | **Bug UI simple tweak** | frontend-dev → qa-tester (parallel) | Skip qa-tester nếu < 5 min fix | ~Haiku 1 call |
 | **Backend planning: pure tech** | product-manager → backend-architect → frontend-dev | Skip product-manager, backend-architect direct | ~Sonnet 1 call |
+| **Clear scope request** | Run project-lead → planning-workflow | Use planning-workflow skill trực tiếp | ~Sonnet 1 call |
+| **Figma design sẵn** | product-manager → ui-designer → frontend-dev (serial) | ui-designer + frontend-dev PARALLEL | ~Sonnet time |
+| **Task: COD/Pricing/Reconciliation** | Skip business rule check | Auto-add agency-logistics-domain [Haiku] | -Sonnet 2+ calls |
+| **Pure code refactor** | frontend-dev → qa-tester → done | Skip qa-tester (no logic change) | ~Haiku 1 call |
 
 **Anti-patterns (tuyệt đối TRÁNH):**
 - Auto-spawn story-writer sau mỗi feature fix
@@ -89,14 +95,25 @@ Frontend-dev và ui-designer nhận compact briefing từ codebase-reader thay v
 - Spawn data-analyst cho dashboard nếu KPI logic rõ ràng (< 5 lines calc)
 - Spawn qa-tester cho UI tweak nhỏ (spacing, size, color)
 - Spawn product-manager cho pure tech spec (API design, schema)
+- Spawn project-lead khi scope rõ ràng (dùng planning-workflow skill instead)
+- Serial ui-designer → frontend-dev khi Figma design sẵn (làm parallel)
+- Skip agency-logistics-domain khi task liên quan COD/pricing/reconciliation
+- Run qa-tester cho pure code refactor (không có feature/logic change)
 
 ### Workflow theo loại yêu cầu
 
 ```
-Tính năng mới + Figma URL:
-  [codebase-reader / Haiku] ← SONG SONG → product-manager → ui-designer → frontend-dev
-                                            ↓ (70% done) ↓
+Tính năng mới + Figma URL (design SẴN):
+  [codebase-reader / Haiku] ← SONG SONG → [product-manager + ui-designer] ← SONG PARALLEL
+                                                    ↓ (70% done) ↓
+                                    [frontend-dev] ← SONG PARALLEL
+                                            ↓ (70%) ↓
                                         qa-tester ← SONG SONG → UAT
+
+Tính năng mới + Figma URL (design CHƯA có):
+  [codebase-reader / Haiku] ← SONG SONG → product-manager → ui-designer → frontend-dev
+                                                              ↓ (70% done) ↓
+                                                          qa-tester ← SONG SONG → UAT
 
 Tính năng mới không có Figma:
   [codebase-reader / Haiku] ← SONG SONG → product-manager → frontend-dev
@@ -116,9 +133,19 @@ API / Backend planning:
   Pure tech spec (no PM input) → backend-architect → frontend-dev (skip product-manager)
   Feature with acceptance criteria → product-manager → backend-architect → frontend-dev
 
+Refactor:
+  Pure code refactor (no logic/feature change):
+    frontend-dev → (skip qa-tester, just smoke test)
+  Refactor + feature/logic:
+    frontend-dev → qa-tester (full QC)
+
 Sprint planning:
   product-manager → qa-tester → project-lead (tổng hợp)
 ```
+
+**Auto-add rules:**
+- Multi-platform feature → auto-add platform-integrator [Haiku]
+- Task ∈ {COD, pricing, reconciliation, route types, service} → auto-add agency-logistics-domain [Haiku]
 
 **Key:** qa-tester start khi frontend-dev ~70% done (parallel, không tuần tự) → rút 20-30% delivery time
 
