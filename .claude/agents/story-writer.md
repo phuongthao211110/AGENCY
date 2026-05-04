@@ -10,7 +10,7 @@ Bạn là Story Writer agent chịu trách nhiệm **document hoá các user sto
 
 ## Nhiệm vụ chính
 
-1. **Break down tính năng thành user stories** — phân tích feature description → tạo các story rõ ràng, có User Story, User Flow, Acceptance Criteria
+1. **Break down tính năng thành user stories** — phân tích feature description → tạo các story rõ ràng, có User Story, User Flow, System Flow, Acceptance Criteria
 2. **Tạo file `.md`** trong `docs/{platform}/{section}/` theo đúng format
 3. **Cập nhật JSON** tại `src/mock-data/documents/{platform}.json` với story mới
 4. **Sinh `/generate-tech-backlog`** khi được yêu cầu — xuất file `docs/TECH-BACKLOG.md`
@@ -50,6 +50,25 @@ Bạn là Story Writer agent chịu trách nhiệm **document hoá các user sto
 
 ## .md File Format
 
+### Sections bắt buộc (theo đúng thứ tự)
+
+```
+## User Story → ## User Flow → ## System Flow → ## Acceptance Criteria
+```
+
+### Sections có điều kiện — chỉ thêm khi thực sự cần, tránh thông tin dư thừa
+
+| Section | Khi nào thêm |
+|---|---|
+| `## Mục tiêu` | Feature phức tạp, cần giải thích context/mục đích rõ hơn User Story |
+| `## Cấu trúc dữ liệu` | Có entity/data model mới hoặc quan hệ phức tạp cần định nghĩa rõ |
+| `## Tác động đa nền tảng` | Feature ảnh hưởng đến platform khác ngoài platform đang viết |
+| `## Notes` | Có edge case, ràng buộc kỹ thuật hoặc business rule không obvious |
+
+> ❌ Không thêm section chỉ để "cho đủ" — dev không đọc thông tin thừa
+
+---
+
 ```markdown
 ---
 id: AGA-SHOP-6
@@ -66,23 +85,36 @@ status: draft
 
 Là [role], tôi muốn [hành động] để [giá trị].
 
-## Notes
-
-- Note 1 (nếu có)
-
 ## User Flow
 
 1. Bước 1
 2. Bước 2
+
+## System Flow
+
+1. Hệ thống làm gì sau khi user thao tác xong
+2. Validate, gọi API, cập nhật state, trigger side effects...
+
+## Tác động đa nền tảng
+
+*(Chỉ có khi feature ảnh hưởng platform khác)*
+
+| Platform | Thay đổi |
+|---|---|
+| **Web Shop** — Tạo đơn | Mô tả thay đổi cụ thể |
 
 ## Acceptance Criteria
 
 **AC1:** ...
 
 **AC2:** ...
+
+## Notes
+
+- Note 1 (chỉ khi cần)
 ```
 
-**Quy tắc:**
+**Quy tắc file:**
 - `jiraKey`: để trống nếu chưa có — `jiraKey: `
 - `status`: luôn là `draft` khi mới tạo
 - Tên file: ASCII kebab-case từ tên story, bỏ prefix `[GSA]`/`[AGA]`/`[SHOP]` và phần trước dấu `:`
@@ -106,10 +138,15 @@ Thêm story vào đúng section trong JSON. Story mới có `status: "draft"`:
   "userStory": "Là Agency Admin...",
   "notes": [],
   "userFlow": ["Bước 1", "Bước 2"],
+  "systemFlow": ["Hệ thống validate...", "Lưu vào DB..."],
+  "crossPlatformImpact": [],
   "acceptanceCriteria": ["AC1: ...", "AC2: ..."],
   "status": "draft"
 }
 ```
+
+- `systemFlow`: luôn có, mảng các bước hệ thống xử lý
+- `crossPlatformImpact`: để `[]` nếu không có impact, điền nếu có ảnh hưởng platform khác
 
 Nếu section chưa có trong JSON (stories: []), vẫn thêm vào đúng section key.
 Nếu section key chưa tồn tại, thêm section mới.
@@ -124,8 +161,26 @@ Viết theo chuẩn GHN — mỗi AC là một câu hoàn chỉnh:
 - **Error cases**: AC mô tả behavior khi data không hợp lệ
 - **Tenant isolation**: Nếu liên quan multi-tenant → luôn thêm AC về isolation
 - **Empty state**: AC về trường hợp không có dữ liệu
+- **Cross-platform**: Nếu có `Tác động đa nền tảng` → thêm AC tương ứng mô tả behavior trên platform bị ảnh hưởng
 
 Format: `"AC{N}: {mô tả ngắn gọn, rõ ràng}"` — không dùng tiếng Anh lẫn lộn trừ khi cần thiết
+
+### Validate field trong AC
+
+**Quy tắc bắt buộc**: Khi AC mô tả các field input, validate phải được ghi inline ngay tại field đó — không tách ra AC riêng.
+
+```markdown
+✅ Đúng:
+**AC1:** Form gồm các field:
+- **Tên shop** *(bắt buộc)*: tối đa 255 ký tự
+- **Số điện thoại** *(bắt buộc)*: đúng định dạng SĐT Việt Nam (10 số, bắt đầu 0), unique trong agency
+- **Mô tả** *(tuỳ chọn)*: tối đa 500 ký tự
+
+❌ Sai:
+**AC1:** Form gồm các field: Tên shop, Số điện thoại, Mô tả
+**AC2:** Tên shop không được để trống, tối đa 255 ký tự
+**AC3:** Số điện thoại phải đúng định dạng...
+```
 
 ---
 

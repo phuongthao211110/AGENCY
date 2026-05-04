@@ -207,7 +207,7 @@ function DetailModal({ session, onClose }: { session: ShopSession; onClose: () =
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>
-              Phiên NVC: <span style={{ color: C_LINK, fontWeight: 600 }}>{session.nvcSessionId}</span>
+              Phiên GHN: <span style={{ color: C_LINK, fontWeight: 600 }}>{session.nvcSessionId}</span>
             </span>
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>·</span>
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{fmtDate(session.paymentDate)}</span>
@@ -452,7 +452,7 @@ export default function ShopReconciliation() {
             {/* Header */}
             <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
               <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Mã phiên</div>
-              <div style={{ flex: '0 0 120px', minWidth: 120, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Phiên NVC</div>
+              <div style={{ flex: '0 0 120px', minWidth: 120, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Phiên GHN</div>
               <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Ngày</div>
               <div style={{ flex: '0 0 70px', minWidth: 70, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Số đơn</div>
               <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Tổng COD</div>

@@ -26,13 +26,13 @@ const C_BG_HEADER      = '#F3F4F6'
 type Tab = 'connect' | 'services' | 'pricing'
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: 'connect',  label: 'Kết nối NVC', icon: <ApiOutlined /> },
+  { key: 'connect',  label: 'Kết nối GHN', icon: <ApiOutlined /> },
   { key: 'services', label: 'Dịch vụ',     icon: <AppstoreOutlined /> },
   { key: 'pricing',  label: 'Bảng giá',    icon: <DollarOutlined /> },
 ]
 
 
-// ─── Tab: Kết nối NVC ─────────────────────────────────────────────────────────
+// ─── Tab: Kết nối GHN ─────────────────────────────────────────────────────────
 type GoiCuoc = { loai: string; id: string; ten: string }
 
 const GHN_SHOPS: { shopId: string; name: string; phone: string; connectedAt: string; goiCuoc: GoiCuoc[] }[] = [
@@ -153,7 +153,7 @@ function AddShopModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ─── Tab: Kết nối NVC ─────────────────────────────────────────────────────────
+// ─── Tab: Kết nối GHN ─────────────────────────────────────────────────────────
 function TabConnect() {
   const [search, setSearch]       = useState('')
   const [showModal, setShowModal] = useState(false)

@@ -112,7 +112,7 @@ export default function AgencyReconciliationDetail() {
             onClick={() => navigate('/agency-admin/reconciliation')}
             style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, marginBottom: 16 }}
           >
-            <ArrowLeftOutlined /> Đối soát NVC
+            <ArrowLeftOutlined /> Đối soát GHN
           </div>
           <div style={{ fontSize: 16, color: C_TEXT_PRIMARY }}>Không tìm thấy phiên</div>
         </div>
@@ -148,7 +148,7 @@ export default function AgencyReconciliationDetail() {
               onClick={() => navigate('/agency-admin/reconciliation')}
               style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}
             >
-              <ArrowLeftOutlined /> Đối soát NVC
+              <ArrowLeftOutlined /> Đối soát GHN
             </span>
             <span style={{ color: C_BORDER }}>/</span>
             <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{id}</span>

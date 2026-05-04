@@ -262,6 +262,55 @@
           ]
         },
         {
+          "id": "AGA-CARRIER-6",
+          "jiraKey": "AGENCY-148",
+          "title": "[AGA] Nhà vận chuyển - Tạo mới dịch vụ: Thông tin cơ bản",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn nhập thông tin cơ bản khi tạo mới gói dịch vụ để định danh dịch vụ và gắn các Shop ID GHN sẽ thực hiện vận chuyển cho dịch vụ đó.",
+          "notes": [
+            "Dịch vụ mới tạo mặc định ở trạng thái chưa kích hoạt — Agency Admin bật toggle sau khi hoàn tất cấu hình",
+            "Chưa gắn Shop ID GHN khi tạo vẫn được, có thể bổ sung ở trang chi tiết"
+          ],
+          "userFlow": [
+            "Agency Admin nhấn Tạo dịch vụ mới từ tab Dịch vụ (AGENCY-68)",
+            "Hệ thống hiển thị modal tạo dịch vụ",
+            "Agency Admin nhập thông tin cơ bản và chọn Shop ID GHN",
+            "Nhấn Tạo dịch vụ → hệ thống tạo và điều hướng sang trang chi tiết dịch vụ vừa tạo"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Modal tạo dịch vụ gồm các field: Mã dịch vụ (bắt buộc, font monospace, chỉ cho phép a-z A-Z 0-9 _, tối đa 50 ký tự, unique trong phạm vi đại lý), Tên dịch vụ (bắt buộc, tối đa 255 ký tự), Mô tả (tuỳ chọn, tối đa 500 ký tự), Shop ID GHN (tuỳ chọn, multi-select, chỉ liệt kê Shop ID đã kết nối).",
+            "AC2: Nút Tạo dịch vụ disable khi chưa nhập Mã hoặc Tên dịch vụ.",
+            "AC3: Mã dịch vụ trùng trong cùng đại lý → hiển thị lỗi inline Mã dịch vụ đã tồn tại, không cho submit.",
+            "AC4: Field không hợp lệ → hiển thị lỗi inline ngay tại field, không cho submit.",
+            "AC5: Tạo thành công → đóng modal, điều hướng sang trang chi tiết dịch vụ."
+          ],
+          "status": "draft"
+        },
+        {
+          "id": "AGA-CARRIER-5",
+          "jiraKey": "AGENCY-86",
+          "title": "[AGA] Nhà vận chuyển - Dịch vụ: Xem danh sách gói dịch vụ",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem danh sách các gói dịch vụ đại lý đang cung cấp để nắm toàn bộ dịch vụ đang hoạt động và quản lý chúng.",
+          "notes": [
+            "Dịch vụ chưa gắn Shop ID GHN nào → cột đó hiển thị —",
+            "Toggle ở danh sách là shortcut của AGENCY-152, không cần vào chi tiết để bật/tắt"
+          ],
+          "userFlow": [
+            "Agency Admin vào menu Thiết lập NVC → chọn tab Dịch vụ",
+            "Hệ thống hiển thị danh sách gói dịch vụ của đại lý",
+            "Agency Admin có thể tìm kiếm, xem trạng thái, nhấn tên dịch vụ để vào chi tiết (AGENCY-157), hoặc nhấn Tạo dịch vụ mới (AGENCY-148)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hiển thị danh sách dịch vụ thuộc đúng đại lý đang đăng nhập.",
+            "AC2: Mỗi dòng hiển thị: Tên dịch vụ (link xanh bold), Mã dịch vụ, danh sách Shop ID GHN được gắn, toggle kích hoạt.",
+            "AC3: Tìm kiếm theo tên hoặc mã, partial match, không phân biệt hoa/thường.",
+            "AC4: Không có kết quả → hiển thị Không tìm thấy dữ liệu.",
+            "AC5: Chưa có dịch vụ nào → empty state kèm nút Tạo dịch vụ mới.",
+            "AC6: Nhấn tên dịch vụ → trang chi tiết dịch vụ.",
+            "AC7: Nhấn Tạo dịch vụ mới → mở flow tạo dịch vụ (AGENCY-148)."
+          ],
+          "status": "draft"
+        },
+        {
           "id": "AGA-CARRIER-4",
           "jiraKey": "",
           "title": "[AGA] Thiết lập NVC: Bảng giá dịch vụ",

@@ -75,7 +75,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'shop',     label: 'Phiên shop',           icon: <ShopOutlined /> },
   { key: 'transfer', label: 'Chuyển khoản',         icon: <BankOutlined /> },
   { key: 'forecast', label: 'Dự trù',               icon: <BarChartOutlined /> },
-  { key: 'split',    label: 'Tách phiên NVC',       icon: <ScissorOutlined /> },
+  { key: 'split',    label: 'Tách phiên GHN',       icon: <ScissorOutlined /> },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -375,7 +375,7 @@ function TabCarrier({
           onClose={() => setShowUploadModal(false)}
           onSubmit={(file, date, note) => {
             const newSession: CarrierSession = {
-              id: `NVC${String(sessions.length + 100).padStart(3, '0')}`,
+              id: `GHN${String(sessions.length + 100).padStart(3, '0')}`,
               agencyId: 'AGN001',
               carrier: 'GHN',
               paymentDate: date,
@@ -639,7 +639,7 @@ function TabShop({
       {/* Header */}
       <div style={{ padding: '12px 0', flexShrink: 0 }}>
         <div style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>
-          Danh sách phiên đối soát theo từng shop — tổng hợp từ phiên NVC đã xác nhận
+          Danh sách phiên đối soát theo từng shop — tổng hợp từ phiên GHN đã xác nhận
         </div>
       </div>
 
@@ -728,7 +728,7 @@ function TabShop({
               </div>
               <TCell width={200} isHeader>Mã phiên shop</TCell>
               <TCell flex='1 0 0' minWidth={180} isHeader>Tên shop</TCell>
-              <TCell width={120} isHeader>Phiên NVC</TCell>
+              <TCell width={120} isHeader>Phiên GHN</TCell>
               <TCell width={70}  align='right' isHeader>Số đơn</TCell>
               <TCell width={140} align='right' isHeader>Tổng COD</TCell>
               <TCell width={120} align='right' isHeader>Phí shop</TCell>

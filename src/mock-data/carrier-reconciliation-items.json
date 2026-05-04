@@ -1,7 +1,7 @@
 [
   {
     "id": "ITEM001",
-    "sessionId": "NVC001",
+    "sessionId": "GHN001",
     "orderCode": "GHN-2024031500001",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -13,7 +13,7 @@
   },
   {
     "id": "ITEM002",
-    "sessionId": "NVC001",
+    "sessionId": "GHN001",
     "orderCode": "GHN-2024031500002",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -25,7 +25,7 @@
   },
   {
     "id": "ITEM003",
-    "sessionId": "NVC001",
+    "sessionId": "GHN001",
     "orderCode": "GHN-2024031500003",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -37,7 +37,7 @@
   },
   {
     "id": "ITEM004",
-    "sessionId": "NVC001",
+    "sessionId": "GHN001",
     "orderCode": "GHN-2024031500004",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -49,7 +49,7 @@
   },
   {
     "id": "ITEM005",
-    "sessionId": "NVC001",
+    "sessionId": "GHN001",
     "orderCode": "GHN-2024031500005",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -61,7 +61,7 @@
   },
   {
     "id": "ITEM006",
-    "sessionId": "NVC001",
+    "sessionId": "GHN001",
     "orderCode": "GHN-2024031500006",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -73,7 +73,7 @@
   },
   {
     "id": "ITEM007",
-    "sessionId": "NVC001",
+    "sessionId": "GHN001",
     "orderCode": "GHN-2024031500007",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -85,7 +85,7 @@
   },
   {
     "id": "ITEM008",
-    "sessionId": "NVC002",
+    "sessionId": "GHN002",
     "orderCode": "GHN-2024033100001",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -97,7 +97,7 @@
   },
   {
     "id": "ITEM009",
-    "sessionId": "NVC002",
+    "sessionId": "GHN002",
     "orderCode": "GHN-2024033100002",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -109,7 +109,7 @@
   },
   {
     "id": "ITEM010",
-    "sessionId": "NVC002",
+    "sessionId": "GHN002",
     "orderCode": "GHN-2024033100003",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -121,7 +121,7 @@
   },
   {
     "id": "ITEM011",
-    "sessionId": "NVC002",
+    "sessionId": "GHN002",
     "orderCode": "GHN-2024033100004",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -133,7 +133,7 @@
   },
   {
     "id": "ITEM012",
-    "sessionId": "NVC003",
+    "sessionId": "GHN003",
     "orderCode": "GHN-2024041500001",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -145,7 +145,7 @@
   },
   {
     "id": "ITEM013",
-    "sessionId": "NVC003",
+    "sessionId": "GHN003",
     "orderCode": "GHN-2024041500002",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -157,7 +157,7 @@
   },
   {
     "id": "ITEM014",
-    "sessionId": "NVC003",
+    "sessionId": "GHN003",
     "orderCode": "GHN-2024041500003",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -169,7 +169,7 @@
   },
   {
     "id": "ITEM015",
-    "sessionId": "NVC003",
+    "sessionId": "GHN003",
     "orderCode": "GHN-2024041500004",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -181,7 +181,7 @@
   },
   {
     "id": "ITEM016",
-    "sessionId": "NVC003",
+    "sessionId": "GHN003",
     "orderCode": "GHN-2024041500005",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -193,7 +193,7 @@
   },
   {
     "id": "ITEM017",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043000001",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -205,7 +205,7 @@
   },
   {
     "id": "ITEM018",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043000002",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -217,7 +217,7 @@
   },
   {
     "id": "ITEM019",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043000003",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -229,7 +229,7 @@
   },
   {
     "id": "ITEM020",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043000004",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -241,7 +241,7 @@
   },
   {
     "id": "ITEM021",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043000005",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -253,7 +253,7 @@
   },
   {
     "id": "ITEM022",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043099999",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -265,7 +265,7 @@
   },
   {
     "id": "ITEM023",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043000006",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
@@ -277,7 +277,7 @@
   },
   {
     "id": "ITEM024",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043000007",
     "shopId": "SHP002",
     "shopName": "Điện Tử Thành Công",
@@ -289,7 +289,7 @@
   },
   {
     "id": "ITEM025",
-    "sessionId": "NVC004",
+    "sessionId": "GHN004",
     "orderCode": "GHN-2024043000008",
     "shopId": "SHP001",
     "shopName": "Shop Thời Trang Minh Anh",
