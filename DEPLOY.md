@@ -24,7 +24,33 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-_(Hiện không có tính năng pending)_
+### v0.20.0 — Rebrand NVC → GHN + CarrierSetup UX + PricingCreate Surcharge
+
+**Rebrand & Wording**
+- Sidebar Agency Admin: "Thiết lập NVC" → "Thiết lập GHN", "Đối soát NVC" → "Đối soát GHN"
+- CarrierSetup tabs: "Kết nối NVC" → "Kết nối GHN", "Tách phiên NVC" → "Tách phiên GHN"
+- AgencyReconciliation: tab label + column header "Phiên NVC" → "Phiên GHN", session ID prefix GHN
+- AgencyReconciliationDetail breadcrumb: "Đối soát NVC" → "Đối soát GHN"
+- Shop Reconciliation: cột "Phiên NVC" + modal → "Phiên GHN"
+- Mock data: session IDs NVC001–005 → GHN001–005
+- Gói cước: "Gói cước TMĐT" → "Hàng nhẹ", "Gói cước CPTT" → "Hàng nặng"
+
+**CarrierSetup UX**
+- Bỏ popup "Tạo gói dịch vụ mới" — nút "Tạo mới dịch vụ" navigate thẳng đến ServiceDetail create mode
+
+**PricingCreate — Cấu hình tuyến & phụ phí**
+- Thêm loại tuyến "Nội thành" (TP lấy = TP giao)
+- Đơn vị gram/đ nằm trong field input, align phải
+- Accent border trái 4px màu cam cho từng tuyến để phân cách visual rõ ràng
+- 2 nút "Ngưỡng vượt cân" + "Phụ phí" dạng pill button (nền xám, active cam), badge count luôn có background tránh layout shift
+- **Phụ phí theo tuyến** — 4 loại phí, toggle expand/collapse per fee:
+  - *Phí bảo hiểm (khai giá)*: bảng nhiều mức (Giá trị khai giá từ → đến, Phụ phí số fix đ, Phụ phí % khai giá), Thêm/Xóa từng dòng
+  - *Giao trả 1 phần*: số tiền cố định đ / đơn hàng
+  - *Phí giao thất bại thu tiền*: số tiền cố định đ / đơn hàng
+  - *Phí thu hộ*: bảng nhiều mức COD (COD từ → đến, Phụ phí số fix đ, Phụ phí % COD), Thêm/Xóa từng dòng
+- Đã có data → form tự expand, nút Thêm đổi thành nút Xoá đỏ
+- Xoá phí chưa nhập: đóng thẳng, không cần modal confirm
+- Xoá phí đã nhập: hiện modal confirm trước khi xoá
 
 
 ---

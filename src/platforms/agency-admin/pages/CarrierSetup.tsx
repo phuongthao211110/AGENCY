@@ -302,171 +302,9 @@ function Toggle({ enabled }: { enabled: boolean }) {
 }
 
 
-// ─── Create Service Modal ─────────────────────────────────────────────────────
-type ShopConnection = { shopId: string; selectedGoiCuoc: string[] }
-type NewServiceData = { code: string; name: string; desc: string; shopConnections: ShopConnection[] }
-
-function CreateServiceModal({ onClose, onCreated }: { onClose: () => void; onCreated: (data: NewServiceData) => void }) {
-  const [code, setCode] = useState('')
-  const [name, setName] = useState('')
-  const [desc, setDesc] = useState('')
-  const [connections, setConnections] = useState<ShopConnection[]>([{ shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }])
-
-  const inputStyle: React.CSSProperties = {
-    border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px',
-    fontSize: 14, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box',
-  }
-
-  const addConnection = () =>
-    setConnections((prev) => [...prev, { shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }])
-
-  const removeConnection = (idx: number) =>
-    setConnections((prev) => prev.filter((_, i) => i !== idx))
-
-  const updateShopId = (idx: number, shopId: string) =>
-    setConnections((prev) => prev.map((c, i) => i === idx ? { shopId, selectedGoiCuoc: [] } : c))
-
-  const toggleGoiCuoc = (idx: number, gcId: string) =>
-    setConnections((prev) => prev.map((c, i) => {
-      if (i !== idx) return c
-      const has = c.selectedGoiCuoc.includes(gcId)
-      if (has) return { ...c, selectedGoiCuoc: c.selectedGoiCuoc.filter((id) => id !== gcId) }
-      if (c.selectedGoiCuoc.length >= 2) return c  // max 2
-      return { ...c, selectedGoiCuoc: [...c.selectedGoiCuoc, gcId] }
-    }))
-
-  const canSubmit = code.trim() && name.trim()
-
-  const handleSubmit = () => {
-    if (!canSubmit) return
-    onCreated({ code: code.trim(), name: name.trim(), desc, shopConnections: connections })
-  }
-
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -3px rgba(0,0,0,0.04)', width: 560, position: 'relative', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
-          <span style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Tạo gói dịch vụ mới</span>
-          <button onClick={onClose} style={{ width: 28, height: 28, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C_TEXT_SECONDARY, fontSize: 14, borderRadius: 4 }}>
-            <CloseOutlined />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-          {/* Mã gói + Tên gói */}
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>Mã gói <span style={{ color: '#EF4444' }}>*</span></label>
-              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="VD: GHN_EXPRESS"
-                style={{ ...inputStyle, fontFamily: 'monospace' }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>Tên gói <span style={{ color: '#EF4444' }}>*</span></label>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Giao hàng nhanh"
-                style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
-            </div>
-          </div>
-
-          {/* Mô tả */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>Mô tả</label>
-            <textarea value={desc} onChange={(e) => setDesc(e.target.value)}
-              placeholder="Mô tả ngắn về gói dịch vụ..." rows={2}
-              style={{ ...inputStyle, resize: 'vertical', lineHeight: '20px' }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
-          </div>
-
-          {/* Kết nối Shop ID GHN */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</label>
-
-            {connections.map((conn, idx) => {
-              const shop = GHN_SHOPS.find((s) => s.shopId === conn.shopId)
-              const availableGoiCuoc = shop?.goiCuoc ?? []
-              return (
-                <div key={idx} style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
-                  {/* Shop ID row */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <select
-                      value={conn.shopId}
-                      onChange={(e) => updateShopId(idx, e.target.value)}
-                      style={{ ...inputStyle, cursor: 'pointer', background: '#fff', flex: 1 }}
-                    >
-                      {GHN_SHOPS.map((s) => (
-                        <option key={s.shopId} value={s.shopId}>{s.shopId} — {s.name}</option>
-                      ))}
-                    </select>
-                    {connections.length > 1 && (
-                      <button onClick={() => removeConnection(idx)}
-                        style={{ flexShrink: 0, width: 20, height: 20, border: 'none', background: 'transparent', color: '#EF4444', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                        <CloseOutlined />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Gói cước checkboxes */}
-                  {availableGoiCuoc.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chọn gói cước áp dụng (tối đa 2)</span>
-                      {availableGoiCuoc.map((gc) => {
-                        const checked = conn.selectedGoiCuoc.includes(gc.id)
-                        const disabled = !checked && conn.selectedGoiCuoc.length >= 2
-                        return (
-                          <label key={gc.id}
-                            style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.45 : 1 }}>
-                            <input type="checkbox" checked={checked} disabled={disabled}
-                              onChange={() => toggleGoiCuoc(idx, gc.id)}
-                              style={{ marginTop: 2, accentColor: C_ACTION, flexShrink: 0 }} />
-                            <div>
-                              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>{gc.loai}</div>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.id} — {gc.ten}</div>
-                            </div>
-                          </label>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: 12, color: '#D97706' }}>Shop ID này chưa có gói cước từ GHN</span>
-                  )}
-                </div>
-              )
-            })}
-
-            <button onClick={addConnection}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', border: `1px dashed ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_SECONDARY, fontSize: 13, cursor: 'pointer', alignSelf: 'flex-start' }}>
-              <PlusOutlined style={{ fontSize: 12 }} />
-              Thêm Shop ID GHN
-            </button>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
-          <button onClick={onClose}
-            style={{ padding: '8px 16px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
-            Huỷ
-          </button>
-          <button onClick={handleSubmit} disabled={!canSubmit}
-            style={{ padding: '8px 16px', border: 'none', borderRadius: 6, background: canSubmit ? C_ACTION : '#F3F4F6', color: canSubmit ? '#fff' : '#9CA3AF', fontSize: 14, fontWeight: 600, cursor: canSubmit ? 'pointer' : 'default' }}>
-            Tạo gói dịch vụ
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function TabServices() {
   const navigate = useNavigate()
-  const [showCreateModal, setShowCreateModal] = useState(false)
   const [hovered, setHovered]     = useState<string | null>(null)
   const [shopHover, setShopHover] = useState<string | null>(null)
   const [search, setSearch]       = useState('')
@@ -483,16 +321,6 @@ function TabServices() {
 
   return (
     <>
-      {showCreateModal && (
-        <CreateServiceModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={(data) => {
-            setShowCreateModal(false)
-            navigate(`/agency-admin/carrier-setup/services/${data.code}`, { state: { isNew: true, ...data } })
-          }}
-        />
-      )}
-
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
@@ -504,7 +332,7 @@ function TabServices() {
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm kiếm"
               style={{ border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', width: 200 }} />
           </div>
-          <button onClick={() => setShowCreateModal(true)}
+          <button onClick={() => navigate('/agency-admin/carrier-setup/services/new', { state: { isNew: true } })}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
             <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
             <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo mới dịch vụ</span>

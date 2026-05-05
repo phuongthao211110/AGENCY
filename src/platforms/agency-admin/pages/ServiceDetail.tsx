@@ -43,10 +43,10 @@ type GoiCuoc = { loai: string; id: string; ten: string }
 type ShopConnection = { shopId: string; selectedGoiCuoc: string[] }
 
 const GHN_SHOPS: { shopId: string; name: string; goiCuoc: GoiCuoc[] }[] = [
-  { shopId: '5148899', name: 'Shop Thời Trang ABC',   goiCuoc: [{ loai: 'TMĐT', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'CPTT', id: '150', ten: 'Bảng giá CPTT XIAOMI for a Chính' }] },
-  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      goiCuoc: [{ loai: 'TMĐT', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  goiCuoc: [{ loai: 'CPTT', id: '201', ten: 'Bảng giá CPTT Mỹ Phẩm Standard' }, { loai: 'TMĐT', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148902', name: 'Shop Giày Dép Fashion', goiCuoc: [{ loai: 'TMĐT', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148899', name: 'Shop Thời Trang ABC',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '150', ten: 'Bảng giá Hàng nặng XIAOMI for a Chính' }] },
+  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      goiCuoc: [{ loai: 'Hàng nhẹ', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  goiCuoc: [{ loai: 'Hàng nặng', id: '201', ten: 'Bảng giá Hàng nặng Mỹ Phẩm Standard' }, { loai: 'Hàng nhẹ', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { shopId: '5148902', name: 'Shop Giày Dép Fashion', goiCuoc: [{ loai: 'Hàng nhẹ', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }] },
   { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  goiCuoc: [] },
 ]
 
@@ -264,9 +264,14 @@ export default function ServiceDetail() {
       return { ...c, selectedGoiCuoc: [...c.selectedGoiCuoc, gcId] }
     })}))
 
+  const isNewService = id === 'new' || !!locState?.isNew
+
   const handleStartEdit = () => { setEditForm(serviceData); setIsEditing(true) }
   const handleSave      = () => { setServiceData(editForm); setIsEditing(false) }
-  const handleCancel    = () => { setEditForm(serviceData); setIsEditing(false) }
+  const handleCancel    = () => {
+    if (isNewService) { navigate('/agency-admin/carrier-setup/services'); return }
+    setEditForm(serviceData); setIsEditing(false)
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
@@ -278,10 +283,12 @@ export default function ServiceDetail() {
           onClick={() => navigate('/agency-admin/carrier-setup/services')}
         />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 600, color: C_TEXT_PRIMARY, margin: 0, lineHeight: '28px' }}>
-            {serviceData.name}
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: serviceData.name ? C_TEXT_PRIMARY : C_TEXT_SECONDARY, margin: 0, lineHeight: '28px' }}>
+            {serviceData.name || 'Dịch vụ mới'}
           </h1>
-          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{serviceData.code}</span>
+          {serviceData.code && (
+            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{serviceData.code}</span>
+          )}
         </div>
 
         {isEditing ? (
@@ -387,7 +394,7 @@ export default function ServiceDetail() {
                                       onChange={() => toggleGoiCuoc(idx, gc.id)}
                                       style={{ marginTop: 2, accentColor: C_ACTION, flexShrink: 0 }} />
                                     <div>
-                                      <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>Gói cước {gc.loai}</div>
+                                      <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>{gc.loai}</div>
                                       <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.id} — {gc.ten}</div>
                                     </div>
                                   </label>
@@ -431,7 +438,7 @@ export default function ServiceDetail() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                               {selectedGc.map(gc => (
                                 <div key={gc.id}>
-                                  <div style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>Gói cước {gc.loai}</div>
+                                  <div style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>{gc.loai}</div>
                                   <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>{gc.id} — {gc.ten}</div>
                                 </div>
                               ))}
