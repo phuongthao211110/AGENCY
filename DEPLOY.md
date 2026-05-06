@@ -28,49 +28,30 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-### v0.21.0 — Order Drawer: Fee Sections + Service Filter
+### v0.23.0 — PricingCreate: Route Types + Zone Guide + Bulk Apply
 
-**Agency Admin & Web Shop — Drawer tạo đơn hàng**
-- Đổi tên section "Dịch vụ" → "Phí vận chuyển"; hiển thị phí ship (demoFee) từ configuredServices của từng dịch vụ
-- Toggle "Shop trả ship" / "Khách trả ship" ngay trong header card Phí vận chuyển
-- Thêm section **Phụ phí** — 4 dòng: Phí bảo hiểm (khai giá), Phí giao trả 1 phần, Phí giao thất bại thu tiền, Phí thu hộ; hiển thị 0đ nếu chưa có cấu hình
-- Phụ phí đi theo bảng giá gắn với dịch vụ của shop (lookup chain: shop → service → priceTableId → surcharges)
-- Dịch vụ không có priceTableId → ẩn khỏi danh sách chọn trong drawer (không tạo đơn được)
-- Thêm khối tổng cuối form: **Tổng phí vận chuyển** + **Tổng thu khách hàng** (đỏ, font 16 bold)
-- Mock data: SHP001 bổ sung dịch vụ `ghn-bulky` (demoFee 35.000đ); `ghn-bulky` trong services.json bật priceTableId PRC001; pricing.json bổ sung trường `surcharges` cho tất cả 5 bảng giá
-- UI: bỏ divider giữa 2 dòng tổng, tăng gap lên 8, tăng font size + weight cho số Tổng thu khách hàng
+**Agency Admin — Tạo bảng giá (`/agency-admin/pricing/create`)**
 
-**Agency Admin — ServiceDetail**
-- Header tạo dịch vụ mới: đồng bộ style với ShopCreate/PricingCreate (tiêu đề clean, không có action buttons ở header; nút Huỷ + Tạo dịch vụ nằm ở cuối form)
-- Tab bar căn giữa đúng maxWidth 1024, đường kẻ dưới tab không bị tràn ra ngoài
+*Route types mở rộng (6 tuyến):*
+- Bỏ "Nội thành" (trùng Nội tỉnh); gộp "Liên tỉnh / Toàn quốc" → "Liên vùng tỉnh"
+- Thêm 3 loại mới: **Nội vùng tỉnh**, **Liên vùng đặc biệt**, **Liên vùng tỉnh**
+- Thứ tự dropdown: Nội tỉnh → Nội vùng → Nội vùng tỉnh → Liên vùng đặc biệt → Liên vùng → Liên vùng tỉnh
+- Mặc định tạo đủ 6 tuyến khi mở form tạo bảng giá mới
 
-### v0.20.0 — Rebrand NVC → GHN + CarrierSetup UX + PricingCreate Surcharge
+*Modal Định nghĩa tuyến:*
+- Nút "Định nghĩa tuyến" (icon ⓘ) cạnh tiêu đề "Danh sách tuyến"
+- Popup giải thích định nghĩa 3 vùng địa lý (Vùng 1/2/3 + Miền Nam/Trung/Bắc)
+- Bảng 6 tuyến: Loại tuyến — Định nghĩa — Ví dụ tuyến
+- Lưu ý 3 TP đặc biệt (Hà Nội, Đà Nẵng, HCM) không thuộc 3 vùng
 
-**Rebrand & Wording**
-- Sidebar Agency Admin: "Thiết lập NVC" → "Thiết lập GHN", "Đối soát NVC" → "Đối soát GHN"
-- CarrierSetup tabs: "Kết nối NVC" → "Kết nối GHN", "Tách phiên NVC" → "Tách phiên GHN"
-- AgencyReconciliation: tab label + column header "Phiên NVC" → "Phiên GHN", session ID prefix GHN
-- AgencyReconciliationDetail breadcrumb: "Đối soát NVC" → "Đối soát GHN"
-- Shop Reconciliation: cột "Phiên NVC" + modal → "Phiên GHN"
-- Mock data: session IDs NVC001–005 → GHN001–005
-- Gói cước: "Gói cước TMĐT" → "Hàng nhẹ", "Gói cước CPTT" → "Hàng nặng"
+*Phụ phí mới — 2 loại bổ sung:*
+- **Phí kích hoạt giao lại**: bảng tier Từ lần / Đến lần / Phí cố định đ / % COD
+- **Phí hoàn hàng**: bảng tier Từ lần / Đến lần / Phí cố định đ / % COD
 
-**CarrierSetup UX**
-- Bỏ popup "Tạo gói dịch vụ mới" — nút "Tạo mới dịch vụ" navigate thẳng đến ServiceDetail create mode
-
-**PricingCreate — Cấu hình tuyến & phụ phí**
-- Thêm loại tuyến "Nội thành" (TP lấy = TP giao)
-- Đơn vị gram/đ nằm trong field input, align phải
-- Accent border trái 4px màu cam cho từng tuyến để phân cách visual rõ ràng
-- 2 nút "Ngưỡng vượt cân" + "Phụ phí" dạng pill button (nền xám, active cam), badge count luôn có background tránh layout shift
-- **Phụ phí theo tuyến** — 4 loại phí, toggle expand/collapse per fee:
-  - *Phí bảo hiểm (khai giá)*: bảng nhiều mức (Giá trị khai giá từ → đến, Phụ phí số fix đ, Phụ phí % khai giá), Thêm/Xóa từng dòng
-  - *Giao trả 1 phần*: số tiền cố định đ / đơn hàng
-  - *Phí giao thất bại thu tiền*: số tiền cố định đ / đơn hàng
-  - *Phí thu hộ*: bảng nhiều mức COD (COD từ → đến, Phụ phí số fix đ, Phụ phí % COD), Thêm/Xóa từng dòng
-- Đã có data → form tự expand, nút Thêm đổi thành nút Xoá đỏ
-- Xoá phí chưa nhập: đóng thẳng, không cần modal confirm
-- Xoá phí đã nhập: hiện modal confirm trước khi xoá
+*Áp dụng đồng giá:*
+- Bar nhập nhanh Khối lượng chuẩn + Giá chuẩn áp dụng cho tất cả tuyến cùng lúc
+- Fields căn thẳng hàng với cột Khối lượng / Giá chuẩn của từng tuyến bên dưới
+- Tự động clear bulk fields khi user chỉnh sửa bất kỳ tuyến nào
 
 
 ---
@@ -116,6 +97,9 @@ Dist dir:  dist/
 | v0.17.0 | 2026-04-24 | Settings pages cho 3 platform: (1) Super Admin: Settings menu, 3 sub-pages (Account Info, User Management, Permissions). (2) Agency Admin: Settings menu, 3 sub-pages (Account Info, User Management, Permissions). (3) Shop: Settings menu, 2 sub-pages (Account Info, Shop Settings/Pricing). Thêm routes `/settings`, `/settings/account`, `/settings/users`, `/settings/permissions` cho từng platform. | trannlb |
 | v0.16.0 | 2026-04-24 | Agency Admin — CarrierSetup refactor: (1) AddShopModal 2-step (form → OTP verify), search + danh sách Shop ID GHN, mỗi shop expand/collapse xem gói cước. (2) CreateServiceModal hỗ trợ multi-shop connections, mỗi shop chọn 1-2 gói cước checkbox, inline validation. (3) Fix vite.config: xoá Tailwind CSS plugin (vi phạm inline-styles rule). | trannlb |
 | v0.15.0 | 2026-04-23 | Tab Kết nối NVC: thêm cột "Gói cước GHN", đổi tên cột "Cửa hàng GHN", tất cả shops có tối thiểu 1 gói cước. Tab Dịch vụ: đổi tên cột "Dịch vụ" + "Gói cước GHN", cell hiển thị tên nếu 1 / "n gói cước" + hover nếu ≥2. ShopCreate + ShopDetail: bỏ cột Mã NVC khỏi section Cấu hình dịch vụ. | trannlb |
+| v0.23.0 | 2026-05-06 | PricingCreate: 6 route types + ZoneGuideModal + phụ phí giao lại/hoàn hàng + bulk apply đồng giá | trannlb |
+| v0.21.0 | 2026-05-06 | Order Drawer: Fee Sections (Phí vận chuyển + Phụ phí 4 dòng + Tổng thu), toggle Shop/Khách trả ship, filter dịch vụ không có bảng giá. ServiceDetail header cleanup + tab bar fix. | trannlb |
+| v0.20.0 | 2026-05-06 | Rebrand NVC→GHN toàn bộ 3 platform, CarrierSetup bỏ popup tạo dịch vụ, PricingCreate surcharge 4 loại phí per tuyến | trannlb |
 | v0.22.0 | 2026-05-06 | CarrierSetup & PricingCreate UX Cleanup: Liên tỉnh luôn mở phạm vi áp dụng, wording "Vượt cân", bỏ cột Gói cước GHN + expand, ServiceDetail bỏ Huỷ + fix wording + mock data 5 shops đủ Hàng nhẹ/nặng, order drawer ẩn "Gửi hàng tại bưu cục" | trannlb |
 | v0.19.0 | 2026-04-28 | Sprint 7 — Lịch chuyển khoản COD + Tài khoản ngân hàng: (1) Web Shop Đối soát: section "Lịch nhận COD" trên stat cards + modal đổi lịch 12 options. (2) Web Shop Cài đặt: sub-menu "Tài khoản ngân hàng" — danh sách, form thêm mới, modal chỉnh sửa 2 bước OTP. (3) Agency Admin ShopDetail: tab bar 3 tab (Thông tin cơ bản / Lịch chuyển khoản / Tài khoản ngân hàng) + 3 KPI cards (Đơn hàng / Tổng COD / Doanh thu). (4) Mock data: codSchedule 15 shops + bank-accounts.json. (5) Version badge v0.19.0 dưới nút Đăng xuất ở cả 3 platform. | trannlb |
 | v0.13.0 | 2026-04-23 | Agency Admin — Thiết lập NVC cải tiến: (1) ShopDetail thêm Card "Cấu hình dịch vụ" read-only (Dịch vụ / Mã NVC / Bảng giá áp dụng). (2) Tab Kết nối NVC: expand/collapse từng Shop ID xem danh sách gói cước GHN (TMĐT/CPTT), mock data goiCuoc cho 5 shop. (3) Tạo gói dịch vụ mới: thay dropdown đơn bằng multi-shop connections — mỗi shop chọn 1-2 gói cước GHN bằng checkbox, nút Thêm/Xoá Shop ID. (4) ServiceDetail: đồng bộ logic multi-shop + gói cước ở cả view và edit mode. (5) URL-based tab routing cho CarrierSetup (`/carrier-setup/connect`, `/carrier-setup/services`, `/carrier-setup/pricing`) — back từ ServiceDetail về đúng tab Dịch vụ. | trannlb |

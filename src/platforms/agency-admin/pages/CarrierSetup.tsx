@@ -168,7 +168,7 @@ function TabConnect() {
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
-          Danh sách Shop ID ({GHN_SHOPS.length})
+          Danh sách Shop ID GHN ({GHN_SHOPS.length})
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6 }}>
@@ -189,10 +189,9 @@ function TabConnect() {
         {/* Table header */}
         <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
           {[
-            { label: 'Cửa hàng GHN',  flex: '2 0 0',   minWidth: 200 },
-            { label: 'Shop ID GHN',  flex: '1 0 0',   minWidth: 120 },
+            { label: 'Cửa hàng GHN',  flex: '2 0 0',   minWidth: 220 },
+            { label: 'Dịch vụ từ GHN',  flex: '1 0 0',   minWidth: 140 },
             { label: 'Số điện thoại',flex: '1 0 0',   minWidth: 140 },
-            { label: 'Ngày kết nối', flex: '1 0 0',   minWidth: 120 },
             { label: '',             flex: '0 0 60px', minWidth: 60 },
           ].map((col, i) => (
             <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
@@ -213,17 +212,22 @@ function TabConnect() {
                 onMouseEnter={() => setHovered(s.shopId)}
                 onMouseLeave={() => setHovered(null)}
               >
-                <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
+                <div style={{ flex: '2 0 0', minWidth: 220, padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
+                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, fontFamily: 'monospace', lineHeight: '16px' }}>{s.shopId}</span>
                 </div>
-                <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, fontFamily: 'monospace', lineHeight: '20px' }}>{s.shopId}</span>
+                <div style={{ flex: '1 0 0', minWidth: 140, padding: '6px 8px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {s.goiCuoc.map((gc) => (
+                    <span key={gc.id} style={{
+                      fontSize: 12, borderRadius: 10, padding: '1px 8px', lineHeight: '18px', whiteSpace: 'nowrap',
+                      ...(gc.loai === 'Hàng nhẹ'
+                        ? { color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE' }
+                        : { color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A' })
+                    }}>{gc.loai}</span>
+                  ))}
                 </div>
                 <div style={{ flex: '1 0 0', minWidth: 140, padding: '6px 8px' }}>
                   <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.phone}</span>
-                </div>
-                <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.connectedAt}</span>
                 </div>
                 <div style={{ flex: '0 0 60px', minWidth: 60, padding: '6px 8px' }}>
                   <button title="Ngắt kết nối" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1px solid #FCA5A5', borderRadius: 6, background: '#FFF5F5', color: '#EF4444', fontSize: 14, cursor: 'pointer' }}>
@@ -242,30 +246,30 @@ function TabConnect() {
 
 // ─── Tab: Dịch vụ ─────────────────────────────────────────────────────────────
 
-function Toggle({ enabled }: { enabled: boolean }) {
-  return (
-    <div style={{ width: 36, height: 20, borderRadius: 10, background: enabled ? C_ACTION : '#D1D5DB', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
-      <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: enabled ? 18 : 2, transition: 'left 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }} />
-    </div>
-  )
-}
-
-
-
 function TabServices() {
   const navigate = useNavigate()
   const [hovered, setHovered]     = useState<string | null>(null)
   const [shopHover, setShopHover] = useState<string | null>(null)
   const [search, setSearch]       = useState('')
+  const [defaults, setDefaults]   = useState<Set<string>>(new Set(['ghn-express', 'ghn-standard', 'ghn-bulky', 'ghn-same-day', 'ghn-fragile']))
+
+  const toggleDefault = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDefaults((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   const filtered = allServices.filter(
     (s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.code.toLowerCase().includes(search.toLowerCase())
   )
 
   const cols = [
-    { label: 'Dịch vụ',      flex: '2 0 0',    minWidth: 200 },
-    { label: 'Gói cước GHN', flex: '2 0 0',    minWidth: 200 },
-    { label: 'Kích hoạt',   flex: '0 0 90px', minWidth: 90  },
+    { label: 'Dịch vụ đại lý', flex: '2 0 0',    minWidth: 200 },
+    { label: 'Dịch vụ từ GHN',   flex: '2 0 0',    minWidth: 200 },
+    { label: 'Mặc định',    flex: '0 0 90px', minWidth: 90  },
   ]
 
   return (
@@ -304,7 +308,10 @@ function TabServices() {
           <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
         ) : filtered.map((s) => {
           const shopIds: string[] = (s as any).ghnShopIds ?? []
-          const allGoiCuoc = shopIds.flatMap(id => GHN_SHOPS.find(sh => sh.shopId === id)?.goiCuoc ?? [])
+          const allGoiCuoc = shopIds.flatMap(id => {
+            const shop = GHN_SHOPS.find(sh => sh.shopId === id)
+            return (shop?.goiCuoc ?? []).map(gc => ({ ...gc, shopName: shop?.name ?? '', shopId: id }))
+          })
           return (
             <React.Fragment key={s.id}>
               <div
@@ -325,11 +332,11 @@ function TabServices() {
                   {allGoiCuoc.length === 0 ? (
                     <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>—</span>
                   ) : allGoiCuoc.length === 1 ? (
-                    <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{allGoiCuoc[0].loai}</span>
+                    <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Đang áp dụng 1 dịch vụ</span>
                   ) : (
                     <>
                       <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, cursor: 'default' }}>
-                        {allGoiCuoc.length} gói cước
+                        Đang áp dụng {allGoiCuoc.length} dịch vụ
                       </span>
                       {shopHover === s.id && (
                         <div style={{
@@ -338,8 +345,17 @@ function TabServices() {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.12)', padding: '6px 0', minWidth: 260,
                         }}>
                           {allGoiCuoc.map((gc, i) => (
-                            <div key={i} style={{ padding: '6px 14px' }}>
-                              <div style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{gc.loai}</div>
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 14px', borderBottom: i < allGoiCuoc.length - 1 ? `1px solid ${C_BORDER}` : 'none' }}>
+                              <span style={{
+                                fontSize: 11, borderRadius: 10, padding: '1px 8px', whiteSpace: 'nowrap', flexShrink: 0, width: 72, textAlign: 'center', boxSizing: 'border-box',
+                                ...(gc.loai === 'Hàng nhẹ'
+                                  ? { color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE' }
+                                  : { color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A' })
+                              }}>{gc.loai}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.shopName}</span>
+                                <span style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontFamily: 'monospace', lineHeight: '16px' }}>{gc.shopId}</span>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -348,8 +364,21 @@ function TabServices() {
                   )}
                 </div>
 
-                <div style={{ flex: '0 0 90px', minWidth: 90, padding: '6px 8px' }}>
-                  <Toggle enabled={s.enabled} />
+                <div style={{ flex: '0 0 90px', minWidth: 90, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onClick={(e) => toggleDefault(s.id, e)}
+                >
+                  <div style={{
+                    width: 36, height: 20, borderRadius: 10, cursor: 'pointer', flexShrink: 0,
+                    background: defaults.has(s.id) ? C_ACTION : '#D1D5DB',
+                    position: 'relative', transition: 'background 0.2s',
+                  }}>
+                    <div style={{
+                      width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                      position: 'absolute', top: 2, transition: 'left 0.2s',
+                      left: defaults.has(s.id) ? 18 : 2,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                    }} />
+                  </div>
                 </div>
               </div>
             </React.Fragment>

@@ -246,23 +246,26 @@ export default function ServiceDetail() {
 
   const setEdit = (key: 'code' | 'name' | 'desc') => (v: string) => setEditForm(f => ({ ...f, [key]: v }))
 
-  const addConnection = () =>
-    setEditForm(f => ({ ...f, shopConnections: [...f.shopConnections, { shopId: GHN_SHOPS[0].shopId, selectedGoiCuoc: [] }] }))
+  const toggleShop = (shopId: string) =>
+    setEditForm(f => {
+      const exists = f.shopConnections.some(c => c.shopId === shopId)
+      if (exists) return { ...f, shopConnections: f.shopConnections.filter(c => c.shopId !== shopId) }
+      return { ...f, shopConnections: [...f.shopConnections, { shopId, selectedGoiCuoc: [] }] }
+    })
 
-  const removeConnection = (idx: number) =>
-    setEditForm(f => ({ ...f, shopConnections: f.shopConnections.filter((_, i) => i !== idx) }))
-
-  const updateConnectionShop = (idx: number, shopId: string) =>
-    setEditForm(f => ({ ...f, shopConnections: f.shopConnections.map((c, i) => i === idx ? { shopId, selectedGoiCuoc: [] } : c) }))
-
-  const toggleGoiCuoc = (idx: number, gcId: string) =>
-    setEditForm(f => ({ ...f, shopConnections: f.shopConnections.map((c, i) => {
-      if (i !== idx) return c
-      const has = c.selectedGoiCuoc.includes(gcId)
-      if (has) return { ...c, selectedGoiCuoc: c.selectedGoiCuoc.filter(id => id !== gcId) }
-      if (c.selectedGoiCuoc.length >= 2) return c
-      return { ...c, selectedGoiCuoc: [...c.selectedGoiCuoc, gcId] }
-    })}))
+  const toggleGoiCuocByShop = (shopId: string, gcId: string) => {
+    setEditForm(f => {
+      const conns = f.shopConnections.map(c => {
+        if (c.shopId !== shopId) return c
+        const has = c.selectedGoiCuoc.includes(gcId)
+        const next = has
+          ? c.selectedGoiCuoc.filter(id => id !== gcId)
+          : [...c.selectedGoiCuoc, gcId]
+        return { ...c, selectedGoiCuoc: next }
+      })
+      return { ...f, shopConnections: conns }
+    })
+  }
 
   const isNewService = id === 'new' || !!locState?.isNew
 
@@ -380,62 +383,93 @@ export default function ServiceDetail() {
                     <InputField label="Mô tả" value={editForm.desc} onChange={setEdit('desc')} placeholder="Mô tả ngắn về gói dịch vụ..." />
                   </div>
 
-                  {/* Shop connections */}
+                  {/* Shop connections — card-based rows */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</span>
-                    {editForm.shopConnections.map((conn, idx) => {
-                      const shop = GHN_SHOPS.find(s => s.shopId === conn.shopId)
-                      const availableGoiCuoc = shop?.goiCuoc ?? []
-                      return (
-                        <div key={idx} style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px', flex: 1 }}>
-                              <select
-                                value={conn.shopId}
-                                onChange={e => updateConnectionShop(idx, e.target.value)}
-                                style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', cursor: 'pointer' }}
+                    <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</span>
+                    <div style={{ borderRadius: 8, overflow: 'hidden' }}>
+                      {/* Header */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: C_BG_HEADER, borderRadius: '8px 8px 0 0' }}>
+                        <div style={{ padding: '7px 14px', fontSize: 11, fontWeight: 700, color: C_TEXT_SECONDARY, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Cửa hàng GHN</div>
+                        <div style={{ padding: '7px 14px', fontSize: 11, fontWeight: 700, color: C_TEXT_SECONDARY, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Dịch vụ từ GHN</div>
+                      </div>
+                      {GHN_SHOPS.map((shop, i) => {
+                        const conn = editForm.shopConnections.find(c => c.shopId === shop.shopId)
+                        const isSelected = !!conn
+                        return (
+                          <div key={shop.shopId}>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr',
+                              background: isSelected ? '#FFF9F7' : '#fff',
+                              borderLeft: isSelected ? '3px solid #FF5200' : '3px solid transparent',
+                              transition: 'background 0.15s',
+                            }}>
+                              {/* Left: custom checkbox + shop info */}
+                              <div
+                                style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                                onClick={() => toggleShop(shop.shopId)}
                               >
-                                {GHN_SHOPS.map(s => (
-                                  <option key={s.shopId} value={s.shopId}>{s.shopId} — {s.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                            {editForm.shopConnections.length > 1 && (
-                              <button onClick={() => removeConnection(idx)}
-                                style={{ flexShrink: 0, width: 20, height: 20, border: 'none', background: 'transparent', color: '#EF4444', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                                <CloseOutlined />
-                              </button>
-                            )}
-                          </div>
-                          {availableGoiCuoc.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chọn gói cước áp dụng</span>
-                              {availableGoiCuoc.map((gc) => {
-                                const checked = conn.selectedGoiCuoc.includes(gc.id)
-                                const disabled = !checked && conn.selectedGoiCuoc.length >= 2
-                                return (
-                                  <label key={gc.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.45 : 1 }}>
-                                    <input type="checkbox" checked={checked} disabled={disabled}
-                                      onChange={() => toggleGoiCuoc(idx, gc.id)}
-                                      style={{ marginTop: 2, accentColor: C_ACTION, flexShrink: 0 }} />
-                                    <div>
-                                      <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.loai}</div>
+                                {/* Custom checkbox */}
+                                <div style={{
+                                  width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                                  border: isSelected ? 'none' : `1.5px solid #D1D5DB`,
+                                  background: isSelected ? '#FF5200' : '#fff',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  boxShadow: isSelected ? '0 0 0 3px rgba(255,82,0,0.12)' : 'none',
+                                  transition: 'background 0.15s, box-shadow 0.15s',
+                                }}>
+                                  {isSelected && (
+                                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                      <path d="M1 3.5L3.8 6.5L9 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? '#111827' : '#374151' }}>{shop.name}</div>
+                                  <div style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace', marginTop: 2, letterSpacing: '0.02em' }}>{shop.shopId}</div>
+                                </div>
+                              </div>
+                              {/* Right: chip toggles */}
+                              <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                {shop.goiCuoc.map(gc => {
+                                  const isChecked = conn?.selectedGoiCuoc.includes(gc.id) ?? false
+                                  const isHangNhe = gc.loai === 'Hàng nhẹ'
+                                  const activeStyle = isHangNhe
+                                    ? { color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE' }
+                                    : { color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A' }
+                                  const inactiveStyle = { color: '#6B7280', background: '#fff', border: `1px solid #E5E7EB` }
+                                  return (
+                                    <div
+                                      key={gc.id}
+                                      onClick={() => { if (isSelected) toggleGoiCuocByShop(shop.shopId, gc.id) }}
+                                      style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                                        padding: '4px 10px', borderRadius: 20,
+                                        fontSize: 12, fontWeight: isChecked ? 600 : 400,
+                                        cursor: isSelected ? 'pointer' : 'default',
+                                        pointerEvents: isSelected ? 'auto' : 'none',
+                                        opacity: isSelected ? 1 : 0.4,
+                                        transition: 'all 0.15s',
+                                        userSelect: 'none',
+                                        ...(isChecked ? activeStyle : inactiveStyle),
+                                      }}
+                                    >
+                                      {isChecked && (
+                                        <svg width="9" height="7" viewBox="0 0 9 7" fill="none" style={{ flexShrink: 0 }}>
+                                          <path d="M1 3L3.2 5.5L8 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                      )}
+                                      {gc.loai}
                                     </div>
-                                  </label>
-                                )
-                              })}
+                                  )
+                                })}
+                              </div>
                             </div>
-                          ) : (
-                            <span style={{ fontSize: 12, color: '#D97706' }}>Shop ID này chưa có gói cước từ GHN</span>
-                          )}
-                        </div>
-                      )
-                    })}
-                    <button onClick={addConnection}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', border: `1px dashed ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_SECONDARY, fontSize: 13, cursor: 'pointer', alignSelf: 'flex-start' }}>
-                      <PlusOutlined style={{ fontSize: 12 }} />
-                      Thêm Shop ID GHN
-                    </button>
+                            {i < GHN_SHOPS.length - 1 && <div style={{ height: 1, background: '#F5F5F5' }} />}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (

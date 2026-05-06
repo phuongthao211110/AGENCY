@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined, InfoCircleOutlined, CloseOutlined } from '@ant-design/icons'
 
 const C_ACTION        = '#FF5200'
 const C_LINK          = '#3B82F6'
@@ -13,7 +13,7 @@ const C_BG_FORM       = '#F9FAFB'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type RouteType = 'noi-thanh' | 'noi-tinh' | 'noi-vung' | 'lien-vung' | 'lien-tinh'
+type RouteType = 'noi-tinh' | 'noi-vung' | 'lien-vung' | 'noi-vung-tinh' | 'lien-vung-tinh' | 'lien-vung-dac-biet'
 type RegionCode = 'vung1' | 'vung2' | 'vung3' | ''
 
 type OverweightTier = {
@@ -43,6 +43,8 @@ type Surcharges = {
   insurance:          InsuranceTier[] // Phí bảo hiểm (khai giá) — nhiều mức
   codFee:             CodFeeTier[]    // Phí thu hộ — nhiều mức COD
   deliveryFailFee:    SurchargeFee    // Phí giao thất bại thu tiền
+  redeliveryFee:      FeeTier[]       // Phí kích hoạt giao lại — theo lần
+  returnFee:          FeeTier[]       // Phí hoàn hàng — theo lần
 }
 
 type RouteConfig = {
@@ -65,12 +67,14 @@ type RouteConfig = {
 }
 
 const ROUTE_TYPE_LABELS: Record<RouteType, string> = {
-  'noi-thanh': 'Nội thành',
-  'noi-tinh':  'Nội tỉnh',
-  'noi-vung':  'Nội vùng',
-  'lien-vung': 'Liên vùng',
-  'lien-tinh': 'Liên tỉnh',
+  'noi-tinh':           'Nội tỉnh',
+  'noi-vung':           'Nội vùng',
+  'noi-vung-tinh':      'Nội vùng tỉnh',
+  'lien-vung-dac-biet': 'Liên vùng đặc biệt',
+  'lien-vung':          'Liên vùng',
+  'lien-vung-tinh':     'Liên vùng tỉnh',
 }
+
 
 
 const REGION_OPTIONS = [
@@ -86,6 +90,8 @@ const makeEmptySurcharges = (): Surcharges => ({
   insurance:        [],
   codFee:           [],
   deliveryFailFee:  { value: '', unit: 'vnd' },
+  redeliveryFee:    [],
+  returnFee:        [],
 })
 
 const makeEmptyRoute = (routeType: RouteType, id: string): RouteConfig => ({
@@ -300,12 +306,22 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     onUpdateSurcharges({ ...surcharges, codFee: tiers })
   }
 
+  const updateRedeliveryFee = (tiers: FeeTier[]) => {
+    onUpdateSurcharges({ ...surcharges, redeliveryFee: tiers })
+  }
+
+  const updateReturnFee = (tiers: FeeTier[]) => {
+    onUpdateSurcharges({ ...surcharges, returnFee: tiers })
+  }
+
   // A fee is "configured" if it already has data
   const isConfigured = (key: keyof Surcharges): boolean => {
     if (key === 'partialDelivery')  return surcharges.partialDelivery.value.trim() !== ''
     if (key === 'insurance')        return surcharges.insurance.length > 0
     if (key === 'codFee')           return surcharges.codFee.length > 0
     if (key === 'deliveryFailFee')  return surcharges.deliveryFailFee.value.trim() !== ''
+    if (key === 'redeliveryFee')    return surcharges.redeliveryFee.length > 0
+    if (key === 'returnFee')        return surcharges.returnFee.length > 0
     return false
   }
 
@@ -313,12 +329,11 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
   const isOpen = (key: keyof Surcharges) => isConfigured(key) || manualOpen.has(key)
 
   const handleAdd = (key: keyof Surcharges) => {
-    if (key === 'insurance' && surcharges.insurance.length === 0) {
-      updateInsurance([{ id: Date.now().toString(), fromValue: '', toValue: '', fixedFee: '0', percentFee: '0' }])
-    }
-    if (key === 'codFee' && surcharges.codFee.length === 0) {
-      updateCodFee([{ id: Date.now().toString(), fromValue: '', toValue: '', fixedFee: '0', percentFee: '0' }])
-    }
+    const emptyTier = { id: Date.now().toString(), fromValue: '', toValue: '', fixedFee: '0', percentFee: '0' }
+    if (key === 'insurance'     && surcharges.insurance.length === 0)     updateInsurance([emptyTier])
+    if (key === 'codFee'        && surcharges.codFee.length === 0)        updateCodFee([emptyTier])
+    if (key === 'redeliveryFee' && surcharges.redeliveryFee.length === 0) updateRedeliveryFee([emptyTier])
+    if (key === 'returnFee'     && surcharges.returnFee.length === 0)     updateReturnFee([emptyTier])
     setManualOpen((s) => new Set([...s, key]))
   }
 
@@ -329,6 +344,8 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     if (key === 'insurance')        onUpdateSurcharges({ ...surcharges, insurance: [] })
     if (key === 'codFee')           onUpdateSurcharges({ ...surcharges, codFee: [] })
     if (key === 'deliveryFailFee')  onUpdateSurcharges({ ...surcharges, deliveryFailFee: { value: '', unit: 'vnd' } })
+    if (key === 'redeliveryFee')    onUpdateSurcharges({ ...surcharges, redeliveryFee: [] })
+    if (key === 'returnFee')        onUpdateSurcharges({ ...surcharges, returnFee: [] })
     setManualOpen((s) => { const n = new Set(s); n.delete(key); return n })
     setConfirmDelete(null)
   }
@@ -338,6 +355,8 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     { key: 'partialDelivery',  label: 'Giao trả 1 phần' },
     { key: 'deliveryFailFee',  label: 'Phí giao thất bại thu tiền' },
     { key: 'codFee',           label: 'Phí thu hộ' },
+    { key: 'redeliveryFee',    label: 'Phí kích hoạt giao lại' },
+    { key: 'returnFee',        label: 'Phí hoàn hàng' },
   ]
 
   return (
@@ -431,6 +450,22 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
                   colTo="COD đến"
                   colPercent="Phụ phí (% trên số tiền thu hộ)"
                 />
+              ) : key === 'redeliveryFee' ? (
+                <FeeTierTable
+                  tiers={surcharges.redeliveryFee}
+                  onChangeTiers={updateRedeliveryFee}
+                  colFrom="Từ lần"
+                  colTo="Đến lần"
+                  colPercent="Phụ phí (% trên giá)"
+                />
+              ) : key === 'returnFee' ? (
+                <FeeTierTable
+                  tiers={surcharges.returnFee}
+                  onChangeTiers={updateReturnFee}
+                  colFrom="Từ lần"
+                  colTo="Đến lần"
+                  colPercent="Phụ phí (% trên giá)"
+                />
               ) : null}
             </div>
           )}
@@ -461,8 +496,7 @@ function RouteBlock({
 
   const toggleSection = (sec: 'overweight' | 'surcharge') =>
     setActiveSection((v) => (v === sec ? null : sec))
-  const isLienTinh  = route.routeType === 'lien-tinh'
-
+  const isLienTinh         = route.routeType === 'lien-vung-tinh'
   const updateSurcharges = (updated: Surcharges) => {
     onChange({ ...route, surcharges: updated })
   }
@@ -537,7 +571,7 @@ function RouteBlock({
           <select
             value={route.routeType}
             onChange={(e) => handleRouteTypeChange(e.target.value as RouteType)}
-            style={{ ...inputStyle, padding: '6px 10px', fontWeight: 600, cursor: 'pointer', fontSize: 13, minWidth: 130 }}
+            style={{ ...inputStyle, padding: '6px 10px', fontWeight: 600, cursor: 'pointer', fontSize: 13, width: 190 }}
             onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
             onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
           >
@@ -708,17 +742,157 @@ function RouteBlock({
   )
 }
 
+// ─── Zone guide modal ─────────────────────────────────────────────────────────
+
+const ZONE_GUIDE_ROWS: { type: string; definition: string; routes: string[] }[] = [
+  {
+    type: 'Nội Tỉnh',
+    definition: 'Là lộ trình giao - nhận hàng hóa chỉ trong khu vực của tỉnh thành đó và nằm trong cùng 1 miền gửi hàng.',
+    routes: [
+      'Hà Nội <=> Hà Nội',
+      'Đà Nẵng <=> Đà Nẵng',
+      'Hồ Chí Minh <=> Hồ Chí Minh',
+      'Tỉnh X vùng 1 <=> Tỉnh X vùng 1',
+      'Tỉnh X vùng 2 <=> Tỉnh X vùng 2',
+      'Tỉnh X vùng 3 <=> Tỉnh X vùng 3',
+    ],
+  },
+  {
+    type: 'Nội Vùng',
+    definition: 'Là lộ trình giao - nhận hàng hóa giữa 2 tỉnh thành chỉ nằm trong cùng 1 miền gửi hàng.',
+    routes: [
+      'Hà Nội <=> Vùng 3',
+      'Đà Nẵng <=> Vùng 2',
+      'Hồ Chí Minh <=> Vùng 1',
+    ],
+  },
+  {
+    type: 'Nội Vùng Tỉnh',
+    definition: 'Là lộ trình giao - nhận hàng hóa giữa các tỉnh (không gồm 3 thành phố lớn) nằm trong cùng một vùng địa lý.',
+    routes: [
+      'Vùng 3 <=> Vùng 3',
+      'Vùng 2 <=> Vùng 2',
+      'Vùng 1 <=> Vùng 1',
+    ],
+  },
+  {
+    type: 'Liên Vùng Đặc Biệt',
+    definition: 'Là lộ trình giao - nhận hàng hóa giữa 3 thành phố lớn Hà Nội, Đà Nẵng và Hồ Chí Minh với nhau.',
+    routes: [
+      'Hà Nội <=> Đà Nẵng',
+      'Đà Nẵng <=> Hồ Chí Minh',
+      'Hồ Chí Minh <=> Hà Nội',
+    ],
+  },
+  {
+    type: 'Liên Vùng',
+    definition: 'Là lộ trình giao - nhận hàng hóa giữa 2 tỉnh thành thuộc 2 miền liền kề, bao gồm: miền Nam với miền Trung; miền Bắc với miền Trung.',
+    routes: [
+      'Hà Nội <=> Vùng 1/Vùng 2',
+      'Đà Nẵng <=> Vùng 1/Vùng 3',
+      'Hồ Chí Minh <=> Vùng 2/Vùng 3',
+    ],
+  },
+  {
+    type: 'Liên Vùng Tỉnh',
+    definition: 'Là lộ trình giao - nhận hàng hóa giữa các tỉnh thành thuộc 2 vùng địa lý khác nhau, bao gồm cả các tuyến giữa miền Bắc và miền Nam.',
+    routes: [
+      'Vùng 3 <=> Vùng 1/Vùng 2',
+      'Vùng 2 <=> Vùng 1/Vùng 3',
+      'Vùng 1 <=> Vùng 2/Vùng 3',
+    ],
+  },
+]
+
+function ZoneGuideModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 900, maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}` }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Bảng mô tả tuyến dịch vụ</span>
+          <button
+            onClick={onClose}
+            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: C_TEXT_SECONDARY, padding: 4, display: 'flex', alignItems: 'center' }}
+          >
+            <CloseOutlined style={{ fontSize: 16 }} />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div style={{ overflow: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Định nghĩa vùng */}
+          <div style={{ background: C_BG_FORM, border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, marginBottom: 2 }}>Định nghĩa vùng</span>
+            {[
+              { label: 'Vùng 1', mien: 'Miền Nam',   desc: 'Từ Bình Định trở vào các tỉnh miền Nam' },
+              { label: 'Vùng 2', mien: 'Miền Trung', desc: 'Từ Quảng Ngãi ra tới Quảng Bình' },
+              { label: 'Vùng 3', mien: 'Miền Bắc',   desc: 'Từ Hà Tĩnh trở ra các tỉnh miền Bắc' },
+            ].map(({ label, mien, desc }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: 6, fontSize: 13 }}>
+                <span style={{ padding: '1px 8px', borderRadius: 20, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#2563EB', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{label}</span>
+                <span style={{ color: C_TEXT_SECONDARY }}><strong style={{ color: C_TEXT_PRIMARY }}>{mien}</strong> — {desc}</span>
+              </div>
+            ))}
+            <div style={{ marginTop: 4, fontSize: 12, color: '#D97706', fontStyle: 'italic', fontWeight: 500 }}>
+              Lưu ý: 03 thành phố Hà Nội, Đà Nẵng, Hồ Chí Minh không nằm trong 3 phân vùng trên.
+            </div>
+          </div>
+
+          {/* Bảng tuyến */}
+          <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            {/* Table header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 260px', background: C_ACTION }}>
+              <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#fff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Tuyến</div>
+              <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#fff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Định nghĩa</div>
+              <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#fff' }}>Ví dụ</div>
+            </div>
+            {/* Rows */}
+            {ZONE_GUIDE_ROWS.map((row, rowIdx) => (
+              <div
+                key={row.type}
+                style={{ display: 'grid', gridTemplateColumns: '160px 1fr 260px', borderTop: `1px solid ${C_BORDER}`, background: rowIdx % 2 === 0 ? '#fff' : C_BG_FORM }}
+              >
+                <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, borderRight: `1px solid ${C_BORDER}` }}>
+                  {row.type}
+                </div>
+                <div style={{ padding: '10px 16px', fontSize: 13, color: C_TEXT_SECONDARY, borderRight: `1px solid ${C_BORDER}`, lineHeight: '1.5' }}>
+                  {row.definition}
+                </div>
+                <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {row.routes.map((r, i) => (
+                    <span key={i} style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{r}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PricingCreate() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [desc, setDesc] = useState('')
+  const [showZoneGuide, setShowZoneGuide] = useState(false)
+  const [bulkWeight, setBulkWeight] = useState('')
+  const [bulkPrice, setBulkPrice] = useState('')
   const [routes, setRoutes] = useState<RouteConfig[]>([
-    makeEmptyRoute('noi-tinh',  '1'),
-    makeEmptyRoute('noi-vung',  '2'),
-    makeEmptyRoute('lien-vung', '3'),
-    makeEmptyRoute('lien-tinh', '4'),
+    makeEmptyRoute('noi-tinh',           '1'),
+    makeEmptyRoute('noi-vung',           '2'),
+    makeEmptyRoute('noi-vung-tinh',      '3'),
+    makeEmptyRoute('lien-vung-dac-biet', '4'),
+    makeEmptyRoute('lien-vung',          '5'),
+    makeEmptyRoute('lien-vung-tinh',     '6'),
   ])
 
   const canSubmit = name.trim().length > 0
@@ -728,11 +902,26 @@ export default function PricingCreate() {
   }
 
   const updateRoute = (id: string, updated: RouteConfig) => {
-    setRoutes((prev) => prev.map((r) => r.id === id ? updated : r))
+    setRoutes((prev) => {
+      const old = prev.find((r) => r.id === id)
+      if (old && (old.standardWeight !== updated.standardWeight || old.basePrice !== updated.basePrice)) {
+        setBulkWeight('')
+        setBulkPrice('')
+      }
+      return prev.map((r) => r.id === id ? updated : r)
+    })
   }
 
   const deleteRoute = (id: string) => {
     setRoutes((prev) => prev.filter((r) => r.id !== id))
+  }
+
+  const applyBulkDefaults = () => {
+    setRoutes((prev) => prev.map((r) => ({
+      ...r,
+      ...(bulkWeight ? { standardWeight: bulkWeight } : {}),
+      ...(bulkPrice  ? { basePrice: bulkPrice }       : {}),
+    })))
   }
 
   const handleSubmit = () => {
@@ -826,10 +1015,53 @@ export default function PricingCreate() {
         {/* Section 2: Danh sách tuyến */}
         <div style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
-              Danh sách tuyến
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+                Danh sách tuyến
+              </span>
+              <button
+                onClick={() => setShowZoneGuide(true)}
+                title="Xem định nghĩa vùng tuyến"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: `1px solid ${C_BORDER}`, borderRadius: 6, background: C_BG_FORM, color: C_TEXT_SECONDARY, fontSize: 12, fontWeight: 500, cursor: 'pointer', padding: '3px 10px', lineHeight: '18px' }}
+              >
+                <InfoCircleOutlined style={{ fontSize: 12 }} />
+                Định nghĩa tuyến
+              </button>
+            </div>
             <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{routes.length} tuyến</span>
+          </div>
+          {showZoneGuide && <ZoneGuideModal onClose={() => setShowZoneGuide(false)} />}
+
+          {/* Nhập nhanh đồng giá */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '8px 12px 8px 20px', background: '#F9FAFB', border: `1px solid ${C_BORDER}`, borderRadius: 8, marginTop: 8 }}>
+            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap', width: 190, flexShrink: 0 }}>Áp dụng đồng giá:</span>
+            <div style={{ position: 'relative', width: 130 }}>
+              <input
+                type="number"
+                value={bulkWeight}
+                onChange={(e) => setBulkWeight(e.target.value)}
+                placeholder="VD: 2000"
+                style={{ ...inputStyle, width: '100%', paddingRight: 40, boxSizing: 'border-box' }}
+              />
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>gram</span>
+            </div>
+            <div style={{ position: 'relative', width: 140 }}>
+              <input
+                type="number"
+                value={bulkPrice}
+                onChange={(e) => setBulkPrice(e.target.value)}
+                placeholder="VD: 15000"
+                style={{ ...inputStyle, width: '100%', paddingRight: 28, boxSizing: 'border-box' }}
+              />
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+            </div>
+            <button
+              onClick={applyBulkDefaults}
+              disabled={!bulkWeight && !bulkPrice}
+              style={{ fontSize: 12, fontWeight: 600, height: 32, padding: '0 14px', border: 'none', borderRadius: 6, cursor: (!bulkWeight && !bulkPrice) ? 'default' : 'pointer', background: (!bulkWeight && !bulkPrice) ? C_BG_HEADER : C_ACTION, color: (!bulkWeight && !bulkPrice) ? C_TEXT_SECONDARY : '#fff', whiteSpace: 'nowrap' }}
+            >
+              Áp dụng tất cả
+            </button>
           </div>
 
           <div>
