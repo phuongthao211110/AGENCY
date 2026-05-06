@@ -24,28 +24,6 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-### v0.22.0 — CarrierSetup & PricingCreate UX Cleanup
-
-**PricingCreate**
-- Tuyến Liên tỉnh: form "Cấu hình phạm vi áp dụng" luôn hiển thị mặc định, bỏ button toggle
-- Wording "Ngưỡng vượt cân" → "Vượt cân" (pill button)
-
-**Tab Kết nối GHN (CarrierSetup)**
-- Bỏ cột "Gói cước GHN" khỏi bảng
-- Bỏ expand/collapse xem Hàng nhẹ/Hàng nặng trong từng row
-
-**ServiceDetail — Tạo dịch vụ mới**
-- Bỏ button "Huỷ" ở cuối form (dùng back arrow thay thế)
-- Section "Bảng giá" → "Bảng giá mặc định"
-- Bỏ chữ "(tối đa 2)" khỏi label "Chọn gói cước áp dụng"
-- Mock data: tất cả 5 Shop ID GHN đều có đủ Hàng nhẹ + Hàng nặng
-
-**ServiceDetail & CarrierSetup — Gói cước display**
-- Bỏ hiển thị id + tên chi tiết gói cước ở mọi view, chỉ giữ "Hàng nhẹ" / "Hàng nặng"
-
-**Order Drawer (Agency Admin & Web Shop)**
-- Ẩn option "Gửi hàng tại bưu cục", chỉ còn "Lấy hàng tận nơi"
-
 ### v0.21.0 — Order Drawer: Fee Sections + Service Filter
 
 **Agency Admin & Web Shop — Drawer tạo đơn hàng**
@@ -134,6 +112,7 @@ Dist dir:  dist/
 | v0.17.0 | 2026-04-24 | Settings pages cho 3 platform: (1) Super Admin: Settings menu, 3 sub-pages (Account Info, User Management, Permissions). (2) Agency Admin: Settings menu, 3 sub-pages (Account Info, User Management, Permissions). (3) Shop: Settings menu, 2 sub-pages (Account Info, Shop Settings/Pricing). Thêm routes `/settings`, `/settings/account`, `/settings/users`, `/settings/permissions` cho từng platform. | trannlb |
 | v0.16.0 | 2026-04-24 | Agency Admin — CarrierSetup refactor: (1) AddShopModal 2-step (form → OTP verify), search + danh sách Shop ID GHN, mỗi shop expand/collapse xem gói cước. (2) CreateServiceModal hỗ trợ multi-shop connections, mỗi shop chọn 1-2 gói cước checkbox, inline validation. (3) Fix vite.config: xoá Tailwind CSS plugin (vi phạm inline-styles rule). | trannlb |
 | v0.15.0 | 2026-04-23 | Tab Kết nối NVC: thêm cột "Gói cước GHN", đổi tên cột "Cửa hàng GHN", tất cả shops có tối thiểu 1 gói cước. Tab Dịch vụ: đổi tên cột "Dịch vụ" + "Gói cước GHN", cell hiển thị tên nếu 1 / "n gói cước" + hover nếu ≥2. ShopCreate + ShopDetail: bỏ cột Mã NVC khỏi section Cấu hình dịch vụ. | trannlb |
+| v0.22.0 | 2026-05-06 | CarrierSetup & PricingCreate UX Cleanup: Liên tỉnh luôn mở phạm vi áp dụng, wording "Vượt cân", bỏ cột Gói cước GHN + expand, ServiceDetail bỏ Huỷ + fix wording + mock data 5 shops đủ Hàng nhẹ/nặng, order drawer ẩn "Gửi hàng tại bưu cục" | trannlb |
 | v0.19.0 | 2026-04-28 | Sprint 7 — Lịch chuyển khoản COD + Tài khoản ngân hàng: (1) Web Shop Đối soát: section "Lịch nhận COD" trên stat cards + modal đổi lịch 12 options. (2) Web Shop Cài đặt: sub-menu "Tài khoản ngân hàng" — danh sách, form thêm mới, modal chỉnh sửa 2 bước OTP. (3) Agency Admin ShopDetail: tab bar 3 tab (Thông tin cơ bản / Lịch chuyển khoản / Tài khoản ngân hàng) + 3 KPI cards (Đơn hàng / Tổng COD / Doanh thu). (4) Mock data: codSchedule 15 shops + bank-accounts.json. (5) Version badge v0.19.0 dưới nút Đăng xuất ở cả 3 platform. | trannlb |
 | v0.13.0 | 2026-04-23 | Agency Admin — Thiết lập NVC cải tiến: (1) ShopDetail thêm Card "Cấu hình dịch vụ" read-only (Dịch vụ / Mã NVC / Bảng giá áp dụng). (2) Tab Kết nối NVC: expand/collapse từng Shop ID xem danh sách gói cước GHN (TMĐT/CPTT), mock data goiCuoc cho 5 shop. (3) Tạo gói dịch vụ mới: thay dropdown đơn bằng multi-shop connections — mỗi shop chọn 1-2 gói cước GHN bằng checkbox, nút Thêm/Xoá Shop ID. (4) ServiceDetail: đồng bộ logic multi-shop + gói cước ở cả view và edit mode. (5) URL-based tab routing cho CarrierSetup (`/carrier-setup/connect`, `/carrier-setup/services`, `/carrier-setup/pricing`) — back từ ServiceDetail về đúng tab Dịch vụ. | trannlb |
 
