@@ -8,7 +8,6 @@ import {
   SearchOutlined,
   DisconnectOutlined,
   CloseOutlined,
-  RightOutlined,
 } from '@ant-design/icons'
 import allServices from '../../../mock-data/services.json'
 import allPriceTables from '../../../mock-data/pricing.json'
@@ -158,16 +157,6 @@ function TabConnect() {
   const [search, setSearch]       = useState('')
   const [showModal, setShowModal] = useState(false)
   const [hovered, setHovered]     = useState<string | null>(null)
-  const [expanded, setExpanded]   = useState<Set<string>>(new Set())
-
-  const toggleExpand = (shopId: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      next.has(shopId) ? next.delete(shopId) : next.add(shopId)
-      return next
-    })
-  }
-
   const filtered = GHN_SHOPS.filter(
     (s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.shopId.includes(search) || s.phone.includes(search)
   )
@@ -200,9 +189,7 @@ function TabConnect() {
         {/* Table header */}
         <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
           {[
-            { label: '',             flex: '0 0 32px', minWidth: 32 },
             { label: 'Cửa hàng GHN',  flex: '2 0 0',   minWidth: 200 },
-            { label: 'Gói cước GHN', flex: '1 0 0',   minWidth: 100 },
             { label: 'Shop ID GHN',  flex: '1 0 0',   minWidth: 120 },
             { label: 'Số điện thoại',flex: '1 0 0',   minWidth: 140 },
             { label: 'Ngày kết nối', flex: '1 0 0',   minWidth: 120 },
@@ -219,72 +206,34 @@ function TabConnect() {
         {filtered.length === 0 ? (
           <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
         ) : (
-          filtered.map((s) => {
-            const goiCuoc = s.goiCuoc
-            const isExpanded = expanded.has(s.shopId)
-            const hasGoiCuoc = goiCuoc.length > 0
-
-            return (
-              <React.Fragment key={s.shopId}>
-                {/* Main row */}
-                <div
-                  style={{ display: 'flex', alignItems: 'center', background: hovered === s.shopId ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
-                  onMouseEnter={() => setHovered(s.shopId)}
-                  onMouseLeave={() => setHovered(null)}
-                >
-                  {/* Expand toggle */}
-                  <div style={{ flex: '0 0 32px', minWidth: 32, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <button
-                      onClick={() => toggleExpand(s.shopId)}
-                      title={isExpanded ? 'Thu gọn' : 'Xem gói cước'}
-                      style={{ width: 20, height: 20, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: C_TEXT_SECONDARY, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                    >
-                      <RightOutlined style={{ fontSize: 11 }} />
-                    </button>
-                  </div>
-                  <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
-                  </div>
-                  <div style={{ flex: '1 0 0', minWidth: 100, padding: '6px 8px' }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
-                      {goiCuoc.length} gói cước
-                    </span>
-                  </div>
-                  <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, fontFamily: 'monospace', lineHeight: '20px' }}>{s.shopId}</span>
-                  </div>
-                  <div style={{ flex: '1 0 0', minWidth: 140, padding: '6px 8px' }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.phone}</span>
-                  </div>
-                  <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.connectedAt}</span>
-                  </div>
-                  <div style={{ flex: '0 0 60px', minWidth: 60, padding: '6px 8px' }}>
-                    <button title="Ngắt kết nối" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1px solid #FCA5A5', borderRadius: 6, background: '#FFF5F5', color: '#EF4444', fontSize: 14, cursor: 'pointer' }}>
-                      <DisconnectOutlined />
-                    </button>
-                  </div>
+          filtered.map((s) => (
+            <React.Fragment key={s.shopId}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', background: hovered === s.shopId ? '#FAFAFA' : '#fff', transition: 'background 0.1s' }}
+                onMouseEnter={() => setHovered(s.shopId)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{s.name}</span>
                 </div>
-
-                {/* Expanded: gói cước list */}
-                {isExpanded && hasGoiCuoc && (
-                  <div>
-                    {goiCuoc.map((gc: GoiCuoc) => (
-                      <div
-                        key={gc.id}
-                        style={{ padding: '7px 8px 7px 40px' }}
-                      >
-                        <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginBottom: 2 }}>{gc.loai}</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>{gc.id} — {gc.ten}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div style={{ height: 1, background: C_BORDER }} />
-              </React.Fragment>
-            )
-          })
+                <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, fontFamily: 'monospace', lineHeight: '20px' }}>{s.shopId}</span>
+                </div>
+                <div style={{ flex: '1 0 0', minWidth: 140, padding: '6px 8px' }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.phone}</span>
+                </div>
+                <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px' }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{s.connectedAt}</span>
+                </div>
+                <div style={{ flex: '0 0 60px', minWidth: 60, padding: '6px 8px' }}>
+                  <button title="Ngắt kết nối" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1px solid #FCA5A5', borderRadius: 6, background: '#FFF5F5', color: '#EF4444', fontSize: 14, cursor: 'pointer' }}>
+                    <DisconnectOutlined />
+                  </button>
+                </div>
+              </div>
+              <div style={{ height: 1, background: C_BORDER }} />
+            </React.Fragment>
+          ))
         )}
       </div>{/* /Table */}
     </>
@@ -376,7 +325,7 @@ function TabServices() {
                   {allGoiCuoc.length === 0 ? (
                     <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>—</span>
                   ) : allGoiCuoc.length === 1 ? (
-                    <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{allGoiCuoc[0].ten}</span>
+                    <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{allGoiCuoc[0].loai}</span>
                   ) : (
                     <>
                       <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, cursor: 'default' }}>
@@ -390,8 +339,7 @@ function TabServices() {
                         }}>
                           {allGoiCuoc.map((gc, i) => (
                             <div key={i} style={{ padding: '6px 14px' }}>
-                              <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginBottom: 1 }}>{gc.loai}</div>
-                              <div style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{gc.ten}</div>
+                              <div style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{gc.loai}</div>
                             </div>
                           ))}
                         </div>

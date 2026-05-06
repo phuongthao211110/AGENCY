@@ -5,6 +5,7 @@ import { agencyAdminTheme } from '../../../theme/platforms'
 import allOrders from '../../../mock-data/orders.json'
 import allShops from '../../../mock-data/shops.json'
 import allServices from '../../../mock-data/services.json'
+import allPricing from '../../../mock-data/pricing.json'
 
 // ── Design tokens ────────────────────────────────────────────
 const C_ACTION         = '#FF5200'
@@ -15,6 +16,22 @@ const C_TEXT_SECONDARY = '#6B7280'
 const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
 
+
+// ── Fee calculation helpers ──────────────────────────────────
+type FeeTier = { id: string; fromValue: string; toValue: string; fixedFee: string; percentFee: string }
+type PricingSurcharges = {
+  partialDelivery?: { value: string; unit: string }
+  insurance?:       FeeTier[]
+  deliveryFailFee?: { value: string; unit: string }
+  codFee?:          FeeTier[]
+}
+
+function calcTierFee(amount: number, tiers: FeeTier[]): number {
+  if (!tiers || tiers.length === 0 || amount <= 0) return 0
+  const tier = tiers.find(t => amount >= parseFloat(t.fromValue) && amount <= parseFloat(t.toValue))
+  if (!tier) return 0
+  return Math.round(amount * parseFloat(tier.percentFee) / 100 + parseFloat(tier.fixedFee))
+}
 
 // ── Simulated current agency ─────────────────────────────────
 const CURRENT_AGENCY_ID = 'AGN001'
@@ -135,10 +152,37 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const shopServices = ((selectedShop as any)?.configuredServices ?? []).map((cs: { serviceId: string; demoFee: number }) => ({
     ...cs,
     service: allServices.find(sv => sv.id === cs.serviceId),
-  })).filter((cs: any) => cs.service)
+  })).filter((cs: any) => cs.service && cs.service.priceTableId)
   const [selectedServiceId, setSelectedServiceId] = useState<string>(shopServices[0]?.serviceId ?? '')
+  const [feePayer, setFeePayer] = useState<'sender' | 'receiver'>('sender')
 
   const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
+
+  // ── Fee calculations ──────────────────────────────────────
+  const selectedService     = allServices.find(s => s.id === selectedServiceId)
+  const selectedServiceConf = shopServices.find((cs: any) => cs.serviceId === selectedServiceId)
+  const priceTable          = selectedService?.priceTableId
+    ? (allPricing as any[]).find(p => p.id === selectedService.priceTableId)
+    : null
+  const surcharges          = (priceTable?.surcharges ?? {}) as PricingSurcharges
+
+  const feeShipping         = (selectedServiceConf as any)?.demoFee ?? 0
+  const feeInsurance     = declareValue && goodsValue > 0
+    ? calcTierFee(goodsValue, surcharges.insurance ?? [])
+    : 0
+  const feePartial       = partialDeliver
+    ? parseInt(surcharges.partialDelivery?.value ?? '0', 10)
+    : 0
+  const feeDeliveryFail  = collectOnFail
+    ? parseInt(surcharges.deliveryFailFee?.value ?? '0', 10)
+    : 0
+  const feeCod           = cod > 0
+    ? calcTierFee(cod, surcharges.codFee ?? [])
+    : 0
+  const totalShipping    = feeShipping + feeInsurance + feePartial + feeDeliveryFail + feeCod
+  const totalCollect     = feePayer === 'sender'
+    ? cod + (shipCollect > 0 ? shipCollect : 0)
+    : cod + feeShipping
   const now = new Date()
   const createdAt = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} - ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`
 
@@ -215,7 +259,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const currentServices = ((agencyShops.find(s => s.id === selectedShopId) as any)?.configuredServices ?? []).map((cs: { serviceId: string; demoFee: number }) => ({
     ...cs,
     service: allServices.find(sv => sv.id === cs.serviceId),
-  })).filter((cs: any) => cs.service)
+  })).filter((cs: any) => cs.service && cs.service.priceTableId)
 
   return (
     <>
@@ -300,9 +344,9 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 40, padding: '6px 12px' }}>
-                  {(['home', 'post'] as const).map((t) => {
+                  {(['home'] as const).map((t) => {
                     const active = pickupType === t
-                    const label  = t === 'home' ? 'Lấy hàng tận nơi' : 'Gửi hàng tại bưu cục'
+                    const label  = 'Lấy hàng tận nơi'
                     return (
                       <div key={t} onClick={() => setPickupType(t)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0 }}>
                         <div style={{
@@ -523,10 +567,18 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             <div style={{ ...card, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
                 <IcTruck />
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Dịch vụ</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', flexShrink: 0 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Shop trả phí ship</span>
-                  <IcChevronDown size={18} />
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
+                <div style={{ display: 'flex', gap: 1, flexShrink: 0, background: '#F3F4F6', borderRadius: 6, padding: 2 }}>
+                  {(['sender', 'receiver'] as const).map((p) => (
+                    <button key={p} onClick={() => setFeePayer(p)}
+                      style={{ padding: '3px 8px', borderRadius: 5, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap',
+                        background: feePayer === p ? '#fff' : 'transparent',
+                        color: feePayer === p ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                        boxShadow: feePayer === p ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                      }}>
+                      {p === 'sender' ? 'Shop trả ship' : 'Khách trả ship'}
+                    </button>
+                  ))}
                 </div>
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
@@ -570,14 +622,42 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               </div>
             </div>
 
+            {/* ── Danh sách phí card ── */}
+            <div style={{ ...card, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phụ phí</span>
+              </div>
+              <div style={{ height: 1, background: C_BORDER }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {[
+                  { label: 'Phí bảo hiểm (khai giá)', value: feeInsurance, active: declareValue && goodsValue > 0 },
+                  { label: 'Phí giao trả 1 phần', value: feePartial, active: partialDeliver },
+                  { label: 'Phí giao thất bại thu tiền', value: feeDeliveryFail, active: collectOnFail },
+                  { label: 'Phí thu hộ', value: feeCod, active: cod > 0 },
+                ].map(({ label, value, active }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', padding: '5px 10px' }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+                      {(active ? value : 0).toLocaleString('vi-VN')}đ
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* ── Action card ── */}
             <div style={{ ...card, flexShrink: 0, gap: 8, padding: 8 }}>
-              <div style={{ background: '#F9FAFB', borderRadius: 6, padding: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Tổng thu khách hàng</span>
-                  <IcHelp />
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: '#EF4444', lineHeight: '20px', textAlign: 'right' }}>
-                    {(cod || 0).toLocaleString('vi-VN')}đ
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#F9FAFB', borderRadius: 6, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng phí vận chuyển</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+                    {totalShipping.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng thu khách hàng</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#EF4444', lineHeight: '20px' }}>
+                    {totalCollect.toLocaleString('vi-VN')}đ
                   </span>
                 </div>
               </div>

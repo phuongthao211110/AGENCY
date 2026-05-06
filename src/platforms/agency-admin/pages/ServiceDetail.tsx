@@ -44,10 +44,10 @@ type ShopConnection = { shopId: string; selectedGoiCuoc: string[] }
 
 const GHN_SHOPS: { shopId: string; name: string; goiCuoc: GoiCuoc[] }[] = [
   { shopId: '5148899', name: 'Shop Thời Trang ABC',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '150', ten: 'Bảng giá Hàng nặng XIAOMI for a Chính' }] },
-  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      goiCuoc: [{ loai: 'Hàng nhẹ', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  goiCuoc: [{ loai: 'Hàng nặng', id: '201', ten: 'Bảng giá Hàng nặng Mỹ Phẩm Standard' }, { loai: 'Hàng nhẹ', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148902', name: 'Shop Giày Dép Fashion', goiCuoc: [{ loai: 'Hàng nhẹ', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  goiCuoc: [] },
+  { shopId: '5148900', name: 'Shop Điện Tử XYZ',      goiCuoc: [{ loai: 'Hàng nhẹ', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '162', ten: 'Bảng giá Hàng nặng Điện Tử Standard' }] },
+  { shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',  goiCuoc: [{ loai: 'Hàng nhẹ', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '201', ten: 'Bảng giá Hàng nặng Mỹ Phẩm Standard' }] },
+  { shopId: '5148902', name: 'Shop Giày Dép Fashion', goiCuoc: [{ loai: 'Hàng nhẹ', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '178', ten: 'Bảng giá Hàng nặng Giày Dép Standard' }] },
+  { shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',  goiCuoc: [{ loai: 'Hàng nhẹ', id: '421', ten: 'CAM KẾT TỪ 500 ĐƠN - 19,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '195', ten: 'Bảng giá Hàng nặng Gia Dụng Standard' }] },
 ]
 
 type ServiceInfo = { code: string; name: string; desc: string; shopConnections: ShopConnection[]; priceTableId: string | null }
@@ -62,7 +62,7 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
 function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>{label}</span>
+      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>{label}</span>
       <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, fontWeight: 500, lineHeight: '20px' }}>{value}</span>
     </div>
   )
@@ -75,7 +75,7 @@ function InputField({ label, value, onChange, placeholder, mono = false }: {
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>{label}</span>
+      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>{label}</span>
       <div style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
         <input
           value={value}
@@ -210,7 +210,7 @@ function LocationTab({ pickupColor, deliveryColor }: { pickupColor: string; deli
         <AddLocationModal title="Thêm địa điểm giao hàng" onClose={() => setModal(null)}
           onAdd={(e) => setDeliveryEntries((prev) => [...prev, e])} />
       )}
-      <div style={{ display: 'flex', gap: 16, padding: 16, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 16, padding: '16px 0', alignItems: 'flex-start', width: '100%', maxWidth: 1024, boxSizing: 'border-box', alignSelf: 'center' }}>
         <LocationSection title="Lấy hàng" accentColor={pickupColor} entries={pickupEntries}
           onAdd={() => setModal('pickup')}
           onRemove={(i) => setPickupEntries((prev) => prev.filter((_, idx) => idx !== i))} />
@@ -273,76 +273,101 @@ export default function ServiceDetail() {
     setEditForm(serviceData); setIsEditing(false)
   }
 
+  const centeredBox: React.CSSProperties = {
+    width: '100%', maxWidth: 1024, boxSizing: 'border-box', alignSelf: 'center', margin: '0 auto',
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#F9FAFB', alignItems: 'center' }}>
 
       {/* ── Page header ──────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', flexShrink: 0 }}>
-        <ArrowLeftOutlined
-          style={{ fontSize: 18, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
+      <div style={{ ...centeredBox, display: 'flex', alignItems: 'center', gap: 12, padding: '24px 80px', flexShrink: 0 }}>
+        <button
           onClick={() => navigate('/agency-admin/carrier-setup/services')}
-        />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 600, color: serviceData.name ? C_TEXT_PRIMARY : C_TEXT_SECONDARY, margin: 0, lineHeight: '28px' }}>
-            {serviceData.name || 'Dịch vụ mới'}
-          </h1>
-          {serviceData.code && (
-            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{serviceData.code}</span>
-          )}
-        </div>
-
-        {isEditing ? (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={handleCancel}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
-            >
-              <CloseOutlined style={{ fontSize: 13 }} />
-              Huỷ
-            </button>
-            <button
-              onClick={handleSave}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', border: 'none', borderRadius: 6, background: C_ACTION, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-            >
-              <SaveOutlined style={{ fontSize: 13 }} />
-              Lưu
-            </button>
-          </div>
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+        >
+          <ArrowLeftOutlined style={{ fontSize: 20, color: C_TEXT_PRIMARY }} />
+        </button>
+        {isNewService ? (
+          <span style={{ flex: 1, fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>
+            Dịch vụ mới
+          </span>
         ) : (
-          <button
-            onClick={handleStartEdit}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
-          >
-            <EditOutlined />
-            Chỉnh sửa
-          </button>
+          <>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>
+                {serviceData.name}
+              </span>
+              {serviceData.code && (
+                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontFamily: 'monospace' }}>{serviceData.code}</span>
+              )}
+            </div>
+            {isEditing ? (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={handleCancel}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+                >
+                  <CloseOutlined style={{ fontSize: 13 }} />
+                  Huỷ
+                </button>
+                <button
+                  onClick={handleSave}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: 'none', borderRadius: 6, background: C_ACTION, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  <SaveOutlined style={{ fontSize: 13 }} />
+                  Lưu
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleStartEdit}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+              >
+                <EditOutlined />
+                Chỉnh sửa
+              </button>
+            )}
+          </>
         )}
       </div>
 
       {/* ── Tab bar ──────────────────────────────────────────── */}
-      <div style={{ display: 'flex', borderBottom: `1px solid ${C_BORDER}`, padding: '0 16px', flexShrink: 0 }}>
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.key
-          return (
-            <div key={tab.key} onClick={() => setActiveTab(tab.key)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 14, fontWeight: 600, color: isActive ? C_ACTION : C_TEXT_SECONDARY, cursor: 'pointer', borderBottom: isActive ? `2px solid ${C_ACTION}` : '2px solid transparent', marginBottom: -1, userSelect: 'none', transition: 'color 0.15s' }}>
-              <span style={{ fontSize: 15 }}>{tab.icon}</span>
-              {tab.label}
-            </div>
-          )
-        })}
+      <div style={{ ...centeredBox, padding: '16px 80px 0', flexShrink: 0 }}>
+        <div style={{ display: 'flex', borderBottom: `1px solid ${C_BORDER}` }}>
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key
+            return (
+              <div key={tab.key} onClick={() => setActiveTab(tab.key)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 16px', fontSize: 14, fontWeight: 600,
+                  color: isActive ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                  cursor: 'pointer', userSelect: 'none',
+                  background: isActive ? '#fff' : 'transparent',
+                  border: isActive ? `1px solid ${C_BORDER}` : '1px solid transparent',
+                  borderBottom: isActive ? '1px solid #fff' : '1px solid transparent',
+                  borderRadius: '8px 8px 0 0',
+                  marginBottom: -1,
+                }}>
+                <span style={{ fontSize: 14 }}>{tab.icon}</span>
+                {tab.label}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* ── Tab content ──────────────────────────────────────── */}
-      <div style={{ flex: '1 0 0', overflowY: 'auto' }}>
+      <div style={{ flex: '1 0 0', overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
         {/* ── Tab: Thông tin ── */}
         {activeTab === 'info' && (
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ ...centeredBox, padding: '16px 80px 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
             {/* Basic info card */}
-            <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-              <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
+            <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 12, overflow: 'hidden', background: '#fff', boxShadow: '0px 1px 2px rgba(0,0,0,0.06)' }}>
+              <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>
                 Thông tin cơ bản
               </div>
 
@@ -357,7 +382,7 @@ export default function ServiceDetail() {
 
                   {/* Shop connections */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</span>
                     {editForm.shopConnections.map((conn, idx) => {
                       const shop = GHN_SHOPS.find(s => s.shopId === conn.shopId)
                       const availableGoiCuoc = shop?.goiCuoc ?? []
@@ -384,7 +409,7 @@ export default function ServiceDetail() {
                           </div>
                           {availableGoiCuoc.length > 0 ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chọn gói cước áp dụng (tối đa 2)</span>
+                              <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chọn gói cước áp dụng</span>
                               {availableGoiCuoc.map((gc) => {
                                 const checked = conn.selectedGoiCuoc.includes(gc.id)
                                 const disabled = !checked && conn.selectedGoiCuoc.length >= 2
@@ -394,8 +419,7 @@ export default function ServiceDetail() {
                                       onChange={() => toggleGoiCuoc(idx, gc.id)}
                                       style={{ marginTop: 2, accentColor: C_ACTION, flexShrink: 0 }} />
                                     <div>
-                                      <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>{gc.loai}</div>
-                                      <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.id} — {gc.ten}</div>
+                                      <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{gc.loai}</div>
                                     </div>
                                   </label>
                                 )
@@ -424,7 +448,7 @@ export default function ServiceDetail() {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID GHN</span>
                     {serviceData.shopConnections.map((conn, idx) => {
                       const shop = GHN_SHOPS.find(s => s.shopId === conn.shopId)
                       const selectedGc = shop?.goiCuoc.filter(gc => conn.selectedGoiCuoc.includes(gc.id)) ?? []
@@ -438,8 +462,7 @@ export default function ServiceDetail() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                               {selectedGc.map(gc => (
                                 <div key={gc.id}>
-                                  <div style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>{gc.loai}</div>
-                                  <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>{gc.id} — {gc.ten}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>{gc.loai}</div>
                                 </div>
                               ))}
                             </div>
@@ -460,9 +483,9 @@ export default function ServiceDetail() {
                 ? allPriceTables.find((pt) => pt.id === serviceData.priceTableId)
                 : null
               return (
-                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-                  <div style={{ padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
-                    Bảng giá
+                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 12, overflow: 'hidden', background: '#fff', boxShadow: '0px 1px 2px rgba(0,0,0,0.06)' }}>
+                  <div style={{ padding: '12px 20px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>
+                    Bảng giá mặc định
                   </div>
                   <div style={{ padding: 16 }}>
                     {priceTable ? (
@@ -497,17 +520,34 @@ export default function ServiceDetail() {
                 </div>
               )
             })()}
+
+            {/* ── Action buttons (new service only) ── */}
+            {isNewService && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingBottom: 8 }}>
+                <button
+                  onClick={handleSave}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px', border: 'none', borderRadius: 6, background: C_ACTION, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  <SaveOutlined style={{ fontSize: 13 }} />
+                  Tạo dịch vụ
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {/* ── Tab: Địa điểm khả dụng ── */}
         {activeTab === 'available' && (
-          <LocationTab pickupColor="#10B981" deliveryColor="#3B82F6" />
+          <div style={{ ...centeredBox, padding: '0 80px' }}>
+            <LocationTab pickupColor="#10B981" deliveryColor="#3B82F6" />
+          </div>
         )}
 
         {/* ── Tab: Địa điểm chặn ── */}
         {activeTab === 'blocked' && (
-          <LocationTab pickupColor="#F59E0B" deliveryColor="#EF4444" />
+          <div style={{ ...centeredBox, padding: '0 80px' }}>
+            <LocationTab pickupColor="#F59E0B" deliveryColor="#EF4444" />
+          </div>
         )}
       </div>
     </div>

@@ -456,7 +456,6 @@ function RouteBlock({
   onChange: (updated: RouteConfig) => void
   onDelete: () => void
 }) {
-  const [showLocation, setShowLocation] = useState(false)
   const [activeSection, setActiveSection] = useState<null | 'overweight' | 'surcharge'>(null)
   const [weightError, setWeightError] = useState(false)
 
@@ -480,7 +479,6 @@ function RouteBlock({
   }
 
   const handleRouteTypeChange = (newType: RouteType) => {
-    if (newType !== 'lien-tinh') setShowLocation(false)
     onChange({
       ...route,
       routeType: newType,
@@ -591,7 +589,7 @@ function RouteBlock({
           <span style={{ fontSize: 12, lineHeight: '16px', visibility: 'hidden', userSelect: 'none' }}>_</span>
           <div style={{ display: 'flex', gap: 8 }}>
             {([
-              { key: 'overweight' as const, label: 'Ngưỡng vượt cân', count: route.overweightTiers.length },
+              { key: 'overweight' as const, label: 'Vượt cân', count: route.overweightTiers.length },
               { key: 'surcharge'  as const, label: 'Phụ phí',          count: surchargeCount },
             ]).map(({ key, label, count }) => {
               const isActive = activeSection === key
@@ -631,19 +629,8 @@ function RouteBlock({
         </div>
       </div>
 
-      {/* Liên tỉnh: CTA toggle + optional location selectors */}
+      {/* Liên tỉnh: location selectors (luôn hiển thị) */}
       {isLienTinh && (
-        <div style={{ marginBottom: 14 }}>
-          <button
-            onClick={() => setShowLocation((v) => !v)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: 'none', background: 'transparent', color: '#3B82F6', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '2px 0', marginBottom: showLocation ? 10 : 0 }}
-          >
-            <span style={{ fontSize: 12, lineHeight: 1 }}>{showLocation ? '▾' : '▸'}</span>
-            Cấu hình phạm vi áp dụng
-          </button>
-        </div>
-      )}
-      {isLienTinh && showLocation && (
         <div style={{ padding: '12px 14px', background: C_BG_FORM, borderRadius: 6, marginBottom: 14, border: `1px solid ${C_BORDER}` }}>
           {/* Grid: col1=label, col2=Vùng, col3=Tỉnh, col4=Quận, col5=Phường */}
           <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr 1fr', gap: '8px 10px', alignItems: 'end' }}>
@@ -688,7 +675,7 @@ function RouteBlock({
       )}
 
 
-      {/* Tab content: Ngưỡng vượt cân */}
+      {/* Tab content: Vượt cân */}
       {activeSection === 'overweight' && (
         <div style={{ padding: '10px 0 4px' }}>
           {route.overweightTiers.map((tier, idx) => (

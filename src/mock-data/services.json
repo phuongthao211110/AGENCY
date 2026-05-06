@@ -31,8 +31,8 @@
     "carrier": "GHN",
     "maxWeight": "50 kg",
     "deliveryZones": "HCM, HN",
-    "enabled": false,
+    "enabled": true,
     "ghnShopIds": ["5148901", "5148902", "5148903"],
-    "priceTableId": null
+    "priceTableId": "PRC001"
   }
 ]

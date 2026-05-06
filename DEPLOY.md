@@ -24,6 +24,44 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
+### v0.22.0 — CarrierSetup & PricingCreate UX Cleanup
+
+**PricingCreate**
+- Tuyến Liên tỉnh: form "Cấu hình phạm vi áp dụng" luôn hiển thị mặc định, bỏ button toggle
+- Wording "Ngưỡng vượt cân" → "Vượt cân" (pill button)
+
+**Tab Kết nối GHN (CarrierSetup)**
+- Bỏ cột "Gói cước GHN" khỏi bảng
+- Bỏ expand/collapse xem Hàng nhẹ/Hàng nặng trong từng row
+
+**ServiceDetail — Tạo dịch vụ mới**
+- Bỏ button "Huỷ" ở cuối form (dùng back arrow thay thế)
+- Section "Bảng giá" → "Bảng giá mặc định"
+- Bỏ chữ "(tối đa 2)" khỏi label "Chọn gói cước áp dụng"
+- Mock data: tất cả 5 Shop ID GHN đều có đủ Hàng nhẹ + Hàng nặng
+
+**ServiceDetail & CarrierSetup — Gói cước display**
+- Bỏ hiển thị id + tên chi tiết gói cước ở mọi view, chỉ giữ "Hàng nhẹ" / "Hàng nặng"
+
+**Order Drawer (Agency Admin & Web Shop)**
+- Ẩn option "Gửi hàng tại bưu cục", chỉ còn "Lấy hàng tận nơi"
+
+### v0.21.0 — Order Drawer: Fee Sections + Service Filter
+
+**Agency Admin & Web Shop — Drawer tạo đơn hàng**
+- Đổi tên section "Dịch vụ" → "Phí vận chuyển"; hiển thị phí ship (demoFee) từ configuredServices của từng dịch vụ
+- Toggle "Shop trả ship" / "Khách trả ship" ngay trong header card Phí vận chuyển
+- Thêm section **Phụ phí** — 4 dòng: Phí bảo hiểm (khai giá), Phí giao trả 1 phần, Phí giao thất bại thu tiền, Phí thu hộ; hiển thị 0đ nếu chưa có cấu hình
+- Phụ phí đi theo bảng giá gắn với dịch vụ của shop (lookup chain: shop → service → priceTableId → surcharges)
+- Dịch vụ không có priceTableId → ẩn khỏi danh sách chọn trong drawer (không tạo đơn được)
+- Thêm khối tổng cuối form: **Tổng phí vận chuyển** + **Tổng thu khách hàng** (đỏ, font 16 bold)
+- Mock data: SHP001 bổ sung dịch vụ `ghn-bulky` (demoFee 35.000đ); `ghn-bulky` trong services.json bật priceTableId PRC001; pricing.json bổ sung trường `surcharges` cho tất cả 5 bảng giá
+- UI: bỏ divider giữa 2 dòng tổng, tăng gap lên 8, tăng font size + weight cho số Tổng thu khách hàng
+
+**Agency Admin — ServiceDetail**
+- Header tạo dịch vụ mới: đồng bộ style với ShopCreate/PricingCreate (tiêu đề clean, không có action buttons ở header; nút Huỷ + Tạo dịch vụ nằm ở cuối form)
+- Tab bar căn giữa đúng maxWidth 1024, đường kẻ dưới tab không bị tràn ra ngoài
+
 ### v0.20.0 — Rebrand NVC → GHN + CarrierSetup UX + PricingCreate Surcharge
 
 **Rebrand & Wording**

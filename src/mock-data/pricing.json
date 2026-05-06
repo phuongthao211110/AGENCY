@@ -27,7 +27,21 @@
       [26000, 38000, 35000, 32000],
       [35000, 50000, 46000, 42000],
       [48000, 68000, 62000, 56000]
-    ]
+    ],
+    "surcharges": {
+      "partialDelivery": { "value": "5000", "unit": "vnd" },
+      "insurance": [
+        { "id": "i1", "fromValue": "0", "toValue": "500000", "fixedFee": "1000", "percentFee": "0" },
+        { "id": "i2", "fromValue": "500001", "toValue": "3000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "i3", "fromValue": "3000001", "toValue": "50000000", "fixedFee": "0", "percentFee": "1.5" }
+      ],
+      "deliveryFailFee": { "value": "15000", "unit": "vnd" },
+      "codFee": [
+        { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.5" },
+        { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "2" }
+      ]
+    }
   },
   {
     "id": "PRC002",
@@ -57,7 +71,21 @@
       [23400, 34200, 31500, 28800],
       [31500, 45000, 41400, 37800],
       [43200, 61200, 55800, 50400]
-    ]
+    ],
+    "surcharges": {
+      "partialDelivery": { "value": "5000", "unit": "vnd" },
+      "insurance": [
+        { "id": "i1", "fromValue": "0", "toValue": "500000", "fixedFee": "900", "percentFee": "0" },
+        { "id": "i2", "fromValue": "500001", "toValue": "3000000", "fixedFee": "0", "percentFee": "0.9" },
+        { "id": "i3", "fromValue": "3000001", "toValue": "50000000", "fixedFee": "0", "percentFee": "1.35" }
+      ],
+      "deliveryFailFee": { "value": "12000", "unit": "vnd" },
+      "codFee": [
+        { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "0.9" },
+        { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.35" },
+        { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "1.8" }
+      ]
+    }
   },
   {
     "id": "PRC003",
@@ -87,7 +115,21 @@
       [25000, 37000, 34000, 31000],
       [34000, 49000, 45000, 41000],
       [47000, 67000, 61000, 55000]
-    ]
+    ],
+    "surcharges": {
+      "partialDelivery": { "value": "5000", "unit": "vnd" },
+      "insurance": [
+        { "id": "i1", "fromValue": "0", "toValue": "500000", "fixedFee": "1000", "percentFee": "0" },
+        { "id": "i2", "fromValue": "500001", "toValue": "3000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "i3", "fromValue": "3000001", "toValue": "50000000", "fixedFee": "0", "percentFee": "1.5" }
+      ],
+      "deliveryFailFee": { "value": "15000", "unit": "vnd" },
+      "codFee": [
+        { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.5" },
+        { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "2" }
+      ]
+    }
   },
   {
     "id": "PRC004",
@@ -117,7 +159,21 @@
       [24000, 37000, 35000, 30000],
       [33000, 49000, 46000, 40000],
       [46000, 67000, 62000, 54000]
-    ]
+    ],
+    "surcharges": {
+      "partialDelivery": { "value": "5000", "unit": "vnd" },
+      "insurance": [
+        { "id": "i1", "fromValue": "0", "toValue": "500000", "fixedFee": "1000", "percentFee": "0" },
+        { "id": "i2", "fromValue": "500001", "toValue": "3000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "i3", "fromValue": "3000001", "toValue": "50000000", "fixedFee": "0", "percentFee": "1.5" }
+      ],
+      "deliveryFailFee": { "value": "15000", "unit": "vnd" },
+      "codFee": [
+        { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.5" },
+        { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "2" }
+      ]
+    }
   },
   {
     "id": "PRC005",
@@ -147,6 +203,20 @@
       [23000, 35000, 40000, 30000],
       [32000, 47000, 53000, 40000],
       [45000, 65000, 73000, 54000]
-    ]
+    ],
+    "surcharges": {
+      "partialDelivery": { "value": "5000", "unit": "vnd" },
+      "insurance": [
+        { "id": "i1", "fromValue": "0", "toValue": "500000", "fixedFee": "1000", "percentFee": "0" },
+        { "id": "i2", "fromValue": "500001", "toValue": "3000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "i3", "fromValue": "3000001", "toValue": "50000000", "fixedFee": "0", "percentFee": "1.5" }
+      ],
+      "deliveryFailFee": { "value": "15000", "unit": "vnd" },
+      "codFee": [
+        { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.5" },
+        { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "2" }
+      ]
+    }
   }
 ]
