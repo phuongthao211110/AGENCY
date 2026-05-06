@@ -17,6 +17,10 @@
 > **Quy tắc:** 
 > - KHÔNG push production nếu chưa có confirm rõ ràng từ user. Mọi feature mới đều vào Pending trước.
 > - **Documentation changes (.md, CLAUDE.md) không cần tạo version mới** — chỉ commit + push. Chỉ tạo version khi có code/feature changes (src/, vite.config, mock-data).
+> - ⚠️ **BẮT BUỘC khi deploy:** Cập nhật version badge ở **3 file layout** trước khi commit:
+>   - `src/platforms/agency-admin/layout/AgencyAdminLayout.tsx`
+>   - `src/platforms/super-admin/layout/SuperAdminLayout.tsx`
+>   - `src/platforms/shop/layout/ShopLayout.tsx`
 
 ---
 

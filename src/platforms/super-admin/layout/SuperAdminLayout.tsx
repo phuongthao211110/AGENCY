@@ -175,7 +175,7 @@ export default function SuperAdminLayout() {
 
           {/* Version */}
           <div style={{ padding: '0 16px 10px', textAlign: 'center' }}>
-            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.20.0</span>
+            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.22.0</span>
           </div>
         </aside>
 
