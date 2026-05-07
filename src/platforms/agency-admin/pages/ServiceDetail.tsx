@@ -434,29 +434,36 @@ export default function ServiceDetail() {
                                 {shop.goiCuoc.map(gc => {
                                   const isChecked = conn?.selectedGoiCuoc.includes(gc.id) ?? false
                                   const isHangNhe = gc.loai === 'Hàng nhẹ'
-                                  const activeStyle = isHangNhe
+                                  const checkedStyle = isHangNhe
                                     ? { color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE' }
                                     : { color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A' }
-                                  const inactiveStyle = { color: '#6B7280', background: '#fff', border: `1px solid #E5E7EB` }
+                                  const uncheckedStyle = isHangNhe
+                                    ? { color: '#93C5FD', background: '#fff', border: '1px dashed #BFDBFE' }
+                                    : { color: '#FCD34D', background: '#fff', border: '1px dashed #FDE68A' }
                                   return (
                                     <div
                                       key={gc.id}
                                       onClick={() => { if (isSelected) toggleGoiCuocByShop(shop.shopId, gc.id) }}
+                                      title={isSelected ? (isChecked ? 'Bỏ chọn' : 'Chọn gói cước') : undefined}
                                       style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                                        display: 'inline-flex', alignItems: 'center', gap: 5,
                                         padding: '4px 10px', borderRadius: 20,
-                                        fontSize: 12, fontWeight: isChecked ? 600 : 400,
+                                        fontSize: 12, fontWeight: isChecked ? 600 : 500,
                                         cursor: isSelected ? 'pointer' : 'default',
                                         pointerEvents: isSelected ? 'auto' : 'none',
-                                        opacity: isSelected ? 1 : 0.4,
+                                        opacity: isSelected ? 1 : 0.35,
                                         transition: 'all 0.15s',
                                         userSelect: 'none',
-                                        ...(isChecked ? activeStyle : inactiveStyle),
+                                        ...(isChecked ? checkedStyle : uncheckedStyle),
                                       }}
                                     >
-                                      {isChecked && (
+                                      {isChecked ? (
                                         <svg width="9" height="7" viewBox="0 0 9 7" fill="none" style={{ flexShrink: 0 }}>
                                           <path d="M1 3L3.2 5.5L8 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                      ) : (
+                                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none" style={{ flexShrink: 0 }}>
+                                          <circle cx="4.5" cy="4.5" r="3.5" stroke="currentColor" strokeWidth="1.2"/>
                                         </svg>
                                       )}
                                       {gc.loai}

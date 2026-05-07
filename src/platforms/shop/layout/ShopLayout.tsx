@@ -180,7 +180,7 @@ export default function ShopLayout() {
 
           {/* Version */}
           <div style={{ padding: '0 16px 10px', textAlign: 'center' }}>
-            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.23.1</span>
+            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.23.2</span>
           </div>
         </aside>
 

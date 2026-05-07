@@ -18,9 +18,10 @@ type RegionCode = 'vung1' | 'vung2' | 'vung3' | ''
 
 type OverweightTier = {
   id: string
-  toGram: string    // gram, rỗng = không giới hạn
-  stepGram: string  // mỗi Y gram
-  increase: string  // tăng X đồng
+  toGram: string      // gram, rỗng = không giới hạn
+  unbounded?: boolean // true = "trở lên" mode, không có upper bound
+  stepGram: string    // mỗi Y gram
+  increase: string    // tăng X đồng
 }
 
 type FeeUnit = '%' | 'vnd'
@@ -151,18 +152,47 @@ function OverweightTierRow({
     width: 60,
   }
 
+  const isUnbounded = !!tier.unbounded
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 0', fontSize: 13, color: C_TEXT_SECONDARY }}>
       <span style={{ color: C_TEXT_SECONDARY, marginRight: 4 }}>•</span>
-      <span>{prevLabel} đến</span>
-      <input
-        type="number"
-        value={tier.toGram}
-        onChange={(e) => onChange({ ...tier, toGram: e.target.value })}
-        placeholder="∞"
-        style={{ ...inlineInput, width: 70 }}
-      />
-      <span>g &nbsp;:&nbsp; Tăng</span>
+      <span>{prevLabel}</span>
+      {/* Segmented control: đến / trở lên */}
+      <div style={{ display: 'inline-flex', gap: 1, background: '#F3F4F6', borderRadius: 6, padding: 2, flexShrink: 0 }}>
+        {(['đến', 'trở lên'] as const).map((opt) => {
+          const active = opt === 'đến' ? !isUnbounded : isUnbounded
+          return (
+            <button
+              key={opt}
+              onClick={() => onChange({ ...tier, unbounded: opt === 'trở lên', toGram: '' })}
+              style={{
+                fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 5,
+                border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                background: active ? '#fff' : 'transparent',
+                color: active ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              {opt}
+            </button>
+          )
+        })}
+      </div>
+      {!isUnbounded && (
+        <>
+          <input
+            type="number"
+            value={tier.toGram}
+            onChange={(e) => onChange({ ...tier, toGram: e.target.value })}
+            placeholder="∞"
+            style={{ ...inlineInput, width: 70 }}
+          />
+          <span>g</span>
+        </>
+      )}
+      <span>&nbsp;:&nbsp; Tăng</span>
       <input
         type="number"
         value={tier.increase}

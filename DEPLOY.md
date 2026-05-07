@@ -80,6 +80,7 @@ Dist dir:  dist/
 | v0.22.0 | 2026-05-06 | CarrierSetup & PricingCreate UX Cleanup: Liên tỉnh luôn mở phạm vi áp dụng, wording "Vượt cân", bỏ cột Gói cước GHN + expand, ServiceDetail bỏ Huỷ + fix wording + mock data 5 shops đủ Hàng nhẹ/nặng, order drawer ẩn "Gửi hàng tại bưu cục" | trannlb |
 | v0.23.0 | 2026-05-06 | PricingCreate: 6 route types + ZoneGuideModal + phụ phí giao lại/hoàn hàng + bulk apply đồng giá | trannlb |
 | v0.23.1 | 2026-05-07 | Cập nhật định nghĩa tuyến ZoneGuideModal: Nội Vùng (3 TP lớn & vùng tương ứng), Nội Vùng Tỉnh (2 tỉnh cùng miền), Liên Vùng (3 TP lớn & các vùng chéo) | trannlb |
+| v0.23.2 | 2026-05-07 | UX: ServiceDetail chip dịch vụ thêm circle indicator + dashed border; PricingCreate vượt cân segmented control đến/trở lên | trannlb |
 
 ---
 
