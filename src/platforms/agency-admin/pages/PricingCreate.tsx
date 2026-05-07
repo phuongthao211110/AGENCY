@@ -759,7 +759,7 @@ const ZONE_GUIDE_ROWS: { type: string; definition: string; routes: string[] }[] 
   },
   {
     type: 'Nội Vùng',
-    definition: 'Là lộ trình giao - nhận hàng hóa giữa 2 tỉnh thành chỉ nằm trong cùng 1 miền gửi hàng.',
+    definition: 'Là lộ trình giao - nhận hàng hoá giữa TP. Hà Nội & Vùng 3, TP. Đà Nẵng & Vùng 2, TP. Hồ Chí Minh & Vùng 1.',
     routes: [
       'Hà Nội <=> Vùng 3',
       'Đà Nẵng <=> Vùng 2',
@@ -768,7 +768,7 @@ const ZONE_GUIDE_ROWS: { type: string; definition: string; routes: string[] }[] 
   },
   {
     type: 'Nội Vùng Tỉnh',
-    definition: 'Là lộ trình giao - nhận hàng hóa giữa các tỉnh (không gồm 3 thành phố lớn) nằm trong cùng một vùng địa lý.',
+    definition: 'Là lộ trình giao - nhận hàng hóa giữa 2 tỉnh thành chỉ nằm trong cùng 1 miền gửi hàng.',
     routes: [
       'Vùng 3 <=> Vùng 3',
       'Vùng 2 <=> Vùng 2',
@@ -786,7 +786,7 @@ const ZONE_GUIDE_ROWS: { type: string; definition: string; routes: string[] }[] 
   },
   {
     type: 'Liên Vùng',
-    definition: 'Là lộ trình giao - nhận hàng hóa giữa 2 tỉnh thành thuộc 2 miền liền kề, bao gồm: miền Nam với miền Trung; miền Bắc với miền Trung.',
+    definition: 'Là lộ trình giao - nhận hàng hoá giữa TP. Hà Nội và Vùng 1/Vùng 2, TP. Đà Nẵng & Vùng 1/Vùng 3, TP. HCM & Vùng 2/Vùng 3.',
     routes: [
       'Hà Nội <=> Vùng 1/Vùng 2',
       'Đà Nẵng <=> Vùng 1/Vùng 3',
