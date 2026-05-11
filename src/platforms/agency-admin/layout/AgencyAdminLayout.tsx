@@ -8,11 +8,11 @@ import {
   ShopOutlined,
   LogoutOutlined,
   TruckOutlined,
-  FileTextOutlined,
   OrderedListOutlined,
   AuditOutlined,
   SettingOutlined,
   RightOutlined,
+  NodeIndexOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
@@ -28,6 +28,10 @@ const NAV_ITEMS = [
 ]
 
 const SETTINGS_ITEM = { key: '/agency-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }
+
+const TOOL_ITEMS = [
+  { key: '/agency-admin/route-check', icon: <NodeIndexOutlined />, label: 'Kiểm tra tuyến' },
+]
 
 
 export default function AgencyAdminLayout() {
@@ -94,6 +98,41 @@ export default function AgencyAdminLayout() {
 
           <div style={{ height: 1, background: COLOR_BORDER, margin: '10px 16px' }} />
 
+          {/* CÔNG CỤ section */}
+          <div style={{ padding: '0 16px' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: 0.5, marginBottom: 6 }}>
+              CÔNG CỤ
+            </div>
+            {TOOL_ITEMS.map((item) => {
+              const active = isActive(item.key)
+              return (
+                <div
+                  key={item.key}
+                  onClick={() => navigate(item.key)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '5px 8px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    background: active ? '#FFF3EE' : 'transparent',
+                    color: active ? GHN_ORANGE : '#333',
+                    fontWeight: active ? 600 : 400,
+                    fontSize: 14,
+                  }}
+                >
+                  <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </div>
+              )
+            })}
+          </div>
+
+          <div style={{ height: 1, background: COLOR_BORDER, margin: '10px 16px' }} />
+
           {/* CÀI ĐẶT section */}
           <div style={{ padding: '0 16px' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: 0.5, marginBottom: 6 }}>
@@ -129,36 +168,6 @@ export default function AgencyAdminLayout() {
 
           <div style={{ flex: 1 }} />
 
-          {/* Document — localhost only */}
-          {window.location.hostname === 'localhost' && (
-          <div style={{ padding: '0 16px 4px' }}>
-            {(() => {
-              const active = isActive('/agency-admin/document')
-              return (
-                <div
-                  onClick={() => navigate('/agency-admin/document')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '5px 8px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    background: active ? '#FFF3EE' : 'transparent',
-                    color: active ? GHN_ORANGE : '#333',
-                    fontWeight: active ? 600 : 400,
-                    fontSize: 14,
-                  }}
-                >
-                  <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
-                    <FileTextOutlined />
-                  </span>
-                  Document
-                </div>
-              )
-            })()}
-          </div>
-          )}
 
           <div style={{ height: 1, background: COLOR_BORDER, margin: '0 16px' }} />
 
@@ -184,7 +193,7 @@ export default function AgencyAdminLayout() {
 
           {/* Version */}
           <div style={{ padding: '0 16px 10px', textAlign: 'center' }}>
-            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.23.2</span>
+            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.24.0</span>
           </div>
         </aside>
 

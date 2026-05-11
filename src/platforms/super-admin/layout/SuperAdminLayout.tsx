@@ -9,7 +9,6 @@ import {
   SettingOutlined,
   LogoutOutlined,
   RightOutlined,
-  FileTextOutlined,
 } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
@@ -120,36 +119,6 @@ export default function SuperAdminLayout() {
           {/* Spacer */}
           <div style={{ flex: 1 }} />
 
-          {/* Document — localhost only */}
-          {window.location.hostname === 'localhost' && (
-          <div style={{ padding: '0 16px 4px' }}>
-            {(() => {
-              const active = isActive('/super-admin/document')
-              return (
-                <div
-                  onClick={() => navigate('/super-admin/document')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '5px 8px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    background: active ? '#FFF3EE' : 'transparent',
-                    color: active ? GHN_ORANGE : '#333',
-                    fontWeight: active ? 600 : 400,
-                    fontSize: 14,
-                  }}
-                >
-                  <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
-                    <FileTextOutlined />
-                  </span>
-                  Document
-                </div>
-              )
-            })()}
-          </div>
-          )}
 
           <div style={{ height: 1, background: COLOR_BORDER, margin: '0 16px' }} />
 
@@ -175,7 +144,7 @@ export default function SuperAdminLayout() {
 
           {/* Version */}
           <div style={{ padding: '0 16px 10px', textAlign: 'center' }}>
-            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.23.2</span>
+            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.24.0</span>
           </div>
         </aside>
 

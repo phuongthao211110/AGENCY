@@ -28,7 +28,8 @@
 
 > Các tính năng đã phát triển local, chưa lên production.
 
-_(Hiện không có tính năng pending)_
+| Version | Tính năng | Author |
+|---------|-----------|--------|
 
 ---
 
@@ -81,6 +82,7 @@ Dist dir:  dist/
 | v0.23.0 | 2026-05-06 | PricingCreate: 6 route types + ZoneGuideModal + phụ phí giao lại/hoàn hàng + bulk apply đồng giá | trannlb |
 | v0.23.1 | 2026-05-07 | Cập nhật định nghĩa tuyến ZoneGuideModal: Nội Vùng (3 TP lớn & vùng tương ứng), Nội Vùng Tỉnh (2 tỉnh cùng miền), Liên Vùng (3 TP lớn & các vùng chéo) | trannlb |
 | v0.23.2 | 2026-05-07 | UX: ServiceDetail chip dịch vụ thêm circle indicator + dashed border; PricingCreate vượt cân segmented control đến/trở lên | trannlb |
+| v0.24.0 | 2026-05-11 | (1) Web Shop & Agency Admin / Đơn hàng: cập nhật 8 tabs trạng thái đơn hàng (Đơn nháp, Chờ bàn giao, Đã bàn giao - Đang giao, Đã bàn giao - Đang hoàn hàng, Chờ xác nhận giao lại, Hoàn tất, Đơn huỷ, Hàng thất lạc - hư hỏng); hỗ trợ scroll ngang tab bar. (2) Agency Admin / Công cụ — Kiểm tra tuyến: thêm section CÔNG CỤ vào sidebar; trang tra cứu tuyến giao hàng với 63 tỉnh thành + quận huyện đầy đủ, xác định 1 trong 6 tuyến (Nội Tỉnh / Nội Vùng / Nội Vùng Tỉnh / Liên Vùng Đặc Biệt / Liên Vùng / Liên Vùng Tỉnh), badge hiển thị vùng, nút hoán đổi chiều, bảng phân vùng tham khảo; cập nhật zone Quảng Ngãi → Vùng 1 | trannlb |
 
 ---
 
