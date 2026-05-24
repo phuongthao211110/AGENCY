@@ -54,6 +54,22 @@ function IcHelp() {
     </svg>
   )
 }
+function IcStar({ active = false }: { active?: boolean }) {
+  const c = active ? '#FF5200' : IC
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+}
+function IcMapPin() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a7 7 0 017 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+}
+function IcPrinter() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+}
+function IcSettings() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+}
+function IcArrowReturn() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 010 8h-1"/></svg>
+}
 
 // ── Checkbox (blue when checked – per Figma design tokens) ───
 function CheckboxBlue({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -72,6 +88,188 @@ function CheckboxBlue({ checked, onChange }: { checked: boolean; onChange: () =>
           <path d="M1 4L4.5 7.5L11 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       )}
+    </div>
+  )
+}
+
+// ── Toggle ───────────────────────────────────────────────────
+function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
+  return (
+    <div onClick={onChange} style={{ width: 36, height: 20, borderRadius: 10, cursor: 'pointer', background: on ? '#FF5200' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+      <div style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: 8, background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+    </div>
+  )
+}
+
+// ── OrderSettingsModal ────────────────────────────────────────
+function OrderSettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<'default' | 'pickup' | 'print'>('default')
+  const [weightDefault, setWeightDefault] = useState(false)
+  const [sizeDefault, setSizeDefault] = useState(false)
+  const [settingsDeclare, setSettingsDeclare] = useState(false)
+  const [settingsPartial, setSettingsPartial] = useState(false)
+  const [settingsCollectFail, setSettingsCollectFail] = useState(false)
+  const [orderNote, setOrderNote] = useState('')
+  const [autoRedeliver, setAutoRedeliver] = useState(false)
+  const [collectShipFee, setCollectShipFee] = useState(0)
+
+  if (!open) return null
+
+  function SectionCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+    return (
+      <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, display: 'flex', flexDirection: 'column', gap: 12, padding: 12, width: '100%', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {icon}
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{title}</span>
+        </div>
+        {children}
+      </div>
+    )
+  }
+
+  function SettingRow({ label, desc, control }: { label: string; desc: string; control: React.ReactNode }) {
+    return (
+      <div style={{ display: 'flex', gap: 32, alignItems: 'center', paddingTop: 6, paddingBottom: 6 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label}</span>
+          <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px' }}>{desc}</span>
+        </div>
+        {control}
+      </div>
+    )
+  }
+
+  function SelectCtrl({ value, flex1 }: { value: string; flex1?: boolean }) {
+    return (
+      <div style={{ ...(flex1 ? { flex: 1, minWidth: 0 } : { width: 240, flexShrink: 0 }), background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
+        <IcChevronDown size={20} />
+      </div>
+    )
+  }
+
+  const sidebarItems: { key: 'default' | 'pickup' | 'print'; label: string; icon: React.ReactNode }[] = [
+    { key: 'default', label: 'Thông tin mặc định', icon: <IcStar active={activeTab === 'default'} /> },
+    { key: 'pickup', label: 'Địa chỉ lấy hàng', icon: <IcMapPin /> },
+    { key: 'print', label: 'In đơn hàng', icon: <IcPrinter /> },
+  ]
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 209 }} />
+      <div style={{ position: 'fixed', top: 16, left: 16, right: 16, bottom: 16, background: '#fff', borderRadius: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.06)', zIndex: 210, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', flexShrink: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Cài đặt đơn hàng</span>
+          <div onClick={onClose} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}><IcX /></div>
+        </div>
+        <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+        {/* Body */}
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          {/* Sidebar */}
+          <div style={{ width: 240, borderRight: `1px solid ${C_BORDER}`, display: 'flex', flexDirection: 'column', paddingTop: 10, paddingBottom: 16, paddingLeft: 16, paddingRight: 16, flexShrink: 0, overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ padding: '4px 8px' }}>
+                <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px', textTransform: 'uppercase' }}>Cài đặt đơn hàng</span>
+              </div>
+              {sidebarItems.map(item => (
+                <div key={item.key} onClick={() => setActiveTab(item.key)} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 8, borderRadius: 6, cursor: 'pointer', background: activeTab === item.key ? '#FFF4ED' : 'transparent' }}>
+                  {item.icon}
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: activeTab === item.key ? '#FF5200' : '#4B5563' }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Form */}
+          <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', background: '#fff' }}>
+            {activeTab === 'default' && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: '100%', maxWidth: 1024, padding: '24px 80px', flexShrink: 0 }}>
+                  <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>Thông tin mặc định</span>
+                </div>
+                <div style={{ width: '100%', maxWidth: 1024, padding: '0 80px 80px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <SectionCard icon={<IcStore />} title="Bên gửi">
+                    <SettingRow label="Ca lấy hàng" desc="Thiết lập ca lấy hàng mặc định khi tạo đơn" control={<SelectCtrl value="Tự chọn ca lấy hàng sau" />} />
+                  </SectionCard>
+                  <SectionCard icon={<IcCube />} title="Sản phẩm">
+                    <SettingRow label="Khối lượng đơn hàng" desc="Thiết lập khối lượng đơn hàng mặc định khi tạo đơn" control={<Toggle on={weightDefault} onChange={() => setWeightDefault(v => !v)} />} />
+                    <SettingRow label="Kích thước đơn hàng" desc="Thiết lập kích thước đơn hàng mặc định khi tạo đơn" control={<Toggle on={sizeDefault} onChange={() => setSizeDefault(v => !v)} />} />
+                  </SectionCard>
+                  <SectionCard icon={<IcClipboard />} title="Thông tin đơn hàng">
+                    <SettingRow label="Khai giá trị hàng" desc="Thiết lập khai giá mặc định khi tạo đơn" control={<Toggle on={settingsDeclare} onChange={() => setSettingsDeclare(v => !v)} />} />
+                    <SettingRow label="Giao / Trả 1 phần" desc="Thiết lập giao / trả 1 phần mặc định khi tạo đơn" control={<Toggle on={settingsPartial} onChange={() => setSettingsPartial(v => !v)} />} />
+                    <SettingRow label="Giao thất bại thu tiền" desc="Giao thất bại thu tiền giúp khách hàng thu thêm khoản phụ phí cho shop khi người nhận không nhận hàng. Khoản phí này Chotdon.AI không cam đoan sẽ thu được 100% mà phụ thuộc vào trao đổi thống nhất giữa shop và bên mua" control={<Toggle on={settingsCollectFail} onChange={() => setSettingsCollectFail(v => !v)} />} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6, paddingBottom: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Ghi chú đơn hàng</span>
+                      <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px' }}>Thiết lập ghi chú đơn hàng mặc định khi tạo đơn</span>
+                      <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px' }}>
+                        <textarea value={orderNote} onChange={e => setOrderNote(e.target.value)} placeholder="Ghi chú đơn hàng" style={{ width: '100%', minHeight: 80, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                      </div>
+                    </div>
+                    <SettingRow label="Ghi chú xem hàng" desc="Thiết lập ghi chú đơn hàng mặc định khi tạo đơn" control={<SelectCtrl value="Cho xem hàng không thử" />} />
+                    <SettingRow label="Tự động yêu cầu giao lại" desc='Khi đơn hàng giao không thành công hoàn hàng với các lý do: "Không liên lạc được", "Khách không có nhà" sẽ tự động yêu cầu nhà vận chuyển giao hàng lại' control={<Toggle on={autoRedeliver} onChange={() => setAutoRedeliver(v => !v)} />} />
+                  </SectionCard>
+                  <SectionCard icon={<IcTruck />} title="Dịch vụ">
+                    <SettingRow label="Phí ship" desc="Thiết lập người trả phí ship mặc định khi tạo đơn" control={<SelectCtrl value="Khách trả phí shop" />} />
+                    <SettingRow label="Thu ship khách hàng" desc="Thiết lập thu ship khách hàng mặc định khi tạo đơn" control={
+                      <div style={{ width: 240, flexShrink: 0, border: `1px solid ${C_BORDER}`, borderRadius: 6, height: 32, display: 'flex', alignItems: 'center', paddingLeft: 12, overflow: 'hidden' }}>
+                        <input type="number" value={collectShipFee} onChange={e => setCollectShipFee(parseFloat(e.target.value) || 0)} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }} />
+                        <div style={{ background: '#F3F4F6', borderLeft: `1px solid ${C_BORDER}`, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>đ</span>
+                        </div>
+                      </div>
+                    } />
+                  </SectionCard>
+                  <SectionCard icon={<IcArrowReturn />} title="Trả hàng">
+                    <SettingRow label="Địa chỉ trả hàng" desc="Khi đơn hàng giao không thành công, hoàn hàng đơn hàng sẽ được chuyển hoàn về địa chỉ mặc định này" control={<SelectCtrl value="Chọn địa chỉ lấy hàng làm địa chỉ trả hàng" flex1 />} />
+                  </SectionCard>
+                </div>
+              </div>
+            )}
+            {activeTab === 'pickup' && (
+              <div style={{ padding: '40px 80px' }}>
+                <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>Địa chỉ lấy hàng</span>
+              </div>
+            )}
+            {activeTab === 'print' && (
+              <div style={{ padding: '40px 80px' }}>
+                <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>In đơn hàng</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Shared sub-components (defined outside to keep stable references across renders) ──
+function NumericWithUnit({ value, onChange, unit, width, flex1, disabled }: {
+  value: number; onChange: (v: number) => void; unit: string; width?: number; flex1?: boolean; disabled?: boolean
+}) {
+  return (
+    <div style={{ background: disabled ? '#F3F4F6' : '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto', ...(flex1 ? { flex: 1, minWidth: 0 } : { width: width ?? 180, flexShrink: 0 }) }}>
+      <input
+        value={value === 0 ? '0' : value.toLocaleString('en-US')}
+        onChange={(e) => onChange(parseFloat(e.target.value.replace(/,/g, '')) || 0)}
+        type="text" disabled={disabled}
+        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
+      />
+      <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{unit}</span>
+      </div>
+    </div>
+  )
+}
+
+function InfoRow({ label, hint, children }: { label: string; hint?: boolean; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>{label}</span>
+        {hint && <IcHelp />}
+      </div>
+      {children}
     </div>
   )
 }
@@ -187,36 +385,6 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
   /** Number input + unit badge (kg/cm/đ) — bg-F9FAFB left + bg-F3F4F6 badge right.
    *  Pass width for fixed-width (right panel), omit for flex-1 (left panel). */
-  function NumericWithUnit({ value, onChange, unit, width, flex1 }: {
-    value: number; onChange: (v: number) => void; unit: string; width?: number; flex1?: boolean
-  }) {
-    return (
-      <div style={{ background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, ...(flex1 ? { flex: 1, minWidth: 0 } : { width: width ?? 180, flexShrink: 0 }) }}>
-        <input
-          value={value} onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          type="number"
-          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
-        />
-        <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{unit}</span>
-        </div>
-      </div>
-    )
-  }
-
-  /** Right-panel info row: label (flex-1) + value w-180 */
-  function InfoRow({ label, hint, children }: { label: string; hint?: boolean; children: React.ReactNode }) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>{label}</span>
-          {hint && <IcHelp />}
-        </div>
-        {children}
-      </div>
-    )
-  }
-
   /** Linked text (right side notes/payment/source) */
   function LinkText({ children }: { children: React.ReactNode }) {
     return <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{children}</span>
@@ -492,7 +660,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   </InfoRow>
                   {/* Thu ship khách hàng */}
                   <InfoRow label="Thu ship khách hàng" hint>
-                    <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" />
+                    <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" disabled={feePayer === 'receiver'} />
                   </InfoRow>
                   {/* Giá trị hàng */}
                   <InfoRow label="Giá trị hàng">
@@ -519,7 +687,8 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                     {/* amount input with bordered đ badge (per Figma) */}
                     <div style={{ background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 12, height: 32, width: 180, flexShrink: 0 }}>
                       <input
-                        value={collectOnFailAmt} onChange={(e) => setCollectOnFailAmt(parseFloat(e.target.value) || 0)} type="number"
+                        value={collectOnFailAmt === 0 ? '0' : collectOnFailAmt.toLocaleString('en-US')}
+                        onChange={(e) => setCollectOnFailAmt(parseFloat(e.target.value.replace(/,/g, '')) || 0)} type="text"
                         style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
                       />
                       <div style={{ background: '#F3F4F6', border: `1px solid ${C_BORDER}`, width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -556,7 +725,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
                 <div style={{ display: 'flex', gap: 1, flexShrink: 0, background: '#F3F4F6', borderRadius: 6, padding: 2 }}>
                   {(['sender', 'receiver'] as const).map((p) => (
-                    <button key={p} onClick={() => setFeePayer(p)}
+                    <button key={p} onClick={() => { setFeePayer(p); if (p === 'receiver') setShipCollect(0) }}
                       style={{ padding: '3px 8px', borderRadius: 5, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap',
                         background: feePayer === p ? '#fff' : 'transparent',
                         color: feePayer === p ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
@@ -913,10 +1082,19 @@ export default function ShopOrders() {
   const [page, setPage]             = useState(1)
   const [pageSize, setPageSize]     = useState(50)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
-  const draftOrders     = myOrders.filter((o) => o.status !== 'failed')
-  const cancelledOrders = myOrders.filter((o) => o.status === 'failed')
-  const tabOrders       = activeTab === 'draft' ? draftOrders : cancelledOrders
+  const ordersByTab: Record<string, typeof myOrders> = {
+    draft:         myOrders.filter((o) => o.status === 'pending'),
+    pickup:        myOrders.filter((o) => o.status === 'pickup'),
+    in_transit:    myOrders.filter((o) => o.status === 'in_transit'),
+    returning:     myOrders.filter((o) => o.status === 'returning'),
+    redelivery:    myOrders.filter((o) => o.status === 'redelivery'),
+    completed:     myOrders.filter((o) => o.status === 'delivered'),
+    cancelled:     myOrders.filter((o) => o.status === 'cancelled' || o.status === 'failed'),
+    lost_damaged:  myOrders.filter((o) => o.status === 'lost' || o.status === 'damaged'),
+  }
+  const tabOrders = ordersByTab[activeTab] ?? []
 
   const filtered = tabOrders.filter((o) =>
     o.trackingCode.toLowerCase().includes(search.toLowerCase()) ||
@@ -939,8 +1117,14 @@ export default function ShopOrders() {
   }
 
   const TABS = [
-    { key: 'draft',     label: 'Đơn nháp', count: draftOrders.length,     countColor: '#F59E0B' },
-    { key: 'cancelled', label: 'Đã huỷ',   count: cancelledOrders.length, countColor: '#3B82F6' },
+    { key: 'draft',        label: 'Đơn nháp',                        count: ordersByTab.draft.length,        countColor: '#F59E0B' },
+    { key: 'pickup',       label: 'Chờ bàn giao',                    count: ordersByTab.pickup.length,       countColor: '#3B82F6' },
+    { key: 'in_transit',   label: 'Đã bàn giao - Đang giao',         count: ordersByTab.in_transit.length,   countColor: '#3B82F6' },
+    { key: 'returning',    label: 'Đã bàn giao - Đang hoàn hàng',    count: ordersByTab.returning.length,    countColor: '#F59E0B' },
+    { key: 'redelivery',   label: 'Chờ xác nhận giao lại',           count: ordersByTab.redelivery.length,   countColor: '#F59E0B' },
+    { key: 'completed',    label: 'Hoàn tất',                        count: ordersByTab.completed.length,    countColor: '#10B981' },
+    { key: 'cancelled',    label: 'Đơn huỷ',                         count: ordersByTab.cancelled.length,    countColor: '#EF4444' },
+    { key: 'lost_damaged', label: 'Hàng thất lạc - hư hỏng',        count: ordersByTab.lost_damaged.length, countColor: '#EF4444' },
   ]
 
   return (
@@ -958,6 +1142,16 @@ export default function ShopOrders() {
             </p>
           </div>
           <button
+            onClick={() => setSettingsOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px',
+              background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            <IcSettings />
+            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Cài đặt đơn hàng</span>
+          </button>
+          <button
             onClick={() => setDrawerOpen(true)}
             style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px',
@@ -970,7 +1164,7 @@ export default function ShopOrders() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0 16px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0 16px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0, overflowX: 'auto', scrollbarWidth: 'none' }}>
           {TABS.map((tab) => {
             const active = activeTab === tab.key
             return (
@@ -1049,6 +1243,7 @@ export default function ShopOrders() {
 
       {/* Create Order Drawer */}
       <CreateOrderDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <OrderSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </ConfigProvider>
   )
 }

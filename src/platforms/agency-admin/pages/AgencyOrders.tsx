@@ -124,6 +124,37 @@ function Checkbox({ checked, onChange }: { checked: boolean; onChange?: () => vo
   )
 }
 
+// ── Shared sub-components (defined outside to keep stable references across renders) ──
+function NumericWithUnit({ value, onChange, unit, width, flex1, disabled }: {
+  value: number; onChange: (v: number) => void; unit: string; width?: number; flex1?: boolean; disabled?: boolean
+}) {
+  return (
+    <div style={{ background: disabled ? '#F3F4F6' : '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto', ...(flex1 ? { flex: 1, minWidth: 0 } : { width: width ?? 180, flexShrink: 0 }) }}>
+      <input
+        value={value === 0 ? '0' : value.toLocaleString('en-US')}
+        onChange={(e) => onChange(parseFloat(e.target.value.replace(/,/g, '')) || 0)}
+        type="text" disabled={disabled}
+        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
+      />
+      <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{unit}</span>
+      </div>
+    </div>
+  )
+}
+
+function InfoRow({ label, hint, children }: { label: string; hint?: boolean; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>{label}</span>
+        {hint && <IcHelp />}
+      </div>
+      {children}
+    </div>
+  )
+}
+
 // ── CreateOrderDrawer ────────────────────────────────────────
 function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [selectedShopId, setSelectedShopId]         = useState(agencyShops[0]?.id ?? '')
@@ -223,35 +254,6 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           {value || placeholder}
         </span>
         <IcChevronDown size={20} />
-      </div>
-    )
-  }
-
-  function NumericWithUnit({ value, onChange, unit, width, flex1 }: {
-    value: number; onChange: (v: number) => void; unit: string; width?: number; flex1?: boolean
-  }) {
-    return (
-      <div style={{ background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, ...(flex1 ? { flex: 1, minWidth: 0 } : { width: width ?? 180, flexShrink: 0 }) }}>
-        <input
-          value={value} onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          type="number"
-          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
-        />
-        <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{unit}</span>
-        </div>
-      </div>
-    )
-  }
-
-  function InfoRow({ label, hint, children }: { label: string; hint?: boolean; children: React.ReactNode }) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>{label}</span>
-          {hint && <IcHelp />}
-        </div>
-        {children}
       </div>
     )
   }
@@ -512,7 +514,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                     <NumericWithUnit value={discount} onChange={setDiscount} unit="đ" />
                   </InfoRow>
                   <InfoRow label="Thu ship khách hàng" hint>
-                    <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" />
+                    <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" disabled={feePayer === 'receiver'} />
                   </InfoRow>
                   <InfoRow label="Giá trị hàng">
                     <NumericWithUnit value={goodsValue} onChange={setGoodsValue} unit="đ" />
@@ -534,7 +536,8 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                     </div>
                     <div style={{ background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 12, height: 32, width: 180, flexShrink: 0 }}>
                       <input
-                        value={collectOnFailAmt} onChange={(e) => setCollectOnFailAmt(parseFloat(e.target.value) || 0)} type="number"
+                        value={collectOnFailAmt === 0 ? '0' : collectOnFailAmt.toLocaleString('en-US')}
+                        onChange={(e) => setCollectOnFailAmt(parseFloat(e.target.value.replace(/,/g, '')) || 0)} type="text"
                         style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
                       />
                       <div style={{ background: '#F3F4F6', border: `1px solid ${C_BORDER}`, width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -570,7 +573,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
                 <div style={{ display: 'flex', gap: 1, flexShrink: 0, background: '#F3F4F6', borderRadius: 6, padding: 2 }}>
                   {(['sender', 'receiver'] as const).map((p) => (
-                    <button key={p} onClick={() => setFeePayer(p)}
+                    <button key={p} onClick={() => { setFeePayer(p); if (p === 'receiver') setShipCollect(0) }}
                       style={{ padding: '3px 8px', borderRadius: 5, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap',
                         background: feePayer === p ? '#fff' : 'transparent',
                         color: feePayer === p ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
@@ -882,7 +885,7 @@ function Pagination({ page, total, pageSize, onPageChange, onPageSizeChange }: {
 
 // ── Main page ─────────────────────────────────────────────────
 export default function AgencyOrders() {
-  const [activeTab, setActiveTab]     = useState('all')
+  const [activeTab, setActiveTab]     = useState('draft')
   const [search, setSearch]           = useState('')
   const [shopFilter, setShopFilter]   = useState('all')
   const [selected, setSelected]       = useState<Set<string>>(new Set())
@@ -890,9 +893,17 @@ export default function AgencyOrders() {
   const [pageSize, setPageSize]       = useState(50)
   const [drawerOpen, setDrawerOpen]   = useState(false)
 
-  const tabOrders = activeTab === 'cancelled'
-    ? agencyOrders.filter(o => o.status === 'failed')
-    : agencyOrders.filter(o => o.status !== 'failed')
+  const ordersByTab: Record<string, typeof agencyOrders> = {
+    draft:         agencyOrders.filter(o => o.status === 'pending'),
+    pickup:        agencyOrders.filter(o => o.status === 'pickup'),
+    in_transit:    agencyOrders.filter(o => o.status === 'in_transit'),
+    returning:     agencyOrders.filter(o => o.status === 'returning'),
+    redelivery:    agencyOrders.filter(o => o.status === 'redelivery'),
+    completed:     agencyOrders.filter(o => o.status === 'delivered'),
+    cancelled:     agencyOrders.filter(o => o.status === 'cancelled' || o.status === 'failed'),
+    lost_damaged:  agencyOrders.filter(o => o.status === 'lost' || o.status === 'damaged'),
+  }
+  const tabOrders = ordersByTab[activeTab] ?? agencyOrders
 
   const shopFiltered = shopFilter === 'all' ? tabOrders : tabOrders.filter(o => o.shopId === shopFilter)
 
@@ -917,12 +928,15 @@ export default function AgencyOrders() {
     setSelected(next)
   }
 
-  const draftCount     = agencyOrders.filter(o => o.status !== 'failed').length
-  const cancelledCount = agencyOrders.filter(o => o.status === 'failed').length
-
   const TABS = [
-    { key: 'all',       label: 'Tất cả đơn', count: draftCount,     countColor: '#F59E0B' },
-    { key: 'cancelled', label: 'Đã huỷ',     count: cancelledCount, countColor: '#EF4444' },
+    { key: 'draft',        label: 'Đơn nháp',                     count: ordersByTab.draft.length,        countColor: '#F59E0B' },
+    { key: 'pickup',       label: 'Chờ bàn giao',                 count: ordersByTab.pickup.length,       countColor: '#3B82F6' },
+    { key: 'in_transit',   label: 'Đã bàn giao - Đang giao',      count: ordersByTab.in_transit.length,   countColor: '#3B82F6' },
+    { key: 'returning',    label: 'Đã bàn giao - Đang hoàn hàng', count: ordersByTab.returning.length,    countColor: '#F59E0B' },
+    { key: 'redelivery',   label: 'Chờ xác nhận giao lại',        count: ordersByTab.redelivery.length,   countColor: '#F59E0B' },
+    { key: 'completed',    label: 'Hoàn tất',                     count: ordersByTab.completed.length,    countColor: '#10B981' },
+    { key: 'cancelled',    label: 'Đơn huỷ',                      count: ordersByTab.cancelled.length,    countColor: '#EF4444' },
+    { key: 'lost_damaged', label: 'Hàng thất lạc - hư hỏng',     count: ordersByTab.lost_damaged.length, countColor: '#EF4444' },
   ]
 
   const shopMap = Object.fromEntries(agencyShops.map(s => [s.id, s.name]))
@@ -954,7 +968,7 @@ export default function AgencyOrders() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0 16px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0 16px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0, overflowX: 'auto', scrollbarWidth: 'none' }}>
           {TABS.map(tab => {
             const active = activeTab === tab.key
             return (

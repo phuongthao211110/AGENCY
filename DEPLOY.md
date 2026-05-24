@@ -46,6 +46,7 @@ Dist dir:   dist/
 
 | Version | Tính năng | Author |
 |---------|-----------|--------|
+| v0.24.1 | (1) Web Shop & Agency Admin / Tạo đơn: field "Thu ship khách hàng" tự động disable (greyed out, không nhập được) khi chọn "Khách trả ship", reset về 0; re-enable khi chuyển lại "Shop trả ship". (2) Tất cả input nhập giá trong drawer Tạo đơn hiển thị dấu phẩy phân cách hàng nghìn (500000 → 500,000). Fix bug mất focus input sau mỗi ký tự (root cause: NumericWithUnit & InfoRow định nghĩa bên trong CreateOrderDrawer gây remount — đã chuyển ra module-level). | trannlb |
 
 ---
 
