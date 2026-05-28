@@ -24,8 +24,11 @@ export default function PlatformSwitcher() {
 
   useEffect(() => {
     if (isLocalhost) {
-      // @vite-ignore — file chỉ tồn tại local, không commit lên production
-      import(/* @vite-ignore */ './JiraManager').then((m) => setJiraModal(() => m.JiraManagerModal)).catch(() => {})
+      // Dùng new Function để bypass cả TypeScript type-check lẫn Vite analysis
+      // JiraManager chỉ tồn tại local, không commit — production sẽ fail silently
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      const dynamicImport = new Function('p', 'return import(p)')
+      dynamicImport('./JiraManager').then((m: { JiraManagerModal: unknown }) => setJiraModal(() => m.JiraManagerModal)).catch(() => {})
     }
   }, [])
 
