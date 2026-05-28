@@ -62,7 +62,7 @@ src/
     orders.json
     pricing.json
     reconciliation.json
-    geography.json             ← 63 tỉnh thành + 4 route types + 3 delivery zones
+    geography.json             ← 63 tỉnh thành + 6 route types + 3 delivery zones + 3 special cities
     districts.json             ← 705 quận/huyện, mỗi item có provinceId
 ```
 
@@ -141,31 +141,39 @@ interface District {
 }
 ```
 
-### Route Determination Logic (dùng khi tạo đơn)
+### Route Determination Logic (6 tuyến — CẬP NHẬT)
 
 ```typescript
-import geographyData from '../../../mock-data/geography.json'
+// Zone definitions (BRD confirmed):
+// Vùng 1 = Miền Nam (từ Bình Định trở vào)
+// Vùng 2 = Miền Trung (Quảng Ngãi → Quảng Bình)
+// Vùng 3 = Miền Bắc (từ Hà Tĩnh trở ra)
+// SPECIAL cities (KHÔNG thuộc vùng nào): Hà Nội, Đà Nẵng, TP. HCM
 
-// Adjacency pairs cho liên vùng (order doesn't matter)
-const ADJACENT_REGION_PAIRS = [
-  ['Miền Bắc', 'Miền Trung'],
-  ['Miền Nam', 'Miền Trung'],
-  ['Tây Nguyên', 'Miền Trung'],
-  ['Tây Nguyên', 'Miền Nam'],
-]
+// Special city ↔ Zone tương ứng (Nội Vùng):
+const SPECIAL_CITY_ZONE: Record<string, number> = {
+  'Hà Nội': 3, 'Đà Nẵng': 2, 'TP. Hồ Chí Minh': 1,
+}
+const SPECIAL_CITIES = new Set(Object.keys(SPECIAL_CITY_ZONE))
 
-function determineRouteType(fromProvinceId: number, toProvinceId: number): string {
-  const provinces = geographyData.provinces
-  const from = provinces.find(p => p.id === fromProvinceId)!
-  const to = provinces.find(p => p.id === toProvinceId)!
+type RouteType = 'noi-tinh' | 'noi-vung' | 'noi-vung-tinh' | 'lien-vung-dac-biet' | 'lien-vung' | 'lien-vung-tinh'
 
-  if (fromProvinceId === toProvinceId) return 'noi-tinh'
-  if (from.region === to.region) return 'noi-vung'
+function determineRouteType(fromProvince: string, toProvince: string, fromZone?: number, toZone?: number): RouteType {
+  if (fromProvince === toProvince) return 'noi-tinh'
 
-  const isAdjacent = ADJACENT_REGION_PAIRS.some(([a, b]) =>
-    (from.region === a && to.region === b) || (from.region === b && to.region === a)
-  )
-  return isAdjacent ? 'lien-vung' : 'lien-tinh'
+  const fromSpecial = SPECIAL_CITIES.has(fromProvince)
+  const toSpecial   = SPECIAL_CITIES.has(toProvince)
+
+  if (fromSpecial && toSpecial) return 'lien-vung-dac-biet'
+
+  if (fromSpecial || toSpecial) {
+    const specialCity = fromSpecial ? fromProvince : toProvince
+    const provinceZone = fromSpecial ? toZone! : fromZone!
+    return SPECIAL_CITY_ZONE[specialCity] === provinceZone ? 'noi-vung' : 'lien-vung'
+  }
+
+  // Both are zone provinces
+  return fromZone === toZone ? 'noi-vung-tinh' : 'lien-vung-tinh'
 }
 ```
 
@@ -176,7 +184,7 @@ AGENCY
  ├── GHN Shop Connection   — tài khoản GHN thật (mỗi shop có 1-2 gói cước: TMĐT/CPTT)
  ├── Service               — 1 service kết nối NHIỀU GHN Shop IDs + gói cước
  │     └── shopConnections: [{ shopId, selectedGoiCuoc: string[] }]
- ├── Pricing Table         — bảng giá theo 4 tuyến + vượt cân
+ ├── Pricing Table         — bảng giá theo 6 tuyến + vượt cân
  └── Shop (internal)
        └── configuredServices: [{ serviceId, priceTableId }]  ← gán service + pricing TẠI ĐÂY
 ```

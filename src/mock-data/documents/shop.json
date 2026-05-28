@@ -1,7 +1,7 @@
 {
   "platform": "shop",
-  "currentVersion": "0.1.0",
-  "lastUpdated": "2026-04-15",
+  "currentVersion": "0.2.0",
+  "lastUpdated": "2026-05-08",
   "figmaUrl": "https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW",
   "sections": [
     {
@@ -12,7 +12,41 @@
     {
       "key": "orders",
       "title": "Đơn hàng",
-      "stories": []
+      "stories": [
+        {
+          "id": "WS-ORDER-1",
+          "jiraKey": "SHOP-1",
+          "title": "[WS] Đơn hàng - Cài đặt đơn hàng mặc định",
+          "userStory": "Là chủ shop (Web Shop), tôi muốn thiết lập các thông số mặc định cho đơn hàng (ca lấy hàng, kích thước, ghi chú, phí ship, địa chỉ trả hàng...) để khi tạo đơn mới các trường quan trọng đã được điền sẵn, giảm thao tác lặp lại mỗi lần tạo đơn.",
+          "userFlow": [
+            "Chủ shop nhấn nút Cài đặt đơn hàng trên màn hình danh sách đơn hàng (bên trái nút Tạo đơn hàng)",
+            "Hệ thống mở popup Cài đặt đơn hàng (overlay full-screen 16px inset)",
+            "Chủ shop thấy sidebar trái với 3 tab điều hướng",
+            "Chủ shop chọn tab Thông tin mặc định (mặc định active)",
+            "Chủ shop chỉnh sửa các thông số theo từng nhóm (Bên gửi, Sản phẩm, Thông tin đơn hàng, Dịch vụ, Trả hàng)",
+            "Nhấn X hoặc click backdrop để đóng popup"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Nút Cài đặt đơn hàng hiển thị bên trái nút Tạo đơn hàng trên header màn hình danh sách đơn hàng, style secondary (trắng, viền #E5E7EB, icon gear).",
+            "AC2: Click nút → popup overlay xuất hiện với backdrop #000 opacity 25%, modal inset 16px, border-radius 12px, zIndex đè lên toàn bộ trang.",
+            "AC3: Sidebar hiển thị đúng 3 tab; tab Thông tin mặc định active mặc định (bg #FFF4ED, text + icon màu #FF5200).",
+            "AC4: Click tab khác → form area chuyển nội dung tương ứng, active style chuyển theo tab được chọn.",
+            "AC5: Form tab Thông tin mặc định hiển thị đúng 5 section (Bên gửi, Sản phẩm, Thông tin đơn hàng, Dịch vụ, Trả hàng) với đúng các field và loại control.",
+            "AC6: Toggle hoạt động đúng — click toggle → đổi trạng thái On/Off, animation knob trượt + đổi màu nền.",
+            "AC7: Textarea Ghi chú đơn hàng có min-height 80px, resize vertical, placeholder màu #9CA3AF.",
+            "AC8: Number input Thu ship khách hàng có badge đơn vị đ (bg #F3F4F6, border-left #E5E7EB, 32×32px), nhập số ≥ 0.",
+            "AC9: Dropdown Địa chỉ trả hàng chiếm flex-1 (không cố định 240px) để hiển thị đầy đủ label dài.",
+            "AC10: Click X hoặc click backdrop → đóng popup, trạng thái trang đơn hàng không bị thay đổi.",
+            "AC11: Form area có overflow-y auto — cuộn được khi nội dung dài hơn viewport."
+          ],
+          "notes": [
+            "Prototype hiện tại: tab Địa chỉ lấy hàng và In đơn hàng chỉ hiển thị tiêu đề placeholder, chưa có form",
+            "Cài đặt trong popup chưa được persist (localStorage/API) ở prototype; production cần save per-shop-user",
+            "Nút mở popup đặt ở list page (không phải trong drawer tạo đơn) để tiện chỉnh settings mà không cần mở form tạo đơn"
+          ],
+          "status": "draft"
+        }
+      ]
     },
     {
       "key": "reconciliation",
@@ -36,6 +70,11 @@
     }
   ],
   "history": [
+    {
+      "version": "0.2.0",
+      "date": "2026-05-08",
+      "summary": "Thêm story WS-ORDER-1: Cài đặt đơn hàng mặc định"
+    },
     {
       "version": "0.1.0",
       "date": "2026-04-15",

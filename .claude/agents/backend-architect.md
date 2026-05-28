@@ -190,7 +190,7 @@ interface PricingTable {
 }
 
 interface PricingRoute {
-  routeType: 'noi-tinh' | 'noi-vung' | 'lien-vung' | 'lien-tinh'
+  routeType: 'noi-tinh' | 'noi-vung' | 'noi-vung-tinh' | 'lien-vung-dac-biet' | 'lien-vung' | 'lien-vung-tinh'
   baseWeight: number      // gram — khối lượng chuẩn bao gồm trong giá
   basePrice: number       // VND — giá chuẩn
   overweightRules: OverweightRule[]
@@ -234,22 +234,28 @@ interface District {
 }
 ```
 
-### Route Determination Algorithm
+### Route Determination Algorithm (6 tuyến — CẬP NHẬT)
 ```
-// Routing zone mapping:
-// Miền Bắc = routingZone 1 (Bắc)
-// Miền Trung + Tây Nguyên = routingZone 2 (Trung)
-// Miền Nam = routingZone 3 (Nam)
+// Zone definitions:
+// Vùng 1 = Miền Nam (từ Bình Định trở vào)
+// Vùng 2 = Miền Trung (Quảng Ngãi → Quảng Bình)
+// Vùng 3 = Miền Bắc (từ Hà Tĩnh trở ra)
+// SPECIAL = Hà Nội, Đà Nẵng, TP. HCM (không thuộc vùng nào)
 
-function determineRouteType(senderProvinceId, receiverProvinceId):
-  if senderProvinceId == receiverProvinceId → 'noi-tinh'
-  
-  senderZone = getRoutingZone(senderProvince.region)
-  receiverZone = getRoutingZone(receiverProvince.region)
-  
-  if senderZone == receiverZone → 'noi-vung'
-  if |senderZone - receiverZone| == 1 → 'lien-vung'   // 1↔2 hoặc 2↔3
-  else → 'lien-tinh'   // 1↔3 = Bắc↔Nam
+// Special city ↔ Zone mapping:
+// Hà Nội ↔ Vùng 3 (Nội Vùng) | Hà Nội ↔ Vùng 1/2 (Liên Vùng)
+// Đà Nẵng ↔ Vùng 2 (Nội Vùng) | Đà Nẵng ↔ Vùng 1/3 (Liên Vùng)
+// HCM ↔ Vùng 1 (Nội Vùng) | HCM ↔ Vùng 2/3 (Liên Vùng)
+
+function determineRouteType(senderProvince, receiverProvince):
+  if sender == receiver → 'noi-tinh'
+  if both SPECIAL → 'lien-vung-dac-biet'
+  if one SPECIAL, one ZONE_PROVINCE:
+    if matched (HN↔V3 | ĐN↔V2 | HCM↔V1) → 'noi-vung'
+    else → 'lien-vung'
+  if both ZONE_PROVINCE:
+    if same zone → 'noi-vung-tinh'
+    else → 'lien-vung-tinh'
 
 // Fee calculation:
 total_fee = base_price + ceil((weight - base_weight) / step_weight) * step_price
@@ -349,7 +355,7 @@ POST   /api/shop/services/best-price
   Body: { serviceId, weight, fromProvinceId, toProvinceId }
   Response: {
     serviceId: string,
-    routeType: 'noi-tinh' | 'noi-vung' | 'lien-vung' | 'lien-tinh',
+    routeType: 'noi-tinh' | 'noi-vung' | 'noi-vung-tinh' | 'lien-vung-dac-biet' | 'lien-vung' | 'lien-vung-tinh',
     bestFee: number,
     selectedGhnShopId: string,
     selectedGoiCuocId: string,

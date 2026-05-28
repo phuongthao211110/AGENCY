@@ -193,7 +193,7 @@ export default function AgencyAdminLayout() {
 
           {/* Version */}
           <div style={{ padding: '0 16px 10px', textAlign: 'center' }}>
-            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.24.1</span>
+            <span style={{ fontSize: 11, color: '#C4C4C4', letterSpacing: 0.3 }}>v0.25.0</span>
           </div>
         </aside>
 

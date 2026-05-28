@@ -161,31 +161,64 @@ Mỗi bảng giá gồm: Tên, Mô tả, và **danh sách tuyến (routes)**
 
 ---
 
-## 4 Loại Tuyến (Route Types)
+## 2-Layer Architecture (Pricing vs Routing)
 
-| Tuyến | Điều kiện xác định |
-|-------|-------------------|
-| **Nội tỉnh** | `sender_province === receiver_province` |
-| **Nội vùng** | Khác tỉnh + cùng vùng địa lý (Bắc/Trung/Nam) |
-| **Liên vùng** | Khác vùng, là 2 vùng liền kề (Bắc↔Trung hoặc Trung↔Nam) |
-| **Liên tỉnh** | Đại lý tự cấu hình riêng — thường là Bắc↔Nam (không liền kề) |
+| Layer | Vai trò | Shop thấy? |
+|-------|---------|-----------|
+| **Pricing Layer** | Giá đại lý cấu hình → hiển thị cho shop | ✅ Có |
+| **Routing Layer** | System tự chọn GHN Shop ID tối ưu sau khi tạo đơn | ❌ Không |
 
-### Logic xác định tuyến (Route Determination)
+→ **Margin = Agency price − GHN actual fee** — đây là core business model.
+
+---
+
+## Định nghĩa Vùng (Zone Definitions)
+
+| Vùng | Miền | Phạm vi tỉnh thành |
+|------|------|--------------------|
+| **Vùng 1** | Miền Nam | Từ Bình Định trở vào |
+| **Vùng 2** | Miền Trung | Từ Quảng Ngãi → Quảng Bình |
+| **Vùng 3** | Miền Bắc | Từ Hà Tĩnh trở ra |
+| **Đặc biệt** | — | **Hà Nội, Đà Nẵng, TP. HCM** — KHÔNG thuộc 3 vùng trên |
+
+---
+
+## 6 Loại Tuyến (Route Types) ← CẬP NHẬT MỚI
+
+| # | Tuyến | Định nghĩa | Ví dụ |
+|---|-------|-----------|-------|
+| 1 | **Nội Tỉnh** | Giao nhận trong cùng tỉnh/thành | HN↔HN, HCM↔HCM, Bắc Ninh↔Bắc Ninh |
+| 2 | **Nội Vùng** | TP lớn ↔ vùng tương ứng | HN↔V3, ĐN↔V2, HCM↔V1 |
+| 3 | **Nội Vùng Tỉnh** | 2 tỉnh khác nhau, cùng vùng | Bắc Ninh↔Tuyên Quang, Đồng Nai↔An Giang |
+| 4 | **Liên Vùng Đặc Biệt** | Giữa 3 TP lớn với nhau | HN↔ĐN, ĐN↔HCM, HCM↔HN |
+| 5 | **Liên Vùng** | TP lớn ↔ vùng khác (không tương ứng) | HN↔V1/V2, ĐN↔V1/V3, HCM↔V2/V3 |
+| 6 | **Liên Vùng Tỉnh** | 2 tỉnh thuộc 2 vùng khác nhau | Đồng Nai↔Quảng Bình, An Giang↔Lạng Sơn |
+
+### Logic xác định tuyến (Route Determination) — Priority Order
 
 ```
 Input: sender_province, receiver_province
 
-Step 1: Lấy region từ geography.json
-  - Miền Bắc = routing zone 1
-  - Miền Trung + Tây Nguyên = routing zone 2
-  - Miền Nam = routing zone 3
+STEP 1: Classify từng tỉnh
+  - Nếu là Hà Nội / Đà Nẵng / TP. HCM → SPECIAL_CITY
+  - Nếu thuộc Vùng 1/2/3 → ZONE_PROVINCE(zone)
 
-Step 2: Xác định tuyến
-  if sender_province == receiver_province → Nội tỉnh
-  else if sender_region == receiver_region → Nội vùng
-  else if |zone_a - zone_b| == 1 → Liên vùng
-    (zone1↔zone2 hoặc zone2↔zone3)
-  else → Liên tỉnh (zone1↔zone3 = Bắc↔Nam)
+STEP 2: Xác định tuyến theo priority (check từ trên xuống, dừng khi match):
+
+  1. sender == receiver (cùng tỉnh)
+       → Nội Tỉnh
+
+  2. cả 2 đều là SPECIAL_CITY (khác nhau)
+       → Liên Vùng Đặc Biệt
+
+  3. 1 bên là SPECIAL_CITY, 1 bên là ZONE_PROVINCE
+       mapping tương ứng: HN↔V3 | ĐN↔V2 | HCM↔V1
+       if matched → Nội Vùng
+       else       → Liên Vùng
+
+  4. cả 2 đều là ZONE_PROVINCE
+       if same zone → Nội Vùng Tỉnh
+       else         → Liên Vùng Tỉnh
 ```
 
 ### Mỗi tuyến trong bảng giá có
@@ -219,7 +252,7 @@ total_fee    = 21.000 + 5.000 = 26.000đ
 
 ```
 B1: Shop nhập địa chỉ gửi + nhận
-B2: System xác định tuyến (nội tỉnh / nội vùng / liên vùng / liên tỉnh)
+B2: System xác định tuyến (6 loại: nội-tỉnh / nội-vùng / nội-vùng-tỉnh / liên-vùng-đặc-biệt / liên-vùng / liên-vùng-tỉnh)
 B3: Lọc dịch vụ hợp lệ:
     - Service phải thuộc shop (được agency gán)
     - Service phải có bảng giá được gán cho shop
@@ -275,7 +308,8 @@ Mỗi đại lý có thể có **nhiều bảng giá** (`pricing.json`):
 - Bảng giá ưu đãi theo mùa/chiến dịch (`status: inactive` khi hết hạn)
 
 **Zone logic mới (thay thế ma trận zone×weight cũ):**
-- Zone xác định theo **tuyến** (nội tỉnh / nội vùng / liên vùng / liên tỉnh)
+- Zone xác định theo **tuyến** (6 loại: nội-tỉnh / nội-vùng / nội-vùng-tỉnh / liên-vùng-đặc-biệt / liên-vùng / liên-vùng-tỉnh)
+- 3 TP đặc biệt (HN/ĐN/HCM) không thuộc vùng nào — có route riêng với từng vùng
 - Giá chuẩn theo tuyến + tính thêm phí vượt cân nếu quá base_weight
 - Mỗi đại lý tự cấu hình giá cho từng tuyến trong từng bảng giá
 

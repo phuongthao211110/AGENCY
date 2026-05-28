@@ -2,7 +2,7 @@
 
 **Platform:** Web Shop (Chủ shop)  
 **Figma:** [WS Design File](https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW)  
-**Version:** 0.1.0 | **Cập nhật:** 2026-04-15
+**Version:** 0.2.0 | **Cập nhật:** 2026-05-08
 
 ---
 
@@ -12,7 +12,9 @@ _Chưa có stories_
 
 ## Đơn hàng
 
-_Chưa có stories_
+| ID | Story | Status |
+|----|-------|--------|
+| WS-ORDER-1 | [Cài đặt đơn hàng mặc định](orders/cai-dat-don-hang-mac-dinh.md) | draft |
 
 ## Đối soát
 

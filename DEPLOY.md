@@ -46,7 +46,6 @@ Dist dir:   dist/
 
 | Version | Tính năng | Author |
 |---------|-----------|--------|
-| v0.24.1 | (1) Web Shop & Agency Admin / Tạo đơn: field "Thu ship khách hàng" tự động disable (greyed out, không nhập được) khi chọn "Khách trả ship", reset về 0; re-enable khi chuyển lại "Shop trả ship". (2) Tất cả input nhập giá trong drawer Tạo đơn hiển thị dấu phẩy phân cách hàng nghìn (500000 → 500,000). Fix bug mất focus input sau mỗi ký tự (root cause: NumericWithUnit & InfoRow định nghĩa bên trong CreateOrderDrawer gây remount — đã chuyển ra module-level). | trannlb |
 
 ---
 
@@ -86,6 +85,7 @@ Dist dir:   dist/
 | v0.23.1 | 2026-05-07 | Cập nhật định nghĩa tuyến ZoneGuideModal: Nội Vùng (3 TP lớn & vùng tương ứng), Nội Vùng Tỉnh (2 tỉnh cùng miền), Liên Vùng (3 TP lớn & các vùng chéo) | trannlb |
 | v0.23.2 | 2026-05-07 | UX: ServiceDetail chip dịch vụ thêm circle indicator + dashed border; PricingCreate vượt cân segmented control đến/trở lên | trannlb |
 | v0.24.0 | 2026-05-11 | (1) Web Shop & Agency Admin / Đơn hàng: cập nhật 8 tabs trạng thái đơn hàng (Đơn nháp, Chờ bàn giao, Đã bàn giao - Đang giao, Đã bàn giao - Đang hoàn hàng, Chờ xác nhận giao lại, Hoàn tất, Đơn huỷ, Hàng thất lạc - hư hỏng); hỗ trợ scroll ngang tab bar. (2) Agency Admin / Công cụ — Kiểm tra tuyến: thêm section CÔNG CỤ vào sidebar; trang tra cứu tuyến giao hàng với 63 tỉnh thành + quận huyện đầy đủ, xác định 1 trong 6 tuyến (Nội Tỉnh / Nội Vùng / Nội Vùng Tỉnh / Liên Vùng Đặc Biệt / Liên Vùng / Liên Vùng Tỉnh), badge hiển thị vùng, nút hoán đổi chiều, bảng phân vùng tham khảo; cập nhật zone Quảng Ngãi → Vùng 1 | trannlb |
+| v0.25.0 | 2026-05-10 | (1) Web Shop & Agency Admin / Tạo đơn: field "Thu ship khách hàng" tự động disable khi chọn "Khách trả ship", reset về 0; tất cả input giá hiển thị dấu phẩy phân cách hàng nghìn; fix bug mất focus input (NumericWithUnit & InfoRow chuyển ra module-level). (2) Agency Admin / Bảng giá — Cấu hình phụ phí: mutual exclusive số fix ↔ %, nhập một loại thì loại kia tự disable + greyed out; khi dùng % xuất hiện thêm field "Tối đa X đ" inline — áp dụng cho Bảo hiểm, Thu hộ, Kích hoạt giao lại, Hoàn hàng. | trannlb |
 
 ---
 
