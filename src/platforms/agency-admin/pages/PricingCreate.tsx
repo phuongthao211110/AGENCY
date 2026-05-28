@@ -245,33 +245,126 @@ function FeeTierTable({
   colTo: string
   colPercent: string
 }) {
+  // touched: "tierId:fieldName" để track từng field riêng
   const [touched, setTouched] = useState<Set<string>>(new Set())
-  const markTouched = (id: string) => setTouched((s) => new Set([...s, id]))
+  const markTouched = (tierId: string, field: string) =>
+    setTouched((s) => new Set([...s, `${tierId}:${field}`]))
+  const isTouched = (tierId: string, field: string) =>
+    touched.has(`${tierId}:${field}`)
+
+  // ── Mutations với auto-link fromValue (no-overlap) ────────────────────────
 
   const addAfter = (idx: number) => {
-    const newTier: FeeTier = { id: Date.now().toString(), fromValue: '', toValue: '', fixedFee: '0', percentFee: '0', maxFee: '' }
+    const prevTo = tiers[idx].toValue
+    const autoFrom = prevTo !== '' ? String(Number(prevTo) + 1) : ''
+    const newTier: FeeTier = { id: Date.now().toString(), fromValue: autoFrom, toValue: '', fixedFee: '0', percentFee: '0', maxFee: '' }
     const next = [...tiers]
     next.splice(idx + 1, 0, newTier)
     onChangeTiers(next)
   }
 
-  const removeTier = (id: string) => onChangeTiers(tiers.filter((t) => t.id !== id))
+  const removeTier = (id: string) => {
+    const idx = tiers.findIndex((t) => t.id === id)
+    const updated = tiers.filter((t) => t.id !== id)
+    if (idx === 0 && updated.length > 0) {
+      // Xoá row 0 → row mới đầu tiên được phép edit fromValue
+      updated[0] = { ...updated[0], fromValue: '' }
+    } else if (idx > 0 && idx < updated.length) {
+      // Xoá row giữa/cuối → tier ngay sau recalculate fromValue
+      const prevTo = updated[idx - 1].toValue
+      updated[idx] = { ...updated[idx], fromValue: prevTo !== '' ? String(Number(prevTo) + 1) : '' }
+    }
+    onChangeTiers(updated)
+  }
 
-  const updateTier = (id: string, patch: Partial<FeeTier>) =>
-    onChangeTiers(tiers.map((t) => t.id === id ? { ...t, ...patch } : t))
+  const updateTier = (id: string, patch: Partial<FeeTier>) => {
+    const updated = tiers.map((t) => t.id === id ? { ...t, ...patch } : t)
+    // Nếu toValue thay đổi → cập nhật fromValue của tier ngay sau
+    if ('toValue' in patch) {
+      const changedIdx = updated.findIndex((t) => t.id === id)
+      if (changedIdx < updated.length - 1) {
+        const newFrom = (patch.toValue ?? '') !== '' ? String(Number(patch.toValue) + 1) : ''
+        updated[changedIdx + 1] = { ...updated[changedIdx + 1], fromValue: newFrom }
+      }
+    }
+    onChangeTiers(updated)
+  }
 
   const colStyle = (flex: number): React.CSSProperties => ({ flex, minWidth: 0 })
 
   // Helper: is a fee value "filled" (non-empty, non-zero)
   const isFilled = (v: string) => v.trim() !== '' && v.trim() !== '0'
 
-  // Disabled input style
+  // Disabled input style (for auto-filled or mutex fields)
   const disabledInputStyle: React.CSSProperties = {
     ...inputStyle,
     background: '#F3F4F6',
     color: '#9CA3AF',
     cursor: 'not-allowed',
     borderColor: C_BORDER,
+  }
+  // Auto-filled style (fromValue của row > 0) — darker text để phân biệt
+  const autoFilledStyle: React.CSSProperties = {
+    ...disabledInputStyle,
+    color: '#6B7280',
+  }
+
+  // ── Validation helpers ────────────────────────────────────────────────────
+
+  const getFromError = (tier: FeeTier, idx: number): string => {
+    if (idx > 0) return '' // disabled + auto-filled, không validate
+    if (!isTouched(tier.id, 'fromValue')) return ''
+    if (tier.fromValue.trim() === '') return 'Bắt buộc'
+    if (Number(tier.fromValue) < 0) return '≥ 0'
+    return ''
+  }
+
+  const getToError = (tier: FeeTier): string => {
+    if (!isTouched(tier.id, 'toValue')) return ''
+    if (tier.toValue.trim() === '') return 'Bắt buộc'
+    if (tier.fromValue.trim() !== '' && Number(tier.toValue) <= Number(tier.fromValue)) return `> ${tier.fromValue}`
+    return ''
+  }
+
+  const getFixedError = (tier: FeeTier): string => {
+    if (!isFilled(tier.fixedFee)) return ''
+    if (!isTouched(tier.id, 'fixedFee')) return ''
+    if (Number(tier.fixedFee) <= 0) return '> 0'
+    return ''
+  }
+
+  const getPercentError = (tier: FeeTier): string => {
+    if (!isFilled(tier.percentFee)) return ''
+    if (!isTouched(tier.id, 'percentFee')) return ''
+    const v = Number(tier.percentFee)
+    if (v <= 0 || v > 100) return '0 < % ≤ 100'
+    return ''
+  }
+
+  const getMaxFeeError = (tier: FeeTier): string => {
+    if (tier.maxFee.trim() === '') return ''
+    if (!isTouched(tier.id, 'maxFee')) return ''
+    if (Number(tier.maxFee) <= 0) return '> 0'
+    return ''
+  }
+
+  // Renders an input with optional error label below
+  const withError = (
+    input: React.ReactElement<{ style?: React.CSSProperties }>,
+    error: string,
+  ): React.ReactElement => {
+    if (!error) return input
+    return (
+      <div style={{ position: 'relative' }} title={error}>
+        {React.cloneElement(input, {
+          style: { ...(input.props.style ?? {}), borderColor: '#EF4444' },
+        })}
+        <span style={{
+          position: 'absolute', bottom: -15, left: 0,
+          fontSize: 10, color: '#EF4444', whiteSpace: 'nowrap', pointerEvents: 'none',
+        }}>{error}</span>
+      </div>
+    )
   }
 
   return (
@@ -287,88 +380,109 @@ function FeeTierTable({
 
       {/* Rows */}
       {tiers.map((tier, idx) => {
-        const fixedActive   = isFilled(tier.fixedFee)
-        const percentActive = isFilled(tier.percentFee)
-        const fixedDisabled   = percentActive   // disable số fix nếu % đã nhập
-        const percentDisabled = fixedActive     // disable % nếu số fix đã nhập
+        const fixedActive    = isFilled(tier.fixedFee)
+        const percentActive  = isFilled(tier.percentFee)
+        const fixedDisabled  = percentActive
+        const percentDisabled = fixedActive
+        const fromDisabled   = idx > 0  // row > 0: auto-filled, không được sửa
 
-        const showFromError = tier.fromValue.trim() === '' && touched.has(tier.id)
+        const fromError   = getFromError(tier, idx)
+        const toError     = getToError(tier)
+        const fixedError  = getFixedError(tier)
+        const pctError    = getPercentError(tier)
+        const maxFeeError = getMaxFeeError(tier)
 
         return (
-          <div key={tier.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 8px', background: '#fff', borderBottom: idx < tiers.length - 1 ? `1px solid ${C_BORDER}` : 'none' }}>
+          <div key={tier.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 10px 14px', background: '#fff', borderBottom: idx < tiers.length - 1 ? `1px solid ${C_BORDER}` : 'none' }}>
             {/* From */}
             <div style={colStyle(1)}>
-              <input
-                type="number"
-                value={tier.fromValue}
-                onChange={(e) => updateTier(tier.id, { fromValue: e.target.value })}
-                onBlur={() => markTouched(tier.id)}
-                onFocus={(e) => (e.currentTarget.style.borderColor = showFromError ? '#EF4444' : '#FFA274')}
-                style={{ ...inputStyle, width: '100%', borderColor: showFromError ? '#EF4444' : C_BORDER }}
-              />
+              {withError(
+                <input
+                  type="number"
+                  value={tier.fromValue}
+                  disabled={fromDisabled}
+                  onChange={(e) => !fromDisabled && updateTier(tier.id, { fromValue: e.target.value })}
+                  onBlur={() => !fromDisabled && markTouched(tier.id, 'fromValue')}
+                  onFocus={(e) => !fromDisabled && (e.currentTarget.style.borderColor = fromError ? '#EF4444' : '#FFA274')}
+                  style={{ ...(fromDisabled ? autoFilledStyle : inputStyle), width: '100%', borderColor: fromError ? '#EF4444' : C_BORDER }}
+                  title={fromDisabled ? 'Tự động điền từ dòng trên + 1' : undefined}
+                />,
+                fromError,
+              )}
             </div>
 
             {/* To */}
             <div style={colStyle(1)}>
-              <input
-                type="number"
-                value={tier.toValue}
-                onChange={(e) => updateTier(tier.id, { toValue: e.target.value })}
-                onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-                style={{ ...inputStyle, width: '100%' }}
-              />
-            </div>
-
-            {/* Fixed fee — disable khi % đang dùng */}
-            <div style={colStyle(1)}>
-              <div style={{ position: 'relative', width: '100%' }}>
+              {withError(
                 <input
                   type="number"
-                  value={tier.fixedFee}
-                  disabled={fixedDisabled}
-                  onChange={(e) => updateTier(tier.id, { fixedFee: e.target.value, percentFee: '0', maxFee: '' })}
-                  onFocus={(e) => !fixedDisabled && (e.currentTarget.style.borderColor = '#FFA274')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-                  style={{ ...(fixedDisabled ? disabledInputStyle : inputStyle), width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
-                  title={fixedDisabled ? 'Bỏ phụ phí % để nhập số fix' : undefined}
-                />
+                  value={tier.toValue}
+                  onChange={(e) => updateTier(tier.id, { toValue: e.target.value })}
+                  onBlur={() => markTouched(tier.id, 'toValue')}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = toError ? '#EF4444' : '#FFA274')}
+                  style={{ ...inputStyle, width: '100%', borderColor: toError ? '#EF4444' : C_BORDER }}
+                />,
+                toError,
+              )}
+            </div>
+
+            {/* Fixed fee */}
+            <div style={colStyle(1)}>
+              <div style={{ position: 'relative', width: '100%' }}>
+                {withError(
+                  <input
+                    type="number"
+                    value={tier.fixedFee}
+                    disabled={fixedDisabled}
+                    onChange={(e) => updateTier(tier.id, { fixedFee: e.target.value, percentFee: '0', maxFee: '' })}
+                    onBlur={() => markTouched(tier.id, 'fixedFee')}
+                    onFocus={(e) => !fixedDisabled && (e.currentTarget.style.borderColor = fixedError ? '#EF4444' : '#FFA274')}
+                    style={{ ...(fixedDisabled ? disabledInputStyle : inputStyle), width: '100%', paddingRight: 26, boxSizing: 'border-box', borderColor: fixedError ? '#EF4444' : C_BORDER }}
+                    title={fixedDisabled ? 'Bỏ phụ phí % để nhập số fix' : undefined}
+                  />,
+                  fixedError,
+                )}
                 <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: fixedDisabled ? '#C0C4CC' : C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
               </div>
             </div>
 
-            {/* Percent fee + max fee — disable khi số fix đang dùng */}
-            <div style={{ ...colStyle(2), display: 'flex', gap: 6, alignItems: 'center' }}>
-              {/* % input */}
+            {/* Percent fee + max fee */}
+            <div style={{ ...colStyle(2), display: 'flex', gap: 6, alignItems: 'flex-start' }}>
               <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-                <input
-                  type="number"
-                  value={tier.percentFee}
-                  disabled={percentDisabled}
-                  onChange={(e) => updateTier(tier.id, { percentFee: e.target.value, fixedFee: '0' })}
-                  onFocus={(e) => !percentDisabled && (e.currentTarget.style.borderColor = '#FFA274')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-                  style={{ ...(percentDisabled ? disabledInputStyle : inputStyle), width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
-                  title={percentDisabled ? 'Bỏ phụ phí số fix để nhập %' : undefined}
-                />
-                <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: percentDisabled ? '#C0C4CC' : C_TEXT_SECONDARY, pointerEvents: 'none' }}>%</span>
+                {withError(
+                  <input
+                    type="number"
+                    value={tier.percentFee}
+                    disabled={percentDisabled}
+                    onChange={(e) => updateTier(tier.id, { percentFee: e.target.value, fixedFee: '0' })}
+                    onBlur={() => markTouched(tier.id, 'percentFee')}
+                    onFocus={(e) => !percentDisabled && (e.currentTarget.style.borderColor = pctError ? '#EF4444' : '#FFA274')}
+                    style={{ ...(percentDisabled ? disabledInputStyle : inputStyle), width: '100%', paddingRight: 26, boxSizing: 'border-box', borderColor: pctError ? '#EF4444' : C_BORDER }}
+                    title={percentDisabled ? 'Bỏ phụ phí số fix để nhập %' : undefined}
+                  />,
+                  pctError,
+                )}
+                <span style={{ position: 'absolute', right: 8, top: 8, fontSize: 12, color: percentDisabled ? '#C0C4CC' : C_TEXT_SECONDARY, pointerEvents: 'none' }}>%</span>
               </div>
 
-              {/* Tối đa — chỉ hiển thị khi % đang active */}
+              {/* Tối đa */}
               {percentActive && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                  <span style={{ fontSize: 12, color: C_TEXT_LABEL, whiteSpace: 'nowrap' }}>Tối đa</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, flexShrink: 0 }}>
+                  <span style={{ fontSize: 12, color: C_TEXT_LABEL, whiteSpace: 'nowrap', lineHeight: '32px' }}>Tối đa</span>
                   <div style={{ position: 'relative', width: 90 }}>
-                    <input
-                      type="number"
-                      value={tier.maxFee}
-                      onChange={(e) => updateTier(tier.id, { maxFee: e.target.value })}
-                      placeholder="∞"
-                      onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-                      style={{ ...inputStyle, width: '100%', paddingRight: 20, boxSizing: 'border-box' }}
-                    />
-                    <span style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+                    {withError(
+                      <input
+                        type="number"
+                        value={tier.maxFee}
+                        onChange={(e) => updateTier(tier.id, { maxFee: e.target.value })}
+                        placeholder="∞"
+                        onBlur={() => markTouched(tier.id, 'maxFee')}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = maxFeeError ? '#EF4444' : '#FFA274')}
+                        style={{ ...inputStyle, width: '100%', paddingRight: 20, boxSizing: 'border-box', borderColor: maxFeeError ? '#EF4444' : C_BORDER }}
+                      />,
+                      maxFeeError,
+                    )}
+                    <span style={{ position: 'absolute', right: 6, top: 8, fontSize: 11, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
                   </div>
                 </div>
               )}
