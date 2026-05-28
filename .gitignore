@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local-only tools (không commit, không build production)
+src/components/JiraManager/
+src/hooks/
+src/utils/
+scripts/
+.claire/
+.claude/worktrees/

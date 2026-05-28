@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Dropdown, Button } from 'antd'
 import { DownOutlined, AppstoreOutlined } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { SHADOW_FLOAT } from '../theme/tokens'
-import { JiraManagerModal } from './JiraManager'
+
+// JiraManager: localhost-only — không commit, không bundle production
+// Dynamic import với @vite-ignore để Vite bỏ qua lúc build
+const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 
 const PLATFORMS = [
   { key: 'super-admin', label: 'Super Admin', color: '#F05521', path: '/super-admin/agencies' },
@@ -16,6 +19,15 @@ export default function PlatformSwitcher() {
   const navigate = useNavigate()
   const location = useLocation()
   const [jiraOpen, setJiraOpen] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [JiraModal, setJiraModal] = useState<any>(null)
+
+  useEffect(() => {
+    if (isLocalhost) {
+      // @vite-ignore — file chỉ tồn tại local, không commit lên production
+      import(/* @vite-ignore */ './JiraManager').then((m) => setJiraModal(() => m.JiraManagerModal)).catch(() => {})
+    }
+  }, [])
 
   const currentPlatform =
     PLATFORMS.find((p) => location.pathname.startsWith(`/${p.key}`)) || PLATFORMS[0]
@@ -81,7 +93,7 @@ export default function PlatformSwitcher() {
         </Dropdown>
       </div>
 
-      {jiraOpen && <JiraManagerModal onClose={() => setJiraOpen(false)} />}
+      {jiraOpen && JiraModal && <JiraModal onClose={() => setJiraOpen(false)} />}
     </>
   )
 }
