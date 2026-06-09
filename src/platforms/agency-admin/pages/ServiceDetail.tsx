@@ -11,7 +11,9 @@ import {
   SaveOutlined,
   CloseOutlined,
   SwapOutlined,
+  SwapRightOutlined,
   WarningOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons'
 import allServices from '../../../mock-data/services.json'
 import allPriceTables from '../../../mock-data/pricing.json'
@@ -37,7 +39,16 @@ const DISTRICTS: Record<string, string[]> = {
 }
 
 type LocationEntry = { province: string; district: string }
-type Tab = 'info' | 'available' | 'blocked'
+type Tab = 'info' | 'available' | 'blocked' | 'history'
+type EditHistoryItem = { id: string; date: string; time: string; operator: string; field: string; oldValue: string; newValue: string }
+
+const SERVICE_HISTORY: EditHistoryItem[] = [
+  { id: '1', date: '2024-03-15', time: '14:32', operator: 'Admin Đại lý', field: 'Tên gói', oldValue: 'Giao hàng nhanh cũ', newValue: 'Giao hàng nhanh' },
+  { id: '2', date: '2024-03-15', time: '10:05', operator: 'Admin Đại lý', field: 'Mô tả', oldValue: '', newValue: 'Dịch vụ giao hàng nhanh trong ngày' },
+  { id: '3', date: '2024-02-28', time: '16:45', operator: 'Super Admin', field: 'Bảng giá', oldValue: 'Chưa có', newValue: 'Bảng giá tiêu chuẩn 2024' },
+  { id: '4', date: '2024-02-28', time: '09:20', operator: 'Admin Đại lý', field: 'Kết nối Shop GHN', oldValue: 'Shop Thời Trang ABC', newValue: 'Shop Thời Trang ABC, Shop Điện Tử XYZ' },
+  { id: '5', date: '2024-02-01', time: '08:00', operator: 'Super Admin', field: 'Mã gói', oldValue: 'SVC001', newValue: 'CHUYENNHANH' },
+]
 
 type GoiCuoc = { loai: string; id: string; ten: string }
 type ShopConnection = { shopId: string; selectedGoiCuoc: string[] }
@@ -56,6 +67,7 @@ const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'info',      label: 'Thông tin',          icon: <InfoCircleOutlined /> },
   { key: 'available', label: 'Địa điểm khả dụng',  icon: <EnvironmentOutlined /> },
   { key: 'blocked',   label: 'Địa điểm chặn',       icon: <StopOutlined /> },
+  { key: 'history',   label: 'Lịch sử chỉnh sửa',  icon: <HistoryOutlined /> },
 ]
 
 // ─── LabelValue (view mode) ───────────────────────────────────────────────────
@@ -588,6 +600,69 @@ export default function ServiceDetail() {
         {activeTab === 'blocked' && (
           <div style={{ ...centeredBox, padding: '0 80px' }}>
             <LocationTab pickupColor="#F59E0B" deliveryColor="#EF4444" />
+          </div>
+        )}
+
+        {/* ── Tab: Lịch sử chỉnh sửa ── */}
+        {activeTab === 'history' && (
+          <div style={{ ...centeredBox, padding: '16px 80px 32px' }}>
+            {isNewService ? (
+              <div style={{ padding: '32px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
+                Chưa có lịch sử chỉnh sửa
+              </div>
+            ) : (() => {
+              // Group by date DESC
+              const grouped: Record<string, EditHistoryItem[]> = {}
+              SERVICE_HISTORY.forEach(item => {
+                if (!grouped[item.date]) grouped[item.date] = []
+                grouped[item.date].push(item)
+              })
+              const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+              return (
+                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+                  {/* Table header */}
+                  <div style={{ display: 'flex', background: C_BG_HEADER }}>
+                    <div style={{ width: 80, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, flexShrink: 0 }}>Thời gian</div>
+                    <div style={{ flex: '1 0 0', minWidth: 140, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Người thực hiện</div>
+                    <div style={{ flex: '1 0 0', minWidth: 140, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Trường thay đổi</div>
+                    <div style={{ flex: '3 0 0', minWidth: 220, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Nội dung thay đổi</div>
+                  </div>
+                  <div style={{ height: 1, background: C_BORDER }} />
+                  {sortedDates.map(date => {
+                    const [y, m, d] = date.split('-')
+                    const dateLabel = `${d}/${m}/${y}`
+                    return (
+                      <div key={date}>
+                        {/* Date group header */}
+                        <div style={{ background: '#F3F4F6', padding: '6px 12px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY, borderBottom: `1px solid ${C_BORDER}` }}>
+                          {dateLabel}
+                        </div>
+                        {grouped[date].map((item, idx) => (
+                          <div key={item.id}>
+                            <div style={{ display: 'flex', alignItems: 'center', background: '#fff' }}>
+                              <div style={{ width: 80, padding: '10px 12px', fontSize: 13, color: C_TEXT_SECONDARY, flexShrink: 0 }}>{item.time}</div>
+                              <div style={{ flex: '1 0 0', minWidth: 140, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{item.operator}</div>
+                              <div style={{ flex: '1 0 0', minWidth: 140, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{item.field}</div>
+                              <div style={{ flex: '3 0 0', minWidth: 220, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                {item.oldValue === '' ? (
+                                  <span style={{ color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>(Chưa có)</span>
+                                ) : (
+                                  <span style={{ color: C_TEXT_SECONDARY }}>{item.oldValue}</span>
+                                )}
+                                <SwapRightOutlined style={{ fontSize: 12, color: C_TEXT_SECONDARY, flexShrink: 0 }} />
+                                <span style={{ color: C_TEXT_PRIMARY, fontWeight: 500 }}>{item.newValue}</span>
+                              </div>
+                            </div>
+                            {idx < grouped[date].length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
+                          </div>
+                        ))}
+                        <div style={{ height: 1, background: C_BORDER }} />
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         )}
       </div>

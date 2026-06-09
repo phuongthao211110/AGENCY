@@ -11,6 +11,7 @@ import {
   InboxOutlined,
   DollarOutlined,
   BarChartOutlined,
+  SwapRightOutlined,
 } from '@ant-design/icons'
 import allShops from '../../../mock-data/shops.json'
 import allServices from '../../../mock-data/services.json'
@@ -181,12 +182,35 @@ function SectionCard({ title, children }: { title: string; children: React.React
 }
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
-type TabKey = 'info' | 'schedule' | 'bank'
+type TabKey = 'info' | 'schedule' | 'bank' | 'history'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'info',     label: 'Thông tin cơ bản' },
   { key: 'schedule', label: 'Lịch chuyển khoản' },
   { key: 'bank',     label: 'Tài khoản ngân hàng' },
+  { key: 'history',  label: 'Lịch sử chỉnh sửa' },
+]
+
+// ─── Edit history mock data ───────────────────────────────────────────────────
+type EditHistoryItem = {
+  id: string; date: string; time: string
+  operator: string; field: string; oldValue: string; newValue: string
+}
+
+const SHOP_HISTORY: EditHistoryItem[] = [
+  // Thông tin cơ bản
+  { id: '1', date: '2024-04-10', time: '15:20', operator: 'Admin Đại lý', field: 'Trạng thái',    oldValue: 'Tắt',                  newValue: 'Hoạt động' },
+  { id: '2', date: '2024-04-10', time: '14:05', operator: 'Admin Đại lý', field: 'Địa chỉ',       oldValue: '12 Lê Lợi, Q.1',       newValue: '15 Nguyễn Huệ, Q.1, TP.HCM' },
+  { id: '3', date: '2024-03-22', time: '11:30', operator: 'Admin Đại lý', field: 'Tên shop',      oldValue: 'Shop Thời Trang',       newValue: 'Shop Thời Trang ABC' },
+  { id: '4', date: '2024-03-22', time: '11:28', operator: 'Admin Đại lý', field: 'Số điện thoại', oldValue: '0901234567',            newValue: '0909123456' },
+  // Dịch vụ — chỉ ghi thêm/xoá dịch vụ
+  { id: '5', date: '2024-03-15', time: '09:45', operator: 'Admin Đại lý', field: 'Thêm dịch vụ',  oldValue: '',                     newValue: 'Giao hàng tiết kiệm' },
+  // Bảng giá — ghi đổi bảng giá của từng dịch vụ
+  { id: '6', date: '2024-02-28', time: '16:10', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng nhanh',     oldValue: 'Chưa có',              newValue: 'Bảng giá tiêu chuẩn 2024' },
+  { id: '7', date: '2024-02-10', time: '10:30', operator: 'Admin Đại lý', field: 'Xoá dịch vụ',   oldValue: 'Giao hàng hoả tốc',    newValue: '' },
+  { id: '8', date: '2024-02-10', time: '10:28', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng tiết kiệm', oldValue: 'Bảng giá cũ 2023',     newValue: 'Bảng giá tiêu chuẩn 2024' },
+  // Lịch đối soát
+  { id: '9', date: '2024-01-15', time: '10:00', operator: 'Admin Đại lý', field: 'Lịch chuyển khoản', oldValue: 'Thứ 2 & Thứ 5',    newValue: 'Thứ 2, Thứ 4 & Thứ 6' },
 ]
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -560,6 +584,63 @@ export default function ShopDetail() {
             </SectionCard>
           )
         })()}
+
+        {/* ──── Tab: Lịch sử chỉnh sửa ─────────────────────────── */}
+        {activeTab === 'history' && (
+          <div style={{ padding: '0 0 16px' }}>
+            {(() => {
+              const grouped: Record<string, EditHistoryItem[]> = {}
+              SHOP_HISTORY.forEach(item => {
+                if (!grouped[item.date]) grouped[item.date] = []
+                grouped[item.date].push(item)
+              })
+              const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+              return (
+                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+                  {/* Table header */}
+                  <div style={{ display: 'flex', background: '#F3F4F6' }}>
+                    <div style={{ width: 80, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, flexShrink: 0 }}>Thời gian</div>
+                    <div style={{ flex: '1 0 0', minWidth: 140, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Người thực hiện</div>
+                    <div style={{ flex: '1 0 0', minWidth: 140, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Trường thay đổi</div>
+                    <div style={{ flex: '3 0 0', minWidth: 220, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Nội dung thay đổi</div>
+                  </div>
+                  <div style={{ height: 1, background: C_BORDER }} />
+                  {sortedDates.map(date => {
+                    const [y, m, d] = date.split('-')
+                    const dateLabel = `${d}/${m}/${y}`
+                    return (
+                      <div key={date}>
+                        <div style={{ background: '#F3F4F6', padding: '6px 12px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY, borderBottom: `1px solid ${C_BORDER}` }}>
+                          {dateLabel}
+                        </div>
+                        {grouped[date].map((item, idx) => (
+                          <div key={item.id}>
+                            <div style={{ display: 'flex', alignItems: 'center', background: '#fff' }}>
+                              <div style={{ width: 80, padding: '10px 12px', fontSize: 13, color: C_TEXT_SECONDARY, flexShrink: 0 }}>{item.time}</div>
+                              <div style={{ flex: '1 0 0', minWidth: 140, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{item.operator}</div>
+                              <div style={{ flex: '1 0 0', minWidth: 140, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{item.field}</div>
+                              <div style={{ flex: '3 0 0', minWidth: 220, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                {item.oldValue === '' ? (
+                                  <span style={{ color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>(Chưa có)</span>
+                                ) : (
+                                  <span style={{ color: C_TEXT_SECONDARY }}>{item.oldValue}</span>
+                                )}
+                                <SwapRightOutlined style={{ fontSize: 12, color: C_TEXT_SECONDARY, flexShrink: 0 }} />
+                                <span style={{ color: C_TEXT_PRIMARY, fontWeight: 500 }}>{item.newValue}</span>
+                              </div>
+                            </div>
+                            {idx < grouped[date].length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
+                          </div>
+                        ))}
+                        <div style={{ height: 1, background: C_BORDER }} />
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+          </div>
+        )}
 
       </div>
     </div>

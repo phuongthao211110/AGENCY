@@ -448,7 +448,10 @@ function TabPricing() {
               onMouseLeave={() => setHovered(null)}
             >
               <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{pt.name}</div>
+                <div
+                  onClick={() => navigate(`/agency-admin/carrier-setup/pricing/${pt.id}`)}
+                  style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', cursor: 'pointer' }}
+                >{pt.name}</div>
               </div>
               <div style={{ flex: '1 0 0', minWidth: 110, padding: '6px 8px' }}>
                 <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>
