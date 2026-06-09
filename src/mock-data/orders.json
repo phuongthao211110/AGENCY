@@ -1,32 +1,3252 @@
 [
-  { "id": "ORD001", "shopId": "SHP001", "trackingCode": "GHN00123456", "senderName": "Minh Anh", "senderPhone": "0901111111", "receiverName": "Nguyễn Hoa", "receiverPhone": "0911222333", "receiverAddress": "15 Kim Liên, Đống Đa, HN", "weight": 500, "cod": 250000, "fee": 22000, "status": "delivered", "createdAt": "2024-04-01" },
-  { "id": "ORD002", "shopId": "SHP001", "trackingCode": "GHN00123457", "senderName": "Minh Anh", "senderPhone": "0901111111", "receiverName": "Trần Bình", "receiverPhone": "0922333444", "receiverAddress": "88 Đại Cồ Việt, HBT, HN", "weight": 1200, "cod": 480000, "fee": 28000, "status": "in_transit", "createdAt": "2024-04-03" },
-  { "id": "ORD003", "shopId": "SHP003", "trackingCode": "GHN00223456", "senderName": "Hương Thơm", "senderPhone": "0903333333", "receiverName": "Lê Thị Cúc", "receiverPhone": "0933444555", "receiverAddress": "34 Võ Văn Tần, Q3, HCM", "weight": 300, "cod": 180000, "fee": 20000, "status": "delivered", "createdAt": "2024-04-02" },
-  { "id": "ORD004", "shopId": "SHP003", "trackingCode": "GHN00223457", "senderName": "Hương Thơm", "senderPhone": "0903333333", "receiverName": "Phạm Đức", "receiverPhone": "0944555666", "receiverAddress": "56 Nguyễn Thị Minh Khai, Q1, HCM", "weight": 800, "cod": 350000, "fee": 25000, "status": "pending", "createdAt": "2024-04-05" },
-  { "id": "ORD005", "shopId": "SHP004", "trackingCode": "GHN00323456", "senderName": "Thiên Phú", "senderPhone": "0904444444", "receiverName": "Hoàng Em", "receiverPhone": "0955666777", "receiverAddress": "12 Cách Mạng Tháng 8, Q10, HCM", "weight": 1500, "cod": 620000, "fee": 30000, "status": "delivered", "createdAt": "2024-04-01" },
-  { "id": "ORD006", "shopId": "SHP004", "trackingCode": "GHN00323457", "senderName": "Thiên Phú", "senderPhone": "0904444444", "receiverName": "Ngô Thị Fnh", "receiverPhone": "0966777888", "receiverAddress": "78 Lê Hồng Phong, Q5, HCM", "weight": 2000, "cod": 890000, "fee": 35000, "status": "in_transit", "createdAt": "2024-04-04" },
-  { "id": "ORD007", "shopId": "SHP006", "trackingCode": "GHN00423456", "senderName": "Café HĐN", "senderPhone": "0906666666", "receiverName": "Vũ Giang", "receiverPhone": "0977888999", "receiverAddress": "45 Nguyễn Hữu Thọ, Đà Nẵng", "weight": 600, "cod": 120000, "fee": 22000, "status": "delivered", "createdAt": "2024-04-02" },
-  { "id": "ORD008", "shopId": "SHP008", "trackingCode": "GHN00523456", "senderName": "Miền Tây", "senderPhone": "0908888888", "receiverName": "Đặng Hà", "receiverPhone": "0988999000", "receiverAddress": "23 Lý Tự Trọng, Q1, HCM", "weight": 2500, "cod": 450000, "fee": 35000, "status": "failed", "createdAt": "2024-04-03" },
-  { "id": "ORD009", "shopId": "SHP003", "trackingCode": "GHN00223458", "senderName": "Hương Thơm", "senderPhone": "0903333333", "receiverName": "Bùi Inh", "receiverPhone": "0989000111", "receiverAddress": "67 Phan Đăng Lưu, Bình Thạnh, HCM", "weight": 400, "cod": 220000, "fee": 22000, "status": "delivered", "createdAt": "2024-04-04" },
-  { "id": "ORD010", "shopId": "SHP002", "trackingCode": "GHN00123458", "senderName": "Thành Công", "senderPhone": "0902222222", "receiverName": "Cao Kim", "receiverPhone": "0990111222", "receiverAddress": "90 Bà Triệu, Hà Nội", "weight": 3000, "cod": 1250000, "fee": 45000, "status": "in_transit", "createdAt": "2024-04-05" },
-  { "id": "ORD011", "shopId": "SHP001", "trackingCode": "GHN00123459", "senderName": "Minh Anh", "senderPhone": "0901111111", "receiverName": "Phan Long", "receiverPhone": "0901122334", "receiverAddress": "33 Hàng Bài, Hoàn Kiếm, HN", "weight": 700, "cod": 310000, "fee": 24000, "status": "delivered", "createdAt": "2024-04-06" },
-  { "id": "ORD012", "shopId": "SHP002", "trackingCode": "GHN00123460", "senderName": "Thành Công", "senderPhone": "0902222222", "receiverName": "Đinh Mai", "receiverPhone": "0902233445", "receiverAddress": "14 Láng Hạ, Đống Đa, HN", "weight": 1800, "cod": 750000, "fee": 32000, "status": "pending", "createdAt": "2024-04-06" },
-  { "id": "ORD013", "shopId": "SHP003", "trackingCode": "GHN00223459", "senderName": "Hương Thơm", "senderPhone": "0903333333", "receiverName": "Trịnh Nam", "receiverPhone": "0903344556", "receiverAddress": "102 Nguyễn Thái Bình, Q1, HCM", "weight": 250, "cod": 95000, "fee": 18000, "status": "delivered", "createdAt": "2024-04-06" },
-  { "id": "ORD014", "shopId": "SHP004", "trackingCode": "GHN00323458", "senderName": "Thiên Phú", "senderPhone": "0904444444", "receiverName": "Lý Oanh", "receiverPhone": "0904455667", "receiverAddress": "77 Đinh Bộ Lĩnh, Bình Thạnh, HCM", "weight": 1100, "cod": 480000, "fee": 28000, "status": "delivered", "createdAt": "2024-04-07" },
-  { "id": "ORD015", "shopId": "SHP008", "trackingCode": "GHN00523457", "senderName": "Miền Tây", "senderPhone": "0908888888", "receiverName": "Kiều Phúc", "receiverPhone": "0905566778", "receiverAddress": "55 Hùng Vương, Ninh Kiều, CT", "weight": 3500, "cod": 680000, "fee": 40000, "status": "in_transit", "createdAt": "2024-04-07" },
-  { "id": "ORD016", "shopId": "SHP010", "trackingCode": "GHN00623456", "senderName": "Hải Sản HP", "senderPhone": "0910101010", "receiverName": "Quách Rồng", "receiverPhone": "0906677889", "receiverAddress": "22 Lê Lai, Hồng Bàng, HP", "weight": 5000, "cod": 320000, "fee": 55000, "status": "delivered", "createdAt": "2024-04-05" },
-  { "id": "ORD017", "shopId": "SHP013", "trackingCode": "GHN00723456", "senderName": "Hải Sản VT", "senderPhone": "0913131313", "receiverName": "Sơn Tùng", "receiverPhone": "0907788990", "receiverAddress": "8 Nguyễn Ái Quốc, Biên Hòa, ĐN", "weight": 4000, "cod": 560000, "fee": 48000, "status": "in_transit", "createdAt": "2024-04-07" },
-  { "id": "ORD018", "shopId": "SHP006", "trackingCode": "GHN00423457", "senderName": "Café HĐN", "senderPhone": "0906666666", "receiverName": "Thu Uyên", "receiverPhone": "0908899001", "receiverAddress": "33 Hải Phòng, Hải Châu, ĐN", "weight": 1000, "cod": 250000, "fee": 26000, "status": "delivered", "createdAt": "2024-04-06" },
-  { "id": "ORD019", "shopId": "SHP009", "trackingCode": "GHN00823456", "senderName": "Nông Sản CT", "senderPhone": "0909999999", "receiverName": "Văn Vinh", "receiverPhone": "0909900112", "receiverAddress": "11 Hùng Vương, Ninh Kiều, CT", "weight": 6000, "cod": 200000, "fee": 58000, "status": "delivered", "createdAt": "2024-04-04" },
-  { "id": "ORD020", "shopId": "SHP011", "trackingCode": "GHN00923456", "senderName": "Souvenir NT", "senderPhone": "0911111112", "receiverName": "Xuân Yến", "receiverPhone": "0910011223", "receiverAddress": "44 Trần Phú, Lộc Thọ, NT", "weight": 800, "cod": 185000, "fee": 25000, "status": "pending", "createdAt": "2024-04-08" },
-  { "id": "ORD021", "shopId": "SHP012", "trackingCode": "GHN01023456", "senderName": "Áo Dài Huế", "senderPhone": "0912121212", "receiverName": "Ái Châu", "receiverPhone": "0911122334", "receiverAddress": "78 Nguyễn Huệ, Vĩnh Ninh, Huế", "weight": 600, "cod": 850000, "fee": 24000, "status": "delivered", "createdAt": "2024-04-05" },
-  { "id": "ORD022", "shopId": "SHP014", "trackingCode": "GHN01123456", "senderName": "Nội Thất ĐN", "senderPhone": "0914141414", "receiverName": "Bảo Dương", "receiverPhone": "0912233445", "receiverAddress": "55 Đinh Tiên Hoàng, Biên Hòa", "weight": 15000, "cod": 3200000, "fee": 120000, "status": "in_transit", "createdAt": "2024-04-07" },
-  { "id": "ORD023", "shopId": "SHP001", "trackingCode": "GHN00123461", "senderName": "Minh Anh", "senderPhone": "0901111111", "receiverName": "Cẩm Lai", "receiverPhone": "0913344556", "receiverAddress": "19 Khâm Thiên, Đống Đa, HN", "weight": 400, "cod": 175000, "fee": 21000, "status": "failed", "createdAt": "2024-04-08" },
-  { "id": "ORD024", "shopId": "SHP002", "trackingCode": "GHN00123462", "senderName": "Thành Công", "senderPhone": "0902222222", "receiverName": "Đình Mạnh", "receiverPhone": "0914455667", "receiverAddress": "7 Tôn Đức Thắng, Đống Đa, HN", "weight": 2200, "cod": 980000, "fee": 36000, "status": "delivered", "createdAt": "2024-04-08" },
-  { "id": "ORD025", "shopId": "SHP005", "trackingCode": "GHN00423458", "senderName": "Bảo An", "senderPhone": "0905555555", "receiverName": "Gia Khánh", "receiverPhone": "0915566778", "receiverAddress": "66 Nguyễn Trãi, Q1, HCM", "weight": 5000, "cod": 1500000, "fee": 55000, "status": "delivered", "createdAt": "2024-04-03" },
-  { "id": "ORD026", "shopId": "SHP007", "trackingCode": "GHN01223456", "senderName": "Hội An Craft", "senderPhone": "0907777777", "receiverName": "Hiếu Nghiêm", "receiverPhone": "0916677889", "receiverAddress": "30 Lý Thái Tổ, Đà Nẵng", "weight": 1500, "cod": 420000, "fee": 30000, "status": "in_transit", "createdAt": "2024-04-08" },
-  { "id": "ORD027", "shopId": "SHP003", "trackingCode": "GHN00223460", "senderName": "Hương Thơm", "senderPhone": "0903333333", "receiverName": "Ông Phát", "receiverPhone": "0917788990", "receiverAddress": "122 Nguyễn Công Trứ, Q1, HCM", "weight": 350, "cod": 156000, "fee": 20000, "status": "delivered", "createdAt": "2024-04-08" },
-  { "id": "ORD028", "shopId": "SHP015", "trackingCode": "GHN01323456", "senderName": "Cây Cảnh ĐN", "senderPhone": "0915151515", "receiverName": "Quý Phúc", "receiverPhone": "0918899001", "receiverAddress": "12 Nguyễn Ái Quốc, Biên Hòa", "weight": 8000, "cod": 450000, "fee": 70000, "status": "pending", "createdAt": "2024-04-08" },
-  { "id": "ORD029", "shopId": "SHP004", "trackingCode": "GHN00323459", "senderName": "Thiên Phú", "senderPhone": "0904444444", "receiverName": "Rạng Đông", "receiverPhone": "0919900112", "receiverAddress": "44 Nguyễn Văn Trỗi, Phú Nhuận, HCM", "weight": 900, "cod": 390000, "fee": 26000, "status": "delivered", "createdAt": "2024-04-08" },
-  { "id": "ORD030", "shopId": "SHP008", "trackingCode": "GHN00523458", "senderName": "Miền Tây", "senderPhone": "0908888888", "receiverName": "Sa Mạc", "receiverPhone": "0920011223", "receiverAddress": "88 Trần Hưng Đạo, Q5, HCM", "weight": 4500, "cod": 580000, "fee": 50000, "status": "in_transit", "createdAt": "2024-04-08" }
+  {
+    "id": "ORD001",
+    "shopId": "SHP001",
+    "trackingCode": "GHN00123456",
+    "senderName": "Minh Anh",
+    "senderPhone": "0901111111",
+    "receiverName": "Nguyễn Hoa",
+    "receiverPhone": "0911222333",
+    "receiverAddress": "15 Kim Liên, Đống Đa, HN",
+    "weight": 500,
+    "cod": 250000,
+    "fee": 22000,
+    "status": "delivered",
+    "createdAt": "2024-04-01",
+    "statusHistory": [
+      {
+        "date": "2024-04-04",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 15 Kim Liên, Đống Đa, HN",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 15 Kim Liên, Đống Đa, HN",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-02",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-02",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-02",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-01",
+        "status": "Chờ lấy hàng",
+        "detail": "7 Thành Thái, Q10, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-04",
+        "time": "15:01:12",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "09:30:55",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "14:05:09",
+        "operator": "Minh Anh",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 15 Kim Liên, Đống Đa...",
+        "newContent": "15 Kim Liên, Đống Đa, HN"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "11:20:44",
+        "operator": "Minh Anh",
+        "action": "Cập nhật COD",
+        "oldContent": "200.000 đ",
+        "newContent": "250.000 đ"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "08:55:30",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-01",
+        "time": "10:42:18",
+        "operator": "Minh Anh",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-01",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD002",
+    "shopId": "SHP001",
+    "trackingCode": "GHN00123457",
+    "senderName": "Minh Anh",
+    "senderPhone": "0901111111",
+    "receiverName": "Trần Bình",
+    "receiverPhone": "0922333444",
+    "receiverAddress": "88 Đại Cồ Việt, HBT, HN",
+    "weight": 1200,
+    "cod": 480000,
+    "fee": 28000,
+    "status": "in_transit",
+    "createdAt": "2024-04-03",
+    "statusHistory": [
+      {
+        "date": "2024-04-05",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 88 Đại Cồ Việt, HBT, HN",
+        "time": "09:45"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "time": "06:20"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "22:55"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc",
+        "time": "13:40"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "time": "09:10"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Chờ lấy hàng",
+        "detail": "7 Thành Thái, Q10, HCM",
+        "time": "09:15"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-05",
+        "time": "09:30:55",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "14:05:09",
+        "operator": "Minh Anh",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 88 Đại Cồ Việt, HBT,...",
+        "newContent": "88 Đại Cồ Việt, HBT, HN"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "11:20:44",
+        "operator": "Minh Anh",
+        "action": "Cập nhật COD",
+        "oldContent": "430.000 đ",
+        "newContent": "480.000 đ"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "08:55:30",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "10:42:18",
+        "operator": "Minh Anh",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD003",
+    "shopId": "SHP003",
+    "trackingCode": "GHN00223456",
+    "senderName": "Hương Thơm",
+    "senderPhone": "0903333333",
+    "receiverName": "Lê Thị Cúc",
+    "receiverPhone": "0933444555",
+    "receiverAddress": "34 Võ Văn Tần, Q3, HCM",
+    "weight": 300,
+    "cod": 180000,
+    "fee": 20000,
+    "status": "delivered",
+    "createdAt": "2024-04-02",
+    "statusHistory": [
+      {
+        "date": "2024-04-05",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 34 Võ Văn Tần, Q3, HCM",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 34 Võ Văn Tần, Q3, HCM",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-02",
+        "status": "Chờ lấy hàng",
+        "detail": "12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-05",
+        "time": "15:01:12",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "09:30:55",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "14:05:09",
+        "operator": "Hương Thơm",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 34 Võ Văn Tần, Q3, H...",
+        "newContent": "34 Võ Văn Tần, Q3, HCM"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "11:20:44",
+        "operator": "Hương Thơm",
+        "action": "Cập nhật COD",
+        "oldContent": "130.000 đ",
+        "newContent": "180.000 đ"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "08:55:30",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "10:42:18",
+        "operator": "Hương Thơm",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "10:39:02",
+        "operator": "Hương Thơm",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD004",
+    "shopId": "SHP003",
+    "trackingCode": "GHN00223457",
+    "senderName": "Hương Thơm",
+    "senderPhone": "0903333333",
+    "receiverName": "Phạm Đức",
+    "receiverPhone": "0944555666",
+    "receiverAddress": "56 Nguyễn Thị Minh Khai, Q1, HCM",
+    "weight": 800,
+    "cod": 350000,
+    "fee": 25000,
+    "status": "pending",
+    "createdAt": "2024-04-05",
+    "statusHistory": [
+      {
+        "date": "2024-04-05",
+        "status": "Chờ lấy hàng",
+        "detail": "12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-06",
+        "time": "08:55:30",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:42:18",
+        "operator": "Hương Thơm",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:39:02",
+        "operator": "Hương Thơm",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD005",
+    "shopId": "SHP004",
+    "trackingCode": "GHN00323456",
+    "senderName": "Thiên Phú",
+    "senderPhone": "0904444444",
+    "receiverName": "Hoàng Em",
+    "receiverPhone": "0955666777",
+    "receiverAddress": "12 Cách Mạng Tháng 8, Q10, HCM",
+    "weight": 1500,
+    "cod": 620000,
+    "fee": 30000,
+    "status": "delivered",
+    "createdAt": "2024-04-01",
+    "statusHistory": [
+      {
+        "date": "2024-04-04",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 12 Cách Mạng Tháng 8, Q10, HCM",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 12 Cách Mạng Tháng 8, Q10, HCM",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-02",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-02",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-02",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-01",
+        "status": "Chờ lấy hàng",
+        "detail": "88 Lê Hồng Phong, Q5, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-04",
+        "time": "15:01:12",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "09:30:55",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "14:05:09",
+        "operator": "Thiên Phú",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 12 Cách Mạng Tháng 8...",
+        "newContent": "12 Cách Mạng Tháng 8, Q10, HCM"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "11:20:44",
+        "operator": "Thiên Phú",
+        "action": "Cập nhật COD",
+        "oldContent": "570.000 đ",
+        "newContent": "620.000 đ"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "08:55:30",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-01",
+        "time": "10:42:18",
+        "operator": "Thiên Phú",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-01",
+        "time": "10:39:02",
+        "operator": "Thiên Phú",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD006",
+    "shopId": "SHP004",
+    "trackingCode": "GHN00323457",
+    "senderName": "Thiên Phú",
+    "senderPhone": "0904444444",
+    "receiverName": "Ngô Thị Fnh",
+    "receiverPhone": "0966777888",
+    "receiverAddress": "78 Lê Hồng Phong, Q5, HCM",
+    "weight": 2000,
+    "cod": 890000,
+    "fee": 35000,
+    "status": "in_transit",
+    "createdAt": "2024-04-04",
+    "statusHistory": [
+      {
+        "date": "2024-04-06",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 78 Lê Hồng Phong, Q5, HCM",
+        "time": "09:45"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "time": "06:20"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "22:55"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc",
+        "time": "13:40"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
+        "time": "09:10"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Chờ lấy hàng",
+        "detail": "88 Lê Hồng Phong, Q5, HCM",
+        "time": "09:15"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-06",
+        "time": "09:30:55",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "14:05:09",
+        "operator": "Thiên Phú",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 78 Lê Hồng Phong, Q5...",
+        "newContent": "78 Lê Hồng Phong, Q5, HCM"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "11:20:44",
+        "operator": "Thiên Phú",
+        "action": "Cập nhật COD",
+        "oldContent": "840.000 đ",
+        "newContent": "890.000 đ"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "08:55:30",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "10:42:18",
+        "operator": "Thiên Phú",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "10:39:02",
+        "operator": "Thiên Phú",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD007",
+    "shopId": "SHP006",
+    "trackingCode": "GHN00423456",
+    "senderName": "Café HĐN",
+    "senderPhone": "0906666666",
+    "receiverName": "Vũ Giang",
+    "receiverPhone": "0977888999",
+    "receiverAddress": "45 Nguyễn Hữu Thọ, Đà Nẵng",
+    "weight": 600,
+    "cod": 120000,
+    "fee": 22000,
+    "status": "delivered",
+    "createdAt": "2024-04-02",
+    "statusHistory": [
+      {
+        "date": "2024-04-05",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 45 Nguyễn Hữu Thọ, Đà Nẵng",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 45 Nguyễn Hữu Thọ, Đà Nẵng",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 15 Nguyễn Văn Linh, ĐN",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-02",
+        "status": "Chờ lấy hàng",
+        "detail": "15 Nguyễn Văn Linh, ĐN",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-05",
+        "time": "15:01:12",
+        "operator": "Café HĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "09:30:55",
+        "operator": "Café HĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "14:05:09",
+        "operator": "Café HĐN",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 45 Nguyễn Hữu Thọ, Đ...",
+        "newContent": "45 Nguyễn Hữu Thọ, Đà Nẵng"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "11:20:44",
+        "operator": "Café HĐN",
+        "action": "Cập nhật COD",
+        "oldContent": "70.000 đ",
+        "newContent": "120.000 đ"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "08:55:30",
+        "operator": "Café HĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "10:42:18",
+        "operator": "Café HĐN",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "10:39:02",
+        "operator": "Café HĐN",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD008",
+    "shopId": "SHP008",
+    "trackingCode": "GHN00523456",
+    "senderName": "Miền Tây",
+    "senderPhone": "0908888888",
+    "receiverName": "Đặng Hà",
+    "receiverPhone": "0988999000",
+    "receiverAddress": "23 Lý Tự Trọng, Q1, HCM",
+    "weight": 2500,
+    "cod": 450000,
+    "fee": 35000,
+    "status": "failed",
+    "createdAt": "2024-04-03",
+    "statusHistory": [
+      {
+        "date": "2024-04-07",
+        "status": "Chuyển hoàn thành công",
+        "detail": "Kiện hàng đã hoàn trả về 10 Hùng Vương, CT",
+        "time": "11:30"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đang chuyển hoàn",
+        "detail": "Kiện hàng đang trên đường hoàn về kho gốc",
+        "time": "08:00"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Chờ xác nhận giao lại",
+        "detail": "Đã liên hệ người gửi — chờ xác nhận giao lại hoặc hoàn hàng",
+        "time": "15:05"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Giao hàng không thành công",
+        "detail": "Không giao được — người nhận không có ở 23 Lý Tự Trọng, Q1, HCM",
+        "time": "10:42"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 23 Lý Tự Trọng, Q1, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đến bưu cục giao cuối",
+        "time": "18:00"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Chờ lấy hàng",
+        "detail": "10 Hùng Vương, CT",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-06",
+        "time": "16:44:20",
+        "operator": "Miền Tây",
+        "action": "Xác nhận hoàn hàng",
+        "oldContent": "-",
+        "newContent": "Đồng ý hoàn hàng"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "09:12:07",
+        "operator": "Miền Tây",
+        "action": "Yêu cầu giao lại",
+        "oldContent": "-",
+        "newContent": "Giao lại lần 2"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:50:33",
+        "operator": "Miền Tây",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "14:05:09",
+        "operator": "Miền Tây",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 23 Lý Tự Trọng, Q1, ...",
+        "newContent": "23 Lý Tự Trọng, Q1, HCM"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "11:20:44",
+        "operator": "Miền Tây",
+        "action": "Cập nhật COD",
+        "oldContent": "400.000 đ",
+        "newContent": "450.000 đ"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "08:55:30",
+        "operator": "Miền Tây",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "10:42:18",
+        "operator": "Miền Tây",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "10:39:02",
+        "operator": "Miền Tây",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD009",
+    "shopId": "SHP003",
+    "trackingCode": "GHN00223458",
+    "senderName": "Hương Thơm",
+    "senderPhone": "0903333333",
+    "receiverName": "Bùi Inh",
+    "receiverPhone": "0989000111",
+    "receiverAddress": "67 Phan Đăng Lưu, Bình Thạnh, HCM",
+    "weight": 400,
+    "cod": 220000,
+    "fee": 22000,
+    "status": "delivered",
+    "createdAt": "2024-04-04",
+    "statusHistory": [
+      {
+        "date": "2024-04-07",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 67 Phan Đăng Lưu, Bình Thạnh, HCM",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 67 Phan Đăng Lưu, Bình Thạnh, HCM",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Chờ lấy hàng",
+        "detail": "12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-07",
+        "time": "15:01:12",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "09:30:55",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "14:05:09",
+        "operator": "Hương Thơm",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 67 Phan Đăng Lưu, Bì...",
+        "newContent": "67 Phan Đăng Lưu, Bình Thạnh, HCM"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "11:20:44",
+        "operator": "Hương Thơm",
+        "action": "Cập nhật COD",
+        "oldContent": "170.000 đ",
+        "newContent": "220.000 đ"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "08:55:30",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "10:42:18",
+        "operator": "Hương Thơm",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "10:39:02",
+        "operator": "Hương Thơm",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD010",
+    "shopId": "SHP002",
+    "trackingCode": "GHN00123458",
+    "senderName": "Thành Công",
+    "senderPhone": "0902222222",
+    "receiverName": "Cao Kim",
+    "receiverPhone": "0990111222",
+    "receiverAddress": "90 Bà Triệu, Hà Nội",
+    "weight": 3000,
+    "cod": 1250000,
+    "fee": 45000,
+    "status": "in_transit",
+    "createdAt": "2024-04-05",
+    "statusHistory": [
+      {
+        "date": "2024-04-07",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 90 Bà Triệu, Hà Nội",
+        "time": "09:45"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "time": "06:20"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "22:55"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc",
+        "time": "13:40"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 45 Bạch Mai, Hà Nội",
+        "time": "09:10"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Chờ lấy hàng",
+        "detail": "45 Bạch Mai, Hà Nội",
+        "time": "09:15"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-07",
+        "time": "09:30:55",
+        "operator": "Thành Công",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "14:05:09",
+        "operator": "Thành Công",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 90 Bà Triệu, Hà Nội...",
+        "newContent": "90 Bà Triệu, Hà Nội"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "11:20:44",
+        "operator": "Thành Công",
+        "action": "Cập nhật COD",
+        "oldContent": "1.200.000 đ",
+        "newContent": "1.250.000 đ"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "08:55:30",
+        "operator": "Thành Công",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:42:18",
+        "operator": "Thành Công",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:39:02",
+        "operator": "Thành Công",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD011",
+    "shopId": "SHP001",
+    "trackingCode": "GHN00123459",
+    "senderName": "Minh Anh",
+    "senderPhone": "0901111111",
+    "receiverName": "Phan Long",
+    "receiverPhone": "0901122334",
+    "receiverAddress": "33 Hàng Bài, Hoàn Kiếm, HN",
+    "weight": 700,
+    "cod": 310000,
+    "fee": 24000,
+    "status": "delivered",
+    "createdAt": "2024-04-06",
+    "statusHistory": [
+      {
+        "date": "2024-04-09",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 33 Hàng Bài, Hoàn Kiếm, HN",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 33 Hàng Bài, Hoàn Kiếm, HN",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Chờ lấy hàng",
+        "detail": "7 Thành Thái, Q10, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-09",
+        "time": "15:01:12",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "09:30:55",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "14:05:09",
+        "operator": "Minh Anh",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 33 Hàng Bài, Hoàn Ki...",
+        "newContent": "33 Hàng Bài, Hoàn Kiếm, HN"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "11:20:44",
+        "operator": "Minh Anh",
+        "action": "Cập nhật COD",
+        "oldContent": "260.000 đ",
+        "newContent": "310.000 đ"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "08:55:30",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:42:18",
+        "operator": "Minh Anh",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD012",
+    "shopId": "SHP002",
+    "trackingCode": "GHN00123460",
+    "senderName": "Thành Công",
+    "senderPhone": "0902222222",
+    "receiverName": "Đinh Mai",
+    "receiverPhone": "0902233445",
+    "receiverAddress": "14 Láng Hạ, Đống Đa, HN",
+    "weight": 1800,
+    "cod": 750000,
+    "fee": 32000,
+    "status": "pending",
+    "createdAt": "2024-04-06",
+    "statusHistory": [
+      {
+        "date": "2024-04-06",
+        "status": "Chờ lấy hàng",
+        "detail": "45 Bạch Mai, Hà Nội",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-07",
+        "time": "08:55:30",
+        "operator": "Thành Công",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:42:18",
+        "operator": "Thành Công",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:39:02",
+        "operator": "Thành Công",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD013",
+    "shopId": "SHP003",
+    "trackingCode": "GHN00223459",
+    "senderName": "Hương Thơm",
+    "senderPhone": "0903333333",
+    "receiverName": "Trịnh Nam",
+    "receiverPhone": "0903344556",
+    "receiverAddress": "102 Nguyễn Thái Bình, Q1, HCM",
+    "weight": 250,
+    "cod": 95000,
+    "fee": 18000,
+    "status": "delivered",
+    "createdAt": "2024-04-06",
+    "statusHistory": [
+      {
+        "date": "2024-04-09",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 102 Nguyễn Thái Bình, Q1, HCM",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 102 Nguyễn Thái Bình, Q1, HCM",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Chờ lấy hàng",
+        "detail": "12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-09",
+        "time": "15:01:12",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "09:30:55",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "14:05:09",
+        "operator": "Hương Thơm",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 102 Nguyễn Thái Bình...",
+        "newContent": "102 Nguyễn Thái Bình, Q1, HCM"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "11:20:44",
+        "operator": "Hương Thơm",
+        "action": "Cập nhật COD",
+        "oldContent": "45.000 đ",
+        "newContent": "95.000 đ"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "08:55:30",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:42:18",
+        "operator": "Hương Thơm",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:39:02",
+        "operator": "Hương Thơm",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD014",
+    "shopId": "SHP004",
+    "trackingCode": "GHN00323458",
+    "senderName": "Thiên Phú",
+    "senderPhone": "0904444444",
+    "receiverName": "Lý Oanh",
+    "receiverPhone": "0904455667",
+    "receiverAddress": "77 Đinh Bộ Lĩnh, Bình Thạnh, HCM",
+    "weight": 1100,
+    "cod": 480000,
+    "fee": 28000,
+    "status": "delivered",
+    "createdAt": "2024-04-07",
+    "statusHistory": [
+      {
+        "date": "2024-04-10",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 77 Đinh Bộ Lĩnh, Bình Thạnh, HCM",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 77 Đinh Bộ Lĩnh, Bình Thạnh, HCM",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Chờ lấy hàng",
+        "detail": "88 Lê Hồng Phong, Q5, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-10",
+        "time": "15:01:12",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "09:30:55",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "14:05:09",
+        "operator": "Thiên Phú",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 77 Đinh Bộ Lĩnh, Bìn...",
+        "newContent": "77 Đinh Bộ Lĩnh, Bình Thạnh, HCM"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "11:20:44",
+        "operator": "Thiên Phú",
+        "action": "Cập nhật COD",
+        "oldContent": "430.000 đ",
+        "newContent": "480.000 đ"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "08:55:30",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "10:42:18",
+        "operator": "Thiên Phú",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "10:39:02",
+        "operator": "Thiên Phú",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD015",
+    "shopId": "SHP008",
+    "trackingCode": "GHN00523457",
+    "senderName": "Miền Tây",
+    "senderPhone": "0908888888",
+    "receiverName": "Kiều Phúc",
+    "receiverPhone": "0905566778",
+    "receiverAddress": "55 Hùng Vương, Ninh Kiều, CT",
+    "weight": 3500,
+    "cod": 680000,
+    "fee": 40000,
+    "status": "in_transit",
+    "createdAt": "2024-04-07",
+    "statusHistory": [
+      {
+        "date": "2024-04-09",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 55 Hùng Vương, Ninh Kiều, CT",
+        "time": "09:45"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "time": "06:20"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "22:55"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc",
+        "time": "13:40"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
+        "time": "09:10"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Chờ lấy hàng",
+        "detail": "10 Hùng Vương, CT",
+        "time": "09:15"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-09",
+        "time": "09:30:55",
+        "operator": "Miền Tây",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "14:05:09",
+        "operator": "Miền Tây",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 55 Hùng Vương, Ninh ...",
+        "newContent": "55 Hùng Vương, Ninh Kiều, CT"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "11:20:44",
+        "operator": "Miền Tây",
+        "action": "Cập nhật COD",
+        "oldContent": "630.000 đ",
+        "newContent": "680.000 đ"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "08:55:30",
+        "operator": "Miền Tây",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "10:42:18",
+        "operator": "Miền Tây",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "10:39:02",
+        "operator": "Miền Tây",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD016",
+    "shopId": "SHP010",
+    "trackingCode": "GHN00623456",
+    "senderName": "Hải Sản HP",
+    "senderPhone": "0910101010",
+    "receiverName": "Quách Rồng",
+    "receiverPhone": "0906677889",
+    "receiverAddress": "22 Lê Lai, Hồng Bàng, HP",
+    "weight": 5000,
+    "cod": 320000,
+    "fee": 55000,
+    "status": "delivered",
+    "createdAt": "2024-04-05",
+    "statusHistory": [
+      {
+        "date": "2024-04-08",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 22 Lê Lai, Hồng Bàng, HP",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 22 Lê Lai, Hồng Bàng, HP",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 18 Lê Lai, HP",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Chờ lấy hàng",
+        "detail": "18 Lê Lai, HP",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-08",
+        "time": "15:01:12",
+        "operator": "Hải Sản HP",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "09:30:55",
+        "operator": "Hải Sản HP",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "14:05:09",
+        "operator": "Hải Sản HP",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 22 Lê Lai, Hồng Bàng...",
+        "newContent": "22 Lê Lai, Hồng Bàng, HP"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "11:20:44",
+        "operator": "Hải Sản HP",
+        "action": "Cập nhật COD",
+        "oldContent": "270.000 đ",
+        "newContent": "320.000 đ"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "08:55:30",
+        "operator": "Hải Sản HP",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:42:18",
+        "operator": "Hải Sản HP",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:39:02",
+        "operator": "Hải Sản HP",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD017",
+    "shopId": "SHP013",
+    "trackingCode": "GHN00723456",
+    "senderName": "Hải Sản VT",
+    "senderPhone": "0913131313",
+    "receiverName": "Sơn Tùng",
+    "receiverPhone": "0907788990",
+    "receiverAddress": "8 Nguyễn Ái Quốc, Biên Hòa, ĐN",
+    "weight": 4000,
+    "cod": 560000,
+    "fee": 48000,
+    "status": "in_transit",
+    "createdAt": "2024-04-07",
+    "statusHistory": [
+      {
+        "date": "2024-04-09",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 8 Nguyễn Ái Quốc, Biên Hòa, ĐN",
+        "time": "09:45"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "time": "06:20"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "22:55"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc",
+        "time": "13:40"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 20 Nguyễn Ái Quốc, ĐN",
+        "time": "09:10"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Chờ lấy hàng",
+        "detail": "20 Nguyễn Ái Quốc, ĐN",
+        "time": "09:15"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-09",
+        "time": "09:30:55",
+        "operator": "Hải Sản VT",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "14:05:09",
+        "operator": "Hải Sản VT",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 8 Nguyễn Ái Quốc, Bi...",
+        "newContent": "8 Nguyễn Ái Quốc, Biên Hòa, ĐN"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "11:20:44",
+        "operator": "Hải Sản VT",
+        "action": "Cập nhật COD",
+        "oldContent": "510.000 đ",
+        "newContent": "560.000 đ"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "08:55:30",
+        "operator": "Hải Sản VT",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "10:42:18",
+        "operator": "Hải Sản VT",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "10:39:02",
+        "operator": "Hải Sản VT",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD018",
+    "shopId": "SHP006",
+    "trackingCode": "GHN00423457",
+    "senderName": "Café HĐN",
+    "senderPhone": "0906666666",
+    "receiverName": "Thu Uyên",
+    "receiverPhone": "0908899001",
+    "receiverAddress": "33 Hải Phòng, Hải Châu, ĐN",
+    "weight": 1000,
+    "cod": 250000,
+    "fee": 26000,
+    "status": "delivered",
+    "createdAt": "2024-04-06",
+    "statusHistory": [
+      {
+        "date": "2024-04-09",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 33 Hải Phòng, Hải Châu, ĐN",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 33 Hải Phòng, Hải Châu, ĐN",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 15 Nguyễn Văn Linh, ĐN",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Chờ lấy hàng",
+        "detail": "15 Nguyễn Văn Linh, ĐN",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-09",
+        "time": "15:01:12",
+        "operator": "Café HĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "09:30:55",
+        "operator": "Café HĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "14:05:09",
+        "operator": "Café HĐN",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 33 Hải Phòng, Hải Ch...",
+        "newContent": "33 Hải Phòng, Hải Châu, ĐN"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "11:20:44",
+        "operator": "Café HĐN",
+        "action": "Cập nhật COD",
+        "oldContent": "200.000 đ",
+        "newContent": "250.000 đ"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "08:55:30",
+        "operator": "Café HĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:42:18",
+        "operator": "Café HĐN",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:39:02",
+        "operator": "Café HĐN",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD019",
+    "shopId": "SHP009",
+    "trackingCode": "GHN00823456",
+    "senderName": "Nông Sản CT",
+    "senderPhone": "0909999999",
+    "receiverName": "Văn Vinh",
+    "receiverPhone": "0909900112",
+    "receiverAddress": "11 Hùng Vương, Ninh Kiều, CT",
+    "weight": 6000,
+    "cod": 200000,
+    "fee": 58000,
+    "status": "delivered",
+    "createdAt": "2024-04-04",
+    "statusHistory": [
+      {
+        "date": "2024-04-07",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 11 Hùng Vương, Ninh Kiều, CT",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 11 Hùng Vương, Ninh Kiều, CT",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 5 Lý Thái Tổ, CT",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Chờ lấy hàng",
+        "detail": "5 Lý Thái Tổ, CT",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-07",
+        "time": "15:01:12",
+        "operator": "Nông Sản CT",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "09:30:55",
+        "operator": "Nông Sản CT",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "14:05:09",
+        "operator": "Nông Sản CT",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 11 Hùng Vương, Ninh ...",
+        "newContent": "11 Hùng Vương, Ninh Kiều, CT"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "11:20:44",
+        "operator": "Nông Sản CT",
+        "action": "Cập nhật COD",
+        "oldContent": "150.000 đ",
+        "newContent": "200.000 đ"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "08:55:30",
+        "operator": "Nông Sản CT",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "10:42:18",
+        "operator": "Nông Sản CT",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "10:39:02",
+        "operator": "Nông Sản CT",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD020",
+    "shopId": "SHP011",
+    "trackingCode": "GHN00923456",
+    "senderName": "Souvenir NT",
+    "senderPhone": "0911111112",
+    "receiverName": "Xuân Yến",
+    "receiverPhone": "0910011223",
+    "receiverAddress": "44 Trần Phú, Lộc Thọ, NT",
+    "weight": 800,
+    "cod": 185000,
+    "fee": 25000,
+    "status": "pending",
+    "createdAt": "2024-04-08",
+    "statusHistory": [
+      {
+        "date": "2024-04-08",
+        "status": "Chờ lấy hàng",
+        "detail": "44 Trần Phú, NT",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-09",
+        "time": "08:55:30",
+        "operator": "Souvenir NT",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:42:18",
+        "operator": "Souvenir NT",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Souvenir NT",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD021",
+    "shopId": "SHP012",
+    "trackingCode": "GHN01023456",
+    "senderName": "Áo Dài Huế",
+    "senderPhone": "0912121212",
+    "receiverName": "Ái Châu",
+    "receiverPhone": "0911122334",
+    "receiverAddress": "78 Nguyễn Huệ, Vĩnh Ninh, Huế",
+    "weight": 600,
+    "cod": 850000,
+    "fee": 24000,
+    "status": "delivered",
+    "createdAt": "2024-04-05",
+    "statusHistory": [
+      {
+        "date": "2024-04-08",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 78 Nguyễn Huệ, Vĩnh Ninh, Huế",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 78 Nguyễn Huệ, Vĩnh Ninh, Huế",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 78 Nguyễn Huệ, Huế",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Chờ lấy hàng",
+        "detail": "78 Nguyễn Huệ, Huế",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-08",
+        "time": "15:01:12",
+        "operator": "Áo Dài Huế",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "09:30:55",
+        "operator": "Áo Dài Huế",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "14:05:09",
+        "operator": "Áo Dài Huế",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 78 Nguyễn Huệ, Vĩnh ...",
+        "newContent": "78 Nguyễn Huệ, Vĩnh Ninh, Huế"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "11:20:44",
+        "operator": "Áo Dài Huế",
+        "action": "Cập nhật COD",
+        "oldContent": "800.000 đ",
+        "newContent": "850.000 đ"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "08:55:30",
+        "operator": "Áo Dài Huế",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:42:18",
+        "operator": "Áo Dài Huế",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "10:39:02",
+        "operator": "Áo Dài Huế",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD022",
+    "shopId": "SHP014",
+    "trackingCode": "GHN01123456",
+    "senderName": "Nội Thất ĐN",
+    "senderPhone": "0914141414",
+    "receiverName": "Bảo Dương",
+    "receiverPhone": "0912233445",
+    "receiverAddress": "55 Đinh Tiên Hoàng, Biên Hòa",
+    "weight": 15000,
+    "cod": 3200000,
+    "fee": 120000,
+    "status": "in_transit",
+    "createdAt": "2024-04-07",
+    "statusHistory": [
+      {
+        "date": "2024-04-09",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 55 Đinh Tiên Hoàng, Biên Hòa",
+        "time": "09:45"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "time": "06:20"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "22:55"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc",
+        "time": "13:40"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 55 Đinh Tiên Hoàng, BH",
+        "time": "09:10"
+      },
+      {
+        "date": "2024-04-07",
+        "status": "Chờ lấy hàng",
+        "detail": "55 Đinh Tiên Hoàng, BH",
+        "time": "09:15"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-09",
+        "time": "09:30:55",
+        "operator": "Nội Thất ĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "14:05:09",
+        "operator": "Nội Thất ĐN",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 55 Đinh Tiên Hoàng, ...",
+        "newContent": "55 Đinh Tiên Hoàng, Biên Hòa"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "11:20:44",
+        "operator": "Nội Thất ĐN",
+        "action": "Cập nhật COD",
+        "oldContent": "3.150.000 đ",
+        "newContent": "3.200.000 đ"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "08:55:30",
+        "operator": "Nội Thất ĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "10:42:18",
+        "operator": "Nội Thất ĐN",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "10:39:02",
+        "operator": "Nội Thất ĐN",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD023",
+    "shopId": "SHP001",
+    "trackingCode": "GHN00123461",
+    "senderName": "Minh Anh",
+    "senderPhone": "0901111111",
+    "receiverName": "Cẩm Lai",
+    "receiverPhone": "0913344556",
+    "receiverAddress": "19 Khâm Thiên, Đống Đa, HN",
+    "weight": 400,
+    "cod": 175000,
+    "fee": 21000,
+    "status": "failed",
+    "createdAt": "2024-04-08",
+    "statusHistory": [
+      {
+        "date": "2024-04-12",
+        "status": "Chuyển hoàn thành công",
+        "detail": "Kiện hàng đã hoàn trả về 7 Thành Thái, Q10, HCM",
+        "time": "11:30"
+      },
+      {
+        "date": "2024-04-11",
+        "status": "Đang chuyển hoàn",
+        "detail": "Kiện hàng đang trên đường hoàn về kho gốc",
+        "time": "08:00"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Chờ xác nhận giao lại",
+        "detail": "Đã liên hệ người gửi — chờ xác nhận giao lại hoặc hoàn hàng",
+        "time": "15:05"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Giao hàng không thành công",
+        "detail": "Không giao được — người nhận không có ở 19 Khâm Thiên, Đống Đa, HN",
+        "time": "10:42"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 19 Khâm Thiên, Đống Đa, HN",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đến bưu cục giao cuối",
+        "time": "18:00"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Chờ lấy hàng",
+        "detail": "7 Thành Thái, Q10, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-11",
+        "time": "16:44:20",
+        "operator": "Minh Anh",
+        "action": "Xác nhận hoàn hàng",
+        "oldContent": "-",
+        "newContent": "Đồng ý hoàn hàng"
+      },
+      {
+        "date": "2024-04-11",
+        "time": "09:12:07",
+        "operator": "Minh Anh",
+        "action": "Yêu cầu giao lại",
+        "oldContent": "-",
+        "newContent": "Giao lại lần 2"
+      },
+      {
+        "date": "2024-04-10",
+        "time": "10:50:33",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "14:05:09",
+        "operator": "Minh Anh",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 19 Khâm Thiên, Đống ...",
+        "newContent": "19 Khâm Thiên, Đống Đa, HN"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "11:20:44",
+        "operator": "Minh Anh",
+        "action": "Cập nhật COD",
+        "oldContent": "125.000 đ",
+        "newContent": "175.000 đ"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "08:55:30",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:42:18",
+        "operator": "Minh Anh",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD024",
+    "shopId": "SHP002",
+    "trackingCode": "GHN00123462",
+    "senderName": "Thành Công",
+    "senderPhone": "0902222222",
+    "receiverName": "Đình Mạnh",
+    "receiverPhone": "0914455667",
+    "receiverAddress": "7 Tôn Đức Thắng, Đống Đa, HN",
+    "weight": 2200,
+    "cod": 980000,
+    "fee": 36000,
+    "status": "delivered",
+    "createdAt": "2024-04-08",
+    "statusHistory": [
+      {
+        "date": "2024-04-11",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 7 Tôn Đức Thắng, Đống Đa, HN",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-11",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 7 Tôn Đức Thắng, Đống Đa, HN",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 45 Bạch Mai, Hà Nội",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Chờ lấy hàng",
+        "detail": "45 Bạch Mai, Hà Nội",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-11",
+        "time": "15:01:12",
+        "operator": "Thành Công",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-10",
+        "time": "09:30:55",
+        "operator": "Thành Công",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "14:05:09",
+        "operator": "Thành Công",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 7 Tôn Đức Thắng, Đốn...",
+        "newContent": "7 Tôn Đức Thắng, Đống Đa, HN"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "11:20:44",
+        "operator": "Thành Công",
+        "action": "Cập nhật COD",
+        "oldContent": "930.000 đ",
+        "newContent": "980.000 đ"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "08:55:30",
+        "operator": "Thành Công",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:42:18",
+        "operator": "Thành Công",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Thành Công",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD025",
+    "shopId": "SHP005",
+    "trackingCode": "GHN00423458",
+    "senderName": "Bảo An",
+    "senderPhone": "0905555555",
+    "receiverName": "Gia Khánh",
+    "receiverPhone": "0915566778",
+    "receiverAddress": "66 Nguyễn Trãi, Q1, HCM",
+    "weight": 5000,
+    "cod": 1500000,
+    "fee": 55000,
+    "status": "delivered",
+    "createdAt": "2024-04-03",
+    "statusHistory": [
+      {
+        "date": "2024-04-06",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 66 Nguyễn Trãi, Q1, HCM",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-06",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 66 Nguyễn Trãi, Q1, HCM",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-05",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-04",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 33 Đinh Tiên Hoàng, Q1, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-03",
+        "status": "Chờ lấy hàng",
+        "detail": "33 Đinh Tiên Hoàng, Q1, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-06",
+        "time": "15:01:12",
+        "operator": "Bảo An",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-05",
+        "time": "09:30:55",
+        "operator": "Bảo An",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "14:05:09",
+        "operator": "Bảo An",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 66 Nguyễn Trãi, Q1, ...",
+        "newContent": "66 Nguyễn Trãi, Q1, HCM"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "11:20:44",
+        "operator": "Bảo An",
+        "action": "Cập nhật COD",
+        "oldContent": "1.450.000 đ",
+        "newContent": "1.500.000 đ"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "08:55:30",
+        "operator": "Bảo An",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "10:42:18",
+        "operator": "Bảo An",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "10:39:02",
+        "operator": "Bảo An",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD026",
+    "shopId": "SHP007",
+    "trackingCode": "GHN01223456",
+    "senderName": "Hội An Craft",
+    "senderPhone": "0907777777",
+    "receiverName": "Hiếu Nghiêm",
+    "receiverPhone": "0916677889",
+    "receiverAddress": "30 Lý Thái Tổ, Đà Nẵng",
+    "weight": 1500,
+    "cod": 420000,
+    "fee": 30000,
+    "status": "in_transit",
+    "createdAt": "2024-04-08",
+    "statusHistory": [
+      {
+        "date": "2024-04-10",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 30 Lý Thái Tổ, Đà Nẵng",
+        "time": "09:45"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "time": "06:20"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "22:55"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc",
+        "time": "13:40"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 22 Trần Phú, Hội An",
+        "time": "09:10"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Chờ lấy hàng",
+        "detail": "22 Trần Phú, Hội An",
+        "time": "09:15"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-10",
+        "time": "09:30:55",
+        "operator": "Hội An Craft",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "14:05:09",
+        "operator": "Hội An Craft",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 30 Lý Thái Tổ, Đà Nẵ...",
+        "newContent": "30 Lý Thái Tổ, Đà Nẵng"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "11:20:44",
+        "operator": "Hội An Craft",
+        "action": "Cập nhật COD",
+        "oldContent": "370.000 đ",
+        "newContent": "420.000 đ"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "08:55:30",
+        "operator": "Hội An Craft",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:42:18",
+        "operator": "Hội An Craft",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Hội An Craft",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD027",
+    "shopId": "SHP003",
+    "trackingCode": "GHN00223460",
+    "senderName": "Hương Thơm",
+    "senderPhone": "0903333333",
+    "receiverName": "Ông Phát",
+    "receiverPhone": "0917788990",
+    "receiverAddress": "122 Nguyễn Công Trứ, Q1, HCM",
+    "weight": 350,
+    "cod": 156000,
+    "fee": 20000,
+    "status": "delivered",
+    "createdAt": "2024-04-08",
+    "statusHistory": [
+      {
+        "date": "2024-04-11",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 122 Nguyễn Công Trứ, Q1, HCM",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-11",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 122 Nguyễn Công Trứ, Q1, HCM",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Chờ lấy hàng",
+        "detail": "12 Nguyễn Trãi, Q1, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-11",
+        "time": "15:01:12",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-10",
+        "time": "09:30:55",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "14:05:09",
+        "operator": "Hương Thơm",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 122 Nguyễn Công Trứ,...",
+        "newContent": "122 Nguyễn Công Trứ, Q1, HCM"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "11:20:44",
+        "operator": "Hương Thơm",
+        "action": "Cập nhật COD",
+        "oldContent": "106.000 đ",
+        "newContent": "156.000 đ"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "08:55:30",
+        "operator": "Hương Thơm",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:42:18",
+        "operator": "Hương Thơm",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Hương Thơm",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD028",
+    "shopId": "SHP015",
+    "trackingCode": "GHN01323456",
+    "senderName": "Cây Cảnh ĐN",
+    "senderPhone": "0915151515",
+    "receiverName": "Quý Phúc",
+    "receiverPhone": "0918899001",
+    "receiverAddress": "12 Nguyễn Ái Quốc, Biên Hòa",
+    "weight": 8000,
+    "cod": 450000,
+    "fee": 70000,
+    "status": "pending",
+    "createdAt": "2024-04-08",
+    "statusHistory": [
+      {
+        "date": "2024-04-08",
+        "status": "Chờ lấy hàng",
+        "detail": "12 Nguyễn Ái Quốc, BH",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-09",
+        "time": "08:55:30",
+        "operator": "Cây Cảnh ĐN",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:42:18",
+        "operator": "Cây Cảnh ĐN",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Cây Cảnh ĐN",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD029",
+    "shopId": "SHP004",
+    "trackingCode": "GHN00323459",
+    "senderName": "Thiên Phú",
+    "senderPhone": "0904444444",
+    "receiverName": "Rạng Đông",
+    "receiverPhone": "0919900112",
+    "receiverAddress": "44 Nguyễn Văn Trỗi, Phú Nhuận, HCM",
+    "weight": 900,
+    "cod": 390000,
+    "fee": 26000,
+    "status": "delivered",
+    "createdAt": "2024-04-08",
+    "statusHistory": [
+      {
+        "date": "2024-04-11",
+        "status": "Giao hàng thành công",
+        "detail": "Giao thành công đến 44 Nguyễn Văn Trỗi, Phú Nhuận, HCM",
+        "time": "14:22"
+      },
+      {
+        "date": "2024-04-11",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 44 Nguyễn Văn Trỗi, Phú Nhuận, HCM",
+        "time": "08:50"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "time": "17:30"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Rời kho trung chuyển",
+        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "time": "07:05"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "23:15"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "time": "14:10"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
+        "time": "10:38"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Chờ lấy hàng",
+        "detail": "88 Lê Hồng Phong, Q5, HCM",
+        "time": "10:39"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-11",
+        "time": "15:01:12",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-10",
+        "time": "09:30:55",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "14:05:09",
+        "operator": "Thiên Phú",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 44 Nguyễn Văn Trỗi, ...",
+        "newContent": "44 Nguyễn Văn Trỗi, Phú Nhuận, HCM"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "11:20:44",
+        "operator": "Thiên Phú",
+        "action": "Cập nhật COD",
+        "oldContent": "340.000 đ",
+        "newContent": "390.000 đ"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "08:55:30",
+        "operator": "Thiên Phú",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:42:18",
+        "operator": "Thiên Phú",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Thiên Phú",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  },
+  {
+    "id": "ORD030",
+    "shopId": "SHP008",
+    "trackingCode": "GHN00523458",
+    "senderName": "Miền Tây",
+    "senderPhone": "0908888888",
+    "receiverName": "Sa Mạc",
+    "receiverPhone": "0920011223",
+    "receiverAddress": "88 Trần Hưng Đạo, Q5, HCM",
+    "weight": 4500,
+    "cod": 580000,
+    "fee": 50000,
+    "status": "in_transit",
+    "createdAt": "2024-04-08",
+    "statusHistory": [
+      {
+        "date": "2024-04-10",
+        "status": "Đang giao hàng",
+        "detail": "Shipper đang giao hàng đến 88 Trần Hưng Đạo, Q5, HCM",
+        "time": "09:45"
+      },
+      {
+        "date": "2024-04-10",
+        "status": "Đến bưu cục giao hàng",
+        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "time": "06:20"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đến kho trung chuyển",
+        "detail": "Kiện hàng đến kho trung chuyển GHN",
+        "time": "22:55"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Rời kho gốc",
+        "detail": "Kiện hàng rời kho gốc",
+        "time": "13:40"
+      },
+      {
+        "date": "2024-04-09",
+        "status": "Đã lấy hàng",
+        "detail": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
+        "time": "09:10"
+      },
+      {
+        "date": "2024-04-08",
+        "status": "Chờ lấy hàng",
+        "detail": "10 Hùng Vương, CT",
+        "time": "09:15"
+      }
+    ],
+    "actionHistory": [
+      {
+        "date": "2024-04-10",
+        "time": "09:30:55",
+        "operator": "Miền Tây",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "14:05:09",
+        "operator": "Miền Tây",
+        "action": "Cập nhật địa chỉ giao hàng",
+        "oldContent": "Địa chỉ cũ — 88 Trần Hưng Đạo, Q5...",
+        "newContent": "88 Trần Hưng Đạo, Q5, HCM"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "11:20:44",
+        "operator": "Miền Tây",
+        "action": "Cập nhật COD",
+        "oldContent": "530.000 đ",
+        "newContent": "580.000 đ"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "08:55:30",
+        "operator": "Miền Tây",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:42:18",
+        "operator": "Miền Tây",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Miền Tây",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ]
+  }
 ]

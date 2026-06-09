@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ConfigProvider } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
@@ -907,9 +907,472 @@ function THead({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: 
   )
 }
 
+// ── Order types with history ──────────────────────────────────
+type StatusHistoryItem = { date: string; status: string; detail: string; time: string }
+type ActionHistoryItem = { date: string; time: string; operator: string; action: string; oldContent: string; newContent: string }
+type Order = typeof myOrders[0] & {
+  statusHistory?: StatusHistoryItem[]
+  actionHistory?: ActionHistoryItem[]
+}
+
+// ── OrderDetailDrawer ─────────────────────────────────────────
+function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open: boolean; onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<'info' | 'status' | 'action'>('info')
+
+  useEffect(() => { if (order) setActiveTab('info') }, [order?.id])
+
+  const statusHistory: StatusHistoryItem[] = order?.statusHistory ?? []
+  const actionHistory: ActionHistoryItem[] = order?.actionHistory ?? []
+
+  const statusByDate = statusHistory.reduce<Record<string, StatusHistoryItem[]>>((acc, item) => {
+    if (!acc[item.date]) acc[item.date] = []
+    acc[item.date].push(item)
+    return acc
+  }, {})
+  const statusDates = Object.keys(statusByDate).sort((a, b) => b.localeCompare(a))
+
+  const actionByDate = actionHistory.reduce<Record<string, ActionHistoryItem[]>>((acc, item) => {
+    if (!acc[item.date]) acc[item.date] = []
+    acc[item.date].push(item)
+    return acc
+  }, {})
+  const actionDates = Object.keys(actionByDate).sort((a, b) => b.localeCompare(a))
+
+  const latestStatus = statusHistory[0]?.status ?? ''
+
+  function formatDateHeader(dateStr: string) {
+    return new Date(dateStr).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
+  if (!order) return null
+
+  const card: React.CSSProperties = {
+    background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+    display: 'flex', flexDirection: 'column', width: '100%',
+  }
+
+  function CardHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
+    return (
+      <>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+          {icon}
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label}</span>
+        </div>
+        <div style={{ height: 1, background: C_BORDER }} />
+      </>
+    )
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 200,
+          opacity: open ? 1 : 0, pointerEvents: open ? 'auto' : 'none',
+          transition: 'opacity 0.25s',
+        }}
+      />
+
+      {/* Drawer panel */}
+      <div style={{
+        position: 'fixed', top: 0, right: 0,
+        width: 980, height: '100vh',
+        background: '#fff', boxShadow: '0 0 20px rgba(0,0,0,0.2)',
+        zIndex: 201, display: 'flex', flexDirection: 'column',
+        transform: open ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+      }}>
+
+        {/* ── Header ─────────────────────────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{order.trackingCode}</span>
+            <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px', whiteSpace: 'nowrap' }}>Tạo lúc {order.createdAt}</span>
+          </div>
+          {/* Tab switcher */}
+          <div style={{ display: 'flex', gap: 2, background: '#F3F4F6', borderRadius: 8, padding: 3, marginRight: 12, flexShrink: 0 }}>
+            {([
+              { key: 'info' as const, label: 'Thông tin đơn' },
+              { key: 'status' as const, label: 'Lịch sử trạng thái' },
+              { key: 'action' as const, label: 'Lịch sử thao tác' },
+            ]).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                style={{
+                  padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                  fontSize: 13, fontWeight: activeTab === key ? 600 : 400, lineHeight: '20px', whiteSpace: 'nowrap',
+                  background: activeTab === key ? '#fff' : 'transparent',
+                  color: activeTab === key ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                  boxShadow: activeTab === key ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+            <IcX />
+          </button>
+        </div>
+        <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+        {/* ── Body: info tab (gray bg, 2-col) ──────────────────── */}
+        {activeTab === 'info' && <div style={{
+          flex: 1, display: 'flex', gap: 6, padding: 6,
+          background: '#F3F4F6', overflow: 'hidden',
+          alignItems: 'flex-start',
+        }}>
+
+          {/* ════ LEFT COLUMN ════════════════════════════════ */}
+          <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
+
+            {/* ── Bên gửi card ── */}
+            <div style={card}>
+              <CardHeader icon={<IcStore />} label="Bên gửi" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', fontWeight: 600 }}>
+                    {order.senderName} - {order.senderPhone}
+                  </div>
+                  <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+                    268 Lý Thường Kiệt, Phường 14, Quận 10, Hồ Chí Minh
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 40, padding: '6px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                      border: `2px solid ${C_ACTION}`, background: C_ACTION,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />
+                    </div>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Lấy hàng tận nơi</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Bên nhận card ── */}
+            <div style={card}>
+              <CardHeader icon={<IcUser />} label="Bên nhận" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <div style={{ flex: 1, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px' }}>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{order.receiverName}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 200, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', paddingRight: 70 }}>{order.receiverPhone}</span>
+                    <div style={{ position: 'absolute', right: 5, top: '50%', transform: 'translateY(-50%)', background: '#D9F7E5', height: 22, padding: '0 6px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                      <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '22px' }}>TLHH:</span>
+                      <span style={{ fontSize: 13, color: '#10B981', lineHeight: '22px' }}>0%</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px' }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{order.receiverAddress}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Sản phẩm card ── */}
+            <div style={{ ...card, flex: 1 }}>
+              <CardHeader icon={<IcCube />} label="Sản phẩm" />
+
+              <div style={{ padding: 8 }}>
+                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, overflow: 'hidden' }}>
+                  {/* Table header */}
+                  <div style={{ display: 'flex', background: '#F3F4F6' }}>
+                    <div style={{ flex: 1, minWidth: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Tên sản phẩm</span>
+                    </div>
+                    <div style={{ width: 56, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>SL: 1</span>
+                    </div>
+                    <div style={{ width: 104, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>Giá bán</span>
+                    </div>
+                    <div style={{ width: 96, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>KL / KT</span>
+                    </div>
+                  </div>
+                  {/* Data row */}
+                  <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                    <div style={{ flex: 1, minWidth: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Sản phẩm</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 56, flexShrink: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>1</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 104, flexShrink: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 96, flexShrink: 0, padding: 6, display: 'flex', flexDirection: 'column', justifyContent: 'center', fontSize: 12, color: C_TEXT_PRIMARY, lineHeight: '16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <span>{(order.weight / 1000).toFixed(1)}kg</span>
+                      <span>10x10x10cm</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+              {/* Weight & dimensions (read-only) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Khối lượng</span>
+                  <div style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, height: 32 }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', textAlign: 'right', paddingRight: 8 }}>{(order.weight / 1000).toFixed(1)}</span>
+                    <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>kg</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Kích thước</span>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 2 }}>
+                    {(['D', 'R', 'C'] as const).map((lbl) => (
+                      <div key={lbl} style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, height: 32 }}>
+                        <span style={{ flexShrink: 0, fontSize: 14, color: '#9CA3AF', lineHeight: '20px', whiteSpace: 'nowrap' }}>{lbl}:</span>
+                        <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', textAlign: 'right', padding: '0 8px' }}>10</span>
+                        <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>cm</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ paddingLeft: 84, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khối lượng quy đổi: {(order.weight / 1000).toFixed(1)}kg</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ════ RIGHT COLUMN (w-400px) ═════════════════════ */}
+          <div style={{ width: 400, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+
+            {/* ── Thông tin đơn hàng card ── */}
+            <div style={{ ...card, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, flexShrink: 0 }}>
+                <IcClipboard />
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Thông tin đơn hàng</span>
+                <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px', whiteSpace: 'nowrap' }}>Tạo lúc {order.createdAt}</span>
+              </div>
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                  <InfoRow label="Mã đơn shop">
+                    <span style={{ fontSize: 14, color: '#9CA3AF' }}>—</span>
+                  </InfoRow>
+                  <InfoRow label="COD">
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', fontWeight: 600 }}>{order.cod.toLocaleString('vi-VN')} đ</span>
+                  </InfoRow>
+                  <InfoRow label="Giảm giá">
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0 đ</span>
+                  </InfoRow>
+                  <InfoRow label="Thu ship khách hàng">
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0 đ</span>
+                  </InfoRow>
+                  <InfoRow label="Giá trị hàng">
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0 đ</span>
+                  </InfoRow>
+                  <InfoRow label="Trạng thái">
+                    <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', fontWeight: 700 }}>{latestStatus || order.status}</span>
+                  </InfoRow>
+                </div>
+
+                <div style={{ height: 1, background: C_BORDER }} />
+
+                {/* Notes & misc */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
+                  {[
+                    { label: 'Ghi chú đơn hàng',   link: 'Thêm ghi chú' },
+                    { label: 'Thanh toán',          link: 'Thanh toán Tiền mặt (Thu hộ COD)' },
+                    { label: 'Nguồn tạo',           link: 'Facebook' },
+                  ].map(({ label, link }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
+                      <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{link}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Dịch vụ card ── */}
+            <div style={{ ...card, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+                <IcTruck />
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
+                {/* Static "Shop trả ship" toggle */}
+                <div style={{ display: 'flex', gap: 1, flexShrink: 0, background: '#F3F4F6', borderRadius: 6, padding: 2 }}>
+                  <div style={{ padding: '3px 8px', borderRadius: 5, fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap', background: '#fff', color: C_TEXT_PRIMARY, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+                    Shop trả ship
+                  </div>
+                  <div style={{ padding: '3px 8px', borderRadius: 5, fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap', background: 'transparent', color: C_TEXT_SECONDARY }}>
+                    Khách trả ship
+                  </div>
+                </div>
+              </div>
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                {/* Static service row (selected) */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '8px 12px', borderRadius: 6,
+                  border: `1px solid #111827`,
+                }}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                    border: `2px solid #111827`, background: '#111827',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px' }}>Dịch vụ</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>2 shop 1 nặng 1 nhẹ</span>
+                  </div>
+                  <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px', flexShrink: 0 }}>Phí ship:</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {order.fee.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Phụ phí card ── */}
+            <div style={{ ...card, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phụ phí</span>
+              </div>
+              <div style={{ height: 1, background: C_BORDER }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {[
+                  'Phí bảo hiểm',
+                  'Phí giao trả 1 phần',
+                  'Phí giao thất bại thu tiền',
+                  'Phí thu hộ',
+                ].map((label) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', padding: '5px 10px' }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0đ</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Action card ── */}
+            <div style={{ ...card, flexShrink: 0, gap: 8, padding: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#F9FAFB', borderRadius: 6, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng phí vận chuyển</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+                    {order.fee.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng thu khách hàng</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#EF4444', lineHeight: '20px' }}>
+                    {order.cod.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                >
+                  Huỷ đơn
+                </button>
+                <button
+                  style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
+                >
+                  Cập nhật
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>}
+
+        {/* ── Body: status history tab ──────────────────────────── */}
+        {activeTab === 'status' && (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
+            {statusDates.length === 0 && (
+              <div style={{ padding: '32px 0', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>Chưa có lịch sử trạng thái</div>
+            )}
+            {statusDates.map(date => (
+              <div key={date}>
+                <div style={{ display: 'flex', background: '#F3F4F6', padding: '6px 12px', marginTop: 12, borderRadius: 4 }}>
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>{formatDateHeader(date)}</span>
+                  <span style={{ width: 300, fontSize: 13, fontWeight: 600, color: '#374151' }}>Chi tiết</span>
+                  <span style={{ width: 80, fontSize: 13, fontWeight: 600, color: '#374151', textAlign: 'right' }}>Thời gian</span>
+                </div>
+                {statusByDate[date].map((item, idx) => {
+                  const isLatest = item === statusHistory[0]
+                  return (
+                    <div key={idx} style={{ display: 'flex', padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, alignItems: 'flex-start' }}>
+                      <span style={{ flex: 1, fontSize: 14, fontWeight: isLatest ? 700 : 400, color: isLatest ? C_LINK : '#6B7280' }}>
+                        {item.status}
+                      </span>
+                      <span style={{ width: 300, fontSize: 13, color: '#374151', lineHeight: '20px' }}>{item.detail}</span>
+                      <span style={{ width: 80, fontSize: 13, color: '#6B7280', textAlign: 'right' }}>{item.time}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Body: action history tab ──────────────────────────── */}
+        {activeTab === 'action' && (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
+            <div style={{ display: 'flex', background: '#F3F4F6', padding: '6px 12px', marginTop: 0, borderRadius: 4, gap: 8 }}>
+              <span style={{ width: 90, fontSize: 13, fontWeight: 600, color: '#374151', flexShrink: 0 }}>Thời gian</span>
+              <span style={{ width: 120, fontSize: 13, fontWeight: 600, color: '#374151', flexShrink: 0 }}>Người thao tác</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>Hành động</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>Nội dung cũ</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>Nội dung sửa</span>
+            </div>
+            {actionDates.length === 0 && (
+              <div style={{ padding: '32px 0', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>Chưa có lịch sử thao tác</div>
+            )}
+            {actionDates.map(date => (
+              <div key={date}>
+                <div style={{ padding: '8px 12px', fontSize: 13, fontWeight: 700, color: '#111827', background: '#FAFAFA', borderBottom: `1px solid ${C_BORDER}` }}>
+                  {new Date(date).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric', year: 'numeric' })}
+                </div>
+                {actionByDate[date].map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 90, fontSize: 13, color: '#374151', flexShrink: 0 }}>{item.time}</span>
+                    <span style={{ width: 120, fontSize: 13, color: '#374151', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.operator}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: '#374151' }}>{item.action}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: '#6B7280' }}>{item.oldContent}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: '#6B7280' }}>{item.newContent}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
 // ── Table row ─────────────────────────────────────────────────
-type Order = typeof myOrders[0]
-function TRow({ order, checked, onToggle }: { order: Order; checked: boolean; onToggle: () => void }) {
+function TRow({ order, checked, onToggle, onSelect }: { order: Order; checked: boolean; onToggle: () => void; onSelect: () => void }) {
   const [hover, setHover] = useState(false)
   const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
   const weightKg = (order.weight / 1000).toFixed(1)
@@ -932,7 +1395,10 @@ function TRow({ order, checked, onToggle }: { order: Order; checked: boolean; on
         </div>
         {/* Mã đơn hàng */}
         <div style={{ width: 140, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '6px 8px' }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', whiteSpace: 'nowrap' }}>
+          <span
+            onClick={(e) => { e.stopPropagation(); onSelect() }}
+            style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', whiteSpace: 'nowrap', cursor: 'pointer' }}
+          >
             {order.trackingCode}
           </span>
         </div>
@@ -1083,6 +1549,8 @@ export default function ShopOrders() {
   const [pageSize, setPageSize]     = useState(50)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   const ordersByTab: Record<string, typeof myOrders> = {
     draft:         myOrders.filter((o) => o.status === 'pending'),
@@ -1215,9 +1683,10 @@ export default function ShopOrders() {
             {paginated.map((order) => (
               <TRow
                 key={order.id}
-                order={order}
+                order={order as Order}
                 checked={selected.has(order.id)}
                 onToggle={() => toggleOne(order.id)}
+                onSelect={() => { setSelectedOrder(order as Order); setDetailOpen(true) }}
               />
             ))}
             {paginated.length === 0 && (
@@ -1244,6 +1713,8 @@ export default function ShopOrders() {
       {/* Create Order Drawer */}
       <CreateOrderDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <OrderSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {/* Order Detail Drawer */}
+      <OrderDetailDrawer order={selectedOrder} open={detailOpen} onClose={() => setDetailOpen(false)} />
     </ConfigProvider>
   )
 }
