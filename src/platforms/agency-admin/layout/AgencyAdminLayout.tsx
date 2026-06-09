@@ -45,9 +45,8 @@ export default function AgencyAdminLayout() {
 
   useEffect(() => {
     if (import.meta.env.DEV) {
-      import(/* @vite-ignore */ '../../../components/HermesTracker/HermesTrackerPanel')
-        .then((m) => setHermesPanel(() => m.default))
-        .catch(() => {})
+      const p = '../../../components/HermesTracker/HermesTrackerPanel'
+      import(/* @vite-ignore */ p).then((m) => setHermesPanel(() => m.default)).catch(() => {})
     }
   }, [])
 
