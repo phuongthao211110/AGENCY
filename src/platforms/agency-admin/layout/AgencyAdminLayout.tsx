@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Avatar, ConfigProvider, Badge } from 'antd'
 import {
@@ -13,7 +13,6 @@ import {
   SettingOutlined,
   RightOutlined,
   NodeIndexOutlined,
-  RobotOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
@@ -39,17 +38,6 @@ export default function AgencyAdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed]   = useState(false)
-  const [hermesOpen, setHermesOpen] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [HermesPanel, setHermesPanel] = useState<any>(null)
-
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      import('../../../components/HermesTracker/HermesTrackerPanel')
-        .then((m) => setHermesPanel(() => m.default))
-        .catch(() => {})
-    }
-  }, [])
 
   const isActive = (key: string) => location.pathname.startsWith(key)
 
@@ -180,19 +168,6 @@ export default function AgencyAdminLayout() {
 
           <div style={{ flex: 1 }} />
 
-          {/* Hermes Tracking — dev only */}
-          {import.meta.env.DEV && (
-            <div style={{ padding: '0 16px 4px' }}>
-              <div
-                onClick={() => setHermesOpen(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '5px 8px', borderRadius: 6, cursor: 'pointer', color: '#333', fontSize: 14 }}
-              >
-                <span style={{ fontSize: 20, display: 'flex', color: '#8B5CF6' }}><RobotOutlined /></span>
-                Hermes Tracking
-              </div>
-            </div>
-          )}
-
           <div style={{ height: 1, background: COLOR_BORDER, margin: '0 16px' }} />
 
           {/* Đăng xuất */}
@@ -293,7 +268,6 @@ export default function AgencyAdminLayout() {
           </main>
         </div>
       </div>
-      {HermesPanel && <HermesPanel open={hermesOpen} onClose={() => setHermesOpen(false)} />}
     </ConfigProvider>
   )
 }

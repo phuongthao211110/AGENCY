@@ -101,6 +101,7 @@ export default function App() {
           <Route index element={<Navigate to="orders" replace />} />
         </Route>
       </Routes>
+
     </BrowserRouter>
   )
 }

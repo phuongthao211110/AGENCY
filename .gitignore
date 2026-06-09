@@ -25,8 +25,18 @@ dist-ssr
 
 # Local-only tools (không commit, không build production)
 src/components/JiraManager/
+src/components/HermesTracker/
+src/components/HermesChat/
 src/hooks/
 src/utils/
 scripts/
 .claire/
 .claude/worktrees/
+
+# Jira credentials (server-side, never commit)
+jira-config.json
+hermes-bug-prompt.md
+
+# Auto Research — local only, không deploy lên Vercel
+knowledge/baselines/     # PNG binary (lớn)
+knowledge/learning-log.json  # append-only, local
