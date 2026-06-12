@@ -19,6 +19,7 @@ type NVCSession = {
   paymentDate: string
   status: 'pending' | 'confirmed'
   note: string
+  ghnSessionCode: string
 }
 
 type ItemRecord = {
@@ -37,6 +38,7 @@ type ItemRecord = {
 type ShopSession = {
   id: string
   nvcSessionId: string
+  nvcSessionCode: string
   paymentDate: string
   totalOrders: number
   totalCOD: number
@@ -87,12 +89,15 @@ function buildShopSessions(): ShopSession[] {
   })
 
   const result: ShopSession[] = []
+  let idx = 1
   groups.forEach(({ items, session }) => {
     const totalCOD  = items.reduce((s, i) => s + i.ghnCOD, 0)
     const feeShop   = items.reduce((s, i) => s + i.systemFee, 0)
+    const datePart  = session.paymentDate.replace(/-/g, '')
     result.push({
-      id: `SHOP-${session.id}-${MY_SHOP_ID}`,
+      id: `COD_SHOP_${datePart}${String(idx++).padStart(4, '0')}_${MY_SHOP_ID}`,
       nvcSessionId: session.id,
+      nvcSessionCode: session.ghnSessionCode,
       paymentDate: session.paymentDate,
       totalOrders: items.length,
       totalCOD,
@@ -115,8 +120,8 @@ const fmtDate = (d: string) => {
 }
 
 const ITEM_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  MATCH:     { label: 'Khớp',           color: '#16A34A', bg: '#F0FDF4' },
-  MISMATCH:  { label: 'Lệch',           color: '#DC2626', bg: '#FEF2F2' },
+  MATCH:     { label: 'Đúng',           color: '#16A34A', bg: '#F0FDF4' },
+  MISMATCH:  { label: 'Sai',            color: '#DC2626', bg: '#FEF2F2' },
   NOT_FOUND: { label: 'Không tìm thấy', color: '#6B7280', bg: '#F9FAFB' },
 }
 
@@ -142,8 +147,8 @@ function TRow({ session, onView }: { session: ShopSession; onView: () => void })
       <div style={{ flex: '1 0 0', minWidth: 200, padding: '10px 8px' }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: C_LINK }}>{session.id}</span>
       </div>
-      <div style={{ flex: '0 0 120px', minWidth: 120, padding: '10px 8px' }}>
-        <span style={{ fontSize: 13, color: C_LINK }}>{session.nvcSessionId}</span>
+      <div style={{ flex: '0 0 240px', minWidth: 240, padding: '10px 8px' }}>
+        <span style={{ fontSize: 13, color: C_LINK }}>{session.nvcSessionCode}</span>
       </div>
       <div style={{ flex: '0 0 110px', minWidth: 110, padding: '10px 8px' }}>
         <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{fmtDate(session.paymentDate)}</span>
@@ -151,10 +156,10 @@ function TRow({ session, onView }: { session: ShopSession; onView: () => void })
       <div style={{ flex: '0 0 70px', minWidth: 70, padding: '10px 8px', textAlign: 'right' }}>
         <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{session.totalOrders}</span>
       </div>
-      <div style={{ flex: '0 0 130px', minWidth: 130, padding: '10px 8px', textAlign: 'right' }}>
+      <div style={{ flex: '0 0 150px', minWidth: 150, padding: '10px 8px', textAlign: 'right' }}>
         <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{fmt(session.totalCOD)}</span>
       </div>
-      <div style={{ flex: '0 0 110px', minWidth: 110, padding: '10px 8px', textAlign: 'right' }}>
+      <div style={{ flex: '0 0 160px', minWidth: 160, padding: '10px 8px', textAlign: 'right' }}>
         <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>{fmt(session.feeShop)}</span>
       </div>
       <div style={{ flex: '0 0 130px', minWidth: 130, padding: '10px 8px', textAlign: 'right' }}>
@@ -207,7 +212,7 @@ function DetailModal({ session, onClose }: { session: ShopSession; onClose: () =
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>
-              Phiên GHN: <span style={{ color: C_LINK, fontWeight: 600 }}>{session.nvcSessionId}</span>
+              Phiên GHN: <span style={{ color: C_LINK, fontWeight: 600 }}>{session.nvcSessionCode}</span>
             </span>
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>·</span>
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{fmtDate(session.paymentDate)}</span>
@@ -223,11 +228,11 @@ function DetailModal({ session, onClose }: { session: ShopSession; onClose: () =
         {/* Summary mini-cards */}
         <div style={{ display: 'flex', gap: 12, padding: '16px 24px', flexShrink: 0 }}>
           <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', border: `1px solid ${C_BORDER}`, borderRadius: 8 }}>
-            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Tổng COD</div>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Tổng COD (shop)</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(session.totalCOD)}</div>
           </div>
           <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', border: `1px solid ${C_BORDER}`, borderRadius: 8 }}>
-            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Phí ship</div>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Tổng phí DV (shop)</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(session.feeShop)}</div>
           </div>
           <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', border: `1px solid ${C_BORDER}`, borderRadius: 8 }}>
@@ -448,16 +453,16 @@ export default function ShopReconciliation() {
       {/* Table */}
       <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
         <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
-          <div style={{ minWidth: 900 }}>
+          <div style={{ minWidth: 1200 }}>
             {/* Header */}
             <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-              <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Mã phiên</div>
-              <div style={{ flex: '0 0 120px', minWidth: 120, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Phiên GHN</div>
-              <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Ngày</div>
-              <div style={{ flex: '0 0 70px', minWidth: 70, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Số đơn</div>
-              <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Tổng COD</div>
-              <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Phí ship</div>
-              <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Nhận về</div>
+              <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Mã phiên</div>
+              <div style={{ flex: '0 0 240px', minWidth: 240, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Phiên GHN</div>
+              <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Ngày</div>
+              <div style={{ flex: '0 0 70px', minWidth: 70, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right', whiteSpace: 'nowrap' }}>Số đơn</div>
+              <div style={{ flex: '0 0 150px', minWidth: 150, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right', whiteSpace: 'nowrap' }}>Tổng COD (shop)</div>
+              <div style={{ flex: '0 0 160px', minWidth: 160, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right', whiteSpace: 'nowrap' }}>Tổng phí DV (shop)</div>
+              <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right', whiteSpace: 'nowrap' }}>Nhận về</div>
               <div style={{ flex: '0 0 140px', minWidth: 140, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>Trạng thái</div>
               <div style={{ flex: '0 0 72px', minWidth: 72 }} />
             </div>

@@ -10,6 +10,7 @@ import {
   ClockCircleOutlined,
   UploadOutlined,
   CloseOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import carrierSessionsData from '../../../mock-data/carrier-reconciliation.json'
@@ -29,6 +30,11 @@ type CarrierSession = {
   fileName: string
   note: string
   createdAt: string
+  ghnSessionCode: string
+  totalReconcile: number
+  outstandingDebt: number
+  transferFee: number
+  netReceived: number
 }
 
 type ItemRecord = {
@@ -42,11 +48,17 @@ type ItemRecord = {
   ghnFee: number
   systemFee: number
   status: 'MATCH' | 'MISMATCH' | 'NOT_FOUND'
+  customerOrderCode: string
+  ghnStatus: string
+  deliveryFee: number
+  redeliveryFee: number
+  returnFee: number
 }
 
 type ShopSession = {
   id: string
   nvcSessionId: string
+  nvcSessionCode: string
   shopId: string
   shopName: string
   totalOrders: number
@@ -71,7 +83,7 @@ const C_BG_HEADER      = '#F3F4F6'
 type TabKey = 'carrier' | 'shop' | 'transfer' | 'forecast' | 'split'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'carrier',  label: 'Phiên nhà vận chuyển', icon: <FileTextOutlined /> },
+  { key: 'carrier',  label: 'Phiên GHN', icon: <FileTextOutlined /> },
   { key: 'shop',     label: 'Phiên shop',           icon: <ShopOutlined /> },
   { key: 'transfer', label: 'Chuyển khoản',         icon: <BankOutlined /> },
   { key: 'forecast', label: 'Dự trù',               icon: <BarChartOutlined /> },
@@ -119,6 +131,8 @@ function TCell({ children, width, flex = '0 0 auto', align = 'left', isHeader = 
       display: 'flex', alignItems: 'center',
       justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
       fontSize: 14,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
       color: isHeader ? C_TEXT_SECONDARY : undefined,
       background: isHeader ? C_BG_HEADER : undefined,
     }}>
@@ -174,11 +188,14 @@ function deriveShopSessions(
   })
 
   const result: ShopSession[] = []
+  let idx = 1
   groups.forEach(({ items: groupItems, session }, key) => {
     const sep     = key.indexOf('::')
     const nvcId   = key.substring(0, sep)
     const shopId  = key.substring(sep + 2)
-    const id      = `SHOP-${nvcId}-${shopId}`
+    const datePart = session.paymentDate.replace(/-/g, '')
+    const id      = `COD_SHOP_${datePart}${String(idx).padStart(4, '0')}_${shopId}`
+    idx++
     const totalCOD    = groupItems.reduce((sum, i) => sum + i.ghnCOD, 0)
     const feeShop     = groupItems.reduce((sum, i) => sum + i.systemFee, 0)
     const feeGHN      = groupItems.reduce((sum, i) => sum + i.ghnFee, 0)
@@ -187,6 +204,7 @@ function deriveShopSessions(
     result.push({
       id,
       nvcSessionId: nvcId,
+      nvcSessionCode: session.ghnSessionCode,
       shopId,
       shopName: groupItems[0].shopName,
       totalOrders: groupItems.length,
@@ -208,15 +226,23 @@ function TabCarrier({
   sessions,
   onConfirmMultiple,
   onAddSession,
+  onDeleteSession,
 }: {
   sessions: CarrierSession[]
   onConfirmMultiple: (ids: string[]) => void
   onAddSession: (session: CarrierSession) => void
+  onDeleteSession: (id: string) => void
 }) {
   const navigate = useNavigate()
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed'>('all')
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+
+  const handleDeleteSession = (id: string) => {
+    onDeleteSession(id)
+    setDeleteConfirmId(null)
+  }
 
   const total     = sessions.length
   const confirmed = sessions.filter(s => s.status === 'confirmed').length
@@ -270,7 +296,7 @@ function TabCarrier({
           }}
         >
           <UploadOutlined />
-          Upload file GHN
+          Tạo phiên GHN
         </button>
       </div>
 
@@ -334,20 +360,21 @@ function TabCarrier({
       {/* Table */}
       <div style={{ flex: '1 0 0', overflow: 'hidden' }}>
         <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
-          <div style={{ minWidth: 900 }}>
+          <div style={{ minWidth: 1500 }}>
             <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
               <div style={{ width: 40, flexShrink: 0, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Checkbox checked={allPendingSelected} onChange={toggleSelectAll} />
               </div>
-              <TCell width={120} isHeader>Mã phiên</TCell>
+              <TCell width={220} isHeader>Mã phiên GHN</TCell>
               <TCell width={120} isHeader>Ngày TT GHN</TCell>
               <TCell flex='1 0 0' minWidth={220} isHeader>Tên file</TCell>
               <TCell width={80}  align='right' isHeader>Số đơn</TCell>
               <TCell width={90}  align='right' isHeader>Số lệch</TCell>
-              <TCell width={150} align='right' isHeader>Tổng cước</TCell>
-              <TCell width={160} align='right' isHeader>Tổng COD</TCell>
-              <TCell width={150} align='center' isHeader>Trạng thái</TCell>
-              <TCell width={100} align='center' isHeader>Action</TCell>
+              <TCell width={150} align='right' isHeader>Tổng COD (GHN)</TCell>
+              <TCell width={150} align='right' isHeader>Tổng phí DV (GHN)</TCell>
+              <TCell width={160} align='right' isHeader>Thực nhận</TCell>
+              <TCell width={200} align='center' isHeader>Trạng thái</TCell>
+              <TCell width={48} isHeader>{null}</TCell>
             </div>
             <div style={{ height: 1, background: C_BORDER }} />
 
@@ -364,11 +391,47 @@ function TabCarrier({
                 onNavigate={() => navigate(`/agency-admin/reconciliation/${s.id}`)}
                 selected={selectedIds.has(s.id)}
                 onToggle={() => toggleOne(s.id)}
+                onDelete={() => setDeleteConfirmId(s.id)}
               />
             ))}
           </div>
         </div>
       </div>
+
+      {deleteConfirmId && (
+        <div
+          onClick={() => setDeleteConfirmId(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: 400, background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}>
+            <div style={{ padding: '20px 24px 0' }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Xoá phiên GHN</div>
+            </div>
+            <div style={{ padding: '16px 24px' }}>
+              <p style={{ fontSize: 14, color: C_TEXT_PRIMARY, margin: '0 0 4px' }}>
+                Bạn có chắc muốn xoá phiên <strong>{sessions.find(s => s.id === deleteConfirmId)?.ghnSessionCode}</strong>?
+              </p>
+              <p style={{ fontSize: 13, color: C_TEXT_SECONDARY, margin: 0 }}>
+                Hành động này không thể hoàn tác.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 24px' }}>
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                style={{ padding: '7px 16px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 14, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={() => handleDeleteSession(deleteConfirmId)}
+                style={{ padding: '7px 16px', background: '#DC2626', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#fff', cursor: 'pointer' }}
+              >
+                Xoá phiên
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showUploadModal && (
         <UploadModal
@@ -387,6 +450,11 @@ function TabCarrier({
               fileName: file.name,
               note,
               createdAt: new Date().toISOString(),
+              ghnSessionCode: file.name.replace(/\.[^.]+$/, ''),
+              totalReconcile: 0,
+              outstandingDebt: 0,
+              transferFee: -5500,
+              netReceived: 0,
             }
             onAddSession(newSession)
             setShowUploadModal(false)
@@ -397,20 +465,22 @@ function TabCarrier({
   )
 }
 
-function SessionRow({ session: s, onNavigate, selected, onToggle }: {
+function SessionRow({ session: s, onNavigate, selected, onToggle, onDelete }: {
   session: CarrierSession
   onNavigate: () => void
   selected: boolean
   onToggle: () => void
+  onDelete: () => void
 }) {
   const [hover, setHover] = useState(false)
+  const [deleteHover, setDeleteHover] = useState(false)
   return (
     <div
       onClick={onNavigate}
       style={{
-        display: 'flex', alignItems: 'center', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', cursor: 'pointer', minWidth: 1500,
         background: selected ? '#FFF4ED' : hover ? '#FAFAFA' : '#fff',
-        borderBottom: `1px solid ${C_BORDER}`,
+        boxShadow: `inset 0 -1px 0 ${C_BORDER}`,
         transition: 'background 0.1s',
       }}
       onMouseEnter={() => setHover(true)}
@@ -426,8 +496,8 @@ function SessionRow({ session: s, onNavigate, selected, onToggle }: {
           onChange={onToggle}
         />
       </div>
-      <TCell width={120}>
-        <span style={{ color: C_LINK, fontWeight: 600 }}>{s.id}</span>
+      <TCell width={220}>
+        <span style={{ color: C_LINK, fontWeight: 600 }}>{s.ghnSessionCode}</span>
       </TCell>
       <TCell width={120}>{fmtDate(s.paymentDate)}</TCell>
       <TCell flex='1 0 0' minWidth={220}>
@@ -441,20 +511,25 @@ function SessionRow({ session: s, onNavigate, selected, onToggle }: {
           {s.totalMismatch > 0 ? s.totalMismatch : '—'}
         </span>
       </TCell>
+      <TCell width={150} align='right'>{fmt(s.totalCOD)}</TCell>
       <TCell width={150} align='right'>{fmt(s.totalFee)}</TCell>
       <TCell width={160} align='right'>
-        <span style={{ fontWeight: 600 }}>{fmt(s.totalCOD)}</span>
+        <span style={{ fontWeight: 600 }}>{fmt(s.netReceived)}</span>
       </TCell>
-      <TCell width={150} align='center'>
+      <TCell width={200} align='center'>
         <StatusBadge status={s.status} />
       </TCell>
-      <TCell width={100} align='center'>
-        <span
-          onClick={e => { e.stopPropagation(); onNavigate() }}
-          style={{ color: C_LINK, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}
-        >
-          Xem chi tiết
-        </span>
+      <TCell width={48} align='center'>
+        {s.status === 'pending' && (
+          <div
+            onClick={e => { e.stopPropagation(); onDelete() }}
+            onMouseEnter={() => setDeleteHover(true)}
+            onMouseLeave={() => setDeleteHover(false)}
+            style={{ color: deleteHover ? '#DC2626' : '#9CA3AF', cursor: 'pointer', transition: 'color 0.15s', fontSize: 15, lineHeight: 1 }}
+          >
+            <DeleteOutlined />
+          </div>
+        )}
       </TCell>
     </div>
   )
@@ -470,12 +545,25 @@ function UploadModal({ onClose, onSubmit }: {
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
 
+  const handleFileChange = (f: File | null) => {
+    setFile(f)
+    if (f && !date) {
+      const today = new Date()
+      const yyyy = today.getFullYear()
+      const mm = String(today.getMonth() + 1).padStart(2, '0')
+      const dd = String(today.getDate()).padStart(2, '0')
+      setDate(`${yyyy}-${mm}-${dd}`)
+    }
+  }
+
   const handleSubmit = () => {
     if (!file) { setError('Vui lòng chọn file đối soát'); return }
     if (!date) { setError('Vui lòng chọn ngày thanh toán GHN'); return }
     setError('')
     onSubmit(file, date, note)
   }
+
+  const fileBaseName = file ? file.name.replace(/\.[^.]+$/, '') : ''
 
   const inputStyle: React.CSSProperties = {
     width: '100%', border: `1px solid ${C_BORDER}`, borderRadius: 6,
@@ -506,7 +594,7 @@ function UploadModal({ onClose, onSubmit }: {
               File đối soát <span style={{ color: '#DC2626' }}>*</span>
             </div>
             <label style={{ display: 'block', cursor: 'pointer' }}>
-              <input type="file" accept=".xlsx,.xls,.csv" onChange={e => setFile(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
+              <input type="file" accept=".xlsx,.xls,.csv" onChange={e => handleFileChange(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
               <div style={{
                 border: `2px dashed ${file ? C_ACTION : C_BORDER}`,
                 borderRadius: 8, padding: '20px 16px',
@@ -527,6 +615,22 @@ function UploadModal({ onClose, onSubmit }: {
                 )}
               </div>
             </label>
+            {file && (
+              <div style={{
+                marginTop: 8, padding: '8px 12px', background: '#F9FAFB',
+                borderRadius: 6, border: `1px solid ${C_BORDER}`,
+                fontSize: 12, color: C_TEXT_SECONDARY,
+                display: 'flex', flexDirection: 'column', gap: 4,
+              }}>
+                <div>
+                  <span>Mã phiên GHN: </span>
+                  <strong style={{ color: C_TEXT_PRIMARY }}>{fileBaseName}</strong>
+                </div>
+                <div style={{ color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>
+                  Hệ thống sẽ tự động đọc thông tin phiên từ file sau khi tải lên
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -628,7 +732,7 @@ function TabShop({
         <ShopOutlined style={{ fontSize: 48, marginBottom: 12, opacity: 0.3 }} />
         <div style={{ fontSize: 14, fontWeight: 500 }}>Chưa có phiên shop nào</div>
         <div style={{ fontSize: 12, marginTop: 4 }}>
-          Phiên shop được tạo tự động sau khi xác nhận phiên nhà vận chuyển
+          Phiên shop được tạo tự động sau khi xác nhận phiên GHN
         </div>
       </div>
     )
@@ -721,18 +825,18 @@ function TabShop({
       {/* Table */}
       <div style={{ flex: '1 0 0', overflow: 'hidden' }}>
         <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
-          <div style={{ minWidth: 1100 }}>
+          <div style={{ minWidth: 1600 }}>
             <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
               <div style={{ width: 40, flexShrink: 0, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Checkbox checked={allPendingSelected} onChange={toggleSelectAll} />
               </div>
               <TCell width={200} isHeader>Mã phiên shop</TCell>
               <TCell flex='1 0 0' minWidth={180} isHeader>Tên shop</TCell>
-              <TCell width={120} isHeader>Phiên GHN</TCell>
+              <TCell width={240} isHeader>Phiên GHN</TCell>
               <TCell width={70}  align='right' isHeader>Số đơn</TCell>
-              <TCell width={140} align='right' isHeader>Tổng COD</TCell>
-              <TCell width={120} align='right' isHeader>Phí shop</TCell>
-              <TCell width={110} align='right' isHeader>Phí GHN</TCell>
+              <TCell width={160} align='right' isHeader>Tổng COD (shop)</TCell>
+              <TCell width={160} align='right' isHeader>Tổng phí DV (shop)</TCell>
+              <TCell width={160} align='right' isHeader>Tổng phí DV (GHN)</TCell>
               <TCell width={130} align='right' isHeader>Lợi nhuận ĐL</TCell>
               <TCell width={80}  align='right' isHeader>Số lệch</TCell>
               <TCell width={140} align='center' isHeader>Trạng thái</TCell>
@@ -769,9 +873,9 @@ function ShopSessionRow({ session: s, selected, onToggle }: {
   return (
     <div
       style={{
-        display: 'flex', alignItems: 'center',
+        display: 'flex', alignItems: 'center', minWidth: 1600,
         background: selected ? '#FFF4ED' : hover ? '#FAFAFA' : '#fff',
-        borderBottom: `1px solid ${C_BORDER}`,
+        boxShadow: `inset 0 -1px 0 ${C_BORDER}`,
         transition: 'background 0.1s',
       }}
       onMouseEnter={() => setHover(true)}
@@ -793,15 +897,15 @@ function ShopSessionRow({ session: s, selected, onToggle }: {
       <TCell flex='1 0 0' minWidth={180}>
         <span style={{ fontWeight: 500 }}>{s.shopName}</span>
       </TCell>
-      <TCell width={120}>
-        <span style={{ color: C_LINK, fontSize: 13 }}>{s.nvcSessionId}</span>
+      <TCell width={240}>
+        <span style={{ color: C_LINK, fontSize: 13 }}>{s.nvcSessionCode}</span>
       </TCell>
       <TCell width={70} align='right'>{s.totalOrders}</TCell>
-      <TCell width={140} align='right'>
+      <TCell width={160} align='right'>
         <span style={{ fontWeight: 600 }}>{fmt(s.totalCOD)}</span>
       </TCell>
-      <TCell width={120} align='right'>{fmt(s.feeShop)}</TCell>
-      <TCell width={110} align='right'>{fmt(s.feeGHN)}</TCell>
+      <TCell width={160} align='right'>{fmt(s.feeShop)}</TCell>
+      <TCell width={160} align='right'>{fmt(s.feeGHN)}</TCell>
       <TCell width={130} align='right'>
         <span style={{
           fontWeight: 600,
@@ -856,6 +960,10 @@ export default function AgencyReconciliation() {
 
   const handleAddSession = (session: CarrierSession) => {
     setSessions(prev => [session, ...prev])
+  }
+
+  const handleDeleteSession = (id: string) => {
+    setSessions(prev => prev.filter(s => s.id !== id))
   }
 
   const handleConfirmShop = (ids: string[]) => {
@@ -913,6 +1021,7 @@ export default function AgencyReconciliation() {
               sessions={sessions}
               onConfirmMultiple={handleConfirmNVC}
               onAddSession={handleAddSession}
+              onDeleteSession={handleDeleteSession}
             />
           )}
           {activeTab === 'shop' && (

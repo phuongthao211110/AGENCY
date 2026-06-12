@@ -6,6 +6,15 @@ import { agencyAdminTheme } from '../../../theme/platforms'
 import allSessions from '../../../mock-data/carrier-reconciliation.json'
 import allItems from '../../../mock-data/carrier-reconciliation-items.json'
 
+// ─── GHN shop lookup (mirrors CarrierSetup GHN_SHOPS) ────────────────────────
+const GHN_SHOP_NAMES: Record<string, string> = {
+  '5148899': 'Shop Thời Trang ABC',
+  '5148900': 'Shop Điện Tử XYZ',
+  '5148901': 'Shop Mỹ Phẩm Hà Nội',
+  '5148902': 'Shop Giày Dép Fashion',
+  '5148903': 'Shop Đồ Gia Dụng 365',
+}
+
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
 const C_TEXT_SECONDARY = '#6B7280'
@@ -40,8 +49,8 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const ITEM_STATUS: Record<string, { bg: string; color: string; label: string }> = {
-  MATCH:     { bg: '#F0FDF4', color: '#16A34A', label: 'Khớp' },
-  MISMATCH:  { bg: '#FEF2F2', color: '#DC2626', label: 'Lệch' },
+  MATCH:     { bg: '#F0FDF4', color: '#16A34A', label: 'Đúng' },
+  MISMATCH:  { bg: '#FEF2F2', color: '#DC2626', label: 'Sai' },
   NOT_FOUND: { bg: '#F9FAFB', color: '#6B7280', label: 'Không tìm thấy' },
 }
 
@@ -58,7 +67,7 @@ function ItemStatusBadge({ status }: { status: string }) {
 }
 
 // ─── Table cell helper ────────────────────────────────────────────────────────
-function TCell({ children, width, flex = '0 0 auto', align = 'left', isHeader = false, bg, color }: {
+function TCell({ children, width, flex = '0 0 auto', align = 'left', isHeader = false, bg, color, minWidth }: {
   children: React.ReactNode
   width?: number
   flex?: string
@@ -66,19 +75,44 @@ function TCell({ children, width, flex = '0 0 auto', align = 'left', isHeader = 
   isHeader?: boolean
   bg?: string
   color?: string
+  minWidth?: number
 }) {
   return (
     <div style={{
-      width, flex, flexShrink: 0, padding: '6px 8px',
+      width, flex, flexShrink: 0, padding: '6px 8px', minWidth,
       display: 'flex', alignItems: 'center',
       justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
       fontSize: 14,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
       color: color ?? (isHeader ? C_TEXT_SECONDARY : undefined),
       background: bg ?? (isHeader ? C_BG_HEADER : undefined),
+      ...(!isHeader ? { borderBottom: `1px solid ${C_BORDER}` } : {}),
     }}>
       {children}
     </div>
   )
+}
+
+type CarrierSession = {
+  id: string
+  agencyId: string
+  carrier: string
+  paymentDate: string
+  totalOrders: number
+  totalCOD: number
+  totalFee: number
+  totalMismatch: number
+  status: 'pending' | 'confirmed'
+  fileName: string
+  note: string
+  createdAt: string
+  ghnSessionCode: string
+  ghnShopId: string
+  totalReconcile: number
+  outstandingDebt: number
+  transferFee: number
+  netReceived: number
 }
 
 type ItemRecord = {
@@ -92,6 +126,17 @@ type ItemRecord = {
   ghnFee: number
   systemFee: number
   status: 'MATCH' | 'MISMATCH' | 'NOT_FOUND'
+  customerOrderCode: string
+  ghnStatus: string
+  deliveryFee: number
+  redeliveryFee: number
+  insuranceFee: number
+  returnFee: number
+  failedDeliveryCOD: number
+  prepaid: number
+  discount: number
+  serviceFee: number
+  totalReconcileItem: number
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -102,7 +147,7 @@ export default function AgencyReconciliationDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
 
-  const session = allSessions.find(s => s.id === id)
+  const session = (allSessions as CarrierSession[]).find(s => s.id === id)
 
   if (!session) {
     return (
@@ -151,11 +196,11 @@ export default function AgencyReconciliationDetail() {
               <ArrowLeftOutlined /> Đối soát GHN
             </span>
             <span style={{ color: C_BORDER }}>/</span>
-            <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{id}</span>
+            <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{session.ghnSessionCode}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <h1 style={{ fontSize: 20, fontWeight: 600, color: C_TEXT_PRIMARY, margin: 0 }}>
-              Phiên {session.id}
+              Phiên {session.ghnSessionCode}
             </h1>
             <StatusBadge status={session.status} />
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginLeft: 4 }}>
@@ -190,6 +235,23 @@ export default function AgencyReconciliationDetail() {
           </div>
         </div>
 
+        {/* GHN session info row */}
+        <div style={{ display: 'flex', gap: 24, padding: '0 16px 12px', flexShrink: 0, fontSize: 13, flexWrap: 'wrap' }}>
+          <span style={{ color: C_TEXT_SECONDARY }}>
+            Mã phiên GHN: <strong style={{ color: C_TEXT_PRIMARY }}>{session.ghnSessionCode}</strong>
+          </span>
+          <span style={{ color: C_TEXT_SECONDARY }}>
+            Cửa hàng GHN: <strong style={{ color: C_TEXT_PRIMARY }}>{GHN_SHOP_NAMES[session.ghnShopId] ?? session.ghnShopId}</strong>
+            <strong style={{ color: C_TEXT_PRIMARY }}> · {session.ghnShopId}</strong>
+          </span>
+          <span style={{ color: C_TEXT_SECONDARY }}>
+            Nợ tồn: <strong style={{ color: session.outstandingDebt > 0 ? '#DC2626' : C_TEXT_PRIMARY }}>{fmt(session.outstandingDebt)}</strong>
+          </span>
+          <span style={{ color: C_TEXT_SECONDARY }}>
+            Phí CK COD: <strong style={{ color: C_TEXT_PRIMARY }}>{fmt(session.transferFee)}</strong>
+          </span>
+        </div>
+
         {/* Summary cards */}
         <div style={{ display: 'flex', gap: 12, padding: '0 16px 16px', flexShrink: 0 }}>
           <div style={cardStyle}>
@@ -201,8 +263,12 @@ export default function AgencyReconciliationDetail() {
             <div style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(totalCOD)}</div>
           </div>
           <div style={cardStyle}>
-            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Tổng cước (GHN)</div>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Tổng phí DV (GHN)</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(totalFee)}</div>
+          </div>
+          <div style={cardStyle}>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Thực nhận</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#16A34A' }}>{fmt(session.netReceived)}</div>
           </div>
           <div style={cardStyle}>
             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Số lệch</div>
@@ -226,90 +292,134 @@ export default function AgencyReconciliationDetail() {
             }}
           >
             <option value="all">Tất cả</option>
-            <option value="MATCH">Khớp</option>
-            <option value="MISMATCH">Lệch</option>
+            <option value="MATCH">Đúng</option>
+            <option value="MISMATCH">Sai</option>
             <option value="NOT_FOUND">Không tìm thấy</option>
           </select>
         </div>
 
         {/* Table */}
-        <div style={{ flex: '1 0 0', overflowY: 'auto', padding: '0 16px' }}>
-          <div style={{ minWidth: 1000 }}>
-            {/* Header */}
-            <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-              <TCell flex='1 0 0' isHeader>Mã đơn GHN</TCell>
-              <TCell width={180} isHeader>Shop</TCell>
-              <TCell width={130} align='right' isHeader>COD GHN</TCell>
-              <TCell width={130} align='right' isHeader>COD hệ thống</TCell>
-              <TCell width={110} align='right' isHeader>Phí GHN</TCell>
-              <TCell width={110} align='right' isHeader>Phí hệ thống</TCell>
-              <TCell width={140} align='center' isHeader>Trạng thái</TCell>
-            </div>
-            <div style={{ height: 1, background: C_BORDER }} />
-
-            {filteredItems.length === 0 && (
-              <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
-                Không có đơn nào
+        <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
+          <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
+            <div style={{ minWidth: 1800 }}>
+              {/* Header */}
+              <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center', position: 'sticky', top: 0, zIndex: 2 }}>
+                <TCell width={120} isHeader>Mã đơn GHN</TCell>
+                <TCell width={140} isHeader>Mã đơn KH</TCell>
+                <TCell width={220} isHeader>Trạng thái GHN</TCell>
+                <TCell width={120} align='right' isHeader>Tiền COD</TCell>
+                <TCell width={130} align='right' isHeader>Giao TT - thu</TCell>
+                <TCell width={120} align='right' isHeader>Đã TT trước</TCell>
+                <TCell width={100} align='right' isHeader>KM</TCell>
+                <TCell width={170} align='right' isHeader>Phí giao hàng (GHN)</TCell>
+                <TCell width={160} align='right' isHeader>Phí giao lại (GHN)</TCell>
+                <TCell width={160} align='right' isHeader>Phí khai giá (GHN)</TCell>
+                <TCell width={150} align='right' isHeader>Phí hoàn (GHN)</TCell>
+                <TCell width={140} align='right' isHeader>Phí DV (GHN)</TCell>
+                <TCell width={130} align='right' isHeader>Tổng đối soát</TCell>
+                <TCell width={130} align='center' isHeader>Trạng thái ĐS</TCell>
               </div>
-            )}
+              <div style={{ height: 1, background: C_BORDER }} />
 
-            {filteredItems.map((it) => {
-              const isNotFound = it.status === 'NOT_FOUND'
-              const codMismatch = it.ghnCOD !== it.systemCOD
-              const feeMismatch = it.ghnFee !== it.systemFee
-              const baseColor = isNotFound ? '#9CA3AF' : undefined
-              return (
-                <div
-                  key={it.id}
-                  style={{
-                    display: 'flex', alignItems: 'center',
-                    borderBottom: `1px solid ${C_BORDER}`,
-                  }}
-                >
-                  <TCell flex='1 0 0'>
-                    <span style={{
-                      color: isNotFound ? '#9CA3AF' : C_LINK,
-                      fontWeight: 600,
-                    }}>
-                      {it.orderCode}
-                    </span>
-                  </TCell>
-                  <TCell width={180}>
-                    <span style={{
-                      color: isNotFound ? '#9CA3AF' : C_TEXT_PRIMARY,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {it.shopName}
-                    </span>
-                  </TCell>
-                  <TCell
-                    width={130}
-                    align='right'
-                    bg={codMismatch ? '#FEF2F2' : undefined}
-                    color={codMismatch ? '#DC2626' : baseColor}
-                  >
-                    {fmt(it.ghnCOD)}
-                  </TCell>
-                  <TCell width={130} align='right' color={baseColor}>
-                    {fmt(it.systemCOD)}
-                  </TCell>
-                  <TCell
-                    width={110}
-                    align='right'
-                    bg={feeMismatch ? '#FEF2F2' : undefined}
-                    color={feeMismatch ? '#DC2626' : baseColor}
-                  >
-                    {fmt(it.ghnFee)}
-                  </TCell>
-                  <TCell width={110} align='right' color={baseColor}>
-                    {fmt(it.systemFee)}
-                  </TCell>
-                  <TCell width={140} align='center'>
-                    <ItemStatusBadge status={it.status} />
-                  </TCell>
+              {filteredItems.length === 0 && (
+                <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
+                  Không có đơn nào
                 </div>
-              )
-            })}
+              )}
+
+              {filteredItems.map((it) => {
+                const isNotFound = it.status === 'NOT_FOUND'
+                const codMismatch = it.ghnCOD !== it.systemCOD
+                const feeMismatch = Math.abs(it.serviceFee) !== it.systemFee
+                const baseColor = isNotFound ? '#9CA3AF' : undefined
+
+                const ghnStatusColor = (() => {
+                  const SUCCESS = ['Giao hàng thành công', 'Hoàn hàng thành công']
+                  const FAILED  = ['Giao hàng không thành công', 'Hoàn hàng không thành công', 'Hàng thất lạc', 'Hàng hư hỏng', 'Đơn huỷ']
+                  const GREY    = ['Không có trong hệ thống', 'Chờ lấy hàng', 'Đang lấy hàng', 'Đang tương tác với người gửi']
+                  if (SUCCESS.includes(it.ghnStatus)) return '#16A34A'
+                  if (FAILED.includes(it.ghnStatus))  return '#DC2626'
+                  if (GREY.includes(it.ghnStatus))    return '#9CA3AF'
+                  return '#C2410C'  // in-progress statuses
+                })()
+
+                const fmtFee = (n: number) => n !== 0 ? fmt(n) : '—'
+
+                return (
+                  <div
+                    key={it.id}
+                    style={{
+                      display: 'flex', alignItems: 'stretch', minWidth: 1800,
+                    }}
+                  >
+                    <TCell width={120}>
+                      <span style={{ color: isNotFound ? '#9CA3AF' : C_LINK, fontWeight: 600 }}>
+                        {it.orderCode}
+                      </span>
+                    </TCell>
+                    <TCell width={140}>
+                      <span style={{ color: isNotFound ? '#9CA3AF' : C_TEXT_SECONDARY, fontSize: 13 }}>
+                        {it.customerOrderCode || '—'}
+                      </span>
+                    </TCell>
+                    <TCell width={220}>
+                      <span style={{ color: ghnStatusColor, fontSize: 13, whiteSpace: 'nowrap' }}>
+                        {it.ghnStatus}
+                      </span>
+                    </TCell>
+                    {/* (1) Tiền COD */}
+                    <TCell width={120} align='right'
+                      bg={codMismatch ? '#FEF2F2' : undefined}
+                      color={codMismatch ? '#DC2626' : baseColor}
+                    >
+                      {fmt(it.ghnCOD)}
+                    </TCell>
+                    {/* (2) Giao thất bại - thu tiền */}
+                    <TCell width={130} align='right' color={baseColor}>
+                      {fmtFee(it.failedDeliveryCOD)}
+                    </TCell>
+                    {/* (3) Đã thanh toán trước */}
+                    <TCell width={120} align='right' color={baseColor}>
+                      {fmtFee(it.prepaid)}
+                    </TCell>
+                    {/* (4) Khuyến mãi */}
+                    <TCell width={100} align='right' color={baseColor}>
+                      {fmtFee(it.discount)}
+                    </TCell>
+                    {/* (5.1) Phí giao hàng */}
+                    <TCell width={170} align='right'
+                      bg={feeMismatch ? '#FEF2F2' : undefined}
+                      color={feeMismatch ? '#DC2626' : baseColor}
+                    >
+                      {fmtFee(it.deliveryFee)}
+                    </TCell>
+                    {/* (5.2) Phí giao lại */}
+                    <TCell width={160} align='right' color={baseColor}>
+                      {fmtFee(it.redeliveryFee)}
+                    </TCell>
+                    {/* (5.3) Phí khai giá */}
+                    <TCell width={160} align='right' color={baseColor}>
+                      {fmtFee(it.insuranceFee)}
+                    </TCell>
+                    {/* (5.4) Phí hoàn */}
+                    <TCell width={150} align='right' color={baseColor}>
+                      {fmtFee(it.returnFee)}
+                    </TCell>
+                    {/* (5) Phí dịch vụ */}
+                    <TCell width={140} align='right' color={baseColor}>
+                      {fmt(it.serviceFee)}
+                    </TCell>
+                    {/* Tổng đối soát */}
+                    <TCell width={130} align='right' color={baseColor}>
+                      <span style={{ fontWeight: 600 }}>{fmt(it.totalReconcileItem)}</span>
+                    </TCell>
+                    <TCell width={130} align='center'>
+                      <ItemStatusBadge status={it.status} />
+                    </TCell>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -322,11 +432,11 @@ export default function AgencyReconciliationDetail() {
         >
           <div onClick={e => e.stopPropagation()} style={{ width: 420, background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}>
             <div style={{ padding: '20px 24px 0' }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Xoá phiên vận chuyển</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Xoá phiên GHN</div>
             </div>
             <div style={{ padding: '16px 24px' }}>
               <p style={{ fontSize: 14, color: C_TEXT_PRIMARY, margin: '0 0 4px' }}>
-                Bạn có chắc muốn xoá phiên <strong style={{ color: C_TEXT_PRIMARY }}>{session.id}</strong>?
+                Bạn có chắc muốn xoá phiên <strong style={{ color: C_TEXT_PRIMARY }}>{session.ghnSessionCode}</strong>?
               </p>
               <p style={{ fontSize: 13, color: C_TEXT_SECONDARY, margin: 0 }}>
                 Hành động này không thể hoàn tác. Toàn bộ dữ liệu của phiên sẽ bị xoá.
@@ -358,11 +468,11 @@ export default function AgencyReconciliationDetail() {
         >
           <div onClick={e => e.stopPropagation()} style={{ width: 420, background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}>
             <div style={{ padding: '20px 24px 0' }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Xác nhận phiên vận chuyển</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Xác nhận phiên GHN</div>
             </div>
             <div style={{ padding: '16px 24px' }}>
               <p style={{ fontSize: 14, color: C_TEXT_PRIMARY, margin: '0 0 4px' }}>
-                Xác nhận phiên <strong style={{ color: C_TEXT_PRIMARY }}>{session.id}</strong>?
+                Xác nhận phiên <strong style={{ color: C_TEXT_PRIMARY }}>{session.ghnSessionCode}</strong>?
               </p>
               <p style={{ fontSize: 13, color: C_TEXT_SECONDARY, margin: 0 }}>
                 Sau khi xác nhận, hệ thống sẽ tự động tạo phiên đối soát cho từng shop thuộc đại lý. Dữ liệu phiên sẽ bị khoá, không thể chỉnh sửa.
