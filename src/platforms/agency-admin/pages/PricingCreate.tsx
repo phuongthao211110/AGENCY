@@ -46,7 +46,7 @@ type Surcharges = {
   codFee:             CodFeeTier[]    // Phí thu hộ — nhiều mức COD
   deliveryFailFee:    SurchargeFee    // Phí giao thất bại thu tiền
   redeliveryFee:      FeeTier[]       // Phí kích hoạt giao lại — theo lần
-  returnFee:          FeeTier[]       // Phí hoàn hàng — theo lần
+  returnFee:          SurchargeFee    // Phí hoàn hàng — per order, fixed hoặc % cước phí tuyến
 }
 
 type RouteConfig = {
@@ -93,7 +93,7 @@ const makeEmptySurcharges = (): Surcharges => ({
   codFee:           [],
   deliveryFailFee:  { value: '', unit: 'vnd' },
   redeliveryFee:    [],
-  returnFee:        [],
+  returnFee:        { value: '', unit: 'vnd' },
 })
 
 const makeEmptyRoute = (routeType: RouteType, id: string): RouteConfig => ({
@@ -530,8 +530,8 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     onUpdateSurcharges({ ...surcharges, redeliveryFee: tiers })
   }
 
-  const updateReturnFee = (tiers: FeeTier[]) => {
-    onUpdateSurcharges({ ...surcharges, returnFee: tiers })
+  const updateReturnFee = (fee: SurchargeFee) => {
+    onUpdateSurcharges({ ...surcharges, returnFee: fee })
   }
 
   // A fee is "configured" if it already has data
@@ -541,7 +541,7 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     if (key === 'codFee')           return surcharges.codFee.length > 0
     if (key === 'deliveryFailFee')  return surcharges.deliveryFailFee.value.trim() !== ''
     if (key === 'redeliveryFee')    return surcharges.redeliveryFee.length > 0
-    if (key === 'returnFee')        return surcharges.returnFee.length > 0
+    if (key === 'returnFee')        return surcharges.returnFee.value.trim() !== ''
     return false
   }
 
@@ -553,7 +553,6 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     if (key === 'insurance'     && surcharges.insurance.length === 0)     updateInsurance([emptyTier])
     if (key === 'codFee'        && surcharges.codFee.length === 0)        updateCodFee([emptyTier])
     if (key === 'redeliveryFee' && surcharges.redeliveryFee.length === 0) updateRedeliveryFee([emptyTier])
-    if (key === 'returnFee'     && surcharges.returnFee.length === 0)     updateReturnFee([emptyTier])
     setManualOpen((s) => new Set([...s, key]))
   }
 
@@ -565,7 +564,7 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     if (key === 'codFee')           onUpdateSurcharges({ ...surcharges, codFee: [] })
     if (key === 'deliveryFailFee')  onUpdateSurcharges({ ...surcharges, deliveryFailFee: { value: '', unit: 'vnd' } })
     if (key === 'redeliveryFee')    onUpdateSurcharges({ ...surcharges, redeliveryFee: [] })
-    if (key === 'returnFee')        onUpdateSurcharges({ ...surcharges, returnFee: [] })
+    if (key === 'returnFee')        onUpdateSurcharges({ ...surcharges, returnFee: { value: '', unit: 'vnd' } })
     setManualOpen((s) => { const n = new Set(s); n.delete(key); return n })
     setConfirmDelete(null)
   }
@@ -679,13 +678,46 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
                   colPercent="Phụ phí (% trên giá)"
                 />
               ) : key === 'returnFee' ? (
-                <FeeTierTable
-                  tiers={surcharges.returnFee}
-                  onChangeTiers={updateReturnFee}
-                  colFrom="Từ lần"
-                  colTo="Đến lần"
-                  colPercent="Phụ phí (% trên giá)"
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'inline-flex', gap: 1, background: '#F3F4F6', borderRadius: 6, padding: 2, flexShrink: 0 }}>
+                    {(['vnd', '%'] as FeeUnit[]).map((unit) => {
+                      const active = surcharges.returnFee.unit === unit
+                      return (
+                        <button
+                          key={unit}
+                          onClick={() => updateReturnFee({ value: '', unit })}
+                          style={{
+                            fontSize: 12, fontWeight: 600, padding: '2px 10px', borderRadius: 5,
+                            border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                            background: active ? '#fff' : 'transparent',
+                            color: active ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                            boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {unit === 'vnd' ? 'Số tiền cố định' : '% cước phí tuyến'}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ position: 'relative', width: 150 }}>
+                    <input
+                      type="number"
+                      value={surcharges.returnFee.value}
+                      onChange={(e) => updateReturnFee({ ...surcharges.returnFee, value: e.target.value })}
+                      placeholder={surcharges.returnFee.unit === 'vnd' ? 'VD: 10000' : 'VD: 5'}
+                      style={{ ...inputStyle, width: '100%', paddingRight: 30, boxSizing: 'border-box' }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+                    />
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>
+                      {surcharges.returnFee.unit === 'vnd' ? 'đ' : '%'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>
+                    {surcharges.returnFee.unit === '%' ? 'trên cước phí tuyến ' : ''}/ đơn hàng
+                  </span>
+                </div>
               ) : null}
             </div>
           )}

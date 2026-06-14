@@ -196,6 +196,13 @@ export default function AgencyReconciliationDetail() {
               <ArrowLeftOutlined /> Đối soát GHN
             </span>
             <span style={{ color: C_BORDER }}>/</span>
+            <span
+              onClick={() => navigate('/agency-admin/reconciliation')}
+              style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, fontSize: 13 }}
+            >
+              Phiên GHN
+            </span>
+            <span style={{ color: C_BORDER }}>/</span>
             <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{session.ghnSessionCode}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -328,22 +335,26 @@ export default function AgencyReconciliationDetail() {
               )}
 
               {filteredItems.map((it) => {
-                const isNotFound = it.status === 'NOT_FOUND'
-                const codMismatch = it.ghnCOD !== it.systemCOD
-                const feeMismatch = Math.abs(it.serviceFee) !== it.systemFee
-                const baseColor = isNotFound ? '#9CA3AF' : undefined
+                const isNotFound  = it.status === 'NOT_FOUND'
+                const isMismatch  = it.status === 'MISMATCH'
+                const codMismatch = isMismatch && it.ghnCOD !== it.systemCOD
+                const feeMismatch = isMismatch && Math.abs(it.serviceFee) !== it.systemFee
+                const baseColor   = isNotFound ? '#9CA3AF' : undefined
+
+                const SUCCESS_STATUSES = ['Giao hàng thành công', 'Hoàn hàng thành công']
+                const isSuccess = SUCCESS_STATUSES.includes(it.ghnStatus)
 
                 const ghnStatusColor = (() => {
-                  const SUCCESS = ['Giao hàng thành công', 'Hoàn hàng thành công']
                   const FAILED  = ['Giao hàng không thành công', 'Hoàn hàng không thành công', 'Hàng thất lạc', 'Hàng hư hỏng', 'Đơn huỷ']
                   const GREY    = ['Không có trong hệ thống', 'Chờ lấy hàng', 'Đang lấy hàng', 'Đang tương tác với người gửi']
-                  if (SUCCESS.includes(it.ghnStatus)) return '#16A34A'
+                  if (SUCCESS_STATUSES.includes(it.ghnStatus)) return '#16A34A'
                   if (FAILED.includes(it.ghnStatus))  return '#DC2626'
                   if (GREY.includes(it.ghnStatus))    return '#9CA3AF'
                   return '#C2410C'  // in-progress statuses
                 })()
 
                 const fmtFee = (n: number) => n !== 0 ? fmt(n) : '—'
+                const showCell = (val: number, applies: boolean) => applies ? fmtFee(val) : '—'
 
                 return (
                   <div
@@ -367,43 +378,43 @@ export default function AgencyReconciliationDetail() {
                         {it.ghnStatus}
                       </span>
                     </TCell>
-                    {/* (1) Tiền COD */}
+                    {/* (1) Tiền COD — chỉ hiện khi isSuccess */}
                     <TCell width={120} align='right'
                       bg={codMismatch ? '#FEF2F2' : undefined}
                       color={codMismatch ? '#DC2626' : baseColor}
                     >
-                      {fmt(it.ghnCOD)}
+                      {isSuccess ? fmt(it.ghnCOD) : '—'}
                     </TCell>
-                    {/* (2) Giao thất bại - thu tiền */}
+                    {/* (2) Giao thất bại - thu tiền — chỉ hiện khi isSuccess */}
                     <TCell width={130} align='right' color={baseColor}>
-                      {fmtFee(it.failedDeliveryCOD)}
+                      {showCell(it.failedDeliveryCOD, isSuccess)}
                     </TCell>
-                    {/* (3) Đã thanh toán trước */}
+                    {/* (3) Đã thanh toán trước — chỉ hiện khi isSuccess */}
                     <TCell width={120} align='right' color={baseColor}>
-                      {fmtFee(it.prepaid)}
+                      {showCell(it.prepaid, isSuccess)}
                     </TCell>
-                    {/* (4) Khuyến mãi */}
+                    {/* (4) Khuyến mãi — chỉ hiện khi isSuccess */}
                     <TCell width={100} align='right' color={baseColor}>
-                      {fmtFee(it.discount)}
+                      {showCell(it.discount, isSuccess)}
                     </TCell>
-                    {/* (5.1) Phí giao hàng */}
+                    {/* (5.1) Phí giao hàng — chỉ hiện khi !isSuccess */}
                     <TCell width={170} align='right'
-                      bg={feeMismatch ? '#FEF2F2' : undefined}
-                      color={feeMismatch ? '#DC2626' : baseColor}
+                      bg={feeMismatch && !isSuccess ? '#FEF2F2' : undefined}
+                      color={feeMismatch && !isSuccess ? '#DC2626' : baseColor}
                     >
-                      {fmtFee(it.deliveryFee)}
+                      {showCell(it.deliveryFee, !isSuccess)}
                     </TCell>
-                    {/* (5.2) Phí giao lại */}
+                    {/* (5.2) Phí giao lại — chỉ hiện khi isSuccess */}
                     <TCell width={160} align='right' color={baseColor}>
-                      {fmtFee(it.redeliveryFee)}
+                      {showCell(it.redeliveryFee, isSuccess)}
                     </TCell>
-                    {/* (5.3) Phí khai giá */}
+                    {/* (5.3) Phí khai giá — chỉ hiện khi !isSuccess */}
                     <TCell width={160} align='right' color={baseColor}>
-                      {fmtFee(it.insuranceFee)}
+                      {showCell(it.insuranceFee, !isSuccess)}
                     </TCell>
-                    {/* (5.4) Phí hoàn */}
+                    {/* (5.4) Phí hoàn — chỉ hiện khi isSuccess */}
                     <TCell width={150} align='right' color={baseColor}>
-                      {fmtFee(it.returnFee)}
+                      {showCell(it.returnFee, isSuccess)}
                     </TCell>
                     {/* (5) Phí dịch vụ */}
                     <TCell width={140} align='right' color={baseColor}>

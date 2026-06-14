@@ -23,6 +23,7 @@ import PricingDetail from './platforms/agency-admin/pages/PricingDetail'
 import AgencyOrders from './platforms/agency-admin/pages/AgencyOrders'
 import AgencyReconciliation from './platforms/agency-admin/pages/AgencyReconciliation'
 import AgencyReconciliationDetail from './platforms/agency-admin/pages/AgencyReconciliationDetail'
+import AgencyReconciliationShopDetail from './platforms/agency-admin/pages/AgencyReconciliationShopDetail'
 import AgencyAdminSettings from './platforms/agency-admin/pages/Settings'
 import RouteCheck from './platforms/agency-admin/pages/RouteCheck'
 import AccountInfoAgency from './platforms/agency-admin/pages/settings/AccountInfo'
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="shops/:id" element={<ShopDetail />} />
           <Route path="reconciliation" element={<AgencyReconciliation />} />
           <Route path="reconciliation/:id" element={<AgencyReconciliationDetail />} />
+          <Route path="reconciliation/shop/:shopSessionId" element={<AgencyReconciliationShopDetail />} />
           <Route path="carrier-setup" element={<CarrierSetup />} />
           <Route path="carrier-setup/:tab" element={<CarrierSetup />} />
           <Route path="carrier-setup/pricing/create" element={<PricingCreate />} />

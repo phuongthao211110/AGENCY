@@ -20,7 +20,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -28000,
-    "totalReconcileItem": -28000
+    "totalReconcileItem": -28000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_002",
@@ -43,7 +46,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -24000,
-    "totalReconcileItem": -24000
+    "totalReconcileItem": -24000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_003",
@@ -53,8 +59,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 1000000,
     "systemCOD": 1000000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 10000,
+    "systemFee": 10000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13002",
     "ghnStatus": "Giao hàng thành công",
@@ -66,7 +72,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1000000
+    "totalReconcileItem": 1000000,
+    "codFee": 10000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_004",
@@ -76,8 +85,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 750000,
     "systemCOD": 740000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 7400,
+    "systemFee": 7400,
     "status": "MISMATCH",
     "customerOrderCode": "SHP004-13003",
     "ghnStatus": "Giao hàng thành công",
@@ -89,7 +98,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 750000
+    "totalReconcileItem": 750000,
+    "codFee": 7400,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_005",
@@ -99,8 +111,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 600000,
     "systemCOD": 600000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 6000,
+    "systemFee": 6000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10001",
     "ghnStatus": "Giao hàng thành công",
@@ -112,7 +124,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 600000
+    "totalReconcileItem": 600000,
+    "codFee": 6000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_006",
@@ -135,7 +150,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 0
+    "totalReconcileItem": 0,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_007",
@@ -158,7 +176,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -24000,
-    "totalReconcileItem": -24000
+    "totalReconcileItem": -24000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_008",
@@ -181,7 +202,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -47000,
-    "totalReconcileItem": -47000
+    "totalReconcileItem": -47000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_009",
@@ -204,7 +228,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 0
+    "totalReconcileItem": 0,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_010",
@@ -214,8 +241,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 250000,
     "systemCOD": 250000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 2500,
+    "systemFee": 2500,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11002",
     "ghnStatus": "Giao hàng thành công",
@@ -227,7 +254,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 250000
+    "totalReconcileItem": 250000,
+    "codFee": 2500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_011",
@@ -237,8 +267,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 250000,
     "systemCOD": 250000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 2500,
+    "systemFee": 2500,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11003",
     "ghnStatus": "Giao hàng thành công",
@@ -250,7 +280,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 250000
+    "totalReconcileItem": 250000,
+    "codFee": 2500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_012",
@@ -260,8 +293,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 500000,
     "systemCOD": 520000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 5200,
+    "systemFee": 5200,
     "status": "MISMATCH",
     "customerOrderCode": "SHP003-12003",
     "ghnStatus": "Giao hàng thành công",
@@ -273,7 +306,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 500000
+    "totalReconcileItem": 500000,
+    "codFee": 5200,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_013",
@@ -296,7 +332,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -42000,
-    "totalReconcileItem": -42000
+    "totalReconcileItem": -42000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_014",
@@ -319,7 +358,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -24000,
-    "totalReconcileItem": -24000
+    "totalReconcileItem": -24000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_015",
@@ -329,8 +371,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 1000000,
     "systemCOD": 990000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 9900,
+    "systemFee": 9900,
     "status": "MISMATCH",
     "customerOrderCode": "SHP002-11004",
     "ghnStatus": "Giao hàng thành công",
@@ -342,7 +384,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1000000
+    "totalReconcileItem": 1000000,
+    "codFee": 9900,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_016",
@@ -352,8 +397,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 680000,
     "systemCOD": 680000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 6800,
+    "systemFee": 6800,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10004",
     "ghnStatus": "Giao hàng thành công",
@@ -365,7 +410,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 680000
+    "totalReconcileItem": 680000,
+    "codFee": 6800,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_017",
@@ -375,8 +423,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 600000,
     "systemCOD": 600000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 6000,
+    "systemFee": 6000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13005",
     "ghnStatus": "Giao hàng thành công",
@@ -388,7 +436,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 600000
+    "totalReconcileItem": 600000,
+    "codFee": 6000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_018",
@@ -398,8 +449,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 480000,
     "systemCOD": 495000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 4950,
+    "systemFee": 4950,
     "status": "MISMATCH",
     "customerOrderCode": "SHP004-13006",
     "ghnStatus": "Giao hàng thành công",
@@ -411,7 +462,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 480000
+    "totalReconcileItem": 480000,
+    "codFee": 4950,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_019",
@@ -434,7 +488,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -45000,
-    "totalReconcileItem": -45000
+    "totalReconcileItem": -45000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_020",
@@ -444,8 +501,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 300000,
     "systemCOD": 300000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3000,
+    "systemFee": 3000,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12005",
     "ghnStatus": "Giao hàng thành công",
@@ -457,7 +514,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 300000
+    "totalReconcileItem": 300000,
+    "codFee": 3000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_021",
@@ -480,7 +540,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -40000,
-    "totalReconcileItem": -40000
+    "totalReconcileItem": -40000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 50000
   },
   {
     "id": "ITEM_GHN001_022",
@@ -503,7 +566,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -28000,
-    "totalReconcileItem": -28000
+    "totalReconcileItem": -28000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_023",
@@ -513,8 +579,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 1500000,
     "systemCOD": 1500000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 15000,
+    "systemFee": 15000,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12006",
     "ghnStatus": "Giao hàng thành công",
@@ -526,7 +592,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1500000
+    "totalReconcileItem": 1500000,
+    "codFee": 15000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_024",
@@ -536,8 +605,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 200000,
     "systemCOD": 200000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 2000,
+    "systemFee": 2000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10007",
     "ghnStatus": "Giao hàng thành công",
@@ -549,7 +618,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 200000
+    "totalReconcileItem": 200000,
+    "codFee": 2000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_025",
@@ -559,8 +631,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 380000,
     "systemCOD": 380000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3800,
+    "systemFee": 3800,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11006",
     "ghnStatus": "Giao hàng thành công",
@@ -572,7 +644,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 380000
+    "totalReconcileItem": 380000,
+    "codFee": 3800,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_026",
@@ -582,8 +657,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 120000,
     "systemCOD": 120000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 1200,
+    "systemFee": 1200,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13007",
     "ghnStatus": "Giao hàng thành công",
@@ -595,7 +670,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 120000
+    "totalReconcileItem": 120000,
+    "codFee": 1200,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_027",
@@ -618,7 +696,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -25000,
-    "totalReconcileItem": -25000
+    "totalReconcileItem": -25000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_028",
@@ -628,8 +709,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 950000,
     "systemCOD": 950000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 9500,
+    "systemFee": 9500,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11007",
     "ghnStatus": "Giao hàng thành công",
@@ -641,7 +722,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 950000
+    "totalReconcileItem": 950000,
+    "codFee": 9500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_029",
@@ -651,8 +735,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 750000,
     "systemCOD": 765000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 7650,
+    "systemFee": 7650,
     "status": "MISMATCH",
     "customerOrderCode": "SHP003-12007",
     "ghnStatus": "Giao hàng thành công",
@@ -664,7 +748,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 750000
+    "totalReconcileItem": 750000,
+    "codFee": 7650,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_030",
@@ -674,8 +761,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 1200000,
     "systemCOD": 1200000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 12000,
+    "systemFee": 12000,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12008",
     "ghnStatus": "Giao hàng thành công",
@@ -687,7 +774,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1200000
+    "totalReconcileItem": 1200000,
+    "codFee": 12000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_031",
@@ -697,8 +787,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 750000,
     "systemCOD": 750000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 7500,
+    "systemFee": 7500,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11008",
     "ghnStatus": "Giao hàng thành công",
@@ -710,7 +800,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 750000
+    "totalReconcileItem": 750000,
+    "codFee": 7500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_032",
@@ -720,8 +813,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 450000,
     "systemCOD": 445000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 4450,
+    "systemFee": 4450,
     "status": "MISMATCH",
     "customerOrderCode": "SHP003-12009",
     "ghnStatus": "Giao hàng thành công",
@@ -733,7 +826,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 450000
+    "totalReconcileItem": 450000,
+    "codFee": 4450,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_033",
@@ -743,8 +839,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 1200000,
     "systemCOD": 1200000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 12000,
+    "systemFee": 12000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13008",
     "ghnStatus": "Giao hàng thành công",
@@ -756,30 +852,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1200000
-  },
-  {
-    "id": "ITEM_GHN001_034",
-    "sessionId": "GHN001",
-    "orderCode": "GXRUQMOL",
-    "shopId": "SHP003",
-    "shopName": "Shop Mỹ Phẩm Lan Anh",
-    "ghnCOD": 0,
-    "systemCOD": 0,
-    "ghnFee": 0,
-    "systemFee": 0,
-    "status": "MATCH",
-    "customerOrderCode": "SHP003-12010",
-    "ghnStatus": "Chờ lấy hàng",
-    "deliveryFee": 0,
-    "redeliveryFee": 0,
-    "insuranceFee": 0,
-    "returnFee": 0,
-    "failedDeliveryCOD": 0,
-    "prepaid": 0,
-    "discount": 0,
-    "serviceFee": 0,
-    "totalReconcileItem": 0
+    "totalReconcileItem": 1200000,
+    "codFee": 12000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_035",
@@ -802,7 +878,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -30000,
-    "totalReconcileItem": -30000
+    "totalReconcileItem": -30000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_036",
@@ -812,8 +891,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 350000,
     "systemCOD": 345000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3450,
+    "systemFee": 3450,
     "status": "MISMATCH",
     "customerOrderCode": "SHP003-12011",
     "ghnStatus": "Giao hàng thành công",
@@ -825,7 +904,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 350000
+    "totalReconcileItem": 350000,
+    "codFee": 3450,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_037",
@@ -848,7 +930,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -25000,
-    "totalReconcileItem": -25000
+    "totalReconcileItem": -25000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_038",
@@ -871,7 +956,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -47000,
-    "totalReconcileItem": -47000
+    "totalReconcileItem": -47000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_039",
@@ -894,7 +982,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -28000,
-    "totalReconcileItem": -28000
+    "totalReconcileItem": -28000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_040",
@@ -904,8 +995,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 950000,
     "systemCOD": 950000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 9500,
+    "systemFee": 9500,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12012",
     "ghnStatus": "Giao hàng thành công",
@@ -917,7 +1008,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 950000
+    "totalReconcileItem": 950000,
+    "codFee": 9500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_041",
@@ -940,7 +1034,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -25000,
-    "totalReconcileItem": -25000
+    "totalReconcileItem": -25000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_042",
@@ -950,8 +1047,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 300000,
     "systemCOD": 300000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3000,
+    "systemFee": 3000,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12013",
     "ghnStatus": "Giao hàng thành công",
@@ -963,7 +1060,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 300000
+    "totalReconcileItem": 300000,
+    "codFee": 3000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_043",
@@ -973,8 +1073,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 200000,
     "systemCOD": 200000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 2000,
+    "systemFee": 2000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13012",
     "ghnStatus": "Giao hàng thành công",
@@ -986,7 +1086,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 200000
+    "totalReconcileItem": 200000,
+    "codFee": 2000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_044",
@@ -996,8 +1099,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 600000,
     "systemCOD": 600000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 6000,
+    "systemFee": 6000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10009",
     "ghnStatus": "Giao hàng thành công",
@@ -1009,7 +1112,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 600000
+    "totalReconcileItem": 600000,
+    "codFee": 6000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_045",
@@ -1019,8 +1125,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 1200000,
     "systemCOD": 1190000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 11900,
+    "systemFee": 11900,
     "status": "MISMATCH",
     "customerOrderCode": "SHP001-10010",
     "ghnStatus": "Giao hàng thành công",
@@ -1032,7 +1138,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1200000
+    "totalReconcileItem": 1200000,
+    "codFee": 11900,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_046",
@@ -1042,8 +1151,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 680000,
     "systemCOD": 680000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 6800,
+    "systemFee": 6800,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11011",
     "ghnStatus": "Giao hàng thành công",
@@ -1055,7 +1164,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 680000
+    "totalReconcileItem": 680000,
+    "codFee": 6800,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_047",
@@ -1065,8 +1177,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 550000,
     "systemCOD": 550000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 5500,
+    "systemFee": 5500,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11012",
     "ghnStatus": "Giao hàng thành công",
@@ -1078,7 +1190,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 550000
+    "totalReconcileItem": 550000,
+    "codFee": 5500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_048",
@@ -1101,7 +1216,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -20000,
-    "totalReconcileItem": -20000
+    "totalReconcileItem": -20000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_049",
@@ -1124,7 +1242,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -22000,
-    "totalReconcileItem": -22000
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_050",
@@ -1147,7 +1268,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -25000,
-    "totalReconcileItem": -25000
+    "totalReconcileItem": -25000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_051",
@@ -1170,7 +1294,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -24000,
-    "totalReconcileItem": -24000
+    "totalReconcileItem": -24000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_052",
@@ -1180,8 +1307,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 800000,
     "systemCOD": 800000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 8000,
+    "systemFee": 8000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13014",
     "ghnStatus": "Giao hàng thành công",
@@ -1193,7 +1320,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 800000
+    "totalReconcileItem": 800000,
+    "codFee": 8000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_053",
@@ -1203,8 +1333,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 1200000,
     "systemCOD": 1200000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 12000,
+    "systemFee": 12000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10013",
     "ghnStatus": "Giao hàng thành công",
@@ -1216,7 +1346,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1200000
+    "totalReconcileItem": 1200000,
+    "codFee": 12000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_054",
@@ -1226,8 +1359,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 720000,
     "systemCOD": 720000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 7200,
+    "systemFee": 7200,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12015",
     "ghnStatus": "Giao hàng thành công",
@@ -1239,7 +1372,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 720000
+    "totalReconcileItem": 720000,
+    "codFee": 7200,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_055",
@@ -1249,8 +1385,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 1000000,
     "systemCOD": 1000000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 10000,
+    "systemFee": 10000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13015",
     "ghnStatus": "Giao hàng thành công",
@@ -1262,7 +1398,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1000000
+    "totalReconcileItem": 1000000,
+    "codFee": 10000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_056",
@@ -1285,7 +1424,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -50000,
-    "totalReconcileItem": -50000
+    "totalReconcileItem": -50000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_057",
@@ -1308,7 +1450,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -53000,
-    "totalReconcileItem": -53000
+    "totalReconcileItem": -53000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 80000
   },
   {
     "id": "ITEM_GHN001_058",
@@ -1318,8 +1463,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 450000,
     "systemCOD": 450000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 4500,
+    "systemFee": 4500,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12017",
     "ghnStatus": "Giao hàng thành công",
@@ -1331,7 +1476,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 450000
+    "totalReconcileItem": 450000,
+    "codFee": 4500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_059",
@@ -1341,8 +1489,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 1100000,
     "systemCOD": 1100000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 11000,
+    "systemFee": 11000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13017",
     "ghnStatus": "Giao hàng thành công",
@@ -1354,7 +1502,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1100000
+    "totalReconcileItem": 1100000,
+    "codFee": 11000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_060",
@@ -1364,8 +1515,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 680000,
     "systemCOD": 680000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 6800,
+    "systemFee": 6800,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13018",
     "ghnStatus": "Giao hàng thành công",
@@ -1377,7 +1528,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 680000
+    "totalReconcileItem": 680000,
+    "codFee": 6800,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_061",
@@ -1387,8 +1541,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 950000,
     "systemCOD": 950000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 9500,
+    "systemFee": 9500,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12018",
     "ghnStatus": "Giao hàng thành công",
@@ -1400,7 +1554,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 950000
+    "totalReconcileItem": 950000,
+    "codFee": 9500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_062",
@@ -1410,8 +1567,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 1200000,
     "systemCOD": 1200000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 12000,
+    "systemFee": 12000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13019",
     "ghnStatus": "Giao hàng thành công",
@@ -1423,7 +1580,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1200000
+    "totalReconcileItem": 1200000,
+    "codFee": 12000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_063",
@@ -1433,8 +1593,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 120000,
     "systemCOD": 120000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 1200,
+    "systemFee": 1200,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12019",
     "ghnStatus": "Giao hàng thành công",
@@ -1446,7 +1606,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 120000
+    "totalReconcileItem": 120000,
+    "codFee": 1200,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_064",
@@ -1456,8 +1619,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 600000,
     "systemCOD": 600000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 6000,
+    "systemFee": 6000,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12020",
     "ghnStatus": "Giao hàng thành công",
@@ -1469,7 +1632,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 600000
+    "totalReconcileItem": 600000,
+    "codFee": 6000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_065",
@@ -1479,8 +1645,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 300000,
     "systemCOD": 300000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3000,
+    "systemFee": 3000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13020",
     "ghnStatus": "Giao hàng thành công",
@@ -1492,7 +1658,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 300000
+    "totalReconcileItem": 300000,
+    "codFee": 3000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_066",
@@ -1502,8 +1671,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 300000,
     "systemCOD": 300000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3000,
+    "systemFee": 3000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13021",
     "ghnStatus": "Giao hàng thành công",
@@ -1515,7 +1684,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 300000
+    "totalReconcileItem": 300000,
+    "codFee": 3000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_067",
@@ -1538,7 +1710,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -30000,
-    "totalReconcileItem": -30000
+    "totalReconcileItem": -30000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_068",
@@ -1561,7 +1736,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -35000,
-    "totalReconcileItem": -35000
+    "totalReconcileItem": -35000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_069",
@@ -1571,8 +1749,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 200000,
     "systemCOD": 200000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 2000,
+    "systemFee": 2000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10015",
     "ghnStatus": "Giao hàng thành công",
@@ -1584,7 +1762,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 200000
+    "totalReconcileItem": 200000,
+    "codFee": 2000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_070",
@@ -1607,7 +1788,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -30000,
-    "totalReconcileItem": -30000
+    "totalReconcileItem": -30000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_071",
@@ -1617,8 +1801,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 250000,
     "systemCOD": 270000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 2700,
+    "systemFee": 2700,
     "status": "MISMATCH",
     "customerOrderCode": "SHP004-13023",
     "ghnStatus": "Giao hàng thành công",
@@ -1630,7 +1814,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 250000
+    "totalReconcileItem": 250000,
+    "codFee": 2700,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_072",
@@ -1653,7 +1840,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -22000,
-    "totalReconcileItem": -22000
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_073",
@@ -1663,8 +1853,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 200000,
     "systemCOD": 200000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 2000,
+    "systemFee": 2000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10016",
     "ghnStatus": "Giao hàng thành công",
@@ -1676,7 +1866,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 200000
+    "totalReconcileItem": 200000,
+    "codFee": 2000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_074",
@@ -1699,7 +1892,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -20000,
-    "totalReconcileItem": -20000
+    "totalReconcileItem": -20000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_075",
@@ -1709,8 +1905,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 480000,
     "systemCOD": 480000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 4800,
+    "systemFee": 4800,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11014",
     "ghnStatus": "Giao hàng thành công",
@@ -1722,7 +1918,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 480000
+    "totalReconcileItem": 480000,
+    "codFee": 4800,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_076",
@@ -1745,7 +1944,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -24000,
-    "totalReconcileItem": -24000
+    "totalReconcileItem": -24000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_077",
@@ -1768,7 +1970,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -55000,
-    "totalReconcileItem": -55000
+    "totalReconcileItem": -55000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_078",
@@ -1778,8 +1983,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 1100000,
     "systemCOD": 1100000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 11000,
+    "systemFee": 11000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10017",
     "ghnStatus": "Giao hàng thành công",
@@ -1791,7 +1996,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1100000
+    "totalReconcileItem": 1100000,
+    "codFee": 11000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_079",
@@ -1801,8 +2009,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 320000,
     "systemCOD": 320000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3200,
+    "systemFee": 3200,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11016",
     "ghnStatus": "Giao hàng thành công",
@@ -1814,7 +2022,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 320000
+    "totalReconcileItem": 320000,
+    "codFee": 3200,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_080",
@@ -1837,7 +2048,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -22000,
-    "totalReconcileItem": -22000
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_081",
@@ -1847,8 +2061,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 120000,
     "systemCOD": 120000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 1200,
+    "systemFee": 1200,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12024",
     "ghnStatus": "Giao hàng thành công",
@@ -1860,7 +2074,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 120000
+    "totalReconcileItem": 120000,
+    "codFee": 1200,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_082",
@@ -1883,7 +2100,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -28000,
-    "totalReconcileItem": -28000
+    "totalReconcileItem": -28000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_083",
@@ -1906,7 +2126,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -35000,
-    "totalReconcileItem": -35000
+    "totalReconcileItem": -35000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_084",
@@ -1916,8 +2139,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 950000,
     "systemCOD": 950000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 9500,
+    "systemFee": 9500,
     "status": "MATCH",
     "customerOrderCode": "SHP002-11017",
     "ghnStatus": "Giao hàng thành công",
@@ -1929,7 +2152,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 950000
+    "totalReconcileItem": 950000,
+    "codFee": 9500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_085",
@@ -1939,8 +2165,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 520000,
     "systemCOD": 520000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 5200,
+    "systemFee": 5200,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12026",
     "ghnStatus": "Giao hàng thành công",
@@ -1952,7 +2178,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 520000
+    "totalReconcileItem": 520000,
+    "codFee": 5200,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_086",
@@ -1975,7 +2204,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -28000,
-    "totalReconcileItem": -28000
+    "totalReconcileItem": -28000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_087",
@@ -1985,8 +2217,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 300000,
     "systemCOD": 300000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3000,
+    "systemFee": 3000,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12027",
     "ghnStatus": "Giao hàng thành công",
@@ -1998,7 +2230,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 300000
+    "totalReconcileItem": 300000,
+    "codFee": 3000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_088",
@@ -2021,7 +2256,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -30000,
-    "totalReconcileItem": -30000
+    "totalReconcileItem": -30000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_089",
@@ -2044,7 +2282,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -32000,
-    "totalReconcileItem": -32000
+    "totalReconcileItem": -32000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_090",
@@ -2054,8 +2295,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 1100000,
     "systemCOD": 1100000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 11000,
+    "systemFee": 11000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10019",
     "ghnStatus": "Giao hàng thành công",
@@ -2067,7 +2308,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1100000
+    "totalReconcileItem": 1100000,
+    "codFee": 11000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_091",
@@ -2077,8 +2321,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 1100000,
     "systemCOD": 1100000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 11000,
+    "systemFee": 11000,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13027",
     "ghnStatus": "Giao hàng thành công",
@@ -2090,7 +2334,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1100000
+    "totalReconcileItem": 1100000,
+    "codFee": 11000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_092",
@@ -2113,7 +2360,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -38000,
-    "totalReconcileItem": -38000
+    "totalReconcileItem": -38000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_093",
@@ -2136,7 +2386,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -24000,
-    "totalReconcileItem": -24000
+    "totalReconcileItem": -24000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_094",
@@ -2159,7 +2412,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -25000,
-    "totalReconcileItem": -25000
+    "totalReconcileItem": -25000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_095",
@@ -2182,7 +2438,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -39000,
-    "totalReconcileItem": -39000
+    "totalReconcileItem": -39000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_096",
@@ -2205,7 +2464,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -46000,
-    "totalReconcileItem": -46000
+    "totalReconcileItem": -46000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 80000
   },
   {
     "id": "ITEM_GHN001_097",
@@ -2215,8 +2477,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 500000,
     "systemCOD": 500000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 5000,
+    "systemFee": 5000,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10021",
     "ghnStatus": "Giao hàng thành công",
@@ -2228,7 +2490,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 500000
+    "totalReconcileItem": 500000,
+    "codFee": 5000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_098",
@@ -2238,8 +2503,8 @@
     "shopName": "Shop Mỹ Phẩm Lan Anh",
     "ghnCOD": 720000,
     "systemCOD": 720000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 7200,
+    "systemFee": 7200,
     "status": "MATCH",
     "customerOrderCode": "SHP003-12031",
     "ghnStatus": "Giao hàng thành công",
@@ -2251,7 +2516,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 720000
+    "totalReconcileItem": 720000,
+    "codFee": 7200,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_099",
@@ -2261,8 +2529,8 @@
     "shopName": "Nội Thất Gia Đình",
     "ghnCOD": 350000,
     "systemCOD": 350000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3500,
+    "systemFee": 3500,
     "status": "MATCH",
     "customerOrderCode": "SHP004-13029",
     "ghnStatus": "Giao hàng thành công",
@@ -2274,7 +2542,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 350000
+    "totalReconcileItem": 350000,
+    "codFee": 3500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM_GHN001_100",
@@ -2284,8 +2555,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 450000,
     "systemCOD": 450000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 4500,
+    "systemFee": 4500,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10022",
     "ghnStatus": "Giao hàng thành công",
@@ -2297,7 +2568,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 450000
+    "totalReconcileItem": 450000,
+    "codFee": 4500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM008",
@@ -2307,20 +2581,23 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 0,
     "systemCOD": 0,
-    "ghnFee": 15000,
-    "systemFee": 18000,
+    "ghnFee": 43000,
+    "systemFee": 46000,
     "status": "MISMATCH",
     "customerOrderCode": "SHP001-10005",
     "ghnStatus": "Chờ giao lại",
-    "deliveryFee": 0,
+    "deliveryFee": -28000,
     "redeliveryFee": -15000,
     "returnFee": 0,
     "failedDeliveryCOD": 0,
     "prepaid": 0,
     "discount": 0,
     "insuranceFee": 0,
-    "serviceFee": -15000,
-    "totalReconcileItem": -15000
+    "serviceFee": -43000,
+    "totalReconcileItem": -15000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM009",
@@ -2330,8 +2607,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 1500000,
     "systemCOD": 1500000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 15000,
+    "systemFee": 15000,
     "status": "MATCH",
     "customerOrderCode": "SHP002-20004",
     "ghnStatus": "Giao hàng thành công",
@@ -2343,7 +2620,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 1500000
+    "totalReconcileItem": 1500000,
+    "codFee": 15000,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM010",
@@ -2353,8 +2633,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 450000,
     "systemCOD": 450000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 4500,
+    "systemFee": 4500,
     "status": "MATCH",
     "customerOrderCode": "SHP001-10006",
     "ghnStatus": "Giao hàng thành công",
@@ -2366,7 +2646,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 450000
+    "totalReconcileItem": 450000,
+    "codFee": 4500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM011",
@@ -2376,8 +2659,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 720000,
     "systemCOD": 730000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 7300,
+    "systemFee": 7300,
     "status": "MISMATCH",
     "customerOrderCode": "SHP002-20005",
     "ghnStatus": "Giao hàng thành công",
@@ -2389,7 +2672,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 720000
+    "totalReconcileItem": 720000,
+    "codFee": 7300,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM012",
@@ -2399,8 +2685,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 380000,
     "systemCOD": 385000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3850,
+    "systemFee": 3850,
     "status": "MISMATCH",
     "customerOrderCode": "SHP001-10007",
     "ghnStatus": "Giao hàng thành công",
@@ -2412,7 +2698,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 380000
+    "totalReconcileItem": 380000,
+    "codFee": 3850,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM013",
@@ -2422,8 +2711,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 950000,
     "systemCOD": 950000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 9500,
+    "systemFee": 9500,
     "status": "MATCH",
     "customerOrderCode": "SHP002-20006",
     "ghnStatus": "Giao hàng thành công",
@@ -2435,7 +2724,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 950000
+    "totalReconcileItem": 950000,
+    "codFee": 9500,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM014",
@@ -2458,7 +2750,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": -24000,
-    "totalReconcileItem": -24000
+    "totalReconcileItem": -24000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM015",
@@ -2468,8 +2763,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 820000,
     "systemCOD": 825000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 8250,
+    "systemFee": 8250,
     "status": "MISMATCH",
     "customerOrderCode": "SHP002-20007",
     "ghnStatus": "Giao hàng thành công",
@@ -2481,7 +2776,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 820000
+    "totalReconcileItem": 820000,
+    "codFee": 8250,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM016",
@@ -2504,7 +2802,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 360000
+    "totalReconcileItem": 360000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM017",
@@ -2514,8 +2815,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 340000,
     "systemCOD": 340000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 3400,
+    "systemFee": 3400,
     "status": "MISMATCH",
     "customerOrderCode": "SHP001-10010",
     "ghnStatus": "Giao hàng thành công",
@@ -2527,7 +2828,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 340000
+    "totalReconcileItem": 340000,
+    "codFee": 3400,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM018",
@@ -2550,7 +2854,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": -36000,
-    "totalReconcileItem": -36000
+    "totalReconcileItem": -36000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM019",
@@ -2560,8 +2867,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 480000,
     "systemCOD": 480000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 4800,
+    "systemFee": 4800,
     "status": "MISMATCH",
     "customerOrderCode": "SHP001-10011",
     "ghnStatus": "Giao hàng thành công",
@@ -2573,7 +2880,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 480000
+    "totalReconcileItem": 480000,
+    "codFee": 4800,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM020",
@@ -2596,7 +2906,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": -30000,
-    "totalReconcileItem": -30000
+    "totalReconcileItem": -30000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM021",
@@ -2606,8 +2919,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 295000,
     "systemCOD": 295000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 2950,
+    "systemFee": 2950,
     "status": "MISMATCH",
     "customerOrderCode": "SHP001-10012",
     "ghnStatus": "Giao hàng thành công",
@@ -2619,7 +2932,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 295000
+    "totalReconcileItem": 295000,
+    "codFee": 2950,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM022",
@@ -2642,7 +2958,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 0
+    "totalReconcileItem": 0,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM023",
@@ -2665,7 +2984,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": -22000,
-    "totalReconcileItem": -22000
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM024",
@@ -2675,8 +2997,8 @@
     "shopName": "Điện Tử Thành Công",
     "ghnCOD": 870000,
     "systemCOD": 870000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 8700,
+    "systemFee": 8700,
     "status": "MATCH",
     "customerOrderCode": "SHP002-20010",
     "ghnStatus": "Giao hàng thành công",
@@ -2688,7 +3010,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 870000
+    "totalReconcileItem": 870000,
+    "codFee": 8700,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM025",
@@ -2698,8 +3023,8 @@
     "shopName": "Shop Thời Trang Minh Anh",
     "ghnCOD": 415000,
     "systemCOD": 405000,
-    "ghnFee": 0,
-    "systemFee": 0,
+    "ghnFee": 4050,
+    "systemFee": 4050,
     "status": "MISMATCH",
     "customerOrderCode": "SHP001-10014",
     "ghnStatus": "Giao hàng thành công",
@@ -2711,53 +3036,10 @@
     "discount": 0,
     "insuranceFee": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 415000
-  },
-  {
-    "id": "ITEM100",
-    "sessionId": "GHN003",
-    "orderCode": "GYHQ5AAB",
-    "shopId": "SHP001",
-    "shopName": "Shop Thời Trang Minh Anh",
-    "ghnCOD": 0,
-    "systemCOD": 0,
-    "ghnFee": 0,
-    "systemFee": 0,
-    "status": "MATCH",
-    "customerOrderCode": "SHP001-30001",
-    "ghnStatus": "Chờ lấy hàng",
-    "deliveryFee": 0,
-    "redeliveryFee": 0,
-    "insuranceFee": 0,
-    "returnFee": 0,
-    "failedDeliveryCOD": 0,
-    "prepaid": 0,
-    "discount": 0,
-    "serviceFee": 0,
-    "totalReconcileItem": 0
-  },
-  {
-    "id": "ITEM101",
-    "sessionId": "GHN003",
-    "orderCode": "GYHQ5AAC",
-    "shopId": "SHP001",
-    "shopName": "Shop Thời Trang Minh Anh",
-    "ghnCOD": 0,
-    "systemCOD": 0,
-    "ghnFee": 0,
-    "systemFee": 0,
-    "status": "MATCH",
-    "customerOrderCode": "SHP001-30002",
-    "ghnStatus": "Đang lấy hàng",
-    "deliveryFee": 0,
-    "redeliveryFee": 0,
-    "insuranceFee": 0,
-    "returnFee": 0,
-    "failedDeliveryCOD": 0,
-    "prepaid": 0,
-    "discount": 0,
-    "serviceFee": 0,
-    "totalReconcileItem": 0
+    "totalReconcileItem": 415000,
+    "codFee": 4050,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM102",
@@ -2780,7 +3062,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 0
+    "totalReconcileItem": 0,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM103",
@@ -2803,7 +3088,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -22000,
-    "totalReconcileItem": -22000
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM104",
@@ -2826,7 +3114,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -25000,
-    "totalReconcileItem": -25000
+    "totalReconcileItem": -25000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM105",
@@ -2849,7 +3140,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -40000,
-    "totalReconcileItem": -40000
+    "totalReconcileItem": -40000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM106",
@@ -2872,7 +3166,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -37000,
-    "totalReconcileItem": -37000
+    "totalReconcileItem": -37000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM107",
@@ -2895,7 +3192,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -50000,
-    "totalReconcileItem": -50000
+    "totalReconcileItem": -50000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM108",
@@ -2918,7 +3218,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -52000,
-    "totalReconcileItem": -52000
+    "totalReconcileItem": -52000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM109",
@@ -2941,7 +3244,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -44000,
-    "totalReconcileItem": -44000
+    "totalReconcileItem": -44000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM110",
@@ -2964,7 +3270,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -47000,
-    "totalReconcileItem": -47000
+    "totalReconcileItem": -47000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM111",
@@ -2987,7 +3296,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -47000,
-    "totalReconcileItem": -47000
+    "totalReconcileItem": -47000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 80000
   },
   {
     "id": "ITEM112",
@@ -3010,7 +3322,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": 0,
-    "totalReconcileItem": 0
+    "totalReconcileItem": 0,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM113",
@@ -3033,7 +3348,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -22000,
-    "totalReconcileItem": -22000
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM114",
@@ -3056,7 +3374,10 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -22000,
-    "totalReconcileItem": -22000
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   },
   {
     "id": "ITEM115",
@@ -3079,6 +3400,139 @@
     "prepaid": 0,
     "discount": 0,
     "serviceFee": -22000,
-    "totalReconcileItem": -22000
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
+  },
+  {
+    "id": "ITEM_NF_001",
+    "sessionId": "GHN001",
+    "orderCode": "GHN8X2K4",
+    "shopId": "SHP003",
+    "shopName": "Shop Mỹ Phẩm Hương Lan",
+    "ghnCOD": 450000,
+    "systemCOD": 0,
+    "ghnFee": 0,
+    "systemFee": 0,
+    "status": "NOT_FOUND",
+    "customerOrderCode": "SHP003-20041",
+    "ghnStatus": "Giao hàng thành công",
+    "deliveryFee": 0,
+    "redeliveryFee": 0,
+    "returnFee": 0,
+    "failedDeliveryCOD": 0,
+    "prepaid": 0,
+    "discount": 0,
+    "insuranceFee": 0,
+    "serviceFee": 0,
+    "totalReconcileItem": 450000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
+  },
+  {
+    "id": "ITEM_NF_002",
+    "sessionId": "GHN001",
+    "orderCode": "GHN5P7R9",
+    "shopId": "SHP005",
+    "shopName": "Shop Điện Tử Smart",
+    "ghnCOD": 0,
+    "systemCOD": 0,
+    "ghnFee": -22000,
+    "systemFee": 0,
+    "status": "NOT_FOUND",
+    "customerOrderCode": "",
+    "ghnStatus": "Lấy hàng thành công",
+    "deliveryFee": 22000,
+    "redeliveryFee": 0,
+    "returnFee": 0,
+    "failedDeliveryCOD": 0,
+    "prepaid": 0,
+    "discount": 0,
+    "insuranceFee": 0,
+    "serviceFee": -22000,
+    "totalReconcileItem": -22000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
+  },
+  {
+    "id": "ITEM_NF_003",
+    "sessionId": "GHN002",
+    "orderCode": "GHN3W6T1",
+    "shopId": "SHP002",
+    "shopName": "Shop Đồ Gia Dụng Bình An",
+    "ghnCOD": 280000,
+    "systemCOD": 0,
+    "ghnFee": 0,
+    "systemFee": 0,
+    "status": "NOT_FOUND",
+    "customerOrderCode": "SHP002-30017",
+    "ghnStatus": "Hoàn hàng thành công",
+    "deliveryFee": 0,
+    "redeliveryFee": 0,
+    "returnFee": 0,
+    "failedDeliveryCOD": 0,
+    "prepaid": 0,
+    "discount": 0,
+    "insuranceFee": 0,
+    "serviceFee": 0,
+    "totalReconcileItem": 280000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
+  },
+  {
+    "id": "ITEM_NF_004",
+    "sessionId": "GHN002",
+    "orderCode": "GHN7M9L2",
+    "shopId": "SHP007",
+    "shopName": "Shop Thực Phẩm Sạch",
+    "ghnCOD": 0,
+    "systemCOD": 0,
+    "ghnFee": -35000,
+    "systemFee": 0,
+    "status": "NOT_FOUND",
+    "customerOrderCode": "SHP007-40022",
+    "ghnStatus": "Đang giao hàng",
+    "deliveryFee": 35000,
+    "redeliveryFee": 0,
+    "returnFee": 0,
+    "failedDeliveryCOD": 0,
+    "prepaid": 0,
+    "discount": 0,
+    "insuranceFee": 0,
+    "serviceFee": -35000,
+    "totalReconcileItem": -35000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
+  },
+  {
+    "id": "ITEM_NF_005",
+    "sessionId": "GHN001",
+    "orderCode": "GHNQ4S8V",
+    "shopId": "SHP004",
+    "shopName": "Shop Giày Dép Thanh Xuân",
+    "ghnCOD": 0,
+    "systemCOD": 0,
+    "ghnFee": -28000,
+    "systemFee": 0,
+    "status": "NOT_FOUND",
+    "customerOrderCode": "SHP004-10088",
+    "ghnStatus": "Hoàn hàng không thành công",
+    "deliveryFee": 28000,
+    "redeliveryFee": 0,
+    "returnFee": 0,
+    "failedDeliveryCOD": 0,
+    "prepaid": 0,
+    "discount": 0,
+    "insuranceFee": 0,
+    "serviceFee": -28000,
+    "totalReconcileItem": -28000,
+    "codFee": 0,
+    "partialDeliveryFee": 0,
+    "failedDeliveryCollect": 0
   }
 ]

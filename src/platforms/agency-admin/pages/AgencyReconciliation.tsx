@@ -101,11 +101,11 @@ const fmtDate = (d: string) => {
   return `${dd}/${mm}/${yy}`
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, confirmedLabel = 'Đã xác nhận', pendingLabel = 'Chờ xác nhận' }: { status: string; confirmedLabel?: string; pendingLabel?: string }) {
   const isConfirmed = status === 'confirmed'
   const bg    = isConfirmed ? '#F0FDF4' : '#FFF7ED'
   const color = isConfirmed ? '#16A34A' : '#C2410C'
-  const label = isConfirmed ? 'Đã xác nhận' : 'Chờ xác nhận'
+  const label = isConfirmed ? confirmedLabel : pendingLabel
   return (
     <span style={{
       display: 'inline-block', padding: '2px 10px', borderRadius: 10,
@@ -541,25 +541,14 @@ function UploadModal({ onClose, onSubmit }: {
   onSubmit: (file: File, date: string, note: string) => void
 }) {
   const [file, setFile] = useState<File | null>(null)
-  const [date, setDate] = useState('')
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
 
-  const handleFileChange = (f: File | null) => {
-    setFile(f)
-    if (f && !date) {
-      const today = new Date()
-      const yyyy = today.getFullYear()
-      const mm = String(today.getMonth() + 1).padStart(2, '0')
-      const dd = String(today.getDate()).padStart(2, '0')
-      setDate(`${yyyy}-${mm}-${dd}`)
-    }
-  }
-
   const handleSubmit = () => {
     if (!file) { setError('Vui lòng chọn file đối soát'); return }
-    if (!date) { setError('Vui lòng chọn ngày thanh toán GHN'); return }
     setError('')
+    const today = new Date()
+    const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     onSubmit(file, date, note)
   }
 
@@ -594,7 +583,7 @@ function UploadModal({ onClose, onSubmit }: {
               File đối soát <span style={{ color: '#DC2626' }}>*</span>
             </div>
             <label style={{ display: 'block', cursor: 'pointer' }}>
-              <input type="file" accept=".xlsx,.xls,.csv" onChange={e => handleFileChange(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
+              <input type="file" accept=".xlsx,.xls,.csv" onChange={e => setFile(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
               <div style={{
                 border: `2px dashed ${file ? C_ACTION : C_BORDER}`,
                 borderRadius: 8, padding: '20px 16px',
@@ -634,13 +623,6 @@ function UploadModal({ onClose, onSubmit }: {
           </div>
 
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C_TEXT_PRIMARY, marginBottom: 6 }}>
-              Ngày thanh toán GHN <span style={{ color: '#DC2626' }}>*</span>
-            </div>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle} />
-          </div>
-
-          <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: C_TEXT_PRIMARY, marginBottom: 6 }}>Ghi chú</div>
             <textarea
               rows={2} value={note} onChange={e => setNote(e.target.value)}
@@ -669,15 +651,12 @@ function UploadModal({ onClose, onSubmit }: {
 function TabShop({
   sessions,
   confirmedShopIds,
-  onConfirmShopSessions,
 }: {
   sessions: CarrierSession[]
   confirmedShopIds: Set<string>
-  onConfirmShopSessions: (ids: string[]) => void
 }) {
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed'>('all')
   const [filterShop, setFilterShop] = useState<string>('all')
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const shopSessions = deriveShopSessions(
     sessions,
@@ -696,26 +675,6 @@ function TabShop({
     const matchShop   = filterShop === 'all' || s.shopId === filterShop
     return matchStatus && matchShop
   })
-
-  const pendingIds = filtered.filter(s => s.status === 'pending').map(s => s.id)
-  const allPendingSelected = pendingIds.length > 0 && pendingIds.every(id => selectedIds.has(id))
-
-  const toggleSelectAll = () => {
-    if (allPendingSelected) setSelectedIds(new Set())
-    else setSelectedIds(new Set(pendingIds))
-  }
-
-  const toggleOne = (id: string) => {
-    const next = new Set(selectedIds)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
-    setSelectedIds(next)
-  }
-
-  const handleConfirm = () => {
-    onConfirmShopSessions(Array.from(selectedIds))
-    setSelectedIds(new Set())
-  }
 
   const total     = shopSessions.length
   const confirmed = shopSessions.filter(s => s.status === 'confirmed').length
@@ -754,11 +713,11 @@ function TabShop({
           <div style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY }}>{total}</div>
         </div>
         <div style={cardStyle}>
-          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Đã xác nhận</div>
+          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Đã chuyển khoản</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: '#16A34A' }}>{confirmed}</div>
         </div>
         <div style={cardStyle}>
-          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Chờ xác nhận</div>
+          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Chưa chuyển khoản</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: '#C2410C' }}>{pending}</div>
         </div>
       </div>
@@ -773,12 +732,12 @@ function TabShop({
             style={{
               border: `1px solid ${C_BORDER}`, borderRadius: 6,
               padding: '7px 12px', fontSize: 14, background: '#fff',
-              color: C_TEXT_PRIMARY, outline: 'none', cursor: 'pointer', minWidth: 160,
+              color: C_TEXT_PRIMARY, outline: 'none', cursor: 'pointer', minWidth: 180,
             }}
           >
             <option value="all">Tất cả</option>
-            <option value="pending">Chờ xác nhận</option>
-            <option value="confirmed">Đã xác nhận</option>
+            <option value="pending">Chưa chuyển khoản</option>
+            <option value="confirmed">Đã chuyển khoản</option>
           </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -800,36 +759,11 @@ function TabShop({
         </div>
       </div>
 
-      {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '10px 12px', marginBottom: 8,
-          background: '#FFF4ED', borderRadius: 8, border: '1px solid #FDBA74', flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>
-            Đã chọn <strong>{selectedIds.size}</strong> phiên
-          </span>
-          <button
-            onClick={handleConfirm}
-            style={{
-              padding: '6px 16px', background: C_ACTION, border: 'none',
-              borderRadius: 6, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Xác nhận phiên đã chọn
-          </button>
-        </div>
-      )}
-
       {/* Table */}
       <div style={{ flex: '1 0 0', overflow: 'hidden' }}>
         <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
-          <div style={{ minWidth: 1600 }}>
+          <div style={{ minWidth: 1400 }}>
             <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-              <div style={{ width: 40, flexShrink: 0, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Checkbox checked={allPendingSelected} onChange={toggleSelectAll} />
-              </div>
               <TCell width={200} isHeader>Mã phiên shop</TCell>
               <TCell flex='1 0 0' minWidth={180} isHeader>Tên shop</TCell>
               <TCell width={240} isHeader>Phiên GHN</TCell>
@@ -838,8 +772,7 @@ function TabShop({
               <TCell width={160} align='right' isHeader>Tổng phí DV (shop)</TCell>
               <TCell width={160} align='right' isHeader>Tổng phí DV (GHN)</TCell>
               <TCell width={130} align='right' isHeader>Lợi nhuận ĐL</TCell>
-              <TCell width={80}  align='right' isHeader>Số lệch</TCell>
-              <TCell width={140} align='center' isHeader>Trạng thái</TCell>
+              <TCell width={160} align='center' isHeader>Trạng thái</TCell>
             </div>
             <div style={{ height: 1, background: C_BORDER }} />
 
@@ -853,8 +786,6 @@ function TabShop({
               <ShopSessionRow
                 key={s.id}
                 session={s}
-                selected={selectedIds.has(s.id)}
-                onToggle={() => toggleOne(s.id)}
               />
             ))}
           </div>
@@ -864,33 +795,22 @@ function TabShop({
   )
 }
 
-function ShopSessionRow({ session: s, selected, onToggle }: {
-  session: ShopSession
-  selected: boolean
-  onToggle: () => void
-}) {
+function ShopSessionRow({ session: s }: { session: ShopSession }) {
+  const navigate = useNavigate()
   const [hover, setHover] = useState(false)
   return (
     <div
+      onClick={() => navigate(`/agency-admin/reconciliation/shop/${encodeURIComponent(s.id)}`, { state: { session: s } })}
       style={{
-        display: 'flex', alignItems: 'center', minWidth: 1600,
-        background: selected ? '#FFF4ED' : hover ? '#FAFAFA' : '#fff',
+        display: 'flex', alignItems: 'center', minWidth: 1400,
+        background: hover ? '#FAFAFA' : '#fff',
         boxShadow: `inset 0 -1px 0 ${C_BORDER}`,
         transition: 'background 0.1s',
+        cursor: 'pointer',
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <div
-        style={{ width: 40, flexShrink: 0, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        onClick={e => e.stopPropagation()}
-      >
-        <Checkbox
-          checked={selected}
-          disabled={s.status !== 'pending'}
-          onChange={onToggle}
-        />
-      </div>
       <TCell width={200}>
         <span style={{ color: C_LINK, fontWeight: 600, fontSize: 13 }}>{s.id}</span>
       </TCell>
@@ -909,18 +829,13 @@ function ShopSessionRow({ session: s, selected, onToggle }: {
       <TCell width={130} align='right'>
         <span style={{
           fontWeight: 600,
-          color: s.profit > 0 ? C_ACTION : s.profit < 0 ? '#DC2626' : C_TEXT_SECONDARY,
+          color: s.profit > 0 ? '#16A34A' : s.profit < 0 ? '#DC2626' : C_TEXT_SECONDARY,
         }}>
           {s.profit > 0 ? '+' : ''}{fmt(s.profit)}
         </span>
       </TCell>
-      <TCell width={80} align='right'>
-        <span style={{ color: s.totalMismatch > 0 ? '#DC2626' : C_TEXT_SECONDARY, fontWeight: s.totalMismatch > 0 ? 700 : 400 }}>
-          {s.totalMismatch > 0 ? s.totalMismatch : '—'}
-        </span>
-      </TCell>
-      <TCell width={140} align='center'>
-        <StatusBadge status={s.status} />
+      <TCell width={160} align='center'>
+        <StatusBadge status={s.status} confirmedLabel='Đã chuyển khoản' pendingLabel='Chưa chuyển khoản' />
       </TCell>
     </div>
   )
@@ -949,7 +864,7 @@ export default function AgencyReconciliation() {
     return s
   })
 
-  const [confirmedShopIds, setConfirmedShopIds] = useState<Set<string>>(new Set())
+  const [confirmedShopIds] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<TabKey>('carrier')
 
   const handleConfirmNVC = (ids: string[]) => {
@@ -964,14 +879,6 @@ export default function AgencyReconciliation() {
 
   const handleDeleteSession = (id: string) => {
     setSessions(prev => prev.filter(s => s.id !== id))
-  }
-
-  const handleConfirmShop = (ids: string[]) => {
-    setConfirmedShopIds(prev => {
-      const next = new Set(prev)
-      ids.forEach(id => next.add(id))
-      return next
-    })
   }
 
   return (
@@ -1028,7 +935,6 @@ export default function AgencyReconciliation() {
             <TabShop
               sessions={sessions}
               confirmedShopIds={confirmedShopIds}
-              onConfirmShopSessions={handleConfirmShop}
             />
           )}
           {activeTab === 'transfer' && <TabComingSoon />}
