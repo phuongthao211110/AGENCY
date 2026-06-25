@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import {
@@ -22,6 +22,8 @@ type CarrierSession = {
   agencyId: string
   carrier: string
   paymentDate: string
+  periodStart?: string
+  periodEnd?: string
   totalOrders: number
   totalCOD: number
   totalFee: number
@@ -69,6 +71,8 @@ type ShopSession = {
   totalMismatch: number
   status: 'pending' | 'confirmed'
   paymentDate: string
+  periodStart?: string
+  periodEnd?: string
 }
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -92,6 +96,16 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n: number) => n.toLocaleString('vi-VN') + ' ₫'
+
+const fmtPeriod = (start?: string, end?: string) => {
+  if (!start || !end) return null
+  const dt = (s: string) => new Date(s)
+  const dd = (s: string) => String(dt(s).getDate()).padStart(2, '0')
+  const mm = (s: string) => String(dt(s).getMonth() + 1).padStart(2, '0')
+  const yy = (s: string) => dt(s).getFullYear()
+  if (start === end) return `${dd(start)}/${mm(start)}/${yy(start)}`
+  return `${dd(start)}/${mm(start)} – ${dd(end)}/${mm(end)}/${yy(end)}`
+}
 
 const fmtDate = (d: string) => {
   const dt = new Date(d)
@@ -201,6 +215,8 @@ function deriveShopSessions(
     const feeGHN      = groupItems.reduce((sum, i) => sum + i.ghnFee, 0)
     const totalMismatch = groupItems.filter(i => i.status !== 'MATCH').length
 
+    const raw = (carrierSessionsData as Array<{ id: string; periodStart?: string; periodEnd?: string }>)
+      .find(r => r.id === nvcId)
     result.push({
       id,
       nvcSessionId: nvcId,
@@ -215,6 +231,8 @@ function deriveShopSessions(
       totalMismatch,
       status: confirmedShopIds.has(id) ? 'confirmed' : 'pending',
       paymentDate: session.paymentDate,
+      periodStart: raw?.periodStart ?? session.periodStart,
+      periodEnd:   raw?.periodEnd   ?? session.periodEnd,
     })
   })
 
@@ -540,19 +558,57 @@ function UploadModal({ onClose, onSubmit }: {
   onClose: () => void
   onSubmit: (file: File, date: string, note: string) => void
 }) {
-  const [file, setFile] = useState<File | null>(null)
-  const [note, setNote] = useState('')
-  const [error, setError] = useState('')
+  const [file, setFile]           = useState<File | null>(null)
+  const [note, setNote]           = useState('')
+  const [error, setError]         = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress]   = useState(0)
+  const abortRef                  = useRef(false)
+  const intervalRef               = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const fileBaseName = file ? file.name.replace(/\.[^.]+$/, '') : ''
 
   const handleSubmit = () => {
     if (!file) { setError('Vui lòng chọn file đối soát'); return }
     setError('')
-    const today = new Date()
-    const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    onSubmit(file, date, note)
+    setUploading(true)
+    setProgress(0)
+    abortRef.current = false
+
+    let pct = 0
+    intervalRef.current = setInterval(() => {
+      if (abortRef.current) {
+        clearInterval(intervalRef.current!)
+        setUploading(false)
+        setProgress(0)
+        return
+      }
+      pct += Math.random() * 12 + 6
+      if (pct >= 100) {
+        pct = 100
+        setProgress(100)
+        clearInterval(intervalRef.current!)
+        setTimeout(() => {
+          setUploading(false)
+          const today = new Date()
+          const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+          onSubmit(file, date, note)
+        }, 400)
+        return
+      }
+      setProgress(Math.round(pct))
+    }, 180)
   }
 
-  const fileBaseName = file ? file.name.replace(/\.[^.]+$/, '') : ''
+  const handleAbort = () => {
+    abortRef.current = true
+  }
+
+  // Clicking backdrop or X during upload → cancel + close
+  const handleClose = () => {
+    if (uploading) abortRef.current = true
+    onClose()
+  }
 
   const inputStyle: React.CSSProperties = {
     width: '100%', border: `1px solid ${C_BORDER}`, borderRadius: 6,
@@ -560,7 +616,7 @@ function UploadModal({ onClose, onSubmit }: {
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000 }}>
+    <div onClick={handleClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000 }}>
       <div
         onClick={e => e.stopPropagation()}
         style={{
@@ -570,77 +626,129 @@ function UploadModal({ onClose, onSubmit }: {
           display: 'flex', flexDirection: 'column',
         }}
       >
+        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${C_BORDER}` }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Upload file đối soát GHN</div>
-          <span onClick={onClose} style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, fontSize: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>
+            {uploading ? 'Đang tải file lên...' : 'Upload file đối soát GHN'}
+          </div>
+          <span onClick={handleClose} style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, fontSize: 16 }}>
             <CloseOutlined />
           </span>
         </div>
 
         <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C_TEXT_PRIMARY, marginBottom: 6 }}>
-              File đối soát <span style={{ color: '#DC2626' }}>*</span>
+
+          {/* ── Uploading state ── */}
+          {uploading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* File info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#F9FAFB', borderRadius: 8, border: `1px solid ${C_BORDER}` }}>
+                <UploadOutlined style={{ fontSize: 20, color: C_ACTION, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file?.name}</div>
+                  <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
+                    {progress < 100 ? `Đang tải lên... ${progress}%` : 'Hoàn tất — đang xử lý...'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Tiến trình</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: progress < 100 ? C_ACTION : '#16A34A' }}>{progress}%</span>
+                </div>
+                <div style={{ height: 8, background: '#F3F4F6', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 4,
+                    background: progress < 100 ? C_ACTION : '#16A34A',
+                    width: `${progress}%`,
+                    transition: 'width 0.15s ease, background 0.3s',
+                  }} />
+                </div>
+              </div>
+
+              {/* Cancel hint */}
+              {progress < 100 && (
+                <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, textAlign: 'center' }}>
+                  Bạn có thể dừng tải và thoát bất cứ lúc nào
+                </div>
+              )}
             </div>
-            <label style={{ display: 'block', cursor: 'pointer' }}>
-              <input type="file" accept=".xlsx,.xls,.csv" onChange={e => setFile(e.target.files?.[0] ?? null)} style={{ display: 'none' }} />
-              <div style={{
-                border: `2px dashed ${file ? C_ACTION : C_BORDER}`,
-                borderRadius: 8, padding: '20px 16px',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                background: file ? '#FFF4ED' : '#FAFAFA',
-              }}>
-                <UploadOutlined style={{ fontSize: 28, color: file ? C_ACTION : C_TEXT_SECONDARY }} />
-                {file ? (
-                  <>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C_ACTION }}>{file.name}</div>
-                    <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Nhấn để thay đổi file</div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>Nhấn để chọn file</div>
-                    <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Hỗ trợ .xlsx, .xls, .csv</div>
-                  </>
+          ) : (
+            /* ── Normal state ── */
+            <>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: C_TEXT_PRIMARY, marginBottom: 6 }}>
+                  File đối soát <span style={{ color: '#DC2626' }}>*</span>
+                </div>
+                <label style={{ display: 'block', cursor: 'pointer' }}>
+                  <input type="file" accept=".xlsx,.xls,.csv" onChange={e => { setFile(e.target.files?.[0] ?? null); setError('') }} style={{ display: 'none' }} />
+                  <div style={{
+                    border: `2px dashed ${file ? C_ACTION : C_BORDER}`,
+                    borderRadius: 8, padding: '20px 16px',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                    background: file ? '#FFF4ED' : '#FAFAFA',
+                  }}>
+                    <UploadOutlined style={{ fontSize: 28, color: file ? C_ACTION : C_TEXT_SECONDARY }} />
+                    {file ? (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C_ACTION }}>{file.name}</div>
+                        <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Nhấn để thay đổi file</div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>Nhấn để chọn file</div>
+                        <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Hỗ trợ .xlsx, .xls, .csv</div>
+                      </>
+                    )}
+                  </div>
+                </label>
+                {file && (
+                  <div style={{ marginTop: 8, padding: '8px 12px', background: '#F9FAFB', borderRadius: 6, border: `1px solid ${C_BORDER}`, fontSize: 12, color: C_TEXT_SECONDARY, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div><span>Mã phiên GHN: </span><strong style={{ color: C_TEXT_PRIMARY }}>{fileBaseName}</strong></div>
+                    <div style={{ fontStyle: 'italic' }}>Hệ thống sẽ tự động đọc thông tin phiên từ file sau khi tải lên</div>
+                  </div>
                 )}
               </div>
-            </label>
-            {file && (
-              <div style={{
-                marginTop: 8, padding: '8px 12px', background: '#F9FAFB',
-                borderRadius: 6, border: `1px solid ${C_BORDER}`,
-                fontSize: 12, color: C_TEXT_SECONDARY,
-                display: 'flex', flexDirection: 'column', gap: 4,
-              }}>
-                <div>
-                  <span>Mã phiên GHN: </span>
-                  <strong style={{ color: C_TEXT_PRIMARY }}>{fileBaseName}</strong>
-                </div>
-                <div style={{ color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>
-                  Hệ thống sẽ tự động đọc thông tin phiên từ file sau khi tải lên
-                </div>
+
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: C_TEXT_PRIMARY, marginBottom: 6 }}>Ghi chú</div>
+                <textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder="Ghi chú (không bắt buộc)" style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
               </div>
-            )}
-          </div>
 
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: C_TEXT_PRIMARY, marginBottom: 6 }}>Ghi chú</div>
-            <textarea
-              rows={2} value={note} onChange={e => setNote(e.target.value)}
-              placeholder="Ghi chú (không bắt buộc)"
-              style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
-            />
-          </div>
-
-          {error && <div style={{ fontSize: 13, color: '#DC2626' }}>{error}</div>}
+              {error && <div style={{ fontSize: 13, color: '#DC2626' }}>{error}</div>}
+            </>
+          )}
         </div>
 
+        {/* Footer */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 24px', borderTop: `1px solid ${C_BORDER}` }}>
-          <button onClick={onClose} style={{ padding: '7px 16px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 14, fontWeight: 500, color: C_TEXT_PRIMARY, cursor: 'pointer' }}>
-            Huỷ
-          </button>
-          <button onClick={handleSubmit} style={{ padding: '7px 16px', background: C_ACTION, border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
-            Tải lên
-          </button>
+          {uploading ? (
+            // During upload: only show "Dừng tải" button
+            <button
+              onClick={handleAbort}
+              disabled={progress >= 100}
+              style={{
+                padding: '7px 16px', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: progress >= 100 ? 'default' : 'pointer',
+                background: progress >= 100 ? '#F3F4F6' : '#FEE2E2',
+                color: progress >= 100 ? C_TEXT_SECONDARY : '#DC2626',
+                border: `1px solid ${progress >= 100 ? C_BORDER : '#FECACA'}`,
+                opacity: progress >= 100 ? 0.6 : 1,
+              }}
+            >
+              Dừng tải
+            </button>
+          ) : (
+            <>
+              <button onClick={handleClose} style={{ padding: '7px 16px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 14, fontWeight: 500, color: C_TEXT_PRIMARY, cursor: 'pointer' }}>
+                Huỷ
+              </button>
+              <button onClick={handleSubmit} style={{ padding: '7px 16px', background: C_ACTION, border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
+                Tải lên
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -656,7 +764,8 @@ function TabShop({
   confirmedShopIds: Set<string>
 }) {
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed'>('all')
-  const [filterShop, setFilterShop] = useState<string>('all')
+  const [filterShop, setFilterShop]     = useState<string>('all')
+  const [filterDate, setFilterDate]     = useState<string>('')
 
   const shopSessions = deriveShopSessions(
     sessions,
@@ -673,8 +782,13 @@ function TabShop({
   const filtered = shopSessions.filter(s => {
     const matchStatus = filterStatus === 'all' || s.status === filterStatus
     const matchShop   = filterShop === 'all' || s.shopId === filterShop
-    return matchStatus && matchShop
+    const matchDate   = !filterDate
+      || (filterDate >= (s.periodStart ?? s.paymentDate) && filterDate <= (s.periodEnd ?? s.paymentDate))
+    return matchStatus && matchShop && matchDate
   })
+
+  const hasActiveFilter = filterStatus !== 'all' || filterShop !== 'all' || !!filterDate
+  const clearFilters = () => { setFilterStatus('all'); setFilterShop('all'); setFilterDate('') }
 
   const total     = shopSessions.length
   const confirmed = shopSessions.filter(s => s.status === 'confirmed').length
@@ -757,16 +871,44 @@ function TabShop({
             ))}
           </select>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Ngày trong kỳ:</span>
+          <input
+            type="date"
+            value={filterDate}
+            onChange={e => setFilterDate(e.target.value)}
+            onBlur={e => setFilterDate(e.target.value)}
+            style={{
+              border: `1px solid ${filterDate ? C_ACTION : C_BORDER}`, borderRadius: 6,
+              padding: '7px 10px', fontSize: 13, background: '#fff',
+              color: filterDate ? C_ACTION : C_TEXT_PRIMARY,
+              fontWeight: filterDate ? 600 : 400,
+              outline: 'none', cursor: 'pointer',
+            }}
+          />
+        </div>
+        {hasActiveFilter && (
+          <button
+            onClick={clearFilters}
+            style={{
+              padding: '7px 12px', background: '#fff', border: `1px solid ${C_BORDER}`,
+              borderRadius: 6, fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'pointer',
+            }}
+          >
+            Xoá lọc
+          </button>
+        )}
       </div>
 
       {/* Table */}
       <div style={{ flex: '1 0 0', overflow: 'hidden' }}>
         <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
-          <div style={{ minWidth: 1400 }}>
+          <div style={{ minWidth: 1530 }}>
             <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
               <TCell width={200} isHeader>Mã phiên shop</TCell>
               <TCell flex='1 0 0' minWidth={180} isHeader>Tên shop</TCell>
               <TCell width={240} isHeader>Phiên GHN</TCell>
+              <TCell width={130} isHeader>Thời gian</TCell>
               <TCell width={70}  align='right' isHeader>Số đơn</TCell>
               <TCell width={160} align='right' isHeader>Tổng COD (shop)</TCell>
               <TCell width={160} align='right' isHeader>Tổng phí DV (shop)</TCell>
@@ -802,7 +944,7 @@ function ShopSessionRow({ session: s }: { session: ShopSession }) {
     <div
       onClick={() => navigate(`/agency-admin/reconciliation/shop/${encodeURIComponent(s.id)}`, { state: { session: s } })}
       style={{
-        display: 'flex', alignItems: 'center', minWidth: 1400,
+        display: 'flex', alignItems: 'center', minWidth: 1530,
         background: hover ? '#FAFAFA' : '#fff',
         boxShadow: `inset 0 -1px 0 ${C_BORDER}`,
         transition: 'background 0.1s',
@@ -819,6 +961,12 @@ function ShopSessionRow({ session: s }: { session: ShopSession }) {
       </TCell>
       <TCell width={240}>
         <span style={{ color: C_LINK, fontSize: 13 }}>{s.nvcSessionCode}</span>
+      </TCell>
+      <TCell width={130}>
+        {fmtPeriod(s.periodStart, s.periodEnd)
+          ? <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{fmtPeriod(s.periodStart, s.periodEnd)}</span>
+          : <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>—</span>
+        }
       </TCell>
       <TCell width={70} align='right'>{s.totalOrders}</TCell>
       <TCell width={160} align='right'>

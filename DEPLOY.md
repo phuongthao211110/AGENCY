@@ -7,7 +7,7 @@
 ## Deploy Flow — Vercel
 
 ```
-1. Phát triển tính năng ở local (npm run dev → localhost:4000)
+1. Phát triển tính năng ở local (npm run dev → localhost:2000)
 2. Test kỹ, đảm bảo build pass: npm run build
 3. Thêm tính năng vào mục [Pending Deploy] bên dưới
 4. Khi muốn deploy: confirm với user → move sang [Deploy History]
@@ -25,9 +25,9 @@
 ## Vercel Config
 
 ```
-URL:        https://ghn-agency.vercel.app
+URL:        https://agency-flame-xi.vercel.app
 Provider:   Vercel (Hobby Plan)
-Repo:       github.com/trantrannnnn/ghn-agency
+Repo:       github.com/phuongthao211110/AGENCY
 Branch:     main (auto-deploy on push)
 Build cmd:  npm run build
 Dist dir:   dist/
@@ -35,8 +35,8 @@ Dist dir:   dist/
 
 > **Vercel Gotchas (đã gặp):**
 > - **SPA routing 404**: Cần file `vercel.json` với rewrites về `index.html` — đã có ✓
-> - **Deployment Blocked — invalid email**: Git email phải match GitHub account. Set: `git config --global user.email "trantrannguyen1996@gmail.com"`
-> - **Deployment Blocked — no contributing access**: Hobby Plan chỉ cho owner deploy. Commit author email phải là `trantrannguyen1996@gmail.com` (email GitHub account `trantrannnnn`)
+> - **Deployment Blocked — invalid email**: Git email phải match GitHub account. Set: `git config --global user.email "thaonnp@chotdonnhanh.vn"`
+> - **Deployment Blocked — no contributing access**: Hobby Plan chỉ cho owner deploy. Commit author email phải là `thaonnp@chotdonnhanh.vn` (email GitHub account `phuongthao211110`)
 
 ---
 

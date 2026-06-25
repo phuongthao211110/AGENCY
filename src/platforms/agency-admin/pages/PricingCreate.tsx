@@ -678,45 +678,54 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
                   colPercent="Phụ phí (% trên giá)"
                 />
               ) : key === 'returnFee' ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ display: 'inline-flex', gap: 1, background: '#F3F4F6', borderRadius: 6, padding: 2, flexShrink: 0 }}>
-                    {(['vnd', '%'] as FeeUnit[]).map((unit) => {
-                      const active = surcharges.returnFee.unit === unit
-                      return (
-                        <button
-                          key={unit}
-                          onClick={() => updateReturnFee({ value: '', unit })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(['vnd', '%'] as FeeUnit[]).map((unit) => {
+                    const isSelected = surcharges.returnFee.unit === unit
+                    const label      = unit === 'vnd' ? 'Số tiền cố định' : '% cước phí tuyến'
+                    const suffix     = unit === 'vnd' ? 'đ' : '%'
+                    const select     = () => { if (!isSelected) updateReturnFee({ value: '', unit }) }
+                    return (
+                      <div key={unit} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {/* Radio dot */}
+                        <div
+                          onClick={select}
                           style={{
-                            fontSize: 12, fontWeight: 600, padding: '2px 10px', borderRadius: 5,
-                            border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-                            background: active ? '#fff' : 'transparent',
-                            color: active ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
-                            boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                            transition: 'all 0.15s',
+                            width: 16, height: 16, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
+                            border: isSelected ? `5px solid ${C_ACTION}` : `1.5px solid ${C_BORDER}`,
+                            background: '#fff', boxSizing: 'border-box', transition: 'border 0.15s',
                           }}
+                        />
+                        <span
+                          onClick={select}
+                          style={{ fontSize: 13, color: isSelected ? C_TEXT_PRIMARY : C_TEXT_SECONDARY, whiteSpace: 'nowrap', width: 140, cursor: 'pointer', userSelect: 'none' }}
                         >
-                          {unit === 'vnd' ? 'Số tiền cố định' : '% cước phí tuyến'}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <div style={{ position: 'relative', width: 150 }}>
-                    <input
-                      type="number"
-                      value={surcharges.returnFee.value}
-                      onChange={(e) => updateReturnFee({ ...surcharges.returnFee, value: e.target.value })}
-                      placeholder={surcharges.returnFee.unit === 'vnd' ? 'VD: 10000' : 'VD: 5'}
-                      style={{ ...inputStyle, width: '100%', paddingRight: 30, boxSizing: 'border-box' }}
-                      onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-                    />
-                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>
-                      {surcharges.returnFee.unit === 'vnd' ? 'đ' : '%'}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>
-                    {surcharges.returnFee.unit === '%' ? 'trên cước phí tuyến ' : ''}/ đơn hàng
-                  </span>
+                          {label}
+                        </span>
+                        <div style={{ position: 'relative', width: 130 }}>
+                          <input
+                            type="number"
+                            value={isSelected ? surcharges.returnFee.value : ''}
+                            disabled={!isSelected}
+                            onChange={(e) => isSelected && updateReturnFee({ ...surcharges.returnFee, value: e.target.value })}
+                            placeholder={unit === 'vnd' ? 'VD: 10000' : 'VD: 5'}
+                            style={{
+                              ...inputStyle,
+                              ...(!isSelected ? { background: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed', borderColor: C_BORDER } : {}),
+                              width: '100%', paddingRight: 26, boxSizing: 'border-box',
+                            }}
+                            onFocus={(e) => isSelected && (e.currentTarget.style.borderColor = '#FFA274')}
+                            onBlur={(e) => isSelected && (e.currentTarget.style.borderColor = C_BORDER)}
+                          />
+                          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: isSelected ? C_TEXT_SECONDARY : '#C0C4CC', pointerEvents: 'none' }}>
+                            {suffix}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>
+                          {unit === '%' ? 'của cước phí tuyến / đơn hàng' : '/ đơn hàng'}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               ) : null}
             </div>

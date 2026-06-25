@@ -1,7 +1,7 @@
 {
   "platform": "agency-admin",
   "currentVersion": "1.1.0",
-  "lastUpdated": "2026-04-17",
+  "lastUpdated": "2026-06-19",
   "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
@@ -172,6 +172,54 @@
             "AC8: Khi không có dịch vụ nào được cấu hình trong đại lý, Section \"Cấu hình dịch vụ\" hiển thị thông báo hướng dẫn Agency Admin thiết lập dịch vụ tại màn \"Thiết lập NVC\" trước."
           ],
           "status": "draft"
+        },
+        {
+          "id": "AGA-SHOP-7",
+          "jiraKey": "AGENCY-611",
+          "title": "[AGA] Shop - Hiển thị Inactive khi shop tự xoá tài khoản",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn tự động thấy shop chuyển sang trạng thái Inactive khi shop đó tự xoá tài khoản, và có thể kích hoạt lại nếu cần, để tôi luôn nắm được tình trạng thực tế của danh sách shop mà không cần phải làm gì thêm.",
+          "notes": [
+            "Task này phụ thuộc AGENCY-610 — cần deploy song song hoặc AGENCY-610 trước",
+            "Kích hoạt lại không yêu cầu shop đồng ý — Agency Admin có toàn quyền. Nhưng cần gửi email thông báo cho shop biết",
+            "Không có thời hạn tự động xoá hẳn — shop Inactive tồn tại vô thời hạn cho đến khi có policy rõ ràng hơn"
+          ],
+          "userFlow": [
+            "Shop hoàn thành xoá tài khoản (AGENCY-610) → system tự cập nhật status = inactive",
+            "Agency Admin vào Quản lý shop → thấy shop đó hiển thị mờ với badge Inactive + ghi chú Tự xoá DD/MM",
+            "Agency Admin không cần làm gì thêm",
+            "(Tùy chọn) Nếu shop đổi ý liên hệ lại: Agency Admin vào chi tiết shop → nhấn Kích hoạt lại tài khoản",
+            "Shop nhận email thông báo tài khoản đã được kích hoạt lại"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Ngay sau khi shop xoá tài khoản, danh sách shop phía Agency Admin tự động cập nhật — không cần F5.",
+            "AC2: Row shop Inactive hiển thị: tên xám + badge Inactive + ghi chú Tự xoá DD/MM. Phân biệt rõ với shop Active.",
+            "AC3: Agency Admin có thể click vào shop Inactive để xem chi tiết: lý do xoá, ghi chú, ngày xoá.",
+            "AC4: Nút Kích hoạt lại tài khoản hoạt động: sau khi kích hoạt → status = Active, shop nhận email, row trở lại bình thường.",
+            "AC5: Dữ liệu lịch sử của shop (đơn hàng, đối soát, COD) vẫn tra cứu được sau khi Inactive.",
+            "AC6: Agency Admin không nhận thông báo push/alert khi shop tự xoá — chỉ thấy qua sự thay đổi trạng thái trong danh sách."
+          ]
+        },
+        {
+          "id": "AGA-SHOP-8",
+          "jiraKey": "AGENCY-608",
+          "title": "[AGA] Shop - Danh sách shop: Hiển thị link đăng nhập shop portal",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn thấy link đăng nhập shop portal ngay trên trang danh sách shop để tôi có thể dễ dàng sao chép và chia sẻ cho chủ shop mà không cần tìm ở nơi khác.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin truy cập màn 'Quản lý shop'",
+            "Hệ thống hiển thị banner 'Link đăng nhập shop' phía trên danh sách",
+            "Agency Admin nhấn 'Copy' để sao chép URL vào clipboard",
+            "Agency Admin chia sẻ URL cho chủ shop để đăng nhập"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hệ thống hiển thị banner 'Link đăng nhập shop' cố định ở đầu trang 'Quản lý shop', phía dưới tiêu đề trang và phía trên thanh tìm kiếm. Banner luôn hiển thị bất kể trạng thái tìm kiếm hay danh sách shop.",
+            "AC2: Banner hiển thị đầy đủ: label 'Link đăng nhập shop:', URL shop portal dạng link (click mở tab mới), nút 'Copy' ở phía phải.",
+            "AC3: URL trong banner là URL shop portal dùng chung của đại lý — không phải URL riêng per shop. Tất cả shop thuộc cùng đại lý đều đăng nhập qua một URL duy nhất.",
+            "AC4: Agency Admin nhấn 'Copy' → URL được sao chép toàn bộ vào clipboard. Nút hiển thị trạng thái 'Đã copy' trong 2 giây rồi tự reset về 'Copy'.",
+            "AC5: Agency Admin click vào URL trong banner → hệ thống mở trang đăng nhập shop trong tab mới."
+          ]
         }
       ]
     },
@@ -331,6 +379,88 @@
             "AC4: Khi không có cấu hình giá, hệ thống hiển thị thông báo \"Chưa có cấu hình giá\".",
             "AC5: Agency Admin có thể click \"Thêm cấu hình giá\" để tạo cấu hình giá mới cho gói đang chọn.",
             "AC6: Agency Admin có thể click \"Chi tiết\" để xem toàn bộ chi tiết cấu hình giá (bậc vượt cân, phụ phí)."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-5",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC: Tạo bảng giá - Cấu hình phụ phí",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn cấu hình phụ phí cho từng tuyến trong bảng giá để xác định các khoản phí phát sinh ngoài cước phí cơ bản khi giao hàng.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin đang tạo bảng giá mới, tại một tuyến bất kỳ",
+            "Agency Admin click nút 'Phụ phí' trên thanh header của tuyến đó",
+            "Hệ thống mở section phụ phí bên dưới, hiển thị danh sách 6 loại phụ phí — mặc định thu gọn",
+            "Agency Admin click 'Thêm' bên cạnh loại phụ phí muốn cấu hình → form tương ứng mở ra",
+            "Agency Admin nhập giá trị → phụ phí được lưu vào tuyến đó",
+            "Nếu muốn xoá phụ phí đã cấu hình → click 'Xoá' → xác nhận trong modal"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Mỗi tuyến trong bảng giá có nút 'Phụ phí' ở góc phải header. Nút hiển thị badge số lượng loại phụ phí đã cấu hình. Click để mở/đóng section phụ phí của tuyến đó.",
+            "AC2: Section phụ phí hiển thị đúng 6 loại theo thứ tự: (1) Phí bảo hiểm (khai giá), (2) Giao trả 1 phần, (3) Phí giao thất bại thu tiền, (4) Phí thu hộ, (5) Phí kích hoạt giao lại, (6) Phí hoàn hàng.",
+            "AC3: Mặc định tất cả 6 loại thu gọn. Mỗi loại hiển thị: tên phụ phí + nút 'Thêm'. Khi đã cấu hình: thay nút 'Thêm' bằng nút 'Xoá' và form mở ra.",
+            "AC4: Cấu trúc form theo loại: (a) Giao trả 1 phần và Phí giao thất bại thu tiền: nhập số tiền/đơn hàng (đồng). (b) Phí hoàn hàng: 2 radio button — 'Số tiền cố định' và '% cước phí tuyến', mỗi option có ô nhập riêng ngay cạnh. Ô của option không được chọn bị disable. Chọn option mới → reset giá trị về rỗng. (c) Phí bảo hiểm, Phí thu hộ, Phí kích hoạt giao lại: bảng nhiều mức.",
+            "AC5: Bảng nhiều mức — cột Từ/Đến khác nhau theo loại: Phí bảo hiểm (giá trị khai giá từ/đến), Phí thu hộ (COD từ/đến), Phí kích hoạt giao lại (từ lần/đến lần). Cột phụ phí gồm: số fix (đồng) hoặc % — loại trừ nhau. Khi dùng %: xuất hiện ô 'Tối đa X đ' (không bắt buộc).",
+            "AC6: Cột 'Từ' dòng thứ 2 trở đi tự động điền = giá trị 'Đến' dòng liền trước + 1, không chỉnh sửa được. Nút 'Thêm' thêm dòng mới phía dưới dòng hiện tại. Nút 'Xoá' xoá dòng (không hoạt động nếu chỉ còn 1 dòng).",
+            "AC7: Click 'Xoá' phụ phí đã có dữ liệu → modal xác nhận 'Bạn có chắc muốn xoá cấu hình [tên phụ phí]? Dữ liệu đã nhập sẽ bị mất.' với nút Huỷ và Xoá. Click 'Xoá' khi chưa nhập → thu gọn trực tiếp, không cần xác nhận."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-6",
+          "jiraKey": "AGENCY-250",
+          "title": "[AGA] Thiết lập NVC: Tạo bảng giá - Cấu hình phụ phí Hoàn hàng",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn cấu hình phụ phí hoàn hàng cho từng tuyến trong bảng giá bằng cách chọn một trong hai hình thức tính phí — số tiền cố định hoặc phần trăm cước phí tuyến — để áp dụng đúng chính sách hoàn hàng của đại lý.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin đang tạo bảng giá mới, mở section Phụ phí của một tuyến",
+            "Tại mục Phí hoàn hàng, click 'Thêm'",
+            "Hệ thống hiển thị form với 2 lựa chọn: Số tiền cố định và % cước phí tuyến",
+            "Agency Admin chọn một hình thức và nhập giá trị vào ô tương ứng",
+            "Nếu đổi sang hình thức khác → giá trị cũ bị xoá, nhập lại từ đầu"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Mục 'Phí hoàn hàng' hiển thị 2 radio button trên 2 dòng riêng: (1) Số tiền cố định — ô nhập + đ / đơn hàng. (2) % cước phí tuyến — ô nhập + % của cước phí tuyến / đơn hàng.",
+            "AC2: Mặc định chọn 'Số tiền cố định'. Chỉ được chọn một trong hai — không thể chọn đồng thời cả hai.",
+            "AC3: Ô nhập của option không được chọn bị vô hiệu hoá (nền xám, chữ nhạt, không nhập được). Ô nhập của option đang chọn hoạt động bình thường.",
+            "AC4: Khi Agency Admin chuyển sang option khác → giá trị đang nhập bị xoá, ô nhập mới ở trạng thái rỗng để nhập lại.",
+            "AC5: Nhãn trailing hiển thị đúng đơn vị: Số tiền cố định → 'đ / đơn hàng'. % cước phí tuyến → '% của cước phí tuyến / đơn hàng'.",
+            "AC6: Giá trị hợp lệ là số dương. Placeholder gợi ý: 'VD: 10000' cho số tiền cố định, 'VD: 5' cho phần trăm."
+          ]
+        }
+      ]
+    },
+    {
+      "key": "he-thong",
+      "title": "Hệ thống",
+      "stories": [
+        {
+          "id": "AGA-HT-1",
+          "jiraKey": "AGENCY-609",
+          "title": "[HỆ THỐNG] Cập nhật danh sách đầu số điện thoại hợp lệ",
+          "status": "draft",
+          "userStory": "Là người dùng (Shop / Agency Admin / Super Admin), tôi muốn có thể nhập số điện thoại với các đầu số mới và hợp lệ của tất cả nhà mạng Việt Nam để hệ thống không từ chối các SĐT thực tế đang dùng.",
+          "notes": [
+            "Danh sách đầu số chuẩn theo config GHN (valid_mobilephone_headers), không phải danh sách Bộ TT&TT",
+            "Đầu số 0868 → prefix 086 đã có trong Viettel, nên thực ra không bị thiếu nếu validate 3 số đầu",
+            "Điện thoại cố định (valid_homephone_headers) phức tạp hơn → tách task riêng",
+            "Cần confirm với backend team về format lưu SĐT trong DB: có normalize trước khi lưu không?"
+          ],
+          "userFlow": [
+            "Người dùng mở bất kỳ form có field SĐT",
+            "Nhập số điện thoại 10 chữ số",
+            "Hệ thống validate khi blur hoặc khi submit: đủ 10 chữ số + 3 chữ số đầu nằm trong danh sách hợp lệ",
+            "Hợp lệ → cho phép tiếp tục",
+            "Không hợp lệ → hiển thị lỗi: \"Số điện thoại không hợp lệ. Vui lòng kiểm tra lại đầu số.\""
+          ],
+          "acceptanceCriteria": [
+            "AC1: Các đầu số sau được chấp nhận (trước đây bị từ chối): 071, 072, 073, 080, 051, 053, 054, 055, 057.",
+            "AC2: Các đầu số không tồn tại (ví dụ: 011, 044, 060) bị từ chối với message: \"Số điện thoại không hợp lệ. Vui lòng kiểm tra lại đầu số.\"",
+            "AC3: Validation áp dụng nhất quán cho tất cả field SĐT trên 3 platform — không có field nào dùng rule cũ.",
+            "AC4: SĐT 9 số, 11 số, hoặc có ký tự đặc biệt đều bị từ chối.",
+            "AC5: Logic validate được tập trung tại 1 utility function, không hardcode riêng lẻ tại từng form.",
+            "AC6: Không có regression — các đầu số hiện tại đang hợp lệ vẫn tiếp tục được chấp nhận."
           ]
         }
       ]

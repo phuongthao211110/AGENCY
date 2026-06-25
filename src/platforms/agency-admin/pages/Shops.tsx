@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
+import { PlusOutlined, SearchOutlined, LinkOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import allShops from '../../../mock-data/shops.json'
 
@@ -97,8 +97,18 @@ function TRow({ shop, checked, onToggle, onClick }: {
         </div>
         {/* Shop */}
         <div style={{ flex:'1 0 0', minWidth:240, padding:'6px 8px', display:'flex', flexDirection:'column', gap:2 }}>
-          <span style={{ fontSize:14, fontWeight:700, color: C_LINK, lineHeight:'20px' }}>{shop.name}</span>
-          <span style={{ fontSize:12, color: C_TEXT_SECONDARY, lineHeight:'16px' }}>{shop.id}</span>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:14, fontWeight:700, color: shop.status === 'inactive' ? '#9CA3AF' : C_LINK, lineHeight:'20px' }}>{shop.name}</span>
+            {shop.status === 'inactive' && (
+              <span style={{ fontSize:11, fontWeight:500, color:'#6B7280', background:'#F3F4F6', border:'1px solid #D1D5DB', borderRadius:4, padding:'1px 6px', lineHeight:'16px', whiteSpace:'nowrap' }}>Inactive</span>
+            )}
+          </div>
+          <span style={{ fontSize:12, color: C_TEXT_SECONDARY, lineHeight:'16px' }}>
+            {shop.id}
+            {shop.status === 'inactive' && (shop as any).selfDeletedAt && (
+              <> · Tự xoá {((shop as any).selfDeletedAt as string).split('-').reverse().join('/')}</>
+            )}
+          </span>
         </div>
         {/* Chủ shop */}
         <div style={{ flex:'1 0 0', minWidth:160, padding:'6px 8px', display:'flex', flexDirection:'column', gap:2 }}>
@@ -206,12 +216,21 @@ function Pagination({ page, total, pageSize, onPageChange, onPageSizeChange }: {
 }
 
 // ── Main page ─────────────────────────────────────────────────
+const SHOP_PORTAL_URL = `${window.location.origin}/shop/login`
+
 export default function Shops() {
   const navigate = useNavigate()
   const [search, setSearch]       = useState('')
   const [selected, setSelected]   = useState<Set<string>>(new Set())
   const [page, setPage]           = useState(1)
   const [pageSize, setPageSize]   = useState(50)
+  const [copied, setCopied]       = useState(false)
+
+  const copyPortalUrl = () => {
+    navigator.clipboard.writeText(SHOP_PORTAL_URL).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const filtered = shops.filter(
     (s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.phone.includes(search)
@@ -256,6 +275,40 @@ export default function Shops() {
             <PlusOutlined style={{ color:'#fff', fontSize:16 }} />
             <span style={{ fontSize:14, fontWeight:600, color:'#fff', whiteSpace:'nowrap' }}>Tạo shop mới</span>
           </button>
+        </div>
+
+        {/* Shop portal URL banner */}
+        <div style={{
+          margin: '0 16px 8px',
+          padding: '10px 14px',
+          background: '#EFF6FF',
+          border: '1px solid #BFDBFE',
+          borderRadius: 8,
+          display: 'flex', alignItems: 'center', gap: 10,
+          flexShrink: 0,
+        }}>
+          <LinkOutlined style={{ fontSize: 15, color: '#3B82F6', flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: '#1E40AF', flexShrink: 0 }}>Link đăng nhập shop:</span>
+          <a
+            href={SHOP_PORTAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 13, color: '#3B82F6', fontWeight: 600, textDecoration: 'none', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          >
+            {SHOP_PORTAL_URL}
+          </a>
+          <div
+            onClick={copyPortalUrl}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', flexShrink: 0, padding: '3px 10px', borderRadius: 5, background: copied ? '#D1FAE5' : '#DBEAFE', border: `1px solid ${copied ? '#6EE7B7' : '#93C5FD'}` }}
+          >
+            {copied
+              ? <CheckOutlined style={{ fontSize: 13, color: '#059669' }} />
+              : <CopyOutlined style={{ fontSize: 13, color: '#3B82F6' }} />
+            }
+            <span style={{ fontSize: 12, fontWeight: 600, color: copied ? '#059669' : '#3B82F6' }}>
+              {copied ? 'Đã copy' : 'Copy'}
+            </span>
+          </div>
         </div>
 
         {/* Search */}

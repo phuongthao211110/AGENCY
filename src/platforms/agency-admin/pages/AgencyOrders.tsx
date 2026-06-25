@@ -714,10 +714,25 @@ function THead({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: 
 }
 
 // ── Order types with history ──────────────────────────────────
-type StatusHistoryItem = { date: string; status: string; detail: string; time: string }
+type GHNLogEntry = {
+  status: string
+  status_name: string
+  action: string
+  updated_date: string
+  note: string
+  warehouse_id: number | null
+  warehouse_name: string
+  is_force_majeure: boolean
+  force_majeure_msg: string
+  is_regulation: boolean
+  regulation_msg: string
+}
 type ActionHistoryItem = { date: string; time: string; operator: string; action: string; oldContent: string; newContent: string }
 type Order = typeof allOrders[number] & {
-  statusHistory?: StatusHistoryItem[]
+  log?: GHNLogEntry[]
+  num_deliver?: number
+  num_pick?: number
+  num_return?: number
   actionHistory?: ActionHistoryItem[]
 }
 
@@ -727,15 +742,16 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
 
   useEffect(() => { if (order) setActiveTab('info') }, [order?.id])
 
-  const statusHistory: StatusHistoryItem[] = order?.statusHistory ?? []
+  const log: GHNLogEntry[] = order?.log ?? []
   const actionHistory: ActionHistoryItem[] = order?.actionHistory ?? []
 
-  const statusByDate = statusHistory.reduce<Record<string, StatusHistoryItem[]>>((acc, item) => {
-    if (!acc[item.date]) acc[item.date] = []
-    acc[item.date].push(item)
+  const logByDate = log.reduce<Record<string, GHNLogEntry[]>>((acc, item) => {
+    const dateKey = item.updated_date.slice(0, 10)
+    if (!acc[dateKey]) acc[dateKey] = []
+    acc[dateKey].push(item)
     return acc
   }, {})
-  const statusDates = Object.keys(statusByDate).sort((a, b) => b.localeCompare(a))
+  const logDates = Object.keys(logByDate).sort((a, b) => b.localeCompare(a))
 
   const actionByDate = actionHistory.reduce<Record<string, ActionHistoryItem[]>>((acc, item) => {
     if (!acc[item.date]) acc[item.date] = []
@@ -744,10 +760,42 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
   }, {})
   const actionDates = Object.keys(actionByDate).sort((a, b) => b.localeCompare(a))
 
-  const latestStatus = statusHistory[0]?.status ?? ''
-
   function formatDateHeader(dateStr: string) {
     return new Date(dateStr).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
+  function formatTime(isoStr: string) {
+    return new Date(isoStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  }
+
+  const ACTION_LABEL: Record<string, string> = {
+    READY_TO_PICK:    'Chờ lấy',
+    PICK_IN_TRIP:     'Lấy hàng',
+    HUB_IN:           'Đến kho',
+    HUB_OUT:          'Rời kho',
+    HUB_DELIVERY_IN:  'Đến bưu cục',
+    DELIVER_IN_TRIP:  'Giao hàng',
+    DELIVERY_FAIL:    'Giao thất bại',
+    WAITING_TO_RETURN:'Chờ hoàn',
+    RETURN_IN_TRIP:   'Đang hoàn',
+    RETURNED:         'Hoàn xong',
+    CANCEL:           'Huỷ',
+  }
+
+  const ACTION_COLOR: Record<string, string> = {
+    DELIVER_IN_TRIP:  '#D1FAE5', DELIVERY_FAIL:    '#FEE2E2',
+    WAITING_TO_RETURN:'#FEF3C7', RETURN_IN_TRIP:   '#FEF3C7',
+    RETURNED:         '#F3F4F6', CANCEL:           '#FEE2E2',
+    READY_TO_PICK:    '#EFF6FF', PICK_IN_TRIP:     '#EFF6FF',
+    HUB_IN:           '#F3F4F6', HUB_OUT:          '#F3F4F6', HUB_DELIVERY_IN: '#F3F4F6',
+  }
+
+  const ACTION_TEXT_COLOR: Record<string, string> = {
+    DELIVER_IN_TRIP:  '#065F46', DELIVERY_FAIL:    '#991B1B',
+    WAITING_TO_RETURN:'#92400E', RETURN_IN_TRIP:   '#92400E',
+    RETURNED:         '#374151', CANCEL:           '#991B1B',
+    READY_TO_PICK:    '#1D4ED8', PICK_IN_TRIP:     '#1D4ED8',
+    HUB_IN:           '#374151', HUB_OUT:          '#374151', HUB_DELIVERY_IN: '#374151',
   }
 
   if (!order) return null
@@ -995,7 +1043,7 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
                     <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0 đ</span>
                   </InfoRow>
                   <InfoRow label="Trạng thái">
-                    <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', fontWeight: 700 }}>{latestStatus || order.status}</span>
+                    <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', fontWeight: 700 }}>{log[0]?.status_name || order.status}</span>
                   </InfoRow>
                 </div>
 
@@ -1112,33 +1160,88 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
           </div>
         </div>}
 
-        {/* ── Body: status history tab ──────────────────────────── */}
+        {/* ── Body: status history tab (GHN log[]) ─────────────── */}
         {activeTab === 'status' && (
           <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
-            {statusDates.length === 0 && (
+            {/* Stats bar */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              {[
+                { label: 'Số lần lấy',  value: order?.num_pick    ?? 0, color: '#1D4ED8', bg: '#EFF6FF' },
+                { label: 'Số lần giao', value: order?.num_deliver ?? 0, color: '#065F46', bg: '#D1FAE5' },
+                { label: 'Số lần hoàn', value: order?.num_return  ?? 0, color: '#92400E', bg: '#FEF3C7' },
+              ].map(s => (
+                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6, background: s.bg, borderRadius: 6, padding: '4px 12px' }}>
+                  <span style={{ fontSize: 13, color: s.color, fontWeight: 700 }}>{s.value}</span>
+                  <span style={{ fontSize: 12, color: s.color }}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {log.length === 0 && (
               <div style={{ padding: '32px 0', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>Chưa có lịch sử trạng thái</div>
             )}
-            {statusDates.map(date => (
-              <div key={date}>
-                <div style={{ display: 'flex', background: '#F3F4F6', padding: '6px 12px', marginTop: 12, borderRadius: 4 }}>
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>{formatDateHeader(date)}</span>
-                  <span style={{ width: 300, fontSize: 13, fontWeight: 600, color: '#374151' }}>Chi tiết</span>
-                  <span style={{ width: 80, fontSize: 13, fontWeight: 600, color: '#374151', textAlign: 'right' }}>Thời gian</span>
+
+            {log.length > 0 && (
+              <>
+                {/* Table header */}
+                <div style={{ display: 'flex', background: C_BG_HEADER, padding: '6px 12px', borderRadius: 4, marginBottom: 2 }}>
+                  <span style={{ width: 200, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#374151' }}>Trạng thái</span>
+                  <span style={{ width: 110, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#374151' }}>Hành động</span>
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>Ghi chú</span>
+                  <span style={{ width: 80, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#374151', textAlign: 'right' }}>Thời gian</span>
                 </div>
-                {statusByDate[date].map((item, idx) => {
-                  const isLatest = item === statusHistory[0]
-                  return (
-                    <div key={idx} style={{ display: 'flex', padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, alignItems: 'flex-start' }}>
-                      <span style={{ flex: 1, fontSize: 14, fontWeight: isLatest ? 700 : 400, color: isLatest ? C_LINK : '#6B7280' }}>
-                        {item.status}
-                      </span>
-                      <span style={{ width: 300, fontSize: 13, color: '#374151', lineHeight: '20px' }}>{item.detail}</span>
-                      <span style={{ width: 80, fontSize: 13, color: '#6B7280', textAlign: 'right' }}>{item.time}</span>
+
+                {logDates.map(date => (
+                  <div key={date}>
+                    {/* Date group header */}
+                    <div style={{ padding: '5px 12px', background: '#FAFAFA', borderBottom: `1px solid ${C_BORDER}`, borderTop: `1px solid ${C_BORDER}`, marginTop: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280' }}>{formatDateHeader(date)}</span>
                     </div>
-                  )
-                })}
-              </div>
-            ))}
+
+                    {logByDate[date].map((item, idx) => {
+                      const isLatest = item === log[0]
+                      const actionLabel = ACTION_LABEL[item.action] ?? item.action
+                      const badgeBg    = ACTION_COLOR[item.action]     ?? '#F3F4F6'
+                      const badgeText  = ACTION_TEXT_COLOR[item.action] ?? '#374151'
+                      return (
+                        <div key={idx} style={{
+                          display: 'flex', alignItems: 'center',
+                          padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`,
+                          background: isLatest ? '#F0F9FF' : '#fff',
+                        }}>
+                          {/* Trạng thái */}
+                          <div style={{ width: 200, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 14, fontWeight: isLatest ? 700 : 400, color: isLatest ? C_LINK : '#374151', lineHeight: '20px' }}>
+                              {item.status_name}
+                            </span>
+                            {item.is_force_majeure && (
+                              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: '#FEF3C7', color: '#92400E', fontWeight: 600, flexShrink: 0 }}>BKK</span>
+                            )}
+                          </div>
+                          {/* Hành động */}
+                          <div style={{ width: 110, flexShrink: 0 }}>
+                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: badgeBg, color: badgeText, fontWeight: 600 }}>
+                              {actionLabel}
+                            </span>
+                          </div>
+                          {/* Ghi chú */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 13, color: '#6B7280', lineHeight: '20px' }}>{item.note || '—'}</span>
+                            {item.warehouse_name && (
+                              <span style={{ fontSize: 12, color: '#9CA3AF', marginLeft: 8 }}>· {item.warehouse_name}</span>
+                            )}
+                          </div>
+                          {/* Thời gian */}
+                          <span style={{ width: 80, flexShrink: 0, fontSize: 13, color: '#6B7280', textAlign: 'right' }}>
+                            {formatTime(item.updated_date)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
 

@@ -17,6 +17,8 @@ type NVCSession = {
   id: string
   agencyId: string
   paymentDate: string
+  periodStart?: string
+  periodEnd?: string
   status: 'pending' | 'confirmed'
   note: string
   ghnSessionCode: string
@@ -40,6 +42,8 @@ type ShopSession = {
   nvcSessionId: string
   nvcSessionCode: string
   paymentDate: string
+  periodStart?: string
+  periodEnd?: string
   totalOrders: number
   totalCOD: number
   feeShop: number
@@ -99,6 +103,8 @@ function buildShopSessions(): ShopSession[] {
       nvcSessionId: session.id,
       nvcSessionCode: session.ghnSessionCode,
       paymentDate: session.paymentDate,
+      periodStart: session.periodStart,
+      periodEnd: session.periodEnd,
       totalOrders: items.length,
       totalCOD,
       feeShop,
@@ -117,6 +123,15 @@ const fmt = (n: number) => n.toLocaleString('vi-VN') + ' ₫'
 const fmtDate = (d: string) => {
   const dt = new Date(d)
   return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`
+}
+const fmtPeriod = (start?: string, end?: string) => {
+  if (!start || !end) return null
+  const dt = (s: string) => new Date(s)
+  const dd = (s: string) => String(dt(s).getDate()).padStart(2, '0')
+  const mm = (s: string) => String(dt(s).getMonth() + 1).padStart(2, '0')
+  const yy = (s: string) => dt(s).getFullYear()
+  if (start === end) return `${dd(start)}/${mm(start)}/${yy(start)}`
+  return `${dd(start)}/${mm(start)} – ${dd(end)}/${mm(end)}/${yy(end)}`
 }
 
 const ITEM_STATUS: Record<string, { label: string; color: string; bg: string }> = {
@@ -149,6 +164,12 @@ function TRow({ session, onView }: { session: ShopSession; onView: () => void })
       </div>
       <div style={{ flex: '0 0 240px', minWidth: 240, padding: '10px 8px' }}>
         <span style={{ fontSize: 13, color: C_LINK }}>{session.nvcSessionCode}</span>
+      </div>
+      <div style={{ flex: '0 0 130px', minWidth: 130, padding: '10px 8px' }}>
+        {fmtPeriod(session.periodStart, session.periodEnd)
+          ? <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{fmtPeriod(session.periodStart, session.periodEnd)}</span>
+          : <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>—</span>
+        }
       </div>
       <div style={{ flex: '0 0 110px', minWidth: 110, padding: '10px 8px' }}>
         <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{fmtDate(session.paymentDate)}</span>
@@ -214,8 +235,16 @@ function DetailModal({ session, onClose }: { session: ShopSession; onClose: () =
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>
               Phiên GHN: <span style={{ color: C_LINK, fontWeight: 600 }}>{session.nvcSessionCode}</span>
             </span>
+            {fmtPeriod(session.periodStart, session.periodEnd) && (
+              <>
+                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>·</span>
+                <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>
+                  {fmtPeriod(session.periodStart, session.periodEnd)}
+                </span>
+              </>
+            )}
             <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>·</span>
-            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{fmtDate(session.paymentDate)}</span>
+            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>TT: {fmtDate(session.paymentDate)}</span>
             <button
               onClick={onClose}
               style={{ marginLeft: 8, border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: C_TEXT_SECONDARY, lineHeight: 1 }}
@@ -453,12 +482,13 @@ export default function ShopReconciliation() {
       {/* Table */}
       <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
         <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
-          <div style={{ minWidth: 1200 }}>
+          <div style={{ minWidth: 1330 }}>
             {/* Header */}
             <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
               <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Mã phiên</div>
               <div style={{ flex: '0 0 240px', minWidth: 240, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Phiên GHN</div>
-              <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Ngày</div>
+              <div style={{ flex: '0 0 130px', minWidth: 130, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Thời gian</div>
+              <div style={{ flex: '0 0 110px', minWidth: 110, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Ngày TT</div>
               <div style={{ flex: '0 0 70px', minWidth: 70, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right', whiteSpace: 'nowrap' }}>Số đơn</div>
               <div style={{ flex: '0 0 150px', minWidth: 150, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right', whiteSpace: 'nowrap' }}>Tổng COD (shop)</div>
               <div style={{ flex: '0 0 160px', minWidth: 160, padding: '6px 8px', fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right', whiteSpace: 'nowrap' }}>Tổng phí DV (shop)</div>

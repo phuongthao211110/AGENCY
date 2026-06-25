@@ -6,7 +6,7 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   EditOutlined,
-  DeleteOutlined,
+  StopOutlined,
   CalendarOutlined,
   InboxOutlined,
   DollarOutlined,
@@ -198,19 +198,28 @@ type EditHistoryItem = {
 }
 
 const SHOP_HISTORY: EditHistoryItem[] = [
-  // Thông tin cơ bản
-  { id: '1', date: '2024-04-10', time: '15:20', operator: 'Admin Đại lý', field: 'Trạng thái',    oldValue: 'Tắt',                  newValue: 'Hoạt động' },
-  { id: '2', date: '2024-04-10', time: '14:05', operator: 'Admin Đại lý', field: 'Địa chỉ',       oldValue: '12 Lê Lợi, Q.1',       newValue: '15 Nguyễn Huệ, Q.1, TP.HCM' },
-  { id: '3', date: '2024-03-22', time: '11:30', operator: 'Admin Đại lý', field: 'Tên shop',      oldValue: 'Shop Thời Trang',       newValue: 'Shop Thời Trang ABC' },
-  { id: '4', date: '2024-03-22', time: '11:28', operator: 'Admin Đại lý', field: 'Số điện thoại', oldValue: '0901234567',            newValue: '0909123456' },
-  // Dịch vụ — chỉ ghi thêm/xoá dịch vụ
-  { id: '5', date: '2024-03-15', time: '09:45', operator: 'Admin Đại lý', field: 'Thêm dịch vụ',  oldValue: '',                     newValue: 'Giao hàng tiết kiệm' },
-  // Bảng giá — ghi đổi bảng giá của từng dịch vụ
-  { id: '6', date: '2024-02-28', time: '16:10', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng nhanh',     oldValue: 'Chưa có',              newValue: 'Bảng giá tiêu chuẩn 2024' },
-  { id: '7', date: '2024-02-10', time: '10:30', operator: 'Admin Đại lý', field: 'Xoá dịch vụ',   oldValue: 'Giao hàng hoả tốc',    newValue: '' },
-  { id: '8', date: '2024-02-10', time: '10:28', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng tiết kiệm', oldValue: 'Bảng giá cũ 2023',     newValue: 'Bảng giá tiêu chuẩn 2024' },
-  // Lịch đối soát
-  { id: '9', date: '2024-01-15', time: '10:00', operator: 'Admin Đại lý', field: 'Lịch chuyển khoản', oldValue: 'Thứ 2 & Thứ 5',    newValue: 'Thứ 2, Thứ 4 & Thứ 6' },
+  // 10/04 15:20 — 1 thay đổi đơn
+  { id: '1',  date: '2024-04-10', time: '15:20', operator: 'Admin Đại lý', field: 'Trạng thái',                    oldValue: 'Tắt',                       newValue: 'Hoạt động' },
+  // 10/04 14:05 — cùng lúc sửa 4 trường thông tin cơ bản
+  { id: '2a', date: '2024-04-10', time: '14:05', operator: 'Admin Đại lý', field: 'Tên shop',                      oldValue: 'Shop Thời Trang',            newValue: 'Shop Thời Trang ABC' },
+  { id: '2b', date: '2024-04-10', time: '14:05', operator: 'Admin Đại lý', field: 'Địa chỉ',                       oldValue: '12 Lê Lợi, Q.1',             newValue: '15 Nguyễn Huệ, Q.1, TP.HCM' },
+  { id: '2c', date: '2024-04-10', time: '14:05', operator: 'Admin Đại lý', field: 'Số điện thoại',                 oldValue: '0901234567',                 newValue: '0909123456' },
+  { id: '2d', date: '2024-04-10', time: '14:05', operator: 'Admin Đại lý', field: 'Họ tên chủ shop',               oldValue: 'Nguyễn Văn A',               newValue: 'Trần Minh Anh' },
+  // 22/03 11:30 — cùng lúc cấu hình 3 dịch vụ + 3 bảng giá
+  { id: '3a', date: '2024-03-22', time: '11:30', operator: 'Admin Đại lý', field: 'Thêm dịch vụ',                  oldValue: '',                           newValue: 'Giao hàng nhanh' },
+  { id: '3b', date: '2024-03-22', time: '11:30', operator: 'Admin Đại lý', field: 'Thêm dịch vụ',                  oldValue: '',                           newValue: 'Giao hàng tiết kiệm' },
+  { id: '3c', date: '2024-03-22', time: '11:30', operator: 'Admin Đại lý', field: 'Thêm dịch vụ',                  oldValue: '',                           newValue: 'Giao hàng hàng nặng' },
+  { id: '3d', date: '2024-03-22', time: '11:30', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng nhanh',    oldValue: 'Chưa có',                    newValue: 'Bảng giá tiêu chuẩn 2024' },
+  { id: '3e', date: '2024-03-22', time: '11:30', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng tiết kiệm',oldValue: 'Chưa có',                    newValue: 'Bảng giá tiêu chuẩn 2024' },
+  { id: '3f', date: '2024-03-22', time: '11:30', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng hàng nặng',oldValue: 'Chưa có',                    newValue: 'Bảng giá tiêu chuẩn 2024' },
+  // 28/02 16:10 — 1 thay đổi đơn
+  { id: '6',  date: '2024-02-28', time: '16:10', operator: 'Admin Đại lý', field: 'Lịch chuyển khoản',             oldValue: 'Thứ 2 & Thứ 5',             newValue: 'Thứ 2, Thứ 4 & Thứ 6' },
+  // 10/02 10:30 — cùng lúc xoá 1 dịch vụ + cập nhật 2 bảng giá
+  { id: '7a', date: '2024-02-10', time: '10:30', operator: 'Admin Đại lý', field: 'Xoá dịch vụ',                   oldValue: 'Giao hàng hoả tốc',          newValue: '' },
+  { id: '7b', date: '2024-02-10', time: '10:30', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng nhanh',    oldValue: 'Bảng giá cũ 2023',           newValue: 'Bảng giá tiêu chuẩn 2024' },
+  { id: '7c', date: '2024-02-10', time: '10:30', operator: 'Admin Đại lý', field: 'Bảng giá — Giao hàng tiết kiệm',oldValue: 'Bảng giá cũ 2023',           newValue: 'Bảng giá tiêu chuẩn 2024' },
+  // 15/01 10:00 — 1 thay đổi đơn
+  { id: '9',  date: '2024-01-15', time: '10:00', operator: 'Admin Đại lý', field: 'Trạng thái',                    oldValue: 'Chờ duyệt',                  newValue: 'Hoạt động' },
 ]
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -220,6 +229,35 @@ export default function ShopDetail() {
 
   // Must be before any early returns (React hook rule)
   const [activeTab, setActiveTab] = useState<TabKey>('info')
+  const [shopStatus, setShopStatus] = useState<string>(() => allShops.find((s) => s.id === id)?.status ?? 'active')
+  const [deactivatedByAgency, setDeactivatedByAgency] = useState(false)
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false)
+  const [editHistory, setEditHistory] = useState<EditHistoryItem[]>(SHOP_HISTORY)
+
+  const handleDeactivate = () => {
+    setShopStatus('inactive')
+    setDeactivatedByAgency(true)
+    setShowDeactivateModal(false)
+    const now = new Date()
+    const dateStr = now.toISOString().slice(0, 10)
+    const timeStr = now.toTimeString().slice(0, 5)
+    setEditHistory((prev) => [
+      { id: Date.now().toString(), date: dateStr, time: timeStr, operator: 'Admin Đại lý', field: 'Trạng thái', oldValue: 'Hoạt động', newValue: 'Ngưng hoạt động' },
+      ...prev,
+    ])
+  }
+
+  const handleReactivate = () => {
+    setShopStatus('active')
+    setDeactivatedByAgency(false)
+    const now = new Date()
+    const dateStr = now.toISOString().slice(0, 10)
+    const timeStr = now.toTimeString().slice(0, 5)
+    setEditHistory((prev) => [
+      { id: Date.now().toString(), date: dateStr, time: timeStr, operator: 'Admin Đại lý', field: 'Trạng thái', oldValue: 'Ngưng hoạt động', newValue: 'Hoạt động' },
+      ...prev,
+    ])
+  }
 
   const shop = allShops.find((s) => s.id === id)
 
@@ -340,6 +378,47 @@ export default function ShopDetail() {
         {/* ──── Tab: Thông tin cơ bản ──────────────────────────────── */}
         {activeTab === 'info' && (
           <>
+            {/* Inactive notice banner — agency deactivated */}
+            {shopStatus === 'inactive' && deactivatedByAgency && (
+              <div style={{ background: '#F9FAFB', border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Shop đã bị ngưng hoạt động</span>
+                  <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Shop không thể đăng nhập hoặc tạo đơn mới trong thời gian này.</span>
+                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 4 }}>Dữ liệu lịch sử (đơn hàng, đối soát) vẫn được lưu trữ để tra cứu.</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                  <button onClick={handleReactivate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16A34A', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 14px', fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer' }}>
+                    Kích hoạt lại
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Inactive notice banner — self deleted */}
+            {shopStatus === 'inactive' && !deactivatedByAgency && (shop as any).selfDeletedAt && (
+              <div style={{ background: '#FFF7ED', border: '1px solid #FECBA1', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#92400E', lineHeight: '20px' }}>Shop đã tự xoá tài khoản</span>
+                  {(shop as any).selfDeletedAt && (
+                    <span style={{ fontSize: 13, color: '#92400E' }}>Ngày xoá: {((shop as any).selfDeletedAt as string).split('-').reverse().join('/')}</span>
+                  )}
+                  {(shop as any).selfDeleteReason && (
+                    <span style={{ fontSize: 13, color: '#92400E' }}>Lý do: {(shop as any).selfDeleteReason}</span>
+                  )}
+                  {(shop as any).selfDeleteNote && (
+                    <span style={{ fontSize: 13, color: '#92400E' }}>Ghi chú: {(shop as any).selfDeleteNote}</span>
+                  )}
+                  <span style={{ fontSize: 12, color: '#78350F', marginTop: 4 }}>Dữ liệu lịch sử (đơn hàng, đối soát) vẫn được lưu trữ để tra cứu.</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                  <button onClick={handleReactivate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16A34A', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 14px', fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer' }}>
+                    Kích hoạt lại tài khoản
+                  </button>
+                  <span style={{ fontSize: 11, color: '#92400E' }}>Chỉ dùng nếu shop đổi ý và liên hệ lại.</span>
+                </div>
+              </div>
+            )}
+
             {/* Card 1: Thông tin cơ bản */}
             <SectionCard title="Thông tin cơ bản">
               <div style={{ display: 'flex', gap: 16 }}>
@@ -412,31 +491,61 @@ export default function ShopDetail() {
               </div>
             </SectionCard>
 
-            {/* Action buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, padding: 16 }}>
-              <button
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: '#111827', color: '#fff', border: 'none',
-                  borderRadius: 6, padding: '8px 12px',
-                  fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer',
-                }}
-              >
-                <EditOutlined style={{ fontSize: 16 }} />
-                Chỉnh sửa
-              </button>
-              <button
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: '#EF4444', color: '#fff', border: 'none',
-                  borderRadius: 6, padding: '8px 12px',
-                  fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer',
-                }}
-              >
-                <DeleteOutlined style={{ fontSize: 16 }} />
-                Xoá
-              </button>
-            </div>
+            {/* Action buttons — hidden when shop is inactive */}
+            {shopStatus !== 'inactive' && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, padding: 16 }}>
+                <button
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: '#111827', color: '#fff', border: 'none',
+                    borderRadius: 6, padding: '8px 12px',
+                    fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer',
+                  }}
+                >
+                  <EditOutlined style={{ fontSize: 16 }} />
+                  Chỉnh sửa
+                </button>
+                <button
+                  onClick={() => setShowDeactivateModal(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: '#fff', color: '#374151',
+                    border: `1px solid ${C_BORDER}`,
+                    borderRadius: 6, padding: '8px 12px',
+                    fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer',
+                  }}
+                >
+                  <StopOutlined style={{ fontSize: 16 }} />
+                  Ngưng hoạt động
+                </button>
+              </div>
+            )}
+
+            {/* Confirm deactivate modal */}
+            {showDeactivateModal && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: '#fff', borderRadius: 12, padding: '28px 32px', width: 400, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY, marginBottom: 8 }}>Ngưng hoạt động shop</div>
+                  <div style={{ fontSize: 14, color: C_TEXT_SECONDARY, marginBottom: 24, lineHeight: '22px' }}>
+                    Shop <strong style={{ color: C_TEXT_PRIMARY }}>{shop.name}</strong> sẽ bị ngưng hoạt động. Shop sẽ không thể đăng nhập hoặc tạo đơn mới. Dữ liệu lịch sử vẫn được giữ nguyên.
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button
+                      onClick={() => setShowDeactivateModal(false)}
+                      style={{ height: 36, padding: '0 18px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+                    >
+                      Huỷ
+                    </button>
+                    <button
+                      onClick={handleDeactivate}
+                      style={{ height: 36, padding: '0 18px', border: 'none', borderRadius: 6, background: '#374151', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Xác nhận ngưng
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -589,50 +698,105 @@ export default function ShopDetail() {
         {activeTab === 'history' && (
           <div style={{ padding: '0 0 16px' }}>
             {(() => {
-              const grouped: Record<string, EditHistoryItem[]> = {}
-              SHOP_HISTORY.forEach(item => {
-                if (!grouped[item.date]) grouped[item.date] = []
-                grouped[item.date].push(item)
+              // Group: date → time → items
+              const byDate: Record<string, Record<string, EditHistoryItem[]>> = {}
+              editHistory.forEach(item => {
+                if (!byDate[item.date]) byDate[item.date] = {}
+                if (!byDate[item.date][item.time]) byDate[item.date][item.time] = []
+                byDate[item.date][item.time].push(item)
               })
-              const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+              const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a))
+
               return (
                 <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
                   {/* Table header */}
                   <div style={{ display: 'flex', background: '#F3F4F6' }}>
-                    <div style={{ width: 80, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, flexShrink: 0 }}>Thời gian</div>
+                    <div style={{ width: 72, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, flexShrink: 0 }}>Giờ</div>
                     <div style={{ flex: '1 0 0', minWidth: 140, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Người thực hiện</div>
-                    <div style={{ flex: '1 0 0', minWidth: 140, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Trường thay đổi</div>
+                    <div style={{ flex: '1 0 0', minWidth: 160, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Trường thay đổi</div>
                     <div style={{ flex: '3 0 0', minWidth: 220, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Nội dung thay đổi</div>
                   </div>
                   <div style={{ height: 1, background: C_BORDER }} />
-                  {sortedDates.map(date => {
+
+                  {sortedDates.map((date, dateIdx) => {
                     const [y, m, d] = date.split('-')
                     const dateLabel = `${d}/${m}/${y}`
+                    const timeGroups = byDate[date]
+                    const sortedTimes = Object.keys(timeGroups).sort((a, b) => b.localeCompare(a))
+
                     return (
                       <div key={date}>
+                        {/* Date header */}
                         <div style={{ background: '#F3F4F6', padding: '6px 12px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY, borderBottom: `1px solid ${C_BORDER}` }}>
                           {dateLabel}
                         </div>
-                        {grouped[date].map((item, idx) => (
-                          <div key={item.id}>
-                            <div style={{ display: 'flex', alignItems: 'center', background: '#fff' }}>
-                              <div style={{ width: 80, padding: '10px 12px', fontSize: 13, color: C_TEXT_SECONDARY, flexShrink: 0 }}>{item.time}</div>
-                              <div style={{ flex: '1 0 0', minWidth: 140, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{item.operator}</div>
-                              <div style={{ flex: '1 0 0', minWidth: 140, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{item.field}</div>
-                              <div style={{ flex: '3 0 0', minWidth: 220, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                {item.oldValue === '' ? (
-                                  <span style={{ color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>(Chưa có)</span>
-                                ) : (
-                                  <span style={{ color: C_TEXT_SECONDARY }}>{item.oldValue}</span>
-                                )}
-                                <SwapRightOutlined style={{ fontSize: 12, color: C_TEXT_SECONDARY, flexShrink: 0 }} />
-                                <span style={{ color: C_TEXT_PRIMARY, fontWeight: 500 }}>{item.newValue}</span>
+
+                        {sortedTimes.map((time, tIdx) => {
+                          const items = timeGroups[time]
+                          const isBatch = items.length > 1
+                          const isLastTimeGroup = tIdx === sortedTimes.length - 1
+
+                          return (
+                            <div key={time}>
+                              {/* Time group */}
+                              <div style={{ display: 'flex', background: isBatch ? '#FAFAFA' : '#fff' }}>
+
+                                {/* Time column — spans all rows in this group */}
+                                <div style={{
+                                  width: 72, flexShrink: 0,
+                                  padding: '10px 12px',
+                                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
+                                  borderRight: isBatch ? `2px solid #FF5200` : 'none',
+                                  alignSelf: 'stretch',
+                                }}>
+                                  <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontVariantNumeric: 'tabular-nums' }}>{time}</span>
+                                  {isBatch && (
+                                    <span style={{
+                                      fontSize: 11, fontWeight: 700, color: C_ACTION,
+                                      background: '#FFF4ED', border: '1px solid #FECBA1',
+                                      borderRadius: 10, padding: '1px 6px', whiteSpace: 'nowrap',
+                                    }}>
+                                      {items.length} TĐ
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Rows stacked vertically */}
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                  {items.map((item, rowIdx) => {
+                                    const isLastRow = rowIdx === items.length - 1
+                                    return (
+                                      <div key={item.id}>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                          <div style={{ flex: '1 0 0', minWidth: 140, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{item.operator}</div>
+                                          <div style={{ flex: '1 0 0', minWidth: 160, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{item.field}</div>
+                                          <div style={{ flex: '3 0 0', minWidth: 220, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                            {item.oldValue === '' ? (
+                                              <span style={{ color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>(Chưa có)</span>
+                                            ) : (
+                                              <span style={{ color: C_TEXT_SECONDARY }}>{item.oldValue}</span>
+                                            )}
+                                            <SwapRightOutlined style={{ fontSize: 12, color: C_TEXT_SECONDARY, flexShrink: 0 }} />
+                                            {item.newValue === '' ? (
+                                              <span style={{ color: '#EF4444', fontStyle: 'italic' }}>(Đã xoá)</span>
+                                            ) : (
+                                              <span style={{ color: C_TEXT_PRIMARY, fontWeight: 500 }}>{item.newValue}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        {!isLastRow && <div style={{ height: 1, background: C_BORDER, marginLeft: 0 }} />}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
                               </div>
+
+                              {!isLastTimeGroup && <div style={{ height: 1, background: C_BORDER }} />}
                             </div>
-                            {idx < grouped[date].length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
-                          </div>
-                        ))}
-                        <div style={{ height: 1, background: C_BORDER }} />
+                          )
+                        })}
+
+                        {dateIdx < sortedDates.length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
                       </div>
                     )
                   })}

@@ -30,4 +30,6 @@ _Chưa có stories_
 
 ## Cài đặt - Thông tin tài khoản
 
-_Chưa có stories_
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [WS] Cài đặt - Xoá tài khoản | [xoa-tai-khoan.md](./settings/xoa-tai-khoan.md) | AGENCY-610 | [Draft] |

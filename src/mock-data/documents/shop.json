@@ -1,7 +1,7 @@
 {
   "platform": "shop",
   "currentVersion": "0.2.0",
-  "lastUpdated": "2026-05-08",
+  "lastUpdated": "2026-06-19",
   "figmaUrl": "https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW",
   "sections": [
     {
@@ -66,7 +66,38 @@
     {
       "key": "settings",
       "title": "Cài đặt - Thông tin tài khoản",
-      "stories": []
+      "stories": [
+        {
+          "id": "WS-SETTINGS-1",
+          "jiraKey": "AGENCY-610",
+          "title": "[WEB SHOP] Cài đặt - Xoá tài khoản",
+          "status": "draft",
+          "userStory": "Là Shop, tôi muốn có thể xoá tài khoản của mình khi không còn muốn sử dụng dịch vụ để tôi chủ động kết thúc hợp tác mà không cần phải liên hệ Agency.",
+          "notes": [
+            "Không block xoá dựa trên COD tồn đọng hay đơn đang giao — Agency Admin chịu trách nhiệm xử lý phần còn lại",
+            "XACNHAN không có dấu — lưu ý khi triển khai input trên mobile (bàn phím có thể tự thêm dấu)",
+            "Dữ liệu lịch sử được giữ lại theo chính sách lưu trữ, không xoá theo tài khoản",
+            "Phụ thuộc: AGENCY-611 phải deploy song song"
+          ],
+          "userFlow": [
+            "Shop vào Cài đặt → Thông tin tài khoản",
+            "Cuộn xuống cuối, thấy section Vùng nguy hiểm → nhấn Xoá tài khoản",
+            "Chọn 1 lý do (bắt buộc), điền ghi chú thêm (không bắt buộc) → Tiếp tục",
+            "Màn xác nhận: nhập cụm từ XACNHAN vào input → nhấn Xác nhận xoá tài khoản",
+            "Hệ thống validate (không phân biệt hoa/thường): nếu khớp → xoá, hiển thị màn thành công + gửi email",
+            "Shop bị đăng xuất, không thể đăng nhập lại"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Trang Cài đặt tài khoản có section Vùng nguy hiểm ở cuối trang với nút Xoá tài khoản outline đỏ.",
+            "AC2: Màn chọn lý do bắt buộc chọn ít nhất 1 radio option. Nút Tiếp tục disable nếu chưa chọn.",
+            "AC3: Màn xác nhận hiển thị cụm từ XACNHAN rõ ràng. Input không có real-time validate — chỉ validate khi nhấn nút.",
+            "AC4: Validate không phân biệt hoa/thường (xacnhan, XACNHAN, XacNhan đều hợp lệ). Nếu sai → không xoá, không có thông báo lỗi trên UI.",
+            "AC5: Sau khi xoá thành công → session bị huỷ, shop không thể đăng nhập lại bằng tài khoản cũ.",
+            "AC6: Email xác nhận được gửi tới địa chỉ email đã đăng ký của shop.",
+            "AC7: Lý do xoá và ghi chú được lưu vào hệ thống để phân tích churn rate."
+          ]
+        }
+      ]
     }
   ],
   "history": [

@@ -13,56 +13,6 @@
     "fee": 22000,
     "status": "delivered",
     "createdAt": "2024-04-01",
-    "statusHistory": [
-      {
-        "date": "2024-04-04",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 15 Kim Liên, Đống Đa, HN",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 15 Kim Liên, Đống Đa, HN",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-02",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-02",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-02",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-01",
-        "status": "Chờ lấy hàng",
-        "detail": "7 Thành Thái, Q10, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-04",
@@ -85,16 +35,24 @@
         "time": "14:05:09",
         "operator": "Minh Anh",
         "action": "Cập nhật địa chỉ giao hàng",
-        "oldContent": "Địa chỉ cũ — 15 Kim Liên, Đống Đa...",
+        "oldContent": "15 Kim Liên, Đống Đa, HN (cũ)",
         "newContent": "15 Kim Liên, Đống Đa, HN"
       },
       {
         "date": "2024-04-02",
-        "time": "11:20:44",
+        "time": "14:05:09",
         "operator": "Minh Anh",
         "action": "Cập nhật COD",
         "oldContent": "200.000 đ",
         "newContent": "250.000 đ"
+      },
+      {
+        "date": "2024-04-02",
+        "time": "14:05:09",
+        "operator": "Minh Anh",
+        "action": "Cập nhật tên người nhận",
+        "oldContent": "Nguyễn Văn A",
+        "newContent": "Nguyễn Hoa"
       },
       {
         "date": "2024-04-02",
@@ -119,6 +77,131 @@
         "action": "Tạo đơn hàng",
         "oldContent": "-",
         "newContent": "-"
+      },
+      {
+        "date": "2024-04-01",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Thiết lập COD",
+        "oldContent": "-",
+        "newContent": "200.000 đ"
+      },
+      {
+        "date": "2024-04-01",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Chọn dịch vụ",
+        "oldContent": "-",
+        "newContent": "Giao hàng nhanh"
+      }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-04T14:22:00.000+07:00",
+        "note": "Giao thành công đến 15 Kim Liên, Đống Đa, HN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-04T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 15 Kim Liên, Đống Đa, HN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-03T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-03T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-02T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-02T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-02T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-01T10:39:00.000+07:00",
+        "note": "7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
       }
     ]
   },
@@ -134,46 +217,8 @@
     "weight": 1200,
     "cod": 480000,
     "fee": 28000,
-    "status": "in_transit",
+    "status": "returning",
     "createdAt": "2024-04-03",
-    "statusHistory": [
-      {
-        "date": "2024-04-05",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 88 Đại Cồ Việt, HBT, HN",
-        "time": "09:45"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
-        "time": "06:20"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "22:55"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc",
-        "time": "13:40"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
-        "time": "09:10"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Chờ lấy hàng",
-        "detail": "7 Thành Thái, Q10, HCM",
-        "time": "09:15"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-05",
@@ -188,16 +233,24 @@
         "time": "14:05:09",
         "operator": "Minh Anh",
         "action": "Cập nhật địa chỉ giao hàng",
-        "oldContent": "Địa chỉ cũ — 88 Đại Cồ Việt, HBT,...",
+        "oldContent": "88 Đại Cồ Việt, HBT, HN (cũ)",
         "newContent": "88 Đại Cồ Việt, HBT, HN"
       },
       {
         "date": "2024-04-04",
-        "time": "11:20:44",
+        "time": "14:05:09",
         "operator": "Minh Anh",
         "action": "Cập nhật COD",
         "oldContent": "430.000 đ",
         "newContent": "480.000 đ"
+      },
+      {
+        "date": "2024-04-04",
+        "time": "14:05:09",
+        "operator": "Minh Anh",
+        "action": "Cập nhật SĐT người nhận",
+        "oldContent": "0922333000",
+        "newContent": "0922333444"
       },
       {
         "date": "2024-04-04",
@@ -222,6 +275,170 @@
         "action": "Tạo đơn hàng",
         "oldContent": "-",
         "newContent": "-"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Thiết lập COD",
+        "oldContent": "-",
+        "newContent": "430.000 đ"
+      },
+      {
+        "date": "2024-04-03",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Chọn dịch vụ",
+        "oldContent": "-",
+        "newContent": "Giao hàng tiết kiệm"
+      }
+    ],
+    "num_deliver": 3,
+    "num_pick": 1,
+    "num_return": 1,
+    "log": [
+      {
+        "status": "returning",
+        "status_name": "Đang chuyển hoàn",
+        "action": "RETURN_IN_TRIP",
+        "updated_date": "2024-04-08T08:15:00.000+07:00",
+        "note": "Kiện hàng đang trên đường hoàn về kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "Kho gốc Q10 – HCM",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivery_fail",
+        "status_name": "Giao hàng không thành công",
+        "action": "DELIVERY_FAIL",
+        "updated_date": "2024-04-07T11:30:00.000+07:00",
+        "note": "Lần 2 — Người nhận từ chối nhận hàng, không đúng sản phẩm",
+        "warehouse_id": 10002000,
+        "warehouse_name": "Bưu cục Hai Bà Trưng – HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng lần 2",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-07T09:00:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 88 Đại Cồ Việt, HBT, HN",
+        "warehouse_id": 10002000,
+        "warehouse_name": "Bưu cục Hai Bà Trưng – HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "waiting_to_return",
+        "status_name": "Chờ xác nhận giao lại",
+        "action": "WAITING_TO_RETURN",
+        "updated_date": "2024-04-06T15:20:00.000+07:00",
+        "note": "Đã liên hệ người gửi — chờ xác nhận giao lại hoặc hoàn hàng",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivery_fail",
+        "status_name": "Giao hàng không thành công",
+        "action": "DELIVERY_FAIL",
+        "updated_date": "2024-04-06T10:42:00.000+07:00",
+        "note": "Lần 1 — Không giao được, người nhận không có mặt tại 88 Đại Cồ Việt, HBT, HN",
+        "warehouse_id": 10002000,
+        "warehouse_name": "Bưu cục Hai Bà Trưng – HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng lần 1",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-05T09:45:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 88 Đại Cồ Việt, HBT, HN",
+        "warehouse_id": 10002000,
+        "warehouse_name": "Bưu cục Hai Bà Trưng – HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-05T06:20:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": 10002000,
+        "warehouse_name": "Bưu cục Hai Bà Trưng – HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-04T22:55:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": 10001000,
+        "warehouse_name": "Kho trung chuyển HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-04T13:40:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "Kho gốc Q10 – HCM",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-04T09:10:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-03T09:15:00.000+07:00",
+        "note": "7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
       }
     ]
   },
@@ -239,56 +456,6 @@
     "fee": 20000,
     "status": "delivered",
     "createdAt": "2024-04-02",
-    "statusHistory": [
-      {
-        "date": "2024-04-05",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 34 Võ Văn Tần, Q3, HCM",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 34 Võ Văn Tần, Q3, HCM",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-02",
-        "status": "Chờ lấy hàng",
-        "detail": "12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-05",
@@ -346,6 +513,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-05T14:22:00.000+07:00",
+        "note": "Giao thành công đến 34 Võ Văn Tần, Q3, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-05T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 34 Võ Văn Tần, Q3, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-04T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-04T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-03T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-03T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-03T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-02T10:39:00.000+07:00",
+        "note": "12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -362,14 +638,6 @@
     "fee": 25000,
     "status": "pending",
     "createdAt": "2024-04-05",
-    "statusHistory": [
-      {
-        "date": "2024-04-05",
-        "status": "Chờ lấy hàng",
-        "detail": "12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-06",
@@ -395,6 +663,24 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 0,
+    "num_pick": 0,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-05T10:39:00.000+07:00",
+        "note": "12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -411,56 +697,6 @@
     "fee": 30000,
     "status": "delivered",
     "createdAt": "2024-04-01",
-    "statusHistory": [
-      {
-        "date": "2024-04-04",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 12 Cách Mạng Tháng 8, Q10, HCM",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 12 Cách Mạng Tháng 8, Q10, HCM",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-02",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-02",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-02",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-01",
-        "status": "Chờ lấy hàng",
-        "detail": "88 Lê Hồng Phong, Q5, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-04",
@@ -518,6 +754,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-04T14:22:00.000+07:00",
+        "note": "Giao thành công đến 12 Cách Mạng Tháng 8, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-04T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 12 Cách Mạng Tháng 8, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-03T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-03T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-02T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-02T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-02T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-01T10:39:00.000+07:00",
+        "note": "88 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -534,44 +879,6 @@
     "fee": 35000,
     "status": "in_transit",
     "createdAt": "2024-04-04",
-    "statusHistory": [
-      {
-        "date": "2024-04-06",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 78 Lê Hồng Phong, Q5, HCM",
-        "time": "09:45"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
-        "time": "06:20"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "22:55"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc",
-        "time": "13:40"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
-        "time": "09:10"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Chờ lấy hàng",
-        "detail": "88 Lê Hồng Phong, Q5, HCM",
-        "time": "09:15"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-06",
@@ -621,6 +928,89 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-06T09:45:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 78 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-06T06:20:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-05T22:55:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-05T13:40:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-05T09:10:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-04T09:15:00.000+07:00",
+        "note": "88 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -637,56 +1027,6 @@
     "fee": 22000,
     "status": "delivered",
     "createdAt": "2024-04-02",
-    "statusHistory": [
-      {
-        "date": "2024-04-05",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 45 Nguyễn Hữu Thọ, Đà Nẵng",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 45 Nguyễn Hữu Thọ, Đà Nẵng",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 15 Nguyễn Văn Linh, ĐN",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-02",
-        "status": "Chờ lấy hàng",
-        "detail": "15 Nguyễn Văn Linh, ĐN",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-05",
@@ -744,6 +1084,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-05T14:22:00.000+07:00",
+        "note": "Giao thành công đến 45 Nguyễn Hữu Thọ, Đà Nẵng",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-05T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 45 Nguyễn Hữu Thọ, Đà Nẵng",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-04T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-04T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-03T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-03T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-03T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 15 Nguyễn Văn Linh, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-02T10:39:00.000+07:00",
+        "note": "15 Nguyễn Văn Linh, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -760,56 +1209,6 @@
     "fee": 35000,
     "status": "failed",
     "createdAt": "2024-04-03",
-    "statusHistory": [
-      {
-        "date": "2024-04-07",
-        "status": "Chuyển hoàn thành công",
-        "detail": "Kiện hàng đã hoàn trả về 10 Hùng Vương, CT",
-        "time": "11:30"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đang chuyển hoàn",
-        "detail": "Kiện hàng đang trên đường hoàn về kho gốc",
-        "time": "08:00"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Chờ xác nhận giao lại",
-        "detail": "Đã liên hệ người gửi — chờ xác nhận giao lại hoặc hoàn hàng",
-        "time": "15:05"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Giao hàng không thành công",
-        "detail": "Không giao được — người nhận không có ở 23 Lý Tự Trọng, Q1, HCM",
-        "time": "10:42"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 23 Lý Tự Trọng, Q1, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đến bưu cục giao cuối",
-        "time": "18:00"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Chờ lấy hàng",
-        "detail": "10 Hùng Vương, CT",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-06",
@@ -875,6 +1274,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 2,
+    "log": [
+      {
+        "status": "returned",
+        "status_name": "Chuyển hoàn thành công",
+        "action": "RETURNED",
+        "updated_date": "2024-04-07T11:30:00.000+07:00",
+        "note": "Kiện hàng đã hoàn trả về 10 Hùng Vương, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "returning",
+        "status_name": "Đang chuyển hoàn",
+        "action": "RETURN_IN_TRIP",
+        "updated_date": "2024-04-06T08:00:00.000+07:00",
+        "note": "Kiện hàng đang trên đường hoàn về kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "waiting_to_return",
+        "status_name": "Chờ xác nhận giao lại",
+        "action": "WAITING_TO_RETURN",
+        "updated_date": "2024-04-05T15:05:00.000+07:00",
+        "note": "Đã liên hệ người gửi — chờ xác nhận giao lại hoặc hoàn hàng",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivery_fail",
+        "status_name": "Giao hàng không thành công",
+        "action": "DELIVERY_FAIL",
+        "updated_date": "2024-04-05T10:42:00.000+07:00",
+        "note": "Không giao được — người nhận không có ở 23 Lý Tự Trọng, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-05T10:38:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 23 Lý Tự Trọng, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-04T18:00:00.000+07:00",
+        "note": "Kiện hàng đến bưu cục giao cuối",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-04T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-03T10:39:00.000+07:00",
+        "note": "10 Hùng Vương, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -891,56 +1399,6 @@
     "fee": 22000,
     "status": "delivered",
     "createdAt": "2024-04-04",
-    "statusHistory": [
-      {
-        "date": "2024-04-07",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 67 Phan Đăng Lưu, Bình Thạnh, HCM",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 67 Phan Đăng Lưu, Bình Thạnh, HCM",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Chờ lấy hàng",
-        "detail": "12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-07",
@@ -998,6 +1456,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-07T14:22:00.000+07:00",
+        "note": "Giao thành công đến 67 Phan Đăng Lưu, Bình Thạnh, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-07T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 67 Phan Đăng Lưu, Bình Thạnh, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-06T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-06T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-05T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-05T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-05T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-04T10:39:00.000+07:00",
+        "note": "12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1014,44 +1581,6 @@
     "fee": 45000,
     "status": "in_transit",
     "createdAt": "2024-04-05",
-    "statusHistory": [
-      {
-        "date": "2024-04-07",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 90 Bà Triệu, Hà Nội",
-        "time": "09:45"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
-        "time": "06:20"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "22:55"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc",
-        "time": "13:40"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 45 Bạch Mai, Hà Nội",
-        "time": "09:10"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Chờ lấy hàng",
-        "detail": "45 Bạch Mai, Hà Nội",
-        "time": "09:15"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-07",
@@ -1101,6 +1630,89 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-07T09:45:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 90 Bà Triệu, Hà Nội",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-07T06:20:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-06T22:55:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-06T13:40:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-06T09:10:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 45 Bạch Mai, Hà Nội",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-05T09:15:00.000+07:00",
+        "note": "45 Bạch Mai, Hà Nội",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1117,56 +1729,6 @@
     "fee": 24000,
     "status": "delivered",
     "createdAt": "2024-04-06",
-    "statusHistory": [
-      {
-        "date": "2024-04-09",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 33 Hàng Bài, Hoàn Kiếm, HN",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 33 Hàng Bài, Hoàn Kiếm, HN",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Chờ lấy hàng",
-        "detail": "7 Thành Thái, Q10, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-09",
@@ -1189,16 +1751,24 @@
         "time": "14:05:09",
         "operator": "Minh Anh",
         "action": "Cập nhật địa chỉ giao hàng",
-        "oldContent": "Địa chỉ cũ — 33 Hàng Bài, Hoàn Ki...",
+        "oldContent": "33 Hàng Bài, Hoàn Kiếm, HN (cũ)",
         "newContent": "33 Hàng Bài, Hoàn Kiếm, HN"
       },
       {
         "date": "2024-04-07",
-        "time": "11:20:44",
+        "time": "14:05:09",
         "operator": "Minh Anh",
         "action": "Cập nhật COD",
         "oldContent": "260.000 đ",
         "newContent": "310.000 đ"
+      },
+      {
+        "date": "2024-04-07",
+        "time": "14:05:09",
+        "operator": "Minh Anh",
+        "action": "Cập nhật ghi chú đơn",
+        "oldContent": "-",
+        "newContent": "Giao giờ hành chính"
       },
       {
         "date": "2024-04-07",
@@ -1223,6 +1793,131 @@
         "action": "Tạo đơn hàng",
         "oldContent": "-",
         "newContent": "-"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Thiết lập COD",
+        "oldContent": "-",
+        "newContent": "260.000 đ"
+      },
+      {
+        "date": "2024-04-06",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Chọn dịch vụ",
+        "oldContent": "-",
+        "newContent": "Giao hàng nhanh"
+      }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T14:22:00.000+07:00",
+        "note": "Giao thành công đến 33 Hàng Bài, Hoàn Kiếm, HN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 33 Hàng Bài, Hoàn Kiếm, HN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-08T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-08T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-07T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-07T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-07T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-06T10:39:00.000+07:00",
+        "note": "7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
       }
     ]
   },
@@ -1240,14 +1935,6 @@
     "fee": 32000,
     "status": "pending",
     "createdAt": "2024-04-06",
-    "statusHistory": [
-      {
-        "date": "2024-04-06",
-        "status": "Chờ lấy hàng",
-        "detail": "45 Bạch Mai, Hà Nội",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-07",
@@ -1273,6 +1960,24 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 0,
+    "num_pick": 0,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-06T10:39:00.000+07:00",
+        "note": "45 Bạch Mai, Hà Nội",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1289,56 +1994,6 @@
     "fee": 18000,
     "status": "delivered",
     "createdAt": "2024-04-06",
-    "statusHistory": [
-      {
-        "date": "2024-04-09",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 102 Nguyễn Thái Bình, Q1, HCM",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 102 Nguyễn Thái Bình, Q1, HCM",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Chờ lấy hàng",
-        "detail": "12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-09",
@@ -1396,6 +2051,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T14:22:00.000+07:00",
+        "note": "Giao thành công đến 102 Nguyễn Thái Bình, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 102 Nguyễn Thái Bình, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-08T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-08T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-07T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-07T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-07T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-06T10:39:00.000+07:00",
+        "note": "12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1412,56 +2176,6 @@
     "fee": 28000,
     "status": "delivered",
     "createdAt": "2024-04-07",
-    "statusHistory": [
-      {
-        "date": "2024-04-10",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 77 Đinh Bộ Lĩnh, Bình Thạnh, HCM",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 77 Đinh Bộ Lĩnh, Bình Thạnh, HCM",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Chờ lấy hàng",
-        "detail": "88 Lê Hồng Phong, Q5, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-10",
@@ -1519,6 +2233,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-10T14:22:00.000+07:00",
+        "note": "Giao thành công đến 77 Đinh Bộ Lĩnh, Bình Thạnh, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-10T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 77 Đinh Bộ Lĩnh, Bình Thạnh, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-09T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-09T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-08T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-08T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-08T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-07T10:39:00.000+07:00",
+        "note": "88 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1535,44 +2358,6 @@
     "fee": 40000,
     "status": "in_transit",
     "createdAt": "2024-04-07",
-    "statusHistory": [
-      {
-        "date": "2024-04-09",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 55 Hùng Vương, Ninh Kiều, CT",
-        "time": "09:45"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
-        "time": "06:20"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "22:55"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc",
-        "time": "13:40"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
-        "time": "09:10"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Chờ lấy hàng",
-        "detail": "10 Hùng Vương, CT",
-        "time": "09:15"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-09",
@@ -1622,6 +2407,89 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T09:45:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 55 Hùng Vương, Ninh Kiều, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-09T06:20:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-08T22:55:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-08T13:40:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-08T09:10:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-07T09:15:00.000+07:00",
+        "note": "10 Hùng Vương, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1638,56 +2506,6 @@
     "fee": 55000,
     "status": "delivered",
     "createdAt": "2024-04-05",
-    "statusHistory": [
-      {
-        "date": "2024-04-08",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 22 Lê Lai, Hồng Bàng, HP",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 22 Lê Lai, Hồng Bàng, HP",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 18 Lê Lai, HP",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Chờ lấy hàng",
-        "detail": "18 Lê Lai, HP",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-08",
@@ -1745,6 +2563,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-08T14:22:00.000+07:00",
+        "note": "Giao thành công đến 22 Lê Lai, Hồng Bàng, HP",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-08T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 22 Lê Lai, Hồng Bàng, HP",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-07T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-07T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-06T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-06T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-06T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 18 Lê Lai, HP",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-05T10:39:00.000+07:00",
+        "note": "18 Lê Lai, HP",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1761,44 +2688,6 @@
     "fee": 48000,
     "status": "in_transit",
     "createdAt": "2024-04-07",
-    "statusHistory": [
-      {
-        "date": "2024-04-09",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 8 Nguyễn Ái Quốc, Biên Hòa, ĐN",
-        "time": "09:45"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
-        "time": "06:20"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "22:55"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc",
-        "time": "13:40"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 20 Nguyễn Ái Quốc, ĐN",
-        "time": "09:10"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Chờ lấy hàng",
-        "detail": "20 Nguyễn Ái Quốc, ĐN",
-        "time": "09:15"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-09",
@@ -1848,6 +2737,89 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T09:45:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 8 Nguyễn Ái Quốc, Biên Hòa, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-09T06:20:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-08T22:55:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-08T13:40:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-08T09:10:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 20 Nguyễn Ái Quốc, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-07T09:15:00.000+07:00",
+        "note": "20 Nguyễn Ái Quốc, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1864,56 +2836,6 @@
     "fee": 26000,
     "status": "delivered",
     "createdAt": "2024-04-06",
-    "statusHistory": [
-      {
-        "date": "2024-04-09",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 33 Hải Phòng, Hải Châu, ĐN",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 33 Hải Phòng, Hải Châu, ĐN",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 15 Nguyễn Văn Linh, ĐN",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Chờ lấy hàng",
-        "detail": "15 Nguyễn Văn Linh, ĐN",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-09",
@@ -1971,6 +2893,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T14:22:00.000+07:00",
+        "note": "Giao thành công đến 33 Hải Phòng, Hải Châu, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 33 Hải Phòng, Hải Châu, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-08T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-08T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-07T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-07T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-07T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 15 Nguyễn Văn Linh, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-06T10:39:00.000+07:00",
+        "note": "15 Nguyễn Văn Linh, ĐN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -1987,56 +3018,6 @@
     "fee": 58000,
     "status": "delivered",
     "createdAt": "2024-04-04",
-    "statusHistory": [
-      {
-        "date": "2024-04-07",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 11 Hùng Vương, Ninh Kiều, CT",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 11 Hùng Vương, Ninh Kiều, CT",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 5 Lý Thái Tổ, CT",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Chờ lấy hàng",
-        "detail": "5 Lý Thái Tổ, CT",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-07",
@@ -2094,6 +3075,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-07T14:22:00.000+07:00",
+        "note": "Giao thành công đến 11 Hùng Vương, Ninh Kiều, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-07T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 11 Hùng Vương, Ninh Kiều, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-06T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-06T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-05T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-05T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-05T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 5 Lý Thái Tổ, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-04T10:39:00.000+07:00",
+        "note": "5 Lý Thái Tổ, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -2110,14 +3200,6 @@
     "fee": 25000,
     "status": "pending",
     "createdAt": "2024-04-08",
-    "statusHistory": [
-      {
-        "date": "2024-04-08",
-        "status": "Chờ lấy hàng",
-        "detail": "44 Trần Phú, NT",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-09",
@@ -2143,6 +3225,24 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 0,
+    "num_pick": 0,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-08T10:39:00.000+07:00",
+        "note": "44 Trần Phú, NT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -2159,56 +3259,6 @@
     "fee": 24000,
     "status": "delivered",
     "createdAt": "2024-04-05",
-    "statusHistory": [
-      {
-        "date": "2024-04-08",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 78 Nguyễn Huệ, Vĩnh Ninh, Huế",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 78 Nguyễn Huệ, Vĩnh Ninh, Huế",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 78 Nguyễn Huệ, Huế",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Chờ lấy hàng",
-        "detail": "78 Nguyễn Huệ, Huế",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-08",
@@ -2266,6 +3316,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-08T14:22:00.000+07:00",
+        "note": "Giao thành công đến 78 Nguyễn Huệ, Vĩnh Ninh, Huế",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-08T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 78 Nguyễn Huệ, Vĩnh Ninh, Huế",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-07T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-07T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-06T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-06T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-06T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 78 Nguyễn Huệ, Huế",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-05T10:39:00.000+07:00",
+        "note": "78 Nguyễn Huệ, Huế",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -2282,44 +3441,6 @@
     "fee": 120000,
     "status": "in_transit",
     "createdAt": "2024-04-07",
-    "statusHistory": [
-      {
-        "date": "2024-04-09",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 55 Đinh Tiên Hoàng, Biên Hòa",
-        "time": "09:45"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
-        "time": "06:20"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "22:55"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc",
-        "time": "13:40"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 55 Đinh Tiên Hoàng, BH",
-        "time": "09:10"
-      },
-      {
-        "date": "2024-04-07",
-        "status": "Chờ lấy hàng",
-        "detail": "55 Đinh Tiên Hoàng, BH",
-        "time": "09:15"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-09",
@@ -2369,6 +3490,89 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-09T09:45:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 55 Đinh Tiên Hoàng, Biên Hòa",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-09T06:20:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-08T22:55:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-08T13:40:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-08T09:10:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 55 Đinh Tiên Hoàng, BH",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-07T09:15:00.000+07:00",
+        "note": "55 Đinh Tiên Hoàng, BH",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -2385,56 +3589,6 @@
     "fee": 21000,
     "status": "failed",
     "createdAt": "2024-04-08",
-    "statusHistory": [
-      {
-        "date": "2024-04-12",
-        "status": "Chuyển hoàn thành công",
-        "detail": "Kiện hàng đã hoàn trả về 7 Thành Thái, Q10, HCM",
-        "time": "11:30"
-      },
-      {
-        "date": "2024-04-11",
-        "status": "Đang chuyển hoàn",
-        "detail": "Kiện hàng đang trên đường hoàn về kho gốc",
-        "time": "08:00"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Chờ xác nhận giao lại",
-        "detail": "Đã liên hệ người gửi — chờ xác nhận giao lại hoặc hoàn hàng",
-        "time": "15:05"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Giao hàng không thành công",
-        "detail": "Không giao được — người nhận không có ở 19 Khâm Thiên, Đống Đa, HN",
-        "time": "10:42"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 19 Khâm Thiên, Đống Đa, HN",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đến bưu cục giao cuối",
-        "time": "18:00"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Chờ lấy hàng",
-        "detail": "7 Thành Thái, Q10, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-11",
@@ -2443,6 +3597,14 @@
         "action": "Xác nhận hoàn hàng",
         "oldContent": "-",
         "newContent": "Đồng ý hoàn hàng"
+      },
+      {
+        "date": "2024-04-11",
+        "time": "16:44:20",
+        "operator": "Minh Anh",
+        "action": "Cập nhật địa chỉ hoàn",
+        "oldContent": "7 Thành Thái, Q10 (cũ)",
+        "newContent": "7 Thành Thái, Q10, HCM"
       },
       {
         "date": "2024-04-11",
@@ -2465,16 +3627,24 @@
         "time": "14:05:09",
         "operator": "Minh Anh",
         "action": "Cập nhật địa chỉ giao hàng",
-        "oldContent": "Địa chỉ cũ — 19 Khâm Thiên, Đống ...",
+        "oldContent": "19 Khâm Thiên, Đống Đa, HN (cũ)",
         "newContent": "19 Khâm Thiên, Đống Đa, HN"
       },
       {
         "date": "2024-04-09",
-        "time": "11:20:44",
+        "time": "14:05:09",
         "operator": "Minh Anh",
         "action": "Cập nhật COD",
         "oldContent": "125.000 đ",
         "newContent": "175.000 đ"
+      },
+      {
+        "date": "2024-04-09",
+        "time": "14:05:09",
+        "operator": "Minh Anh",
+        "action": "Cập nhật khối lượng",
+        "oldContent": "0.5 kg",
+        "newContent": "0.8 kg"
       },
       {
         "date": "2024-04-09",
@@ -2499,6 +3669,131 @@
         "action": "Tạo đơn hàng",
         "oldContent": "-",
         "newContent": "-"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Thiết lập COD",
+        "oldContent": "-",
+        "newContent": "125.000 đ"
+      },
+      {
+        "date": "2024-04-08",
+        "time": "10:39:02",
+        "operator": "Minh Anh",
+        "action": "Chọn dịch vụ",
+        "oldContent": "-",
+        "newContent": "Giao hàng tiết kiệm"
+      }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 2,
+    "log": [
+      {
+        "status": "returned",
+        "status_name": "Chuyển hoàn thành công",
+        "action": "RETURNED",
+        "updated_date": "2024-04-12T11:30:00.000+07:00",
+        "note": "Kiện hàng đã hoàn trả về 7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "returning",
+        "status_name": "Đang chuyển hoàn",
+        "action": "RETURN_IN_TRIP",
+        "updated_date": "2024-04-11T08:00:00.000+07:00",
+        "note": "Kiện hàng đang trên đường hoàn về kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "waiting_to_return",
+        "status_name": "Chờ xác nhận giao lại",
+        "action": "WAITING_TO_RETURN",
+        "updated_date": "2024-04-10T15:05:00.000+07:00",
+        "note": "Đã liên hệ người gửi — chờ xác nhận giao lại hoặc hoàn hàng",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivery_fail",
+        "status_name": "Giao hàng không thành công",
+        "action": "DELIVERY_FAIL",
+        "updated_date": "2024-04-10T10:42:00.000+07:00",
+        "note": "Không giao được — người nhận không có ở 19 Khâm Thiên, Đống Đa, HN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-10T10:38:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 19 Khâm Thiên, Đống Đa, HN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-09T18:00:00.000+07:00",
+        "note": "Kiện hàng đến bưu cục giao cuối",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-09T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-08T10:39:00.000+07:00",
+        "note": "7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
       }
     ]
   },
@@ -2516,56 +3811,6 @@
     "fee": 36000,
     "status": "delivered",
     "createdAt": "2024-04-08",
-    "statusHistory": [
-      {
-        "date": "2024-04-11",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 7 Tôn Đức Thắng, Đống Đa, HN",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-11",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 7 Tôn Đức Thắng, Đống Đa, HN",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 45 Bạch Mai, Hà Nội",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Chờ lấy hàng",
-        "detail": "45 Bạch Mai, Hà Nội",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-11",
@@ -2623,6 +3868,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-11T14:22:00.000+07:00",
+        "note": "Giao thành công đến 7 Tôn Đức Thắng, Đống Đa, HN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-11T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 7 Tôn Đức Thắng, Đống Đa, HN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-10T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-10T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-09T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-09T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-09T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 45 Bạch Mai, Hà Nội",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-08T10:39:00.000+07:00",
+        "note": "45 Bạch Mai, Hà Nội",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -2639,56 +3993,6 @@
     "fee": 55000,
     "status": "delivered",
     "createdAt": "2024-04-03",
-    "statusHistory": [
-      {
-        "date": "2024-04-06",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 66 Nguyễn Trãi, Q1, HCM",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-06",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 66 Nguyễn Trãi, Q1, HCM",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-05",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-04",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 33 Đinh Tiên Hoàng, Q1, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-03",
-        "status": "Chờ lấy hàng",
-        "detail": "33 Đinh Tiên Hoàng, Q1, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-06",
@@ -2746,6 +4050,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-06T14:22:00.000+07:00",
+        "note": "Giao thành công đến 66 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-06T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 66 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-05T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-05T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-04T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-04T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-04T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 33 Đinh Tiên Hoàng, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-03T10:39:00.000+07:00",
+        "note": "33 Đinh Tiên Hoàng, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -2762,44 +4175,6 @@
     "fee": 30000,
     "status": "in_transit",
     "createdAt": "2024-04-08",
-    "statusHistory": [
-      {
-        "date": "2024-04-10",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 30 Lý Thái Tổ, Đà Nẵng",
-        "time": "09:45"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
-        "time": "06:20"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "22:55"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc",
-        "time": "13:40"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 22 Trần Phú, Hội An",
-        "time": "09:10"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Chờ lấy hàng",
-        "detail": "22 Trần Phú, Hội An",
-        "time": "09:15"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-10",
@@ -2849,6 +4224,89 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-10T09:45:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 30 Lý Thái Tổ, Đà Nẵng",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-10T06:20:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-09T22:55:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-09T13:40:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-09T09:10:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 22 Trần Phú, Hội An",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-08T09:15:00.000+07:00",
+        "note": "22 Trần Phú, Hội An",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -2865,56 +4323,6 @@
     "fee": 20000,
     "status": "delivered",
     "createdAt": "2024-04-08",
-    "statusHistory": [
-      {
-        "date": "2024-04-11",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 122 Nguyễn Công Trứ, Q1, HCM",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-11",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 122 Nguyễn Công Trứ, Q1, HCM",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Chờ lấy hàng",
-        "detail": "12 Nguyễn Trãi, Q1, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-11",
@@ -2972,6 +4380,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-11T14:22:00.000+07:00",
+        "note": "Giao thành công đến 122 Nguyễn Công Trứ, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-11T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 122 Nguyễn Công Trứ, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-10T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-10T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-09T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-09T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-09T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-08T10:39:00.000+07:00",
+        "note": "12 Nguyễn Trãi, Q1, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -2988,14 +4505,6 @@
     "fee": 70000,
     "status": "pending",
     "createdAt": "2024-04-08",
-    "statusHistory": [
-      {
-        "date": "2024-04-08",
-        "status": "Chờ lấy hàng",
-        "detail": "12 Nguyễn Ái Quốc, BH",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-09",
@@ -3021,6 +4530,24 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 0,
+    "num_pick": 0,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-08T10:39:00.000+07:00",
+        "note": "12 Nguyễn Ái Quốc, BH",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -3037,56 +4564,6 @@
     "fee": 26000,
     "status": "delivered",
     "createdAt": "2024-04-08",
-    "statusHistory": [
-      {
-        "date": "2024-04-11",
-        "status": "Giao hàng thành công",
-        "detail": "Giao thành công đến 44 Nguyễn Văn Trỗi, Phú Nhuận, HCM",
-        "time": "14:22"
-      },
-      {
-        "date": "2024-04-11",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 44 Nguyễn Văn Trỗi, Phú Nhuận, HCM",
-        "time": "08:50"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
-        "time": "17:30"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Rời kho trung chuyển",
-        "detail": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
-        "time": "07:05"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "23:15"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
-        "time": "14:10"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
-        "time": "10:38"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Chờ lấy hàng",
-        "detail": "88 Lê Hồng Phong, Q5, HCM",
-        "time": "10:39"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-11",
@@ -3144,6 +4621,115 @@
         "oldContent": "-",
         "newContent": "-"
       }
+    ],
+    "num_deliver": 2,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivered",
+        "status_name": "Giao hàng thành công",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-11T14:22:00.000+07:00",
+        "note": "Giao thành công đến 44 Nguyễn Văn Trỗi, Phú Nhuận, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-11T08:50:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 44 Nguyễn Văn Trỗi, Phú Nhuận, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-10T17:30:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục giao cuối — sẵn sàng giao",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-10T07:05:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-09T23:15:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-09T14:10:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-09T10:38:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 88 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-08T10:39:00.000+07:00",
+        "note": "88 Lê Hồng Phong, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
     ]
   },
   {
@@ -3160,44 +4746,6 @@
     "fee": 50000,
     "status": "in_transit",
     "createdAt": "2024-04-08",
-    "statusHistory": [
-      {
-        "date": "2024-04-10",
-        "status": "Đang giao hàng",
-        "detail": "Shipper đang giao hàng đến 88 Trần Hưng Đạo, Q5, HCM",
-        "time": "09:45"
-      },
-      {
-        "date": "2024-04-10",
-        "status": "Đến bưu cục giao hàng",
-        "detail": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
-        "time": "06:20"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đến kho trung chuyển",
-        "detail": "Kiện hàng đến kho trung chuyển GHN",
-        "time": "22:55"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Rời kho gốc",
-        "detail": "Kiện hàng rời kho gốc",
-        "time": "13:40"
-      },
-      {
-        "date": "2024-04-09",
-        "status": "Đã lấy hàng",
-        "detail": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
-        "time": "09:10"
-      },
-      {
-        "date": "2024-04-08",
-        "status": "Chờ lấy hàng",
-        "detail": "10 Hùng Vương, CT",
-        "time": "09:15"
-      }
-    ],
     "actionHistory": [
       {
         "date": "2024-04-10",
@@ -3246,6 +4794,345 @@
         "action": "Tạo đơn hàng",
         "oldContent": "-",
         "newContent": "-"
+      }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-10T09:45:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 88 Trần Hưng Đạo, Q5, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-10T06:20:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-09T22:55:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-09T13:40:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-09T09:10:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 10 Hùng Vương, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-08T09:15:00.000+07:00",
+        "note": "10 Hùng Vương, CT",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
+    ]
+  },
+  {
+    "id": "ORD031",
+    "shopId": "SHP001",
+    "trackingCode": "GHN00123463",
+    "senderName": "Minh Anh",
+    "senderPhone": "0901111111",
+    "receiverName": "Lương Thị Thu",
+    "receiverPhone": "0912345678",
+    "receiverAddress": "25 Trần Duy Hưng, Cầu Giấy, HN",
+    "weight": 950,
+    "cod": 420000,
+    "fee": 26000,
+    "status": "in_transit",
+    "createdAt": "2024-04-10",
+    "actionHistory": [
+      {
+        "date": "2024-04-10",
+        "time": "11:07:33",
+        "operator": "Minh Anh",
+        "action": "In phiếu giao hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-10",
+        "time": "11:05:14",
+        "operator": "Minh Anh",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-10",
+        "time": "11:05:14",
+        "operator": "Minh Anh",
+        "action": "Thiết lập COD",
+        "oldContent": "-",
+        "newContent": "320.000 đ"
+      },
+      {
+        "date": "2024-04-10",
+        "time": "11:05:14",
+        "operator": "Minh Anh",
+        "action": "Chọn dịch vụ",
+        "oldContent": "-",
+        "newContent": "Giao hàng nhanh"
+      },
+      {
+        "date": "2024-04-10",
+        "time": "11:05:14",
+        "operator": "Minh Anh",
+        "action": "Khai khối lượng",
+        "oldContent": "-",
+        "newContent": "1.2 kg"
+      }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-11T09:15:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 25 Trần Duy Hưng, Cầu Giấy, HN",
+        "warehouse_id": 10012000,
+        "warehouse_name": "Bưu cục Cầu Giấy – Hà Nội",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "at_delivery_hub",
+        "status_name": "Đến bưu cục giao hàng",
+        "action": "HUB_DELIVERY_IN",
+        "updated_date": "2024-04-11T06:05:00.000+07:00",
+        "note": "Kiện hàng đã đến bưu cục — sẵn sàng phân công shipper",
+        "warehouse_id": 10012000,
+        "warehouse_name": "Bưu cục Cầu Giấy – Hà Nội",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho trung chuyển",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-10T22:40:00.000+07:00",
+        "note": "Kiện hàng rời kho trung chuyển — đang vận chuyển đến bưu cục",
+        "warehouse_id": 10001000,
+        "warehouse_name": "Kho trung chuyển HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_in",
+        "status_name": "Đến kho trung chuyển",
+        "action": "HUB_IN",
+        "updated_date": "2024-04-10T19:20:00.000+07:00",
+        "note": "Kiện hàng đến kho trung chuyển GHN",
+        "warehouse_id": 10001000,
+        "warehouse_name": "Kho trung chuyển HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "hub_out",
+        "status_name": "Rời kho gốc",
+        "action": "HUB_OUT",
+        "updated_date": "2024-04-10T15:30:00.000+07:00",
+        "note": "Kiện hàng rời kho gốc — đang vận chuyển liên tỉnh",
+        "warehouse_id": null,
+        "warehouse_name": "Kho gốc Q10 – HCM",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-10T11:20:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-10T11:05:00.000+07:00",
+        "note": "7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      }
+    ]
+  },
+  {
+    "id": "ORD032",
+    "shopId": "SHP001",
+    "trackingCode": "GHN00123464",
+    "senderName": "Minh Anh",
+    "senderPhone": "0901111111",
+    "receiverName": "Đinh Văn Long",
+    "receiverPhone": "0971234567",
+    "receiverAddress": "47 Bà Triệu, Hai Bà Trưng, HN",
+    "weight": 600,
+    "cod": 190000,
+    "fee": 22000,
+    "status": "redelivery",
+    "createdAt": "2024-04-12",
+    "actionHistory": [
+      {
+        "date": "2024-04-14",
+        "time": "15:20:00",
+        "operator": "Minh Anh",
+        "action": "Xem thông tin đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      },
+      {
+        "date": "2024-04-12",
+        "time": "10:00:02",
+        "operator": "Minh Anh",
+        "action": "Tạo đơn hàng",
+        "oldContent": "-",
+        "newContent": "-"
+      }
+    ],
+    "num_deliver": 1,
+    "num_pick": 1,
+    "num_return": 0,
+    "log": [
+      {
+        "status": "waiting_to_return",
+        "status_name": "Chờ xác nhận giao lại",
+        "action": "WAITING_TO_RETURN",
+        "updated_date": "2024-04-14T14:55:00.000+07:00",
+        "note": "Đã liên hệ người gửi — chờ xác nhận giao lại hoặc hoàn hàng",
+        "warehouse_id": 10002000,
+        "warehouse_name": "Bưu cục Hai Bà Trưng – HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivery_fail",
+        "status_name": "Giao hàng không thành công",
+        "action": "DELIVERY_FAIL",
+        "updated_date": "2024-04-14T10:30:00.000+07:00",
+        "note": "Lần 1 — Người nhận không có mặt tại 47 Bà Triệu, Hai Bà Trưng, HN",
+        "warehouse_id": 10002000,
+        "warehouse_name": "Bưu cục Hai Bà Trưng – HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "delivering",
+        "status_name": "Đang giao hàng",
+        "action": "DELIVER_IN_TRIP",
+        "updated_date": "2024-04-14T08:00:00.000+07:00",
+        "note": "Shipper đang giao hàng đến 47 Bà Triệu, Hai Bà Trưng, HN",
+        "warehouse_id": 10002000,
+        "warehouse_name": "Bưu cục Hai Bà Trưng – HN",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "picking",
+        "status_name": "Đã lấy hàng",
+        "action": "PICK_IN_TRIP",
+        "updated_date": "2024-04-12T11:00:00.000+07:00",
+        "note": "Shipper đã lấy hàng tại 7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
+      },
+      {
+        "status": "ready_to_pick",
+        "status_name": "Chờ lấy hàng",
+        "action": "READY_TO_PICK",
+        "updated_date": "2024-04-12T10:00:00.000+07:00",
+        "note": "7 Thành Thái, Q10, HCM",
+        "warehouse_id": null,
+        "warehouse_name": "",
+        "is_force_majeure": false,
+        "force_majeure_msg": "",
+        "is_regulation": false,
+        "regulation_msg": ""
       }
     ]
   }

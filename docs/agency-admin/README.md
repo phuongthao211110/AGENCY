@@ -22,10 +22,18 @@
 | [AGA] Shop - Tạo mới shop: Cấu hình User/Password | [tao-moi-shop-cau-hinh-user-password.md](./shops/tao-moi-shop-cau-hinh-user-password.md) | AGENCY-46 | ✅ |
 | [AGA] Shop: View thông tin chi tiết shop | [view-chi-tiet-shop.md](./shops/view-chi-tiet-shop.md) | — | ✅ |
 | [AGA] Shop - Tạo mới shop: Cấu hình dịch vụ | [tao-moi-shop-cau-hinh-dich-vu.md](./shops/tao-moi-shop-cau-hinh-dich-vu.md) | — | [Draft] |
+| [AGA] Shop - Hiển thị Inactive khi shop tự xoá tài khoản | [inactive-shop-tu-xoa.md](./shops/inactive-shop-tu-xoa.md) | AGENCY-611 | [Draft] |
+| [AGA] Danh sách shop: Hiển thị link đăng nhập shop portal | [hien-thi-link-dang-nhap-shop.md](./shops/hien-thi-link-dang-nhap-shop.md) | AGENCY-608 | [Draft] |
 
 ## Quản lý đơn hàng
 
 _Chưa có stories_
+
+## Hệ thống
+
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [HỆ THỐNG] Cập nhật danh sách đầu số điện thoại hợp lệ | [cap-nhat-dau-so-dien-thoai.md](./he-thong/cap-nhat-dau-so-dien-thoai.md) | AGENCY-609 | [Draft] |
 
 ## Thiết lập NVC
 
@@ -35,3 +43,5 @@ _Chưa có stories_
 | [AGA] Thiết lập NVC: Quản lý gói dịch vụ | [quan-ly-goi-dich-vu.md](./carrier-setup/quan-ly-goi-dich-vu.md) | — | ✅ |
 | [AGA] Thiết lập NVC: Chi tiết gói dịch vụ | [chi-tiet-goi-dich-vu.md](./carrier-setup/chi-tiet-goi-dich-vu.md) | — | ✅ |
 | [AGA] Thiết lập NVC: Bảng giá dịch vụ | [bang-gia-dich-vu.md](./carrier-setup/bang-gia-dich-vu.md) | — | ✅ |
+| [AGA] Thiết lập NVC: Tạo bảng giá - Cấu hình phụ phí | [tao-bang-gia-cau-hinh-phu-phi.md](./carrier-setup/tao-bang-gia-cau-hinh-phu-phi.md) | — | [Draft] |
+| [AGA] Thiết lập NVC: Tạo bảng giá - Cấu hình phụ phí Hoàn hàng | [tao-bang-gia-phu-phi-hoan-hang.md](./carrier-setup/tao-bang-gia-phu-phi-hoan-hang.md) | AGENCY-250 | [Draft] |

@@ -19,6 +19,16 @@ const fmtDate = (d: string) => {
   return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`
 }
 
+const fmtPeriod = (start?: string, end?: string) => {
+  if (!start || !end) return null
+  const dt = (s: string) => new Date(s)
+  const dd = (s: string) => String(dt(s).getDate()).padStart(2, '0')
+  const mm = (s: string) => String(dt(s).getMonth() + 1).padStart(2, '0')
+  const yy = (s: string) => dt(s).getFullYear()
+  if (start === end) return `${dd(start)}/${mm(start)}/${yy(start)}`
+  return `${dd(start)}/${mm(start)} – ${dd(end)}/${mm(end)}/${yy(end)}`
+}
+
 type ShopSession = {
   id: string
   nvcSessionId: string
@@ -33,6 +43,8 @@ type ShopSession = {
   totalMismatch: number
   status: 'pending' | 'confirmed'
   paymentDate: string
+  periodStart?: string
+  periodEnd?: string
 }
 
 type ItemRecord = {
@@ -168,7 +180,10 @@ export default function AgencyReconciliationShopDetail() {
             {nvcSession && (
               <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>
                 Phiên GHN: <span style={{ color: C_LINK, fontWeight: 600 }}>{session.nvcSessionCode}</span>
-                {' · '}{fmtDate(session.paymentDate)}
+                {fmtPeriod(session.periodStart, session.periodEnd) && (
+                  <> · <span style={{ color: C_TEXT_PRIMARY, fontWeight: 500 }}>{fmtPeriod(session.periodStart, session.periodEnd)}</span></>
+                )}
+                {' · TT: '}{fmtDate(session.paymentDate)}
               </span>
             )}
           </div>
