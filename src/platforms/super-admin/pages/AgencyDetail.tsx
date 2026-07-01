@@ -402,7 +402,7 @@ export default function AgencyDetail() {
                     {ALL_CARRIERS.map((carrier) => {
                       const enabled = (agency.allowedCarriers ?? ['GHN']).includes(carrier.key)
                       const isLocked = carrier.key === 'GHN'
-                      const pendingReq = !enabled && carrierRequests.find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'pending')
+                      const pendingReq = !enabled ? carrierRequests.find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'pending') : undefined
                       const rejectedReq = !enabled && carrierRequests.find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'rejected')
                       return (
                         <div key={carrier.key} style={{ display: 'flex', flexDirection: 'column', gap: 0, border: `1px solid ${enabled ? carrier.color + '40' : (pendingReq ? '#FCD34D' : C_BORDER)}`, borderRadius: 8, overflow: 'hidden', background: enabled ? carrier.color + '08' : (pendingReq ? '#FFFBEB' : '#FAFAFA') }}>

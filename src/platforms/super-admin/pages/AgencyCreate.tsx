@@ -283,6 +283,7 @@ export default function AgencyCreate() {
       phone:          sdt,
       address:        [soNha, tinhThanh].filter(Boolean).join(', '),
       email:          '',
+      allowedCarriers: ['GHN'],
     })
     navigate('/super-admin/agencies')
   }

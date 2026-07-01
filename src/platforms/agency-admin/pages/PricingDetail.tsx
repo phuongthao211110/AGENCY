@@ -137,11 +137,11 @@ export default function PricingDetail() {
                 <div style={{ flex: '2 0 0', padding: '8px 16px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Nhãn</div>
               </div>
               <div style={{ height: 1, background: C_BORDER }} />
-              {pt.zones.map((zone, idx) => (
+              {(pt.zones as { from?: string; to?: string; label: string }[]).map((zone, idx) => (
                 <div key={idx}>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ flex: '1 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY }}>{zone.from}</div>
-                    <div style={{ flex: '1 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY }}>{zone.to}</div>
+                    <div style={{ flex: '1 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY }}>{zone.from ?? '—'}</div>
+                    <div style={{ flex: '1 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY }}>{zone.to ?? '—'}</div>
                     <div style={{ flex: '2 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_SECONDARY }}>{zone.label}</div>
                   </div>
                   {idx < pt.zones.length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
