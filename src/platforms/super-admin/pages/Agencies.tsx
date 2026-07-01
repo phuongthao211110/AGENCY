@@ -1,14 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
-import {
-  agenciesList,
-  shopConnections, carrierRequests,
-  approveShopConnection, rejectShopConnection,
-  approveCarrierRequest, rejectCarrierRequest,
-} from '../agencyStore'
+import { agenciesList } from '../agencyStore'
 
 // ── Design tokens ────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -23,276 +18,6 @@ function fmt(n: number) {
   if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B'
   if (n >= 1_000_000)     return Math.round(n / 1_000_000) + 'M'
   return n.toLocaleString()
-}
-
-const CARRIER_COLOR: Record<string, string> = {
-  GHN: '#EF4444',
-  '247Express': '#8B5CF6',
-}
-
-const SERVICES_247 = [
-  { code: 'CPN247',   name: 'Chuyển phát nhanh' },
-  { code: 'CPDB247',  name: 'Chuyển phát đường bộ' },
-  { code: 'CP55H247', name: 'Chuyển phát 55h' },
-  { code: 'CPNQT247', name: 'Chuyển phát nhanh quốc tế' },
-  { code: 'CPTQT247', name: 'Chuyển phát tiết kiệm quốc tế' },
-]
-
-// ── Quick Approve Modal ───────────────────────────────────────
-function QuickApproveModal({ agencyId, agencyName, onClose, onUpdate }: {
-  agencyId: string; agencyName: string; onClose: () => void; onUpdate: () => void
-}) {
-  const [rejectingId, setRejectingId]           = useState<string | null>(null)
-  const [rejectReason, setRejectReason]         = useState('')
-  const [selectingServicesId, setSelectingServicesId] = useState<string | null>(null)
-  const [selectedServices, setSelectedServices] = useState<string[]>(SERVICES_247.map(s => s.code))
-
-  const pendingShops    = shopConnections.filter(s => s.agencyId === agencyId && s.status === 'pending')
-  const pendingCarriers = carrierRequests.filter(r => r.agencyId === agencyId && r.status === 'pending')
-  const totalPending    = pendingShops.length + pendingCarriers.length
-
-  function startReject(id: string) { setRejectingId(id); setRejectReason(''); setSelectingServicesId(null) }
-  function cancelReject()          { setRejectingId(null); setRejectReason('') }
-
-  function startSelectServices(id: string) {
-    setSelectingServicesId(id)
-    setSelectedServices(SERVICES_247.map(s => s.code))
-    setRejectingId(null)
-  }
-  function cancelSelectServices() { setSelectingServicesId(null) }
-
-  function toggleService(code: string) {
-    setSelectedServices(prev =>
-      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
-    )
-  }
-
-  function doApproveShop(id: string, carrier: string) {
-    if (carrier === '247Express') {
-      startSelectServices(id)
-    } else {
-      approveShopConnection(id)
-      onUpdate()
-    }
-  }
-  function doConfirmApproveShop247(id: string) {
-    const services = SERVICES_247.filter(s => selectedServices.includes(s.code))
-    approveShopConnection(id, services)
-    setSelectingServicesId(null)
-    onUpdate()
-  }
-  function doRejectShop(id: string) {
-    rejectShopConnection(id, rejectReason); cancelReject(); onUpdate()
-  }
-  function doApproveCarrier(id: string) {
-    approveCarrierRequest(id); onUpdate()
-  }
-  function doRejectCarrier(id: string) {
-    rejectCarrierRequest(id, rejectReason); cancelReject(); onUpdate()
-  }
-
-  function CarrierBadge({ carrier }: { carrier: string }) {
-    const color = CARRIER_COLOR[carrier] ?? C_TEXT_SECONDARY
-    return (
-      <span style={{
-        background: color + '18', color,
-        border: `1px solid ${color}40`,
-        borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 700, flexShrink: 0,
-      }}>
-        {carrier}
-      </span>
-    )
-  }
-
-  function ActionButtons({ onApprove, onReject }: { onApprove: () => void; onReject: () => void }) {
-    return (
-      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-        <button
-          onClick={onReject}
-          style={{ background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 4, padding: '4px 10px', fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}
-        >
-          Từ chối
-        </button>
-        <button
-          onClick={onApprove}
-          style={{ background: C_ACTION, border: 'none', borderRadius: 4, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer' }}
-        >
-          Duyệt
-        </button>
-      </div>
-    )
-  }
-
-  function RejectInput({ onConfirm }: { onConfirm: () => void }) {
-    return (
-      <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-        <input
-          value={rejectReason}
-          onChange={e => setRejectReason(e.target.value)}
-          placeholder="Lý do từ chối..."
-          autoFocus
-          style={{
-            flex: 1, border: `1px solid ${C_BORDER}`, borderRadius: 4,
-            padding: '6px 10px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none',
-          }}
-        />
-        <button
-          onClick={onConfirm}
-          style={{ background: '#EF4444', border: 'none', borderRadius: 4, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer', flexShrink: 0 }}
-        >
-          Xác nhận
-        </button>
-        <button
-          onClick={cancelReject}
-          style={{ background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 4, padding: '6px 10px', fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer', flexShrink: 0 }}
-        >
-          Hủy
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      onClick={onClose}
-    >
-      <div
-        style={{ background: '#fff', borderRadius: 8, width: 560, maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY, flex: 1 }}>Duyệt nhanh</span>
-          <span style={{ fontSize: 14, color: C_LINK, fontWeight: 700 }}>{agencyName}</span>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: C_TEXT_SECONDARY, lineHeight: 1, padding: '0 4px' }}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Body */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '8px 0' }}>
-          {totalPending === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
-              Không còn mục nào chờ duyệt
-            </div>
-          ) : (
-            <>
-              {/* Shop connections */}
-              {pendingShops.length > 0 && (
-                <div>
-                  <div style={{ padding: '8px 20px 4px', fontSize: 12, fontWeight: 600, color: C_TEXT_SECONDARY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Kết nối Shop ({pendingShops.length})
-                  </div>
-                  {pendingShops.map(s => (
-                    <div key={s.id} style={{ padding: '10px 20px', borderBottom: `1px solid ${C_BORDER}` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <CarrierBadge carrier={s.carrier} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {s.name}
-                          </div>
-                          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
-                            ID: {s.shopId} · {s.requestedAt}
-                          </div>
-                        </div>
-                        {rejectingId === s.id || selectingServicesId === s.id
-                          ? <button
-                              onClick={() => rejectingId === s.id ? cancelReject() : cancelSelectServices()}
-                              style={{ background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 4, padding: '4px 10px', fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer', flexShrink: 0 }}
-                            >Hủy</button>
-                          : <ActionButtons onApprove={() => doApproveShop(s.id, s.carrier)} onReject={() => startReject(s.id)} />
-                        }
-                      </div>
-
-                      {/* Rejection input */}
-                      {rejectingId === s.id && <RejectInput onConfirm={() => doRejectShop(s.id)} />}
-
-                      {/* 247Express service selection */}
-                      {selectingServicesId === s.id && (
-                        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px dashed ${C_BORDER}` }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: C_TEXT_SECONDARY, marginBottom: 8 }}>
-                            Chọn dịch vụ được phép sử dụng:
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-                            {SERVICES_247.map(svc => (
-                              <label key={svc.code} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: C_TEXT_PRIMARY }}>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedServices.includes(svc.code)}
-                                  onChange={() => toggleService(svc.code)}
-                                  style={{ width: 14, height: 14, accentColor: C_ACTION, cursor: 'pointer' }}
-                                />
-                                {svc.name}
-                              </label>
-                            ))}
-                          </div>
-                          <button
-                            onClick={() => doConfirmApproveShop247(s.id)}
-                            disabled={selectedServices.length === 0}
-                            style={{
-                              background: selectedServices.length > 0 ? C_ACTION : '#D1D5DB',
-                              border: 'none', borderRadius: 4, padding: '6px 14px',
-                              fontSize: 12, fontWeight: 600, color: '#fff',
-                              cursor: selectedServices.length > 0 ? 'pointer' : 'not-allowed',
-                            }}
-                          >
-                            Duyệt {selectedServices.length} dịch vụ
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Carrier activation requests */}
-              {pendingCarriers.length > 0 && (
-                <div>
-                  <div style={{ padding: '8px 20px 4px', fontSize: 12, fontWeight: 600, color: C_TEXT_SECONDARY, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Kích hoạt ĐVVC ({pendingCarriers.length})
-                  </div>
-                  {pendingCarriers.map(r => (
-                    <div key={r.id} style={{ padding: '10px 20px', borderBottom: `1px solid ${C_BORDER}` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <CarrierBadge carrier={r.carrier} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
-                            Kích hoạt {r.carrier}
-                          </div>
-                          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
-                            {r.requestedAt}{r.note ? ` · ${r.note}` : ''}
-                          </div>
-                        </div>
-                        {rejectingId === r.id
-                          ? null
-                          : <ActionButtons onApprove={() => doApproveCarrier(r.id)} onReject={() => startReject(r.id)} />
-                        }
-                      </div>
-                      {rejectingId === r.id && <RejectInput onConfirm={() => doRejectCarrier(r.id)} />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding: '12px 20px', borderTop: `1px solid ${C_BORDER}`, display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            onClick={onClose}
-            style={{ background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '7px 16px', fontSize: 14, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
-          >
-            Đóng
-          </button>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ── Table header ─────────────────────────────────────────────
@@ -312,15 +37,14 @@ function THead() {
       {cell('Đơn hàng',     '1 0 0', 160, 'right')}
       {cell('Tổng COD (₫)', '1 0 0', 160, 'right')}
       {cell('Doanh thu (₫)','1 0 0', 160, 'right')}
-      {cell('Chờ duyệt',    '0 0 160px', 160)}
     </div>
   )
 }
 
 // ── Table row ─────────────────────────────────────────────────
 type Agency = (typeof agenciesList[0]) & { cod: number; revenue: number }
-function TRow({ agency, onClick, pendingCount, onQuickApprove }: {
-  agency: Agency; onClick: () => void; pendingCount: number; onQuickApprove: () => void
+function TRow({ agency, onClick }: {
+  agency: Agency; onClick: () => void
 }) {
   const [hover, setHover] = useState(false)
   return (
@@ -360,33 +84,6 @@ function TRow({ agency, onClick, pendingCount, onQuickApprove }: {
       {/* Doanh thu */}
       <div style={{ flex: '1 0 0', minWidth: 160, padding: '6px 8px', textAlign: 'right' }}>
         <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{fmt(agency.revenue)}</span>
-      </div>
-      {/* Chờ duyệt */}
-      <div style={{ flex: '0 0 160px', minWidth: 160, padding: '6px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
-        {pendingCount > 0 ? (
-          <>
-            <span style={{
-              background: '#FFF4ED', color: C_ACTION,
-              border: '1px solid #FFD5BB',
-              borderRadius: 100, padding: '2px 8px',
-              fontSize: 12, fontWeight: 600, flexShrink: 0,
-            }}>
-              {pendingCount}
-            </span>
-            <button
-              onClick={e => { e.stopPropagation(); onQuickApprove() }}
-              style={{
-                background: C_ACTION, border: 'none', borderRadius: 4,
-                padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#fff',
-                cursor: 'pointer', flexShrink: 0,
-              }}
-            >
-              Duyệt
-            </button>
-          </>
-        ) : (
-          <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>—</span>
-        )}
       </div>
     </div>
   )
@@ -483,27 +180,12 @@ export default function Agencies() {
   const [search, setSearch]       = useState('')
   const [page, setPage]           = useState(1)
   const [pageSize, setPageSize]   = useState(50)
-  const [modalAgency, setModalAgency] = useState<{ id: string; name: string } | null>(null)
-  const [tick, setTick]           = useState(0)
 
   const agencies = agenciesList.map((a) => ({
     ...a,
     cod:     a.totalOrders * 35_000,
     revenue: Math.round(a.totalOrders * 35_000 * 0.028),
   }))
-
-  // Recomputes whenever tick changes (after approve/reject mutations)
-  const pendingByAgency = useMemo(() => {
-    const map: Record<string, number> = {}
-    shopConnections.filter(s => s.status === 'pending').forEach(s => {
-      map[s.agencyId] = (map[s.agencyId] || 0) + 1
-    })
-    carrierRequests.filter(r => r.status === 'pending').forEach(r => {
-      map[r.agencyId] = (map[r.agencyId] || 0) + 1
-    })
-    return map
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick])
 
   const filtered = agencies.filter(
     (a) =>
@@ -568,8 +250,6 @@ export default function Agencies() {
                   key={agency.id}
                   agency={agency}
                   onClick={() => navigate(`/super-admin/agencies/${agency.id}`)}
-                  pendingCount={pendingByAgency[agency.id] ?? 0}
-                  onQuickApprove={() => setModalAgency({ id: agency.id, name: agency.name })}
                 />
               ))}
             </div>
@@ -587,16 +267,6 @@ export default function Agencies() {
           />
         </div>
       </div>
-
-      {/* Quick Approve Modal */}
-      {modalAgency && (
-        <QuickApproveModal
-          agencyId={modalAgency.id}
-          agencyName={modalAgency.name}
-          onClose={() => setModalAgency(null)}
-          onUpdate={() => setTick(t => t + 1)}
-        />
-      )}
     </ConfigProvider>
   )
 }
