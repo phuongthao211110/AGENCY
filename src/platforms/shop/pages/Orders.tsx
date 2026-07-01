@@ -4,8 +4,8 @@ import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
 import allOrders from '../../../mock-data/orders.json'
 import allShops from '../../../mock-data/shops.json'
-import allServices from '../../../mock-data/services.json'
 import allPricing from '../../../mock-data/pricing.json'
+import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
 
 // ── Fee calculation helpers ──────────────────────────────────
 type ShopFeeTier = { id: string; fromValue: string; toValue: string; fixedFee: string; percentFee: string }
@@ -20,6 +20,17 @@ function shopCalcTierFee(amount: number, tiers: ShopFeeTier[]): number {
   const tier = tiers.find(t => amount >= parseFloat(t.fromValue) && amount <= parseFloat(t.toValue))
   if (!tier) return 0
   return Math.round(amount * parseFloat(tier.percentFee) / 100 + parseFloat(tier.fixedFee))
+}
+
+// Phí ship = tra theo bảng giá (zones × weight) của dịch vụ — chưa có ô nhập tỉnh gửi/nhận
+// trên form nên tạm lấy vùng đầu tiên (rẻ nhất/gần nhất) của bảng giá làm mặc định.
+function shopFeeFromPriceTable(service: AgencyService, weightGram: number): number {
+  const priceTable = service.priceTableId ? (allPricing as any[]).find(p => p.id === service.priceTableId) : null
+  if (!priceTable) return 0
+  const weights: { max: number }[] = priceTable.weights ?? []
+  const weightIndex = weights.findIndex(w => weightGram <= w.max)
+  const row = priceTable.prices?.[weightIndex === -1 ? weights.length - 1 : weightIndex]
+  return row?.[0] ?? 0
 }
 
 // ── Icons (Tabler-style SVG) ─────────────────────────────────
@@ -299,26 +310,44 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const [collectOnFailAmt, setCollectOnFailAmt] = useState(0)
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
-  const shopServices = ((currentShop as any).configuredServices ?? []).map((cs: { serviceId: string; demoFee: number }) => ({
-    ...cs,
-    service: allServices.find(sv => sv.id === cs.serviceId),
-  })).filter((cs: any) => cs.service && cs.service.priceTableId)
-  const [selectedServiceId, setSelectedServiceId] = useState<string>(shopServices[0]?.serviceId ?? '')
+  const shopConnectionId = (currentShop as any).connectionId as string | undefined
+  const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
+  const weightGram = Number(convertedWeight) * 1000
+
+  // Dịch vụ hiển thị cho shop = dịch vụ đại lý đang bật (Mặc định) và có gán Shop ID này —
+  // carrier không hiển thị ra đây, đúng nguyên tắc shop không biết nhà vận chuyển nào xử lý đơn.
+  const availableServices = servicesList.filter(
+    s => s.enabled && !!shopConnectionId && s.shopConnectionIds.includes(shopConnectionId)
+  )
+  // Nhiều carrier có thể cùng cung cấp 1 dịch vụ trùng tên (VD "Giao nhanh" ở cả GHN và
+  // 247Express) — gộp lại theo tên để shop chỉ thấy 1 lựa chọn duy nhất, hệ thống tự chọn
+  // carrier rẻ nhất theo khối lượng đơn hiện tại, tránh hiện 2 dòng giống nhau gây khó hiểu.
+  const serviceGroups = Object.values(
+    availableServices.reduce((acc, s) => {
+      (acc[s.name] ??= []).push(s)
+      return acc
+    }, {} as Record<string, AgencyService[]>)
+  )
+  const cheapestInGroup = (group: AgencyService[]) =>
+    group.reduce((min, s) =>
+      shopFeeFromPriceTable(s, weightGram) < shopFeeFromPriceTable(min, weightGram) ? s : min
+    )
+
+  const [selectedServiceName, setSelectedServiceName] = useState<string>(serviceGroups[0]?.[0]?.name ?? '')
   const [feePayer, setFeePayer] = useState<'sender' | 'receiver'>('sender')
 
-  const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
   const now = new Date()
   const createdAt = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} - ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`
 
   // ── Fee calculations ──────────────────────────────────────
-  const selectedService     = allServices.find(s => s.id === selectedServiceId)
-  const selectedServiceConf = shopServices.find((cs: any) => cs.serviceId === selectedServiceId)
-  const priceTable          = selectedService?.priceTableId
+  const selectedGroup   = serviceGroups.find(g => g[0]?.name === selectedServiceName)
+  const selectedService = selectedGroup ? cheapestInGroup(selectedGroup) : undefined
+  const priceTable       = selectedService?.priceTableId
     ? (allPricing as any[]).find(p => p.id === selectedService.priceTableId)
     : null
-  const surcharges          = (priceTable?.surcharges ?? {}) as ShopPricingSurcharges
+  const surcharges       = (priceTable?.surcharges ?? {}) as ShopPricingSurcharges
 
-  const feeShipping         = (selectedServiceConf as any)?.demoFee ?? 0
+  const feeShipping = selectedService ? shopFeeFromPriceTable(selectedService, weightGram) : 0
   const feeInsurance     = declareValue && goodsValue > 0
     ? shopCalcTierFee(goodsValue, surcharges.insurance ?? [])
     : 0
@@ -738,12 +767,18 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
-                {shopServices.map((cs: any) => {
-                  const selected = selectedServiceId === cs.serviceId
+                {serviceGroups.length === 0 ? (
+                  <div style={{ padding: '12px 4px', fontSize: 13, color: C_TEXT_SECONDARY }}>
+                    Shop chưa được gán dịch vụ nào — liên hệ đại lý để được thêm dịch vụ.
+                  </div>
+                ) : serviceGroups.map((group) => {
+                  const name = group[0].name
+                  const selected = selectedServiceName === name
+                  const fee = shopFeeFromPriceTable(cheapestInGroup(group), weightGram)
                   return (
                     <div
-                      key={cs.serviceId}
-                      onClick={() => setSelectedServiceId(cs.serviceId)}
+                      key={name}
+                      onClick={() => setSelectedServiceName(name)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 12,
                         padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
@@ -760,11 +795,11 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                       </div>
                       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px' }}>Dịch vụ</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{cs.service.name}</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{name}</span>
                       </div>
                       <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px', flexShrink: 0 }}>Phí ship:</span>
                       <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                        {cs.demoFee.toLocaleString('vi-VN')}đ
+                        {fee.toLocaleString('vi-VN')}đ
                       </span>
                     </div>
                   )

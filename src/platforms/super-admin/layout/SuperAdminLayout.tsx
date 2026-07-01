@@ -10,13 +10,16 @@ import {
   LogoutOutlined,
   RightOutlined,
   RobotOutlined,
+  AuditOutlined,
 } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
 import PlatformSwitcher from '../../../components/PlatformSwitcher'
+import { shopConnections, carrierRequests } from '../agencyStore'
 
 const NAV_ITEMS = [
   { key: '/super-admin/agencies', icon: <BankOutlined />, label: 'Đại lý' },
+  { key: '/super-admin/approvals', icon: <AuditOutlined />, label: 'Duyệt yêu cầu' },
 ]
 
 const SETTINGS_ITEM = { key: '/super-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }
@@ -37,6 +40,10 @@ export default function SuperAdminLayout() {
   }, [])
 
   const isActive = (key: string) => location.pathname.startsWith(key)
+
+  const pendingApprovals =
+    shopConnections.filter(s => s.status === 'pending').length +
+    carrierRequests.filter(r => r.status === 'pending').length
 
   return (
     <ConfigProvider theme={superAdminTheme}>
@@ -86,7 +93,12 @@ export default function SuperAdminLayout() {
                   <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
                     {item.icon}
                   </span>
-                  {item.label}
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.key === '/super-admin/approvals' && pendingApprovals > 0 && (
+                    <span style={{ background: '#FF5200', color: '#fff', borderRadius: 100, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>
+                      {pendingApprovals}
+                    </span>
+                  )}
                 </div>
               )
             })}

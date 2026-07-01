@@ -1,127 +1,153 @@
 [
   {
-    "id": "ghn-express",
-    "code": "CHUYENNHANH",
-    "name": "Giao hàng nhanh",
-    "desc": "Dịch vụ giao hàng nhanh trong ngày và hôm sau.",
+    "id": "svc-001",
+    "agencyId": "AGN001",
+    "code": "001",
     "carrier": "GHN",
-    "maxWeight": "20 kg",
-    "deliveryZones": "Toàn quốc",
+    "name": "Giao nhanh",
+    "desc": "Giao trong ngày hoặc hôm sau, ưu tiên tốc độ",
+    "maxWeightKg": 20,
+    "scope": "Toàn quốc",
     "enabled": true,
-    "ghnShopIds": ["5148899", "5148900"],
+    "category": "domestic",
     "priceTableId": "PRC001",
-    "isDefault": true
+    "shopConnectionIds": [
+      "sc-001",
+      "sc-002"
+    ]
   },
   {
-    "id": "ghn-standard",
-    "code": "TIETKIEM",
-    "name": "Giao hàng tiêu chuẩn",
-    "desc": "Dịch vụ giao hàng tiết kiệm, phù hợp hàng không gấp.",
-    "carrier": "GHN",
-    "maxWeight": "30 kg",
-    "deliveryZones": "Toàn quốc",
+    "id": "svc-002",
+    "agencyId": "AGN001",
+    "code": "002",
+    "carrier": "247Express",
+    "name": "Giao nhanh",
+    "desc": "Chuyển phát nhanh (DE), giao trong ngày hoặc hôm sau",
+    "maxWeightKg": 20,
+    "scope": "Toàn quốc",
     "enabled": true,
-    "ghnShopIds": ["5148901"],
-    "priceTableId": "PRC002",
-    "isDefault": true
+    "category": "domestic",
+    "serviceTypeId": "DE",
+    "priceTableId": "PRC247001",
+    "deliveryZones": [
+      "noi-tinh",
+      "lien-tinh-gan",
+      "lien-tinh-xa"
+    ],
+    "shopConnectionIds": [
+      "sc-001",
+      "sc-002"
+    ]
   },
   {
-    "id": "ghn-bulky",
-    "code": "HANGCANANG",
+    "id": "svc-003",
+    "agencyId": "AGN001",
+    "code": "003",
+    "carrier": "GHN",
+    "name": "Tiết kiệm",
+    "desc": "Giao hàng tiết kiệm, phù hợp đơn không gấp",
+    "maxWeightKg": 30,
+    "scope": "Toàn quốc",
+    "enabled": true,
+    "category": "domestic",
+    "priceTableId": "PRC002",
+    "shopConnectionIds": [
+      "sc-003"
+    ]
+  },
+  {
+    "id": "svc-004",
+    "agencyId": "AGN001",
+    "code": "004",
+    "carrier": "247Express",
+    "name": "Tiết kiệm",
+    "desc": "Vận chuyển tiết kiệm (TF), phù hợp đơn không gấp",
+    "maxWeightKg": 30,
+    "scope": "Toàn quốc",
+    "enabled": true,
+    "category": "domestic",
+    "serviceTypeId": "TF",
+    "priceTableId": "PRC247001",
+    "deliveryZones": [
+      "noi-tinh",
+      "lien-tinh-gan",
+      "lien-tinh-xa"
+    ],
+    "shopConnectionIds": [
+      "sc-003"
+    ]
+  },
+  {
+    "id": "svc-005",
+    "agencyId": "AGN001",
+    "code": "005",
+    "carrier": "247Express",
+    "name": "Giao 55 giờ",
+    "desc": "Đảm bảo giao đến tay người nhận trong vòng 55 giờ",
+    "maxWeightKg": 30,
+    "scope": "Toàn quốc",
+    "enabled": true,
+    "category": "domestic",
+    "serviceTypeId": "TH",
+    "priceTableId": "PRC247001",
+    "deliveryZones": [
+      "lien-tinh-gan",
+      "lien-tinh-xa"
+    ],
+    "shopConnectionIds": [
+      "sc-001"
+    ]
+  },
+  {
+    "id": "svc-006",
+    "agencyId": "AGN001",
+    "code": "006",
+    "carrier": "GHN",
     "name": "Hàng cồng kềnh",
-    "desc": "Chuyên xử lý hàng hóa lớn, nặng, cần thiết bị hỗ trợ.",
-    "carrier": "GHN",
-    "maxWeight": "50 kg",
-    "deliveryZones": "HCM, HN",
+    "desc": "Chuyên xử lý hàng hóa lớn, nặng, cần thiết bị hỗ trợ",
+    "maxWeightKg": 50,
+    "scope": "HCM, HN",
     "enabled": true,
-    "ghnShopIds": ["5148901", "5148902", "5148903"],
+    "category": "domestic",
     "priceTableId": "PRC001",
-    "isDefault": true
+    "shopConnectionIds": [
+      "sc-004"
+    ]
   },
   {
-    "id": "ghn-same-day",
-    "code": "GIAOTRONGNGAY",
-    "name": "Giao trong ngày",
-    "desc": "Giao hàng nội thành trong vòng 4 giờ.",
-    "carrier": "GHN",
-    "maxWeight": "10 kg",
-    "deliveryZones": "HCM, HN, ĐN",
+    "id": "svc-007",
+    "agencyId": "AGN001",
+    "code": "007",
+    "carrier": "247Express",
+    "name": "Quốc tế nhanh",
+    "desc": "Giao hàng quốc tế nhanh, đảm bảo thời gian",
+    "maxWeightKg": 30,
+    "scope": "Quốc tế",
     "enabled": true,
-    "ghnShopIds": ["5148899", "5148901"],
-    "priceTableId": "PRC001",
-    "isDefault": true
+    "category": "international",
+    "serviceTypeId": "IE",
+    "priceTableId": "PRC247001",
+    "deliveryZones": [
+      "quoc-te"
+    ],
+    "shopConnectionIds": []
   },
   {
-    "id": "ghn-next-day",
-    "code": "GIAOHOMSAU",
-    "name": "Giao hôm sau",
-    "desc": "Đảm bảo giao đến tay người nhận vào ngày hôm sau.",
-    "carrier": "GHN",
-    "maxWeight": "20 kg",
-    "deliveryZones": "Toàn quốc",
+    "id": "svc-008",
+    "agencyId": "AGN001",
+    "code": "008",
+    "carrier": "247Express",
+    "name": "Quốc tế tiết kiệm",
+    "desc": "Giao hàng quốc tế, chi phí tối ưu",
+    "maxWeightKg": 30,
+    "scope": "Quốc tế",
     "enabled": true,
-    "ghnShopIds": ["5148900", "5148902"],
-    "priceTableId": "PRC002"
-  },
-  {
-    "id": "ghn-cold",
-    "code": "HANGLANH",
-    "name": "Hàng lạnh",
-    "desc": "Vận chuyển hàng hóa cần bảo quản lạnh, thực phẩm tươi sống.",
-    "carrier": "GHN",
-    "maxWeight": "15 kg",
-    "deliveryZones": "HCM, HN",
-    "enabled": true,
-    "ghnShopIds": ["5148903"],
-    "priceTableId": "PRC003"
-  },
-  {
-    "id": "ghn-fragile",
-    "code": "HANGDEBE",
-    "name": "Hàng dễ vỡ",
-    "desc": "Đóng gói và vận chuyển chuyên biệt cho hàng dễ vỡ.",
-    "carrier": "GHN",
-    "maxWeight": "20 kg",
-    "deliveryZones": "Toàn quốc",
-    "enabled": true,
-    "ghnShopIds": ["5148899", "5148902", "5148903"],
-    "priceTableId": "PRC002",
-    "isDefault": true
-  },
-  {
-    "id": "ghn-document",
-    "code": "TAILIEUTHUTU",
-    "name": "Tài liệu & thư từ",
-    "desc": "Chuyển phát nhanh tài liệu, hợp đồng, thư từ quan trọng.",
-    "carrier": "GHN",
-    "maxWeight": "2 kg",
-    "deliveryZones": "Toàn quốc",
-    "enabled": true,
-    "ghnShopIds": ["5148900", "5148901"],
-    "priceTableId": "PRC003"
-  },
-  {
-    "id": "ghn-reverse",
-    "code": "HOANTHANG",
-    "name": "Hoàn hàng nhanh",
-    "desc": "Dịch vụ thu hồi hàng hoàn từ khách, trả về shop trong ngày.",
-    "carrier": "GHN",
-    "maxWeight": "30 kg",
-    "deliveryZones": "Toàn quốc",
-    "enabled": false,
-    "ghnShopIds": ["5148899", "5148900", "5148901"],
-    "priceTableId": "PRC001"
-  },
-  {
-    "id": "ghn-pickup",
-    "code": "LAYHANGTAN",
-    "name": "Lấy hàng tận nơi",
-    "desc": "Nhân viên đến tận địa chỉ shop để lấy hàng, không cần mang ra bưu cục.",
-    "carrier": "GHN",
-    "maxWeight": "50 kg",
-    "deliveryZones": "Toàn quốc",
-    "enabled": true,
-    "ghnShopIds": ["5148902", "5148903"],
-    "priceTableId": "PRC002"
+    "category": "international",
+    "serviceTypeId": "IM",
+    "priceTableId": "PRC247001",
+    "deliveryZones": [
+      "quoc-te"
+    ],
+    "shopConnectionIds": []
   }
 ]

@@ -24,8 +24,8 @@ const SIDEBAR_WIDTH = 240
 const NAV_ITEMS = [
   { key: '/agency-admin/shops', icon: <ShopOutlined />, label: 'Shop' },
   { key: '/agency-admin/orders', icon: <OrderedListOutlined />, label: 'Đơn hàng' },
-  { key: '/agency-admin/carrier-setup', icon: <TruckOutlined />, label: 'Thiết lập GHN' },
-  { key: '/agency-admin/reconciliation', icon: <AuditOutlined />, label: 'Đối soát GHN' },
+  { key: '/agency-admin/carrier-setup', icon: <TruckOutlined />, label: 'Thiết lập NVC' },
+  { key: '/agency-admin/reconciliation', icon: <AuditOutlined />, label: 'Đối soát NVC' },
 ]
 
 const SETTINGS_ITEM = { key: '/agency-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }

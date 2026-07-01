@@ -1,0 +1,358 @@
+<title>Wireframe — Xoá tài khoản Shop</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F3F4F6; padding: 32px 16px; color: #111827; }
+
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #6B7280; margin-bottom: 8px; }
+  .principle { font-size: 12px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 8px 14px; color: #1D4ED8; margin-bottom: 28px; display: inline-block; }
+
+  .flow-heading { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .flow-heading::after { content:''; flex:1; height:1px; background:#E5E7EB; }
+
+  .flow { display: flex; gap: 0; align-items: flex-start; overflow-x: auto; padding-bottom: 16px; }
+
+  .arrow { display:flex; flex-direction:column; align-items:center; padding:0 5px; padding-top:50px; color:#9CA3AF; font-size:18px; flex-shrink:0; gap:2px; }
+  .arrow-lbl { font-size:8px; color:#9CA3AF; text-align:center; white-space:nowrap; }
+
+  /* Big dividing arrow between shop and agency side */
+  .side-arrow { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 10px; padding-top:50px; flex-shrink:0; gap:4px; }
+  .side-arrow-line { width:2px; height:32px; background: linear-gradient(180deg,#FECACA,#BFDBFE); }
+  .side-arrow-icon { font-size:18px; color:#6B7280; }
+  .side-arrow-lbl { font-size:8px; font-weight:700; color:#6B7280; text-align:center; white-space:nowrap; background:#fff; border:1px solid #E5E7EB; border-radius:8px; padding:2px 8px; }
+
+  .screen { flex-shrink:0; width:210px; }
+  .slbl { font-size:10px; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:6px; text-align:center; }
+  .sstep { font-size:10px; font-weight:700; text-align:center; margin-bottom:3px; }
+
+  .phone { background:#fff; border-radius:14px; border:2px solid #E5E7EB; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.07); }
+  .pbar { height:26px; display:flex; align-items:center; padding:0 10px; border-bottom:1px solid #E5E7EB; }
+  .pbar.def { background:#F9FAFB; }
+  .pbar.green { background:#F0FDF4; border-color:#BBF7D0; }
+  .pbar.blue { background:#EFF6FF; border-color:#BFDBFE; }
+  .btitle { font-size:10px; font-weight:600; flex:1; text-align:center; }
+
+  .pc { padding:11px; min-height:310px; display:flex; flex-direction:column; gap:7px; }
+
+  .stitle { font-size:9px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; }
+  .field { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #F3F4F6; }
+  .fl { font-size:9px; color:#6B7280; }
+  .fv { font-size:9px; font-weight:600; color:#111827; }
+
+  .btn { width:100%; padding:7px; border-radius:6px; font-size:10px; font-weight:700; text-align:center; margin-bottom:5px; }
+  .btn:last-child { margin-bottom:0; }
+  .btn-red { background:#DC2626; color:#fff; border:none; }
+  .btn-red-out { background:#fff; border:1.5px solid #DC2626; color:#DC2626; }
+  .btn-gray { background:#fff; border:1px solid #E5E7EB; color:#374151; }
+  .btn-green { background:#16A34A; color:#fff; border:none; }
+
+  .danger-zone { border:1px solid #FECACA; border-radius:8px; padding:9px; background:#FFF5F5; }
+  .dz-title { font-size:9px; font-weight:700; color:#DC2626; margin-bottom:4px; }
+  .dz-desc { font-size:8px; color:#6B7280; line-height:1.4; margin-bottom:7px; }
+
+  .radio-item { display:flex; align-items:center; gap:7px; padding:6px 0; border-bottom:1px solid #F3F4F6; font-size:9px; color:#374151; }
+  .radio-item.sel { font-weight:600; color:#111827; }
+  .rc { width:13px; height:13px; border-radius:50%; border:2px solid #E5E7EB; flex-shrink:0; }
+  .rc.filled { border-color:#FF5200; background:#FF5200; display:flex; align-items:center; justify-content:center; }
+  .rc.filled::after { content:''; width:4px; height:4px; border-radius:50%; background:#fff; }
+
+  .cbox { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:8px 10px; text-align:center; }
+  .cword { font-size:13px; font-weight:800; color:#DC2626; letter-spacing:2px; font-family:monospace; }
+  .chint { font-size:8px; color:#6B7280; margin-bottom:4px; }
+  .cinput { width:100%; border:1.5px solid #E5E7EB; border-radius:6px; padding:7px 10px; font-size:11px; font-weight:700; letter-spacing:2px; text-align:center; font-family:monospace; color:#111827; background:#fff; outline:none; box-sizing:border-box; }
+
+  .warn-icon { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-size:18px; }
+  .sc-title { font-size:12px; font-weight:700; color:#111827; text-align:center; margin-bottom:4px; }
+  .sc-desc { font-size:9px; color:#6B7280; text-align:center; line-height:1.5; margin-bottom:8px; }
+  .back { font-size:9px; color:#6B7280; margin-bottom:4px; }
+
+  .info-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; padding:8px 10px; }
+  .ir { display:flex; justify-content:space-between; font-size:9px; padding:3px 0; border-bottom:1px solid #F3F4F6; }
+  .ir:last-child { border:none; }
+  .il { color:#6B7280; }
+  .iv { font-weight:600; color:#111827; }
+  .iv.link { color:#3B82F6; }
+
+  .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:8px; font-weight:700; }
+  .tag-active { background:#DCFCE7; color:#166534; }
+  .tag-inactive { background:#F3F4F6; color:#6B7280; border:1px solid #D1D5DB; }
+  .tag-done { background:#DCFCE7; color:#166534; }
+
+  /* table */
+  .thead { display:flex; padding:4px 0; border-bottom:1px solid #E5E7EB; font-size:8px; font-weight:700; color:#9CA3AF; text-transform:uppercase; }
+  .trow { display:flex; align-items:center; padding:6px 0; border-bottom:1px solid #F3F4F6; font-size:9px; }
+  .trow:last-child { border:none; }
+  .tc { padding:0 3px; }
+
+  /* side label badge */
+  .side-badge { display:inline-block; font-size:10px; font-weight:700; padding:3px 10px; border-radius:12px; margin-bottom:10px; }
+
+  .divider { border:none; border-top:1px solid #E5E7EB; margin:28px 0 16px; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:#6B7280; }
+  .ldot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+  .notes h2 { font-size:13px; font-weight:700; margin-bottom:12px; }
+  .note-row { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid #F3F4F6; }
+  .num { width:20px; height:20px; border-radius:50%; color:#fff; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .ntxt { font-size:11px; color:#374151; line-height:1.5; }
+  .ntxt strong { color:#111827; }
+
+  /* section label bar */
+  .section-bar { display:flex; align-items:center; gap:10px; margin-bottom:12px; margin-top:4px; }
+  .section-tag { font-size:10px; font-weight:700; padding:3px 10px; border-radius:6px; white-space:nowrap; }
+  .section-bar::after { content:''; flex:1; height:1px; }
+</style>
+
+<h1>Wireframe — Xoá tài khoản Shop</h1>
+<p class="subtitle">Shop tự xoá → Agency Admin thấy tài khoản đó chuyển sang Inactive</p>
+<div class="principle">✦ Shop xoá = Agency nhìn thấy Inactive · Agency không cần action · Có thể reactivate từ phía Agency</div>
+
+<div class="flow">
+
+  <!-- ─── SHOP SIDE ─── -->
+
+  <!-- S1: Settings -->
+  <div class="screen">
+    <div class="section-bar"><span class="section-tag" style="background:#FEE2E2;color:#DC2626">SHOP</span></div>
+    <div class="sstep" style="color:#DC2626">BƯỚC 1</div>
+    <div class="slbl">Cài đặt</div>
+    <div class="phone">
+      <div class="pbar def"><div class="btitle">Cài đặt tài khoản</div></div>
+      <div class="pc">
+        <div class="stitle">Thông tin</div>
+        <div class="field"><span class="fl">Tên shop</span><span class="fv">Shop MA</span></div>
+        <div class="field"><span class="fl">Email</span><span class="fv">ma@shop.vn</span></div>
+        <div class="field"><span class="fl">SĐT</span><span class="fv">0901 111 111</span></div>
+        <div class="field"><span class="fl">Mật khẩu</span><span class="fv">••••••</span></div>
+        <div style="flex:1"></div>
+        <div class="danger-zone">
+          <div class="dz-title">⚠ Vùng nguy hiểm</div>
+          <div class="dz-desc">Xoá tài khoản sẽ dừng toàn bộ hoạt động. Không thể hoàn tác.</div>
+          <div class="btn btn-red-out">Xoá tài khoản</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- S2: Lý do -->
+  <div class="screen">
+    <div class="section-bar"><span class="section-tag" style="background:#FEE2E2;color:#DC2626">SHOP</span></div>
+    <div class="sstep" style="color:#DC2626">BƯỚC 2</div>
+    <div class="slbl">Lý do</div>
+    <div class="phone">
+      <div class="pbar def"><div class="btitle">Lý do xoá tài khoản</div></div>
+      <div class="pc">
+        <div class="back">← Quay lại</div>
+        <div class="stitle">Vui lòng chọn lý do</div>
+        <div class="radio-item sel"><div class="rc filled"></div>Chuyển sang NVC khác</div>
+        <div class="radio-item"><div class="rc"></div>Ngừng kinh doanh</div>
+        <div class="radio-item"><div class="rc"></div>Chi phí vận chuyển cao</div>
+        <div class="radio-item"><div class="rc"></div>Chất lượng dịch vụ kém</div>
+        <div class="radio-item"><div class="rc"></div>Lý do khác</div>
+        <div style="border:1px solid #E5E7EB;border-radius:6px;padding:6px 8px;font-size:8px;color:#9CA3AF;min-height:30px;margin-top:2px">Ghi chú thêm (không bắt buộc)…</div>
+        <div style="flex:1"></div>
+        <div class="btn btn-red">Tiếp tục</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- S3: XACNHAN -->
+  <div class="screen">
+    <div class="section-bar"><span class="section-tag" style="background:#FEE2E2;color:#DC2626">SHOP</span></div>
+    <div class="sstep" style="color:#DC2626">BƯỚC 3</div>
+    <div class="slbl">Xác nhận</div>
+    <div class="phone">
+      <div class="pbar def"><div class="btitle">Xác nhận xoá</div></div>
+      <div class="pc">
+        <div style="height:4px"></div>
+        <div class="warn-icon" style="background:#FEE2E2">🗑️</div>
+        <div class="sc-title">Xác nhận lần cuối</div>
+        <div class="sc-desc">Hành động này <strong>không thể hoàn tác</strong>. Nhập cụm từ bên dưới để xác nhận.</div>
+        <div class="cbox">
+          <div class="chint">Nhập chính xác cụm từ:</div>
+          <div class="cword">XACNHAN</div>
+        </div>
+        <input class="cinput" placeholder="Nhập cụm từ xác nhận..." style="margin-top:6px"/>
+        <div style="flex:1"></div>
+        <div class="btn btn-red">Xác nhận xoá tài khoản</div>
+        <div class="btn btn-gray">Huỷ</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- S4: Done (shop side) -->
+  <div class="screen">
+    <div class="section-bar"><span class="section-tag" style="background:#FEE2E2;color:#DC2626">SHOP</span></div>
+    <div class="sstep" style="color:#16A34A">XONG</div>
+    <div class="slbl">Đã xoá</div>
+    <div class="phone" style="border-color:#BBF7D0">
+      <div class="pbar green"><div class="btitle" style="color:#16A34A">Xoá thành công</div></div>
+      <div class="pc">
+        <div style="height:10px"></div>
+        <div class="warn-icon" style="background:#DCFCE7">✅</div>
+        <div class="sc-title">Tài khoản đã xoá</div>
+        <div class="sc-desc">Cảm ơn bạn đã sử dụng dịch vụ.</div>
+        <div class="info-card">
+          <div class="ir"><span class="il">Ngày xoá</span><span class="iv">19/06/2026</span></div>
+          <div class="ir"><span class="il">Trạng thái</span><span><span class="tag tag-done">Đã xoá</span></span></div>
+        </div>
+        <div style="font-size:8px;color:#6B7280;line-height:1.5;text-align:center">Email xác nhận gửi về<br><strong>ma@shop.vn</strong></div>
+        <div style="flex:1"></div>
+        <div class="btn btn-gray">Đóng</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── DIVIDER ─── -->
+  <div class="side-arrow">
+    <div class="side-arrow-lbl">Tự động</div>
+    <div class="side-arrow-line"></div>
+    <div class="side-arrow-icon">↓</div>
+    <div class="side-arrow-lbl">Agency thấy</div>
+  </div>
+
+  <!-- ─── AGENCY SIDE ─── -->
+
+  <!-- A1: Danh sách shop — TRƯỚC -->
+  <div class="screen" style="width:220px">
+    <div class="section-bar"><span class="section-tag" style="background:#EFF6FF;color:#1D4ED8">AGENCY ADMIN</span></div>
+    <div class="sstep" style="color:#3B82F6">TRƯỚC</div>
+    <div class="slbl">Danh sách shop</div>
+    <div class="phone" style="width:100%">
+      <div class="pbar blue"><div class="btitle" style="color:#1D4ED8">Quản lý shop</div></div>
+      <div class="pc" style="min-height:280px">
+        <div style="border:1px solid #E5E7EB;border-radius:6px;padding:5px 8px;font-size:9px;color:#9CA3AF;background:#F9FAFB">🔍 Tìm kiếm...</div>
+        <div class="thead">
+          <div class="tc" style="flex:2">Tên shop</div>
+          <div class="tc" style="flex:1;text-align:center">Trạng thái</div>
+        </div>
+        <div class="trow" style="background:#EFF6FF;border-radius:6px;margin:0 -2px;padding:6px 2px">
+          <div class="tc" style="flex:2">
+            <div style="font-size:9px;font-weight:700;color:#3B82F6">Shop Minh Anh</div>
+            <div style="font-size:8px;color:#9CA3AF">SHP001</div>
+          </div>
+          <div class="tc" style="flex:1;text-align:center"><span class="tag tag-active">Active</span></div>
+        </div>
+        <div class="trow">
+          <div class="tc" style="flex:2"><div style="font-size:9px;font-weight:600">Shop Điện Tử XYZ</div></div>
+          <div class="tc" style="flex:1;text-align:center"><span class="tag tag-active">Active</span></div>
+        </div>
+        <div class="trow">
+          <div class="tc" style="flex:2"><div style="font-size:9px;font-weight:600">Shop Mỹ Phẩm HN</div></div>
+          <div class="tc" style="flex:1;text-align:center"><span class="tag tag-active">Active</span></div>
+        </div>
+        <div style="font-size:8px;color:#6B7280;text-align:center;margin-top:8px;padding:6px;background:#FFFBEB;border-radius:6px;border:1px solid #FDE68A">
+          ⬅ Shop Minh Anh đang <strong>Active</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow" style="padding-top:54px">→<div class="arrow-lbl">Sau khi<br>shop xoá</div></div>
+
+  <!-- A2: Danh sách shop — SAU -->
+  <div class="screen" style="width:220px">
+    <div class="section-bar"><span class="section-tag" style="background:#EFF6FF;color:#1D4ED8">AGENCY ADMIN</span></div>
+    <div class="sstep" style="color:#3B82F6">SAU</div>
+    <div class="slbl">Danh sách shop</div>
+    <div class="phone" style="width:100%;border-color:#BFDBFE">
+      <div class="pbar blue"><div class="btitle" style="color:#1D4ED8">Quản lý shop</div></div>
+      <div class="pc" style="min-height:280px">
+        <div style="border:1px solid #E5E7EB;border-radius:6px;padding:5px 8px;font-size:9px;color:#9CA3AF;background:#F9FAFB">🔍 Tìm kiếm...</div>
+        <div class="thead">
+          <div class="tc" style="flex:2">Tên shop</div>
+          <div class="tc" style="flex:1;text-align:center">Trạng thái</div>
+        </div>
+        <!-- Shop Minh Anh - now inactive -->
+        <div class="trow" style="opacity:0.7">
+          <div class="tc" style="flex:2">
+            <div style="font-size:9px;font-weight:700;color:#9CA3AF">Shop Minh Anh</div>
+            <div style="font-size:8px;color:#9CA3AF">SHP001 · Tự xoá 19/06</div>
+          </div>
+          <div class="tc" style="flex:1;text-align:center"><span class="tag tag-inactive">Inactive</span></div>
+        </div>
+        <div class="trow">
+          <div class="tc" style="flex:2"><div style="font-size:9px;font-weight:600">Shop Điện Tử XYZ</div></div>
+          <div class="tc" style="flex:1;text-align:center"><span class="tag tag-active">Active</span></div>
+        </div>
+        <div class="trow">
+          <div class="tc" style="flex:2"><div style="font-size:9px;font-weight:600">Shop Mỹ Phẩm HN</div></div>
+          <div class="tc" style="flex:1;text-align:center"><span class="tag tag-active">Active</span></div>
+        </div>
+        <div style="font-size:8px;color:#1D4ED8;text-align:center;margin-top:8px;padding:6px;background:#EFF6FF;border-radius:6px;border:1px solid #BFDBFE">
+          ✓ Shop Minh Anh → <strong>Inactive</strong><br>Agency không cần làm gì
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow" style="padding-top:54px">→<div class="arrow-lbl">Nếu cần</div></div>
+
+  <!-- A3: Chi tiết — có thể reactivate -->
+  <div class="screen" style="width:210px">
+    <div class="section-bar"><span class="section-tag" style="background:#EFF6FF;color:#1D4ED8">AGENCY ADMIN</span></div>
+    <div class="sstep" style="color:#3B82F6">TÙY CHỌN</div>
+    <div class="slbl">Chi tiết shop</div>
+    <div class="phone" style="border-color:#BFDBFE">
+      <div class="pbar blue"><div class="btitle" style="color:#1D4ED8">Shop Minh Anh</div></div>
+      <div class="pc" style="min-height:280px;gap:6px">
+        <div class="back">← Danh sách shop</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:12px;font-weight:700;color:#9CA3AF">Shop Minh Anh</div>
+          <span class="tag tag-inactive">Inactive</span>
+        </div>
+
+        <div class="info-card">
+          <div class="ir"><span class="il">Chủ shop</span><span class="iv">Trần Minh Anh</span></div>
+          <div class="ir"><span class="il">Lý do xoá</span><span class="iv">Chuyển NVC khác</span></div>
+          <div class="ir"><span class="il">Ngày xoá</span><span class="iv">19/06/2026</span></div>
+        </div>
+
+        <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-size:8px;color:#6B7280;line-height:1.6">
+          📂 Dữ liệu lịch sử (đơn hàng, đối soát) vẫn được lưu trữ để tra cứu.
+        </div>
+
+        <div style="flex:1"></div>
+        <div class="btn btn-green" style="font-size:9px">Kích hoạt lại tài khoản</div>
+        <div style="font-size:8px;color:#9CA3AF;text-align:center">Chỉ dùng nếu shop đổi ý và liên hệ lại</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Legend -->
+<hr class="divider">
+<div class="legend">
+  <div class="legend-item"><div class="ldot" style="background:#FEE2E2;border:1px solid #FECACA"></div>Shop — tự xoá</div>
+  <div class="legend-item"><div class="ldot" style="background:#EFF6FF;border:1px solid #BFDBFE"></div>Agency Admin — tự động thấy Inactive, không cần action</div>
+  <div class="legend-item"><div class="ldot" style="background:#DCFCE7;border:1px solid #BBF7D0"></div>Kích hoạt lại (tùy chọn, nếu shop đổi ý)</div>
+</div>
+
+<!-- Notes -->
+<div class="notes">
+  <h2>Ghi chú thiết kế</h2>
+  <div class="note-row">
+    <div class="num" style="background:#DC2626">1</div>
+    <div class="ntxt"><strong>Shop tự xoá — không cần ai duyệt:</strong> 3 bước: chọn lý do → nhập XACNHAN → xác nhận. Validate "XACNHAN" chỉ khi nhấn nút, không real-time trên input.</div>
+  </div>
+  <div class="note-row">
+    <div class="num" style="background:#3B82F6">2</div>
+    <div class="ntxt"><strong>Agency Admin thấy Inactive — không cần làm gì:</strong> Khi shop xoá xong, hệ thống tự chuyển trạng thái shop sang Inactive trong danh sách Agency. Tên shop mờ đi, badge chuyển sang "Inactive", hiển thị ghi chú "Tự xoá ngày...".</div>
+  </div>
+  <div class="note-row">
+    <div class="num" style="background:#16A34A">3</div>
+    <div class="ntxt"><strong>Agency có thể reactivate:</strong> Nếu shop đổi ý và liên hệ lại, Agency Admin vào chi tiết shop và kích hoạt lại. Không phải flow bắt buộc — chỉ là tùy chọn.</div>
+  </div>
+  <div class="note-row">
+    <div class="num" style="background:#6B7280">4</div>
+    <div class="ntxt"><strong>Dữ liệu lịch sử giữ nguyên:</strong> Đơn hàng, đối soát, lịch sử COD của shop vẫn tra cứu được từ phía Agency Admin. Không xoá dữ liệu nghiệp vụ theo tài khoản.</div>
+  </div>
+</div>

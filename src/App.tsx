@@ -5,6 +5,7 @@ import SuperAdminLogin from './platforms/super-admin/pages/Login'
 import Agencies from './platforms/super-admin/pages/Agencies'
 import AgencyCreate from './platforms/super-admin/pages/AgencyCreate'
 import AgencyDetail from './platforms/super-admin/pages/AgencyDetail'
+import Approvals from './platforms/super-admin/pages/Approvals'
 import SuperAdminSettings from './platforms/super-admin/pages/Settings'
 import AccountInfo from './platforms/super-admin/pages/settings/AccountInfo'
 import UserManagement from './platforms/super-admin/pages/settings/UserManagement'
@@ -19,6 +20,7 @@ import ShopDetail from './platforms/agency-admin/pages/ShopDetail'
 import CarrierSetup from './platforms/agency-admin/pages/CarrierSetup'
 import ServiceDetail from './platforms/agency-admin/pages/ServiceDetail'
 import PricingCreate from './platforms/agency-admin/pages/PricingCreate'
+import PricingCreate247 from './platforms/agency-admin/pages/PricingCreate247'
 import PricingDetail from './platforms/agency-admin/pages/PricingDetail'
 import AgencyOrders from './platforms/agency-admin/pages/AgencyOrders'
 import AgencyReconciliation from './platforms/agency-admin/pages/AgencyReconciliation'
@@ -55,6 +57,7 @@ export default function App() {
           <Route path="agencies" element={<Agencies />} />
           <Route path="agencies/create" element={<AgencyCreate />} />
           <Route path="agencies/:id" element={<AgencyDetail />} />
+          <Route path="approvals" element={<Approvals />} />
           <Route path="settings" element={<SuperAdminSettings />}>
             <Route path="account" element={<AccountInfo />} />
             <Route path="users" element={<UserManagement />} />
@@ -77,7 +80,9 @@ export default function App() {
           <Route path="carrier-setup" element={<CarrierSetup />} />
           <Route path="carrier-setup/:tab" element={<CarrierSetup />} />
           <Route path="carrier-setup/pricing/create" element={<PricingCreate />} />
+          <Route path="carrier-setup/pricing/create-247" element={<PricingCreate247 />} />
           <Route path="carrier-setup/pricing/:id" element={<PricingDetail />} />
+          <Route path="carrier-setup/services/new" element={<ServiceDetail />} />
           <Route path="carrier-setup/services/:id" element={<ServiceDetail />} />
           <Route path="route-check" element={<RouteCheck />} />
           <Route path="settings" element={<AgencyAdminSettings />}>

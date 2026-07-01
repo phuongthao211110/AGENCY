@@ -218,5 +218,93 @@
         { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "2" }
       ]
     }
+  },
+  {
+    "id": "PRC247001",
+    "name": "Bảng giá tiêu chuẩn 247Express",
+    "agencyId": "AGN001",
+    "nvc": "247Express",
+    "isDefault": true,
+    "description": "Giá bán cho shop (đã gồm chênh lệch đại lý) — tính dựa theo chi phí 247Express báo cho đại lý theo vùng giao hàng từ Hub TP.HCM Trung Tâm",
+    "status": "active",
+    "createdAt": "2024-03-01",
+    "zones": [
+      { "label": "Nội tỉnh" },
+      { "label": "Liên tỉnh gần ≤300km" },
+      { "label": "Liên tỉnh xa >300km" },
+      { "label": "Quốc tế" }
+    ],
+    "weights": [
+      { "max": 500,   "label": "≤500g" },
+      { "max": 1000,  "label": "501g-1kg" },
+      { "max": 2000,  "label": "1-2kg" },
+      { "max": 5000,  "label": "2-5kg" },
+      { "max": 10000, "label": "5-10kg" }
+    ],
+    "prices": [
+      [17000, 24000, 22000, 21000],
+      [21000, 29000, 27000, 25000],
+      [25000, 36000, 33000, 30000],
+      [33000, 48000, 44000, 40000],
+      [45000, 65000, 59000, 53000]
+    ],
+    "surcharges": {
+      "partialDelivery": { "value": "4000", "unit": "vnd" },
+      "insurance": [
+        { "id": "i1", "fromValue": "0", "toValue": "500000", "fixedFee": "1000", "percentFee": "0" },
+        { "id": "i2", "fromValue": "500001", "toValue": "3000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "i3", "fromValue": "3000001", "toValue": "50000000", "fixedFee": "0", "percentFee": "1.5" }
+      ],
+      "deliveryFailFee": { "value": "12000", "unit": "vnd" },
+      "codFee": [
+        { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "1" },
+        { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.5" },
+        { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "2" }
+      ]
+    }
+  },
+  {
+    "id": "PRC247002",
+    "name": "Bảng giá ưu đãi 247Express",
+    "agencyId": "AGN001",
+    "nvc": "247Express",
+    "isDefault": false,
+    "description": "Giảm chênh lệch 8% so với bảng tiêu chuẩn — dành cho shop cam kết từ 500 đơn/tháng",
+    "status": "active",
+    "createdAt": "2024-05-01",
+    "zones": [
+      { "label": "Nội tỉnh" },
+      { "label": "Liên tỉnh gần ≤300km" },
+      { "label": "Liên tỉnh xa >300km" },
+      { "label": "Quốc tế" }
+    ],
+    "weights": [
+      { "max": 500,   "label": "≤500g" },
+      { "max": 1000,  "label": "501g-1kg" },
+      { "max": 2000,  "label": "1-2kg" },
+      { "max": 5000,  "label": "2-5kg" },
+      { "max": 10000, "label": "5-10kg" }
+    ],
+    "prices": [
+      [15640, 22080, 20240, 19320],
+      [19320, 26680, 24840, 23000],
+      [23000, 33120, 30360, 27600],
+      [30360, 44160, 40480, 36800],
+      [41400, 59800, 54280, 48760]
+    ],
+    "surcharges": {
+      "partialDelivery": { "value": "4000", "unit": "vnd" },
+      "insurance": [
+        { "id": "i1", "fromValue": "0", "toValue": "500000", "fixedFee": "920", "percentFee": "0" },
+        { "id": "i2", "fromValue": "500001", "toValue": "3000000", "fixedFee": "0", "percentFee": "0.92" },
+        { "id": "i3", "fromValue": "3000001", "toValue": "50000000", "fixedFee": "0", "percentFee": "1.38" }
+      ],
+      "deliveryFailFee": { "value": "11040", "unit": "vnd" },
+      "codFee": [
+        { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "0.92" },
+        { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.38" },
+        { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "1.84" }
+      ]
+    }
   }
 ]

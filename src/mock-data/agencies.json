@@ -13,7 +13,12 @@
     "representative": "Nguyễn Văn An",
     "phone": "0901234567",
     "address": "123 Đường Láng, Đống Đa, Hà Nội",
-    "email": "hn-central@ghn.vn"
+    "email": "hn-central@ghn.vn",
+    "allowedCarriers": [
+      "GHN",
+      "247Express"
+    ],
+    "clientHubId": "HUB-SGN-001"
   },
   {
     "id": "AGN002",
@@ -29,7 +34,10 @@
     "representative": "Trần Thị Bình",
     "phone": "0912345678",
     "address": "456 Điện Biên Phủ, Bình Thạnh, TP.HCM",
-    "email": "hcm-north@ghn.vn"
+    "email": "hcm-north@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   },
   {
     "id": "AGN003",
@@ -45,7 +53,10 @@
     "representative": "Lê Văn Cường",
     "phone": "0923456789",
     "address": "789 Trần Phú, Hải Châu, Đà Nẵng",
-    "email": "danang@ghn.vn"
+    "email": "danang@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   },
   {
     "id": "AGN004",
@@ -61,7 +72,10 @@
     "representative": "Phạm Thị Dung",
     "phone": "0934567890",
     "address": "321 Nguyễn Trãi, Ninh Kiều, Cần Thơ",
-    "email": "cantho@ghn.vn"
+    "email": "cantho@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   },
   {
     "id": "AGN005",
@@ -77,7 +91,10 @@
     "representative": "Hoàng Văn Em",
     "phone": "0945678901",
     "address": "654 Lê Lợi, Hồng Bàng, Hải Phòng",
-    "email": "haiphong@ghn.vn"
+    "email": "haiphong@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   },
   {
     "id": "AGN006",
@@ -93,7 +110,10 @@
     "representative": "Ngô Thị Fương",
     "phone": "0956789012",
     "address": "987 Trần Phú, Lộc Thọ, Nha Trang",
-    "email": "nhatrang@ghn.vn"
+    "email": "nhatrang@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   },
   {
     "id": "AGN007",
@@ -109,7 +129,10 @@
     "representative": "Vũ Văn Giang",
     "phone": "0967890123",
     "address": "147 Hùng Vương, Phú Nhuận, Huế",
-    "email": "hue@ghn.vn"
+    "email": "hue@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   },
   {
     "id": "AGN008",
@@ -125,7 +148,10 @@
     "representative": "Đặng Thị Hà",
     "phone": "0978901234",
     "address": "258 Trần Hưng Đạo, Vũng Tàu",
-    "email": "vungtau@ghn.vn"
+    "email": "vungtau@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   },
   {
     "id": "AGN009",
@@ -141,7 +167,10 @@
     "representative": "Bùi Văn Inh",
     "phone": "0989012345",
     "address": "369 Đại lộ Bình Dương, Thủ Dầu Một",
-    "email": "binhduong@ghn.vn"
+    "email": "binhduong@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   },
   {
     "id": "AGN010",
@@ -157,6 +186,9 @@
     "representative": "Cao Thị Kim",
     "phone": "0990123456",
     "address": "741 Phạm Văn Thuận, Biên Hòa, Đồng Nai",
-    "email": "dongnai@ghn.vn"
+    "email": "dongnai@ghn.vn",
+    "allowedCarriers": [
+      "GHN"
+    ]
   }
 ]

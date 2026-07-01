@@ -87,11 +87,11 @@ const C_BG_HEADER      = '#F3F4F6'
 type TabKey = 'carrier' | 'shop' | 'transfer' | 'forecast' | 'split'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'carrier',  label: 'Phiên GHN', icon: <FileTextOutlined /> },
-  { key: 'shop',     label: 'Phiên shop',           icon: <ShopOutlined /> },
-  { key: 'transfer', label: 'Chuyển khoản',         icon: <BankOutlined /> },
-  { key: 'forecast', label: 'Dự trù',               icon: <BarChartOutlined /> },
-  { key: 'split',    label: 'Tách phiên GHN',       icon: <ScissorOutlined /> },
+  { key: 'carrier',  label: 'Phiên NVC',     icon: <FileTextOutlined /> },
+  { key: 'shop',     label: 'Phiên shop',    icon: <ShopOutlined /> },
+  { key: 'transfer', label: 'Chuyển khoản', icon: <BankOutlined /> },
+  { key: 'forecast', label: 'Dự trù',       icon: <BarChartOutlined /> },
+  { key: 'split',    label: 'Tách phiên',   icon: <ScissorOutlined /> },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -252,7 +252,8 @@ function TabCarrier({
   onDeleteSession: (id: string) => void
 }) {
   const navigate = useNavigate()
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed'>('all')
+  const [filterStatus, setFilterStatus]   = useState<'all' | 'pending' | 'confirmed'>('all')
+  const [filterCarrier, setFilterCarrier] = useState<'all' | 'GHN' | '247Express'>('all')
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -262,11 +263,15 @@ function TabCarrier({
     setDeleteConfirmId(null)
   }
 
-  const total     = sessions.length
-  const confirmed = sessions.filter(s => s.status === 'confirmed').length
-  const pending   = sessions.filter(s => s.status === 'pending').length
+  const carrierSessions = sessions.filter(s =>
+    filterCarrier === 'all' ? true : s.carrier === filterCarrier
+  )
 
-  const filteredSessions = sessions.filter(s =>
+  const total     = carrierSessions.length
+  const confirmed = carrierSessions.filter(s => s.status === 'confirmed').length
+  const pending   = carrierSessions.filter(s => s.status === 'pending').length
+
+  const filteredSessions = carrierSessions.filter(s =>
     filterStatus === 'all' ? true : s.status === filterStatus
   )
 
@@ -314,7 +319,7 @@ function TabCarrier({
           }}
         >
           <UploadOutlined />
-          Tạo phiên GHN
+          Tạo phiên {filterCarrier === 'all' ? 'NVC' : filterCarrier}
         </button>
       </div>
 
@@ -335,22 +340,41 @@ function TabCarrier({
       </div>
 
       {/* Filter bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexShrink: 0 }}>
-        <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Trạng thái:</span>
-        <select
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value as 'all' | 'pending' | 'confirmed')}
-          style={{
-            border: `1px solid ${C_BORDER}`, borderRadius: 6,
-            padding: '7px 12px', fontSize: 14, background: '#fff',
-            color: C_TEXT_PRIMARY, outline: 'none', cursor: 'pointer',
-            minWidth: 160,
-          }}
-        >
-          <option value="all">Tất cả</option>
-          <option value="pending">Chờ xác nhận</option>
-          <option value="confirmed">Đã xác nhận</option>
-        </select>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexShrink: 0, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>NVC:</span>
+          <select
+            value={filterCarrier}
+            onChange={e => { setFilterCarrier(e.target.value as 'all' | 'GHN' | '247Express'); setSelectedIds(new Set()) }}
+            style={{
+              border: `1px solid ${C_BORDER}`, borderRadius: 6,
+              padding: '7px 12px', fontSize: 14, background: '#fff',
+              color: C_TEXT_PRIMARY, outline: 'none', cursor: 'pointer',
+              minWidth: 140,
+            }}
+          >
+            <option value="all">Tất cả</option>
+            <option value="GHN">GHN</option>
+            <option value="247Express">247Express</option>
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Trạng thái:</span>
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value as 'all' | 'pending' | 'confirmed')}
+            style={{
+              border: `1px solid ${C_BORDER}`, borderRadius: 6,
+              padding: '7px 12px', fontSize: 14, background: '#fff',
+              color: C_TEXT_PRIMARY, outline: 'none', cursor: 'pointer',
+              minWidth: 160,
+            }}
+          >
+            <option value="all">Tất cả</option>
+            <option value="pending">Chờ xác nhận</option>
+            <option value="confirmed">Đã xác nhận</option>
+          </select>
+        </div>
       </div>
 
       {/* Bulk action bar */}
