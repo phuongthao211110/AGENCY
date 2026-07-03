@@ -15,7 +15,7 @@ import {
   FileTextOutlined,
 } from '@ant-design/icons'
 import allPriceTables from '../../../mock-data/pricing.json'
-import { shopConnections as storeConns, agenciesList, clientHubs247 } from '../../super-admin/agencyStore'
+import { shopConnections as storeConns, agenciesList, clientHubs247, type ClientHub247, SERVICE_TYPES_247 } from '../../super-admin/agencyStore'
 import { servicesList, addService, updateService, toggleServiceEnabled } from '../serviceStore'
 
 const CURRENT_AGENCY_ID = 'AGN001'
@@ -25,32 +25,10 @@ const CARRIERS: Record<string, { color: string; bg: string; border: string; labe
   '247Express': { color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', label: '247' },
 }
 
-// 247Express không chọn khu vực theo tỉnh/quận như GHN — điểm lấy hàng cố định theo
-// ClientHubID của đại lý, khu vực giao hàng tính theo vùng (giống PricingCreate247.tsx)
-type Zone247 = 'noi-tinh' | 'lien-tinh-gan' | 'lien-tinh-xa' | 'quoc-te'
+// 247Express không có "Lấy hàng" theo tỉnh/quận như GHN — điểm lấy hàng cố định
+// theo ClientHubID của đại lý. "Khu vực giao hàng" thì dùng chung cơ chế tỉnh/quận
+// (LocationEntry, thêm/xoá) giống hệt "Khu vực áp dụng" của GHN.
 
-const ZONE_LABELS: Record<Zone247, string> = {
-  'noi-tinh':      'Nội tỉnh',
-  'lien-tinh-gan': 'Liên tỉnh gần ≤300km',
-  'lien-tinh-xa':  'Liên tỉnh xa >300km',
-  'quoc-te':       'Quốc tế',
-}
-
-const ZONE_COLORS: Record<Zone247, string> = {
-  'noi-tinh':      '#16A34A',
-  'lien-tinh-gan': '#2563EB',
-  'lien-tinh-xa':  '#C2410C',
-  'quoc-te':       '#7C3AED',
-}
-
-// Mã dịch vụ chính 247Express (ServiceTypeID) — dùng để gọi GetPriceForCustomerAPI
-const SERVICE_TYPES_247 = [
-  { id: 'DE', label: 'DE — Chuyển phát nhanh' },
-  { id: 'TF', label: 'TF — Vận chuyển tiết kiệm' },
-  { id: 'TH', label: 'TH — Giao hàng 55 giờ' },
-  { id: 'IE', label: 'IE — Quốc tế nhanh' },
-  { id: 'IM', label: 'IM — Quốc tế tiết kiệm' },
-]
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -94,8 +72,9 @@ type ServiceForm = {
   category: 'domestic' | 'international'
   priceTableId?: string
   serviceTypeId?: string
-  deliveryZones: Zone247[]
+  deliveryZones: LocationEntry[]
   shopConnectionIds: string[]
+  hubIds: string[]
 }
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
@@ -225,6 +204,67 @@ function ShopIdTable({ carrier, shops, selectedIds, interactive, onToggle }: {
   )
 }
 
+// ─── Chọn ClientHubID (247Express) — dùng chung cho view & edit ──────────────
+function HubIdTable({ hubs, selectedIds, interactive, onToggle }: {
+  hubs: ClientHub247[]
+  selectedIds: string[]
+  interactive: boolean
+  onToggle?: (hubId: string) => void
+}) {
+  const rows = interactive ? hubs : hubs.filter(h => selectedIds.includes(h.id))
+
+  return (
+    <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${C_BORDER}` }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', background: C_BG_HEADER }}>
+        <div style={{ padding: '7px 14px', fontSize: 13, color: C_TEXT_SECONDARY }}>ClientHubID</div>
+        <div style={{ padding: '7px 14px', fontSize: 13, color: C_TEXT_SECONDARY }}>Điểm lấy hàng</div>
+      </div>
+      {rows.length === 0 ? (
+        <div style={{ padding: '16px', textAlign: 'center' as const, color: C_TEXT_SECONDARY, fontSize: 13, background: '#fff' }}>
+          {interactive ? 'Đại lý chưa được phân ClientHubID nào — liên hệ Super Admin' : 'Chưa chọn hub nào'}
+        </div>
+      ) : rows.map((hub, i) => {
+        const isSelected = selectedIds.includes(hub.id)
+        return (
+          <div key={hub.id}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 2fr',
+              background: interactive && isSelected ? '#FFF9F7' : '#fff',
+              borderLeft: interactive && isSelected ? '3px solid #FF5200' : '3px solid transparent',
+            }}>
+              <div
+                style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: interactive ? 'pointer' : 'default' }}
+                onClick={() => interactive && onToggle?.(hub.id)}
+              >
+                {interactive && (
+                  <div style={{
+                    width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                    border: isSelected ? 'none' : '1.5px solid #D1D5DB',
+                    background: isSelected ? '#FF5200' : '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: isSelected ? '0 0 0 3px rgba(255,82,0,0.12)' : 'none',
+                  }}>
+                    {isSelected && (
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path d="M1 3.5L3.8 6.5L9 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                )}
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#7C3AED', fontFamily: 'monospace' }}>{hub.id}</div>
+              </div>
+              <div style={{ padding: '10px 14px', fontSize: 13, color: C_TEXT_SECONDARY }}>
+                <span style={{ fontWeight: 500, color: C_TEXT_PRIMARY }}>{hub.name}</span> — {hub.location}
+              </div>
+            </div>
+            {i < rows.length - 1 && <div style={{ height: 1, background: '#F5F5F5' }} />}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Khu vực áp dụng modal ────────────────────────────────────────────────────
 function AddLocationModal({ title, onClose, onAdd }: { title: string; onClose: () => void; onAdd: (entry: LocationEntry) => void }) {
   const [province, setProvince] = useState(PROVINCES[0])
@@ -270,9 +310,9 @@ function AddLocationModal({ title, onClose, onAdd }: { title: string; onClose: (
   )
 }
 
-function LocationSection({ title, accentColor, entries, onAdd, onRemove }: {
+function LocationSection({ title, accentColor, entries, onAdd, onRemove, readOnly }: {
   title: string; accentColor: string; entries: LocationEntry[]
-  onAdd: () => void; onRemove: (i: number) => void
+  onAdd: () => void; onRemove: (i: number) => void; readOnly?: boolean
 }) {
   return (
     <div style={{ flex: 1, border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
@@ -282,15 +322,17 @@ function LocationSection({ title, accentColor, entries, onAdd, onRemove }: {
           <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{title}</span>
           <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, background: C_BG_HEADER, padding: '1px 7px', borderRadius: 10 }}>{entries.length}</span>
         </div>
-        <button onClick={onAdd} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_ACTION, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-          <PlusOutlined style={{ fontSize: 11 }} />
-          Thêm
-        </button>
+        {!readOnly && (
+          <button onClick={onAdd} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_ACTION, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            <PlusOutlined style={{ fontSize: 11 }} />
+            Thêm
+          </button>
+        )}
       </div>
       <div style={{ display: 'flex', background: C_BG_HEADER }}>
         <div style={{ flex: '1 0 0', padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY }}>Tỉnh / Thành phố</div>
         <div style={{ flex: '1 0 0', padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY }}>Quận / Huyện</div>
-        <div style={{ width: 40 }} />
+        {!readOnly && <div style={{ width: 40 }} />}
       </div>
       <div style={{ height: 1, background: C_BORDER }} />
       {entries.length === 0 ? (
@@ -300,16 +342,48 @@ function LocationSection({ title, accentColor, entries, onAdd, onRemove }: {
           <div style={{ display: 'flex', alignItems: 'center', background: '#fff' }}>
             <div style={{ flex: '1 0 0', padding: '8px 8px', fontSize: 14, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{e.province}</div>
             <div style={{ flex: '1 0 0', padding: '8px 8px', fontSize: 14, color: C_TEXT_SECONDARY }}>{e.district}</div>
-            <div style={{ width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <button onClick={() => onRemove(i)} title="Xoá"
-                style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', color: C_TEXT_SECONDARY, cursor: 'pointer', borderRadius: 4, fontSize: 13 }}>
-                <DeleteOutlined />
-              </button>
-            </div>
+            {!readOnly && (
+              <div style={{ width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button onClick={() => onRemove(i)} title="Xoá"
+                  style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', color: C_TEXT_SECONDARY, cursor: 'pointer', borderRadius: 4, fontSize: 13 }}>
+                  <DeleteOutlined />
+                </button>
+              </div>
+            )}
           </div>
           <div style={{ height: 1, background: C_BORDER }} />
         </div>
       ))}
+    </div>
+  )
+}
+
+// ─── Khu vực giao hàng modal — 247Express (chỉ 1 mục "Giao hàng", lấy hàng đã cố
+// định theo ClientHubID nên không cần chọn tỉnh/quận riêng) ──────────────────
+function DeliveryZoneModal({ entries, interactive, onAdd, onRemove, onClose }: {
+  entries: LocationEntry[]
+  interactive: boolean
+  onAdd: (entry: LocationEntry) => void
+  onRemove: (i: number) => void
+  onClose: () => void
+}) {
+  const [showAdd, setShowAdd] = useState(false)
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {showAdd && (
+        <AddLocationModal title="Thêm khu vực giao hàng" onClose={() => setShowAdd(false)}
+          onAdd={(e) => onAdd(e)} />
+      )}
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', width: 420, maxHeight: '80vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}` }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>Khu vực giao hàng</span>
+          <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: C_TEXT_SECONDARY }}>✕</button>
+        </div>
+        <div style={{ padding: 20 }}>
+          <LocationSection title="Giao hàng" accentColor="#3B82F6" entries={entries}
+            onAdd={() => setShowAdd(true)} onRemove={onRemove} readOnly={!interactive} />
+        </div>
+      </div>
     </div>
   )
 }
@@ -361,6 +435,7 @@ export default function ServiceDetail() {
   const location = useLocation()
   const [activeTab, setActiveTab] = useState<Tab>('detail')
   const [showZoneModal, setShowZoneModal] = useState(false)
+  const [showDeliveryZoneModal, setShowDeliveryZoneModal] = useState(false)
   const [, forceRender] = useState(0)
 
   const isNewService = !id || id === 'new'
@@ -372,9 +447,10 @@ export default function ServiceDetail() {
         name: existing.name, code: existing.code, carrier: existing.carrier, desc: existing.desc, scope: existing.scope,
         maxWeightKg: existing.maxWeightKg, category: existing.category as 'domestic' | 'international',
         priceTableId: existing.priceTableId, serviceTypeId: existing.serviceTypeId,
-        deliveryZones: (existing.deliveryZones ?? []) as Zone247[], shopConnectionIds: existing.shopConnectionIds,
+        deliveryZones: (existing.deliveryZones ?? []) as LocationEntry[], shopConnectionIds: existing.shopConnectionIds,
+        hubIds: existing.hubIds ?? [],
       }
-    : { name: '', code: '', carrier: newCarrier, desc: '', scope: 'Toàn quốc', maxWeightKg: 20, category: 'domestic', priceTableId: '', serviceTypeId: '', deliveryZones: [], shopConnectionIds: [] }
+    : { name: '', code: '', carrier: newCarrier, desc: '', scope: 'Toàn quốc', maxWeightKg: 20, category: 'domestic', priceTableId: '', serviceTypeId: '', deliveryZones: [], shopConnectionIds: [], hubIds: [] }
 
   const [serviceData, setServiceData] = useState<ServiceForm>(initData)
   const [isEditing, setIsEditing]     = useState(isNewService)
@@ -390,13 +466,19 @@ export default function ServiceDetail() {
         : [...f.shopConnectionIds, connectionId],
     }))
 
-  const toggleZone = (zone: Zone247) =>
+  const toggleHub = (hubId: string) =>
     setEditForm(f => ({
       ...f,
-      deliveryZones: f.deliveryZones.includes(zone)
-        ? f.deliveryZones.filter(z => z !== zone)
-        : [...f.deliveryZones, zone],
+      hubIds: f.hubIds.includes(hubId)
+        ? f.hubIds.filter(hid => hid !== hubId)
+        : [...f.hubIds, hubId],
     }))
+
+  const addDeliveryLocation = (entry: LocationEntry) =>
+    setEditForm(f => ({ ...f, deliveryZones: [...f.deliveryZones, entry] }))
+
+  const removeDeliveryLocation = (i: number) =>
+    setEditForm(f => ({ ...f, deliveryZones: f.deliveryZones.filter((_, idx) => idx !== i) }))
 
   const handleStartEdit = () => { setEditForm(serviceData); setIsEditing(true) }
 
@@ -409,7 +491,8 @@ export default function ServiceDetail() {
         priceTableId: editForm.carrier === 'GHN' ? editForm.priceTableId : undefined,
         serviceTypeId: editForm.carrier === '247Express' ? editForm.serviceTypeId : undefined,
         deliveryZones: editForm.carrier === '247Express' ? editForm.deliveryZones : undefined,
-        shopConnectionIds: editForm.shopConnectionIds,
+        shopConnectionIds: editForm.carrier === 'GHN' ? editForm.shopConnectionIds : [],
+        hubIds: editForm.carrier === '247Express' ? editForm.hubIds : undefined,
       })
       navigate(`/agency-admin/carrier-setup/services/${created.id}`)
       return
@@ -419,7 +502,8 @@ export default function ServiceDetail() {
       priceTableId: editForm.carrier === 'GHN' ? editForm.priceTableId : undefined,
       serviceTypeId: editForm.carrier === '247Express' ? editForm.serviceTypeId : undefined,
       deliveryZones: editForm.carrier === '247Express' ? editForm.deliveryZones : undefined,
-      shopConnectionIds: editForm.shopConnectionIds,
+      shopConnectionIds: editForm.carrier === 'GHN' ? editForm.shopConnectionIds : [],
+      hubIds: editForm.carrier === '247Express' ? editForm.hubIds : undefined,
     })
     setServiceData(editForm)
     setIsEditing(false)
@@ -447,11 +531,14 @@ export default function ServiceDetail() {
   const priceTables = (allPriceTables as any[]).filter(pt => pt.nvc === editForm.carrier)
 
   const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
-  const pickupHub = agency?.clientHubId ? clientHubs247.find(h => h.id === agency.clientHubId) : null
+  const agencyHubs = (agency?.clientHubIds ?? []).map(id => clientHubs247.find(h => h.id === id)).filter((h): h is ClientHub247 => !!h)
+  // Chỉ hiện dịch vụ Super Admin đã duyệt cho đại lý — agency cũ chưa có field này thì hiện tất cả
+  const availableServiceTypes = agency?.allowedServices247
+    ? SERVICE_TYPES_247.filter(s => agency.allowedServices247!.includes(s.id))
+    : SERVICE_TYPES_247
 
   const canCreate = !!editForm.name.trim() &&
-    editForm.shopConnectionIds.length > 0 &&
-    (editForm.carrier === '247Express' ? editForm.deliveryZones.length > 0 : true)
+    (editForm.carrier === '247Express' ? editForm.hubIds.length > 0 : editForm.shopConnectionIds.length > 0)
 
   const isDefaultOn = !isNewService && !!existing?.enabled
 
@@ -463,6 +550,15 @@ export default function ServiceDetail() {
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#F9FAFB', alignItems: 'center' }}>
 
       {showZoneModal && <ZoneModal onClose={() => setShowZoneModal(false)} />}
+      {showDeliveryZoneModal && (
+        <DeliveryZoneModal
+          entries={isEditing ? editForm.deliveryZones : serviceData.deliveryZones}
+          interactive={isEditing}
+          onAdd={addDeliveryLocation}
+          onRemove={removeDeliveryLocation}
+          onClose={() => setShowDeliveryZoneModal(false)}
+        />
+      )}
 
       {/* ── Page header ──────────────────────────────────────── */}
       <div style={{ ...centeredBox, display: 'flex', alignItems: 'center', gap: 12, padding: '24px 80px', flexShrink: 0 }}>
@@ -497,7 +593,8 @@ export default function ServiceDetail() {
         )}
       </div>
 
-      {/* ── Tab bar ──────────────────────────────────────────── */}
+      {/* ── Tab bar (chỉ hiện khi sửa dịch vụ đã có — tạo mới thì không có lịch sử) ── */}
+      {!isNewService && (
       <div style={{ ...centeredBox, padding: '16px 80px 0', flexShrink: 0 }}>
         <div style={{ display: 'flex', borderBottom: `1px solid ${C_BORDER}` }}>
           {TABS.map((tab) => {
@@ -522,6 +619,7 @@ export default function ServiceDetail() {
           })}
         </div>
       </div>
+      )}
 
       {/* ── Tab content ──────────────────────────────────────── */}
       <div style={{ flex: '1 0 0', overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -546,9 +644,13 @@ export default function ServiceDetail() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_LABEL }}>
-                      Kết nối Shop ID {editForm.carrier} <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>
+                      {editForm.carrier === '247Express' ? 'Chọn ClientHubID' : `Kết nối Shop ID ${editForm.carrier}`} <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>
                     </span>
-                    <ShopIdTable carrier={editForm.carrier} shops={editActiveShops} selectedIds={editForm.shopConnectionIds} interactive onToggle={toggleShop} />
+                    {editForm.carrier === '247Express' ? (
+                      <HubIdTable hubs={agencyHubs} selectedIds={editForm.hubIds} interactive onToggle={toggleHub} />
+                    ) : (
+                      <ShopIdTable carrier={editForm.carrier} shops={editActiveShops} selectedIds={editForm.shopConnectionIds} interactive onToggle={toggleShop} />
+                    )}
                   </div>
                 </div>
               ) : (
@@ -562,18 +664,24 @@ export default function ServiceDetail() {
                   <LabelValue label="Mô tả" value={serviceData.desc || <span style={{ color: C_TEXT_SECONDARY }}>—</span>} />
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Shop</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>{serviceData.carrier === '247Express' ? 'ClientHubID' : 'Shop'}</span>
                     <span style={{ fontSize: 14, color: '#3B82F6', textDecoration: 'underline', fontWeight: 500 }}>
-                      {serviceData.shopConnectionIds.length} shop đang áp dụng dịch vụ
+                      {serviceData.carrier === '247Express'
+                        ? `${serviceData.hubIds.length} ClientHubID đang áp dụng dịch vụ`
+                        : `${serviceData.shopConnectionIds.length} shop đang áp dụng dịch vụ`}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID {serviceData.carrier}</span>
-                      <InfoCircleOutlined style={{ fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'help' }} title="Shop ID được duyệt kết nối với đại lý qua nhà vận chuyển này" />
+                      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>{serviceData.carrier === '247Express' ? 'Chọn ClientHubID' : `Kết nối Shop ID ${serviceData.carrier}`}</span>
+                      <InfoCircleOutlined style={{ fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'help' }} title={serviceData.carrier === '247Express' ? 'ClientHubID được Super Admin cấp cho đại lý' : 'Shop ID được duyệt kết nối với đại lý qua nhà vận chuyển này'} />
                     </div>
-                    <ShopIdTable carrier={serviceData.carrier} shops={activeShops} selectedIds={serviceData.shopConnectionIds} interactive={false} />
+                    {serviceData.carrier === '247Express' ? (
+                      <HubIdTable hubs={agencyHubs} selectedIds={serviceData.hubIds} interactive={false} />
+                    ) : (
+                      <ShopIdTable carrier={serviceData.carrier} shops={activeShops} selectedIds={serviceData.shopConnectionIds} interactive={false} />
+                    )}
                   </div>
                 </div>
               )}
@@ -598,7 +706,7 @@ export default function ServiceDetail() {
                             style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '7px 10px', fontSize: 14, color: C_TEXT_PRIMARY, background: '#fff', outline: 'none', cursor: 'pointer' }}
                           >
                             <option value="">— Chọn mã dịch vụ —</option>
-                            {SERVICE_TYPES_247.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                            {availableServiceTypes.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                           </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -659,53 +767,23 @@ export default function ServiceDetail() {
                 )}
 
                 {serviceData.carrier === '247Express' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {/* Điểm lấy hàng — cố định theo ClientHubID của đại lý */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Điểm lấy hàng</span>
-                      {pickupHub ? (
-                        <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '12px 14px', display: 'flex', gap: 12 }}>
-                          <ShopOutlined style={{ color: '#7C3AED', fontSize: 16, marginTop: 2 }} />
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <span style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#7C3AED' }}>{pickupHub.id}</span>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{pickupHub.name}</span>
-                            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>
-                              {pickupHub.address}, {pickupHub.wardName}, {pickupHub.districtName}, {pickupHub.provinceName}
-                            </span>
-                            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Liên hệ: {pickupHub.contactName} — {pickupHub.contactPhone}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: 13, color: '#D97706' }}>Đại lý chưa được phân ClientHubID — liên hệ Super Admin.</span>
-                      )}
-                    </div>
-
-                    {/* Khu vực giao hàng — theo vùng, tính từ ClientHubID */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>
-                        Khu vực giao hàng {isEditing && <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>}
-                      </span>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                        {(Object.keys(ZONE_LABELS) as Zone247[]).map(zone => {
-                          const checked = isEditing ? editForm.deliveryZones.includes(zone) : serviceData.deliveryZones.includes(zone)
-                          const color = ZONE_COLORS[zone]
-                          return (
-                            <div key={zone} onClick={() => isEditing && toggleZone(zone)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-                                borderRadius: 20, fontSize: 13, fontWeight: 600,
-                                cursor: isEditing ? 'pointer' : 'default',
-                                border: `1.5px solid ${checked ? color : C_BORDER}`,
-                                background: checked ? `${color}12` : '#fff',
-                                color: checked ? color : C_TEXT_SECONDARY,
-                              }}>
-                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: checked ? color : '#D1D5DB', flexShrink: 0 }} />
-                              {ZONE_LABELS[zone]}
-                            </div>
-                          )
-                        })}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Khu vực giao hàng</span>
+                    <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px' }}>
+                        <EnvironmentOutlined style={{ color: '#16A34A' }} />
+                        <span style={{ fontSize: 14, fontWeight: 600, color: '#16A34A' }}>Giao hàng</span>
+                        <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>
+                          {(isEditing ? editForm.deliveryZones : serviceData.deliveryZones).length === 0
+                            ? 'Tất cả khu vực'
+                            : `${(isEditing ? editForm.deliveryZones : serviceData.deliveryZones).length} khu vực`}
+                        </span>
                       </div>
                     </div>
+                    <button onClick={() => setShowDeliveryZoneModal(true)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                      <EyeOutlined style={{ fontSize: 13 }} />
+                      Xem khu vực
+                    </button>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -736,8 +814,8 @@ export default function ServiceDetail() {
                       {!canCreate && (
                         <span style={{ fontSize: 12, color: '#9CA3AF' }}>
                           {!editForm.name.trim() ? 'Nhập tên dịch vụ'
-                            : editForm.shopConnectionIds.length === 0 ? 'Chọn ít nhất 1 shop'
-                            : editForm.carrier === '247Express' && editForm.deliveryZones.length === 0 ? 'Chọn ít nhất 1 khu vực giao hàng'
+                            : editForm.carrier === '247Express' && editForm.hubIds.length === 0 ? 'Chọn ít nhất 1 ClientHubID'
+                            : editForm.carrier === 'GHN' && editForm.shopConnectionIds.length === 0 ? 'Chọn ít nhất 1 shop'
                             : ''}
                         </span>
                       )}

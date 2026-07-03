@@ -16,8 +16,21 @@ export interface Agency {
   address: string
   email: string
   allowedCarriers: string[]
-  clientHubId?: string
+  clientHubIds?: string[]
+  // Mã dịch vụ 247Express (xem SERVICE_TYPES_247) mà đại lý được phép sử dụng —
+  // do Super Admin duyệt khi kích hoạt/cấp thêm hub 247Express
+  allowedServices247?: string[]
 }
+
+// Mã dịch vụ chính 247Express (ServiceTypeID) — dùng để gọi GetPriceForCustomerAPI,
+// Super Admin duyệt trước khi cấp ClientHubID cho đại lý
+export const SERVICE_TYPES_247 = [
+  { id: 'DE', label: 'DE — Chuyển phát nhanh' },
+  { id: 'TF', label: 'TF — Vận chuyển tiết kiệm' },
+  { id: 'TH', label: 'TH — Giao hàng 55 giờ' },
+  { id: 'IE', label: 'IE — Quốc tế nhanh' },
+  { id: 'IM', label: 'IM — Quốc tế tiết kiệm' },
+]
 
 // Mutable list — starts with JSON data, new agencies prepended here at runtime
 export const agenciesList: Agency[] = (rawData as any[]).map(a => ({
@@ -128,11 +141,12 @@ export interface CarrierRequest {
   requestedAt: string
   note?: string
   rejectionReason?: string
-  clientHubId?: string
+  hubIds?: string[]
+  serviceIds?: string[]
 }
 
 export const carrierRequests: CarrierRequest[] = [
-  { id: 'cr-001', agencyId: 'AGN001', carrier: '247Express', status: 'approved', requestedAt: '2025-06-01', note: 'Muốn mở rộng dịch vụ vận chuyển liên tỉnh', clientHubId: 'HUB-SGN-001' },
+  { id: 'cr-001', agencyId: 'AGN001', carrier: '247Express', status: 'approved', requestedAt: '2025-06-01', note: 'Muốn mở rộng dịch vụ vận chuyển liên tỉnh', hubIds: ['HUB-SGN-001'], serviceIds: ['DE', 'TF'] },
   { id: 'cr-002', agencyId: 'AGN002', carrier: '247Express', status: 'pending', requestedAt: '2025-06-08', note: 'Shop có nhu cầu giao hàng quốc tế' },
   { id: 'cr-003', agencyId: 'AGN004', carrier: '247Express', status: 'pending', requestedAt: '2025-06-15', note: '' },
 ]
@@ -148,21 +162,36 @@ export function addCarrierRequest(agencyId: string, carrier: string, note?: stri
   return req
 }
 
-export function approveCarrierRequest(id: string, clientHubId?: string) {
+// Duyệt yêu cầu 247Express — cần chọn dịch vụ (ServiceTypeID) TRƯỚC, sau đó mới
+// chọn ClientHubID; cả 2 đều cho phép chọn nhiều trong 1 lần duyệt.
+export function approveCarrierRequest(id: string, hubIds: string[], serviceIds: string[]) {
   const req = carrierRequests.find(r => r.id === id)
   if (!req) return
   req.status = 'approved'
-  if (clientHubId) req.clientHubId = clientHubId
+  req.hubIds = hubIds
+  req.serviceIds = serviceIds
   const agency = agenciesList.find(a => a.id === req.agencyId)
   if (agency) {
     if (!agency.allowedCarriers.includes(req.carrier)) {
       agency.allowedCarriers = [...agency.allowedCarriers, req.carrier]
     }
-    if (clientHubId) agency.clientHubId = clientHubId
+    const newHubs = hubIds.filter(h => !(agency.clientHubIds ?? []).includes(h))
+    if (newHubs.length) agency.clientHubIds = [...(agency.clientHubIds ?? []), ...newHubs]
+    const newServices = serviceIds.filter(s => !(agency.allowedServices247 ?? []).includes(s))
+    if (newServices.length) agency.allowedServices247 = [...(agency.allowedServices247 ?? []), ...newServices]
   }
 }
 
 export function rejectCarrierRequest(id: string, reason: string) {
   const req = carrierRequests.find(r => r.id === id)
   if (req) { req.status = 'rejected'; req.rejectionReason = reason }
+}
+
+// Cấp thêm 1 ClientHubID cho đại lý đã kích hoạt 247Express (ngoài luồng duyệt yêu cầu)
+export function grantAdditionalHub(agencyId: string, clientHubId: string) {
+  const agency = agenciesList.find(a => a.id === agencyId)
+  if (!agency) return
+  if (!(agency.clientHubIds ?? []).includes(clientHubId)) {
+    agency.clientHubIds = [...(agency.clientHubIds ?? []), clientHubId]
+  }
 }

@@ -45,3 +45,8 @@ _Chưa có stories_
 | [AGA] Thiết lập NVC: Bảng giá dịch vụ | [bang-gia-dich-vu.md](./carrier-setup/bang-gia-dich-vu.md) | — | ✅ |
 | [AGA] Thiết lập NVC: Tạo bảng giá - Cấu hình phụ phí | [tao-bang-gia-cau-hinh-phu-phi.md](./carrier-setup/tao-bang-gia-cau-hinh-phu-phi.md) | — | [Draft] |
 | [AGA] Thiết lập NVC: Tạo bảng giá - Cấu hình phụ phí Hoàn hàng | [tao-bang-gia-phu-phi-hoan-hang.md](./carrier-setup/tao-bang-gia-phu-phi-hoan-hang.md) | AGENCY-250 | [Draft] |
+| [AGA] Thiết lập NVC: Bộ chọn nhà vận chuyển tích hợp trong từng tab | [bo-chon-nha-van-chuyen-tich-hop-tab.md](./carrier-setup/bo-chon-nha-van-chuyen-tich-hop-tab.md) | — | [Draft] |
+| [AGA] Thiết lập NVC - Bảng giá 247Express: Selector dịch vụ và cấu trúc zone block | [tao-bang-gia-247-selector-zone-block.md](./carrier-setup/tao-bang-gia-247-selector-zone-block.md) | — | [Draft] |
+| [AGA] Thiết lập NVC - Bảng giá 247Express: Dịch vụ Chuyển phát nhanh | [tao-bang-gia-247-chuyen-phat-nhanh.md](./carrier-setup/tao-bang-gia-247-chuyen-phat-nhanh.md) | — | [Draft] |
+| [AGA] Thiết lập NVC - Bảng giá 247Express: Phụ phí & Dịch vụ gia tăng | [tao-bang-gia-247-phu-phi-dich-vu-gia-tang.md](./carrier-setup/tao-bang-gia-247-phu-phi-dich-vu-gia-tang.md) | — | [Draft] |
+| [AGA] Thiết lập NVC - Bảng giá 247Express: Chuyển phát nhanh tiết kiệm & Chuyển phát đường bộ | [tao-bang-gia-247-tiet-kiem-duong-bo.md](./carrier-setup/tao-bang-gia-247-tiet-kiem-duong-bo.md) | — | [Draft] |

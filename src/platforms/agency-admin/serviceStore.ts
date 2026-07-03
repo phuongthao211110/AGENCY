@@ -16,10 +16,13 @@ export type AgencyService = {
   // Chỉ 247Express dùng — 247 không có bảng giá thủ công, tính phí trực tiếp qua
   // GetPriceForCustomerAPI theo ServiceTypeID + ClientHubID + tuyến + khối lượng
   serviceTypeId?: string
-  // Chỉ 247Express dùng — 247 không có "Khu vực áp dụng" theo tỉnh/quận như GHN,
-  // mà tính vùng dựa trên ClientHubID (điểm lấy hàng cố định của đại lý) + vùng giao hàng
-  deliveryZones?: string[]
+  // Chỉ 247Express dùng — điểm lấy hàng cố định theo ClientHubID (xem hubIds),
+  // "Khu vực giao hàng" thì dùng chung cơ chế tỉnh/quận với GHN
+  deliveryZones?: { province: string; district: string }[]
+  // GHN: chọn Shop ID đã kết nối. 247Express: chọn ClientHubID đã được cấp (không
+  // dùng shopConnectionIds vì 247 không kết nối theo shop).
   shopConnectionIds: string[]
+  hubIds?: string[]
 }
 
 // Mutable list — starts with JSON data, new services pushed here at runtime

@@ -14,7 +14,7 @@ import {
   BarChartOutlined,
   LockOutlined,
 } from '@ant-design/icons'
-import { agenciesList, setAllowedCarriers, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest } from '../agencyStore'
+import { agenciesList, setAllowedCarriers, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub, SERVICE_TYPES_247 } from '../agencyStore'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY = '#111827'
@@ -205,6 +205,97 @@ function Toast({ visible }: { visible: boolean }) {
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
+// ── Duyệt 247Express — 2 bước: (1) chọn dịch vụ, (2) chọn ClientHubID — cả 2 đều multi-select ──
+function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onConfirm, onCancel }: {
+  agencyName: string
+  excludeHubIds?: string[]
+  excludeServiceIds?: string[]
+  onConfirm: (hubIds: string[], serviceIds: string[]) => void
+  onCancel: () => void
+}) {
+  const [step, setStep] = useState<'services' | 'hubs'>('services')
+  const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [selectedHubs, setSelectedHubs] = useState<string[]>([])
+
+  const availableServices = SERVICE_TYPES_247.filter(s => !(excludeServiceIds ?? []).includes(s.id))
+  const availableHubs = clientHubs247.filter(h => !(excludeHubIds ?? []).includes(h.id))
+
+  const toggleService = (id: string) =>
+    setSelectedServices(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  const toggleHub = (id: string) =>
+    setSelectedHubs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const CheckRow = ({ label, sub, checked, onToggle, mono }: {
+    label: string; sub?: string; checked: boolean; onToggle: () => void; mono?: boolean
+  }) => (
+    <div
+      onClick={onToggle}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 14px', cursor: 'pointer', background: checked ? '#EDE9FE' : '#fff', borderBottom: `1px solid #F3F4F6` }}
+    >
+      <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: checked ? 'none' : `1.5px solid #C4B5FD`, background: checked ? '#8B5CF6' : '#fff' }}>
+        {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 3.5L3.8 6.5L9 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: checked ? 600 : 400, color: mono ? '#7C3AED' : C_TEXT_PRIMARY, fontFamily: mono ? 'monospace' : 'inherit' }}>{label}</div>
+        {sub && <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginTop: 1 }}>{sub}</div>}
+      </div>
+    </div>
+  )
+
+  if (step === 'services') {
+    return (
+      <div style={{ padding: '10px 12px', background: '#F5F3FF', borderTop: `1px solid #C4B5FD` }}>
+        <div style={{ fontSize: 12, color: '#5B21B6', fontWeight: 600, marginBottom: 8 }}>
+          Bước 1/2 — Chọn dịch vụ 247Express cho <span style={{ color: '#3B82F6' }}>{agencyName}</span>
+        </div>
+        <div style={{ maxHeight: 200, overflowY: 'auto', border: `1px solid #C4B5FD`, borderRadius: 8, background: '#fff', marginBottom: 8 }}>
+          {availableServices.length === 0 ? (
+            <div style={{ padding: '14px', textAlign: 'center', fontSize: 12, color: C_TEXT_SECONDARY }}>Đại lý đã được duyệt toàn bộ dịch vụ hiện có.</div>
+          ) : availableServices.map(svc => (
+            <CheckRow key={svc.id} label={svc.label} checked={selectedServices.includes(svc.id)} onToggle={() => toggleService(svc.id)} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          <button onClick={onCancel} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Huỷ</button>
+          <button
+            onClick={() => selectedServices.length > 0 && setStep('hubs')}
+            disabled={selectedServices.length === 0}
+            style={{ padding: '4px 14px', background: selectedServices.length > 0 ? '#8B5CF6' : '#D1D5DB', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', cursor: selectedServices.length > 0 ? 'pointer' : 'not-allowed' }}
+          >
+            Tiếp tục ({selectedServices.length})
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ padding: '10px 12px', background: '#F5F3FF', borderTop: `1px solid #C4B5FD` }}>
+      <div style={{ fontSize: 12, color: '#5B21B6', fontWeight: 600, marginBottom: 8 }}>
+        Bước 2/2 — Chọn Mã điểm lấy hàng (ClientHubID) cho <span style={{ color: '#3B82F6' }}>{agencyName}</span>
+      </div>
+      <div style={{ maxHeight: 200, overflowY: 'auto', border: `1px solid #C4B5FD`, borderRadius: 8, background: '#fff', marginBottom: 8 }}>
+        {availableHubs.length === 0 ? (
+          <div style={{ padding: '14px', textAlign: 'center', fontSize: 12, color: C_TEXT_SECONDARY }}>Đại lý đã được cấp toàn bộ Hub hiện có.</div>
+        ) : availableHubs.map(hub => (
+          <CheckRow key={hub.id} label={hub.id} sub={`${hub.name} — 📍 ${hub.location}`} checked={selectedHubs.includes(hub.id)} onToggle={() => toggleHub(hub.id)} mono />
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+        <button onClick={() => setStep('services')} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Quay lại</button>
+        <button onClick={onCancel} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Huỷ</button>
+        <button
+          onClick={() => selectedHubs.length > 0 && onConfirm(selectedHubs, selectedServices)}
+          disabled={selectedHubs.length === 0}
+          style={{ padding: '4px 14px', background: selectedHubs.length > 0 ? '#8B5CF6' : '#D1D5DB', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', cursor: selectedHubs.length > 0 ? 'pointer' : 'not-allowed' }}
+        >
+          Duyệt ({selectedHubs.length} hub)
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const ALL_CARRIERS: { key: string; label: string; color: string; description: string }[] = [
   { key: 'GHN',        label: 'GHN — Giao Hàng Nhanh', color: '#EE4D2D', description: 'Nhà vận chuyển mặc định, không thể tắt' },
   { key: '247Express', label: '247Express',              color: '#1677FF', description: 'Cho phép đại lý kết nối và đối soát với 247Express' },
@@ -220,6 +311,9 @@ export default function AgencyDetail() {
   const [rejectReason, setRejectReason] = useState('')
   const [rejectingCarrierId, setRejectingCarrierId] = useState<string | null>(null)
   const [rejectCarrierReason, setRejectCarrierReason] = useState('')
+  const [approvingCarrierId, setApprovingCarrierId] = useState<string | null>(null)
+  const [addingHubFor, setAddingHubFor] = useState<string | null>(null)
+  const [newHubId, setNewHubId] = useState('')
 
   const agency = agenciesList.find((a) => a.id === id)
 
@@ -418,8 +512,12 @@ export default function AgencyDetail() {
                               {pendingReq ? (
                                 <>
                                   <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#FEF3C7', color: '#D97706' }}>Chờ duyệt</span>
-                                  <button onClick={() => { approveCarrierRequest(pendingReq.id); forceRender(n => n + 1) }} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Duyệt</button>
-                                  <button onClick={() => { setRejectingCarrierId(pendingReq.id); setRejectCarrierReason('') }} style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid #E5E7EB`, background: '#fff', color: '#DC2626', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Từ chối</button>
+                                  {approvingCarrierId !== pendingReq.id && (
+                                    <button onClick={() => { setApprovingCarrierId(pendingReq.id); setRejectingCarrierId(null) }} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Duyệt</button>
+                                  )}
+                                  {approvingCarrierId !== pendingReq.id && (
+                                    <button onClick={() => { setRejectingCarrierId(pendingReq.id); setRejectCarrierReason('') }} style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid #E5E7EB`, background: '#fff', color: '#DC2626', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Từ chối</button>
+                                  )}
                                 </>
                               ) : (
                                 <>
@@ -443,6 +541,20 @@ export default function AgencyDetail() {
                               <span style={{ fontWeight: 600 }}>Ghi chú từ đại lý: </span>{pendingReq.note}
                             </div>
                           )}
+                          {/* Duyệt form 2 bước: chọn dịch vụ trước, ClientHubID sau — cả 2 multi-select */}
+                          {approvingCarrierId === pendingReq?.id && (
+                            <CarrierApprovalForm
+                              agencyName={agency.name}
+                              excludeHubIds={agency.clientHubIds}
+                              excludeServiceIds={agency.allowedServices247}
+                              onConfirm={(hubIds, serviceIds) => {
+                                approveCarrierRequest(pendingReq!.id, hubIds, serviceIds)
+                                setApprovingCarrierId(null)
+                                forceRender(n => n + 1)
+                              }}
+                              onCancel={() => setApprovingCarrierId(null)}
+                            />
+                          )}
                           {/* Reject form inline */}
                           {rejectingCarrierId === pendingReq?.id && (
                             <div style={{ padding: '10px 12px', borderTop: `1px solid #FCA5A5`, background: '#FFF5F5', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -463,6 +575,68 @@ export default function AgencyDetail() {
                                   Xác nhận từ chối
                                 </button>
                               </div>
+                            </div>
+                          )}
+                          {/* Danh sách ClientHubID đã cấp + cấp thêm — chỉ áp dụng 247Express đã kích hoạt */}
+                          {carrier.key === '247Express' && enabled && (
+                            <div style={{ padding: '10px 12px', borderTop: `1px solid ${carrier.color}20` }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>
+                                  ClientHubID đã cấp ({(agency.clientHubIds ?? []).length})
+                                </span>
+                                {addingHubFor !== carrier.key && (
+                                  <button
+                                    onClick={() => { setAddingHubFor(carrier.key); setNewHubId('') }}
+                                    style={{ padding: '3px 10px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', color: carrier.color, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                                  >
+                                    + Cấp thêm Hub
+                                  </button>
+                                )}
+                              </div>
+
+                              {(agency.clientHubIds ?? []).length === 0 ? (
+                                <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa cấp ClientHubID nào.</div>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  {(agency.clientHubIds ?? []).map(hubId => {
+                                    const hubInfo = clientHubs247.find(h => h.id === hubId)
+                                    return (
+                                      <div key={hubId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                                        <span style={{ fontFamily: 'monospace', fontWeight: 700, color: carrier.color }}>{hubId}</span>
+                                        <span style={{ color: C_TEXT_SECONDARY }}>{hubInfo?.name ?? '(không rõ hub)'}</span>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+
+                              {addingHubFor === carrier.key && (
+                                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                                  <select
+                                    value={newHubId}
+                                    onChange={e => setNewHubId(e.target.value)}
+                                    style={{ flex: 1, padding: '5px 8px', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_PRIMARY }}
+                                  >
+                                    <option value="">— Chọn ClientHubID —</option>
+                                    {clientHubs247.filter(h => !(agency.clientHubIds ?? []).includes(h.id)).map(h => (
+                                      <option key={h.id} value={h.id}>{h.id} — {h.name}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => setAddingHubFor(null)}
+                                    style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', fontSize: 12, cursor: 'pointer', color: C_TEXT_SECONDARY }}
+                                  >
+                                    Huỷ
+                                  </button>
+                                  <button
+                                    onClick={() => { grantAdditionalHub(agency.id, newHubId); setAddingHubFor(null); forceRender(n => n + 1) }}
+                                    disabled={!newHubId}
+                                    style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: newHubId ? carrier.color : '#D1D5DB', color: '#fff', fontSize: 12, fontWeight: 700, cursor: newHubId ? 'pointer' : 'not-allowed' }}
+                                  >
+                                    Cấp
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

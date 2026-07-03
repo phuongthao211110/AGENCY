@@ -5,7 +5,6 @@ import SuperAdminLogin from './platforms/super-admin/pages/Login'
 import Agencies from './platforms/super-admin/pages/Agencies'
 import AgencyCreate from './platforms/super-admin/pages/AgencyCreate'
 import AgencyDetail from './platforms/super-admin/pages/AgencyDetail'
-import Approvals from './platforms/super-admin/pages/Approvals'
 import SuperAdminSettings from './platforms/super-admin/pages/Settings'
 import AccountInfo from './platforms/super-admin/pages/settings/AccountInfo'
 import UserManagement from './platforms/super-admin/pages/settings/UserManagement'
@@ -57,7 +56,6 @@ export default function App() {
           <Route path="agencies" element={<Agencies />} />
           <Route path="agencies/create" element={<AgencyCreate />} />
           <Route path="agencies/:id" element={<AgencyDetail />} />
-          <Route path="approvals" element={<Approvals />} />
           <Route path="settings" element={<SuperAdminSettings />}>
             <Route path="account" element={<AccountInfo />} />
             <Route path="users" element={<UserManagement />} />

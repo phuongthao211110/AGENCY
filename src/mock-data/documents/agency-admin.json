@@ -428,6 +428,164 @@
             "AC5: Nhãn trailing hiển thị đúng đơn vị: Số tiền cố định → 'đ / đơn hàng'. % cước phí tuyến → '% của cước phí tuyến / đơn hàng'.",
             "AC6: Giá trị hợp lệ là số dương. Placeholder gợi ý: 'VD: 10000' cho số tiền cố định, 'VD: 5' cho phần trăm."
           ]
+        },
+        {
+          "id": "AGA-CARRIER-7",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC: Bộ chọn nhà vận chuyển tích hợp trong từng tab",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn thấy bộ chọn nhà vận chuyển ngay bên trong từng tab (Kết nối, Dịch vụ, Bảng giá) thay vì một selector chung ở trên tất cả tab để tương tác rõ ràng hơn với dữ liệu của từng NVC trong mỗi ngữ cảnh.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin truy cập menu \"Thiết lập NVC\"",
+            "Mỗi tab (Kết nối / Dịch vụ / Bảng giá) hiển thị bộ chọn NVC \"Nhà vận chuyển: GHN | 247Express\" ở đầu nội dung tab",
+            "Agency Admin chọn NVC tại một tab → nội dung tab lọc theo NVC được chọn",
+            "Agency Admin chuyển sang tab khác → NVC đã chọn được giữ nguyên"
+          ],
+          "systemFlow": [
+            "Khi trang CarrierSetup khởi tạo, selectedCarrier mặc định là \"GHN\"",
+            "Component CarrierSelector được embed vào nội dung của cả 3 tab, đọc và ghi cùng một state duy nhất",
+            "Khi user chọn NVC khác, selectedCarrier cập nhật → tất cả 3 tab tự re-render nội dung tương ứng",
+            "Tab \"Bảng giá\" không còn bị disabled khi NVC chưa có Shop ID / ClientHubID; hiển thị banner cảnh báo nếu NVC chưa sẵn sàng"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Mỗi tab (Kết nối / Dịch vụ / Bảng giá) hiển thị component CarrierSelector riêng với label \"Nhà vận chuyển:\" và 2 nút: \"GHN\" | \"247Express\" ở đầu nội dung tab.",
+            "AC2: Khi Agency Admin chọn NVC trong bất kỳ tab nào, nội dung của tab đó lọc theo NVC được chọn.",
+            "AC3: Trạng thái NVC đang chọn được chia sẻ giữa các tab (shared state) — chuyển tab không reset lại về GHN.",
+            "AC4: Tab \"Bảng giá\" luôn có thể click bất kể NVC đã có Shop ID / ClientHubID hay chưa — không còn bị disabled.",
+            "AC5: Khi NVC chưa sẵn sàng (GHN chưa có Shop ID kết nối, hoặc 247Express chưa được kích hoạt / chưa có ClientHubID), tab \"Bảng giá\" hiển thị banner cảnh báo thay vì chặn truy cập.",
+            "AC6: CarrierSelector là một component tái sử dụng, được embed vào cả 3 tab từ cùng một implementation — không duplicate code selector."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-8",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC - Bảng giá 247Express: Selector dịch vụ và cấu trúc zone block",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn tạo bảng giá cho 247Express bằng cách chọn từng dịch vụ cụ thể và cấu hình giá theo từng zone dưới dạng card riêng biệt để mỗi dịch vụ có cấu hình độc lập và không ảnh hưởng lẫn nhau trong cùng một lần tạo bảng giá.",
+          "notes": [
+            "Kiến trúc zone block tương đồng với PricingCreate.tsx (GHN \"tuyến\" route blocks) — tham khảo pattern đó khi implement",
+            "3 dịch vụ 247Express là KHÔNG thể hoán đổi — giá vốn và cấu trúc zone của mỗi dịch vụ là khác nhau hoàn toàn"
+          ],
+          "userFlow": [
+            "Agency Admin truy cập Thiết lập NVC → tab Bảng giá → chọn NVC \"247Express\" → click \"Thêm bảng giá\"",
+            "Hệ thống mở trang \"Tạo bảng giá 247Express\"",
+            "Trang hiển thị 3 tab dịch vụ: \"Chuyển phát nhanh\" / \"Chuyển phát nhanh tiết kiệm\" / \"Chuyển phát đường bộ\"",
+            "Agency Admin chọn một tab dịch vụ → nội dung hiển thị các zone block tương ứng",
+            "Mỗi zone được hiển thị dạng card có viền trái màu sắc, tên zone, và các field nhập giá bán kèm giá vốn tham chiếu",
+            "Agency Admin cấu hình lần lượt các dịch vụ → dữ liệu mỗi dịch vụ được lưu độc lập khi chuyển tab",
+            "Agency Admin hoàn tất và submit bảng giá"
+          ],
+          "systemFlow": [
+            "Trang khởi tạo state độc lập cho từng dịch vụ (3 slice riêng biệt)",
+            "Khi chuyển tab dịch vụ, hệ thống giữ nguyên dữ liệu tab cũ và load dữ liệu tab mới từ state",
+            "\"Chuyển phát nhanh\" có 6 zone, \"Chuyển phát nhanh tiết kiệm\" và \"Chuyển phát đường bộ\" mỗi dịch vụ có 5 zone",
+            "Mỗi zone được render dưới dạng card với toggle \"Vượt cân\" (và \"Phụ phí\" riêng cho Chuyển phát nhanh)",
+            "Khi Agency Admin submit, hệ thống validate và lưu toàn bộ 3 dịch vụ"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Trang \"Tạo bảng giá 247Express\" hiển thị tiêu đề bảng giá kèm ghi chú tham chiếu hợp đồng số 1231/2026/HĐDV-247.",
+            "AC2: Trang có 3 tab dịch vụ ở đầu: \"Chuyển phát nhanh\" / \"Chuyển phát nhanh tiết kiệm\" / \"Chuyển phát đường bộ\". Mặc định chọn tab đầu tiên.",
+            "AC3: Dữ liệu từng tab dịch vụ lưu độc lập — Agency Admin có thể cấu hình cả 3 dịch vụ trong cùng một lần tạo bảng giá mà không mất dữ liệu khi chuyển tab.",
+            "AC4: Mỗi zone được render dưới dạng card riêng biệt có viền trái màu sắc, hiển thị tên zone, và các field nhập giá bán bên cạnh label giá vốn tham chiếu.",
+            "AC5: Tab \"Chuyển phát nhanh\" hiển thị 6 zone card. Tab \"Chuyển phát nhanh tiết kiệm\" và \"Chuyển phát đường bộ\" mỗi tab hiển thị 5 zone card.",
+            "AC6: Mỗi zone card có toggle \"Vượt cân\" — khi bật, hiển thị form cấu hình cước vượt cân theo cú pháp \"Tăng X đồng trên mỗi Y gram\" (nhất quán với PricingCreate GHN).",
+            "AC7: Tab \"Chuyển phát nhanh\" có thêm toggle \"Phụ phí\" trên mỗi zone card; tab \"Chuyển phát nhanh tiết kiệm\" và \"Chuyển phát đường bộ\" không có toggle này."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-9",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC - Bảng giá 247Express: Dịch vụ Chuyển phát nhanh",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn cấu hình bảng giá chi tiết cho dịch vụ \"Chuyển phát nhanh\" của 247Express theo 6 vùng giao và các bậc khối lượng (gram bracket) để xác định giá bán phù hợp với chi phí của từng tuyến.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin mở trang \"Tạo bảng giá 247Express\" → tab \"Chuyển phát nhanh\"",
+            "Hệ thống hiển thị phần cấu hình \"Mốc khối lượng\" chung dùng cho tất cả zone (mặc định: 50g, 100g, 200g, 500g, 1000g, 2000g)",
+            "Agency Admin thêm, xoá hoặc chỉnh sửa các mốc → tất cả 6 zone card cập nhật đồng bộ",
+            "Hệ thống hiển thị 6 zone card: Nội tỉnh 1, Nội tỉnh 2, Đến 300km, Trên 300km, Nội tỉnh 1 HCM↔ĐN/ĐN↔HN, Nội tỉnh 1 HCM↔HN",
+            "Agency Admin nhập giá bán tại từng mốc khối lượng và 2 mức \"+500gr tiếp theo\" (band 2–10kg và >10kg)",
+            "Mỗi ô nhập giá bán hiển thị label \"Giá vốn: X đ\" tham chiếu bên cạnh"
+          ],
+          "systemFlow": [
+            "Phần \"Mốc khối lượng\" là shared config — khi thay đổi, hệ thống cập nhật số hàng của tất cả 6 zone card",
+            "Mỗi zone card render bảng giá theo danh sách mốc hiện tại + 2 hàng bổ sung \"+500gr tiếp theo\" (2–10kg và >10kg)",
+            "Field \"Giá bán\" nhận số nguyên dương, hiển thị format phân cách nghìn (.)",
+            "Giá vốn là dữ liệu tham chiếu cố định từ hợp đồng 247Express, không do Agency Admin nhập"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Chuyển phát nhanh\" có phần cấu hình \"Mốc khối lượng\" chung dùng cho tất cả zone: các mốc gram mặc định 50g, 100g, 200g, 500g, 1000g, 2000g. Agency Admin có thể thêm, xoá, chỉnh sửa mốc. Thay đổi mốc → tất cả 6 zone card cập nhật đồng bộ ngay lập tức.",
+            "AC2: 6 zone card hiển thị đúng thứ tự và tên: (1) Nội tỉnh 1, (2) Nội tỉnh 2, (3) Đến 300km, (4) Trên 300km, (5) Nội tỉnh 1 HCM↔ĐN / ĐN↔HN, (6) Nội tỉnh 1 HCM↔HN.",
+            "AC3: Mỗi zone card hiển thị bảng giá theo mốc khối lượng. Mỗi hàng gồm: nhãn mốc khối lượng, ô nhập \"Giá bán\" (đồng, bắt buộc khi zone được kích hoạt), label \"Giá vốn: X đ\" tham chiếu từ 247Express.",
+            "AC4: Ngoài các mốc khối lượng, mỗi zone có thêm 2 hàng \"+500gr tiếp theo\": một cho band 2–10kg và một cho >10kg, mỗi hàng có ô nhập giá bán và giá vốn tham chiếu riêng.",
+            "AC5: Mỗi zone card có toggle \"Vượt cân\" — khi bật, hiển thị form cấu hình cước vượt cân theo cú pháp \"Tăng X đồng trên mỗi Y gram\".",
+            "AC6: Mỗi zone card có toggle \"Phụ phí\" — khi bật, mở section phụ phí của zone đó (chi tiết tại AGA-CARRIER-10)."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-10",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC - Bảng giá 247Express: Phụ phí & Dịch vụ gia tăng (Chuyển phát nhanh)",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn xem dữ liệu phụ phí theo hợp đồng và tính tổng phụ phí theo điều kiện thực tế (loại hàng, ngoại thành, xe nâng...) trên từng zone của dịch vụ Chuyển phát nhanh 247Express để tham chiếu khi cấu hình giá bán.",
+          "notes": [
+            "Phụ phí và dịch vụ gia tăng chỉ áp dụng cho dịch vụ \"Chuyển phát nhanh\" — không có cho \"Chuyển phát nhanh tiết kiệm\" và \"Chuyển phát đường bộ\""
+          ],
+          "userFlow": [
+            "Agency Admin ở tab \"Chuyển phát nhanh\" của trang tạo bảng giá 247Express",
+            "Tại một zone card, Agency Admin click toggle \"Phụ phí\" → section phụ phí mở ra bên dưới zone đó",
+            "Agency Admin chọn loại hàng hoá, tích checkbox cước hoàn, ngoại thành, nhập số lượng xe nâng",
+            "Hệ thống tự tính và hiển thị tổng phụ phí dựa trên các lựa chọn",
+            "Trang cũng hiển thị các bảng tham chiếu cố định: Dịch vụ gia tăng nhanh, Phí đóng gói, Dịch vụ gia tăng khác"
+          ],
+          "systemFlow": [
+            "Tỷ lệ phụ phí (%, công thức, mức phí cố định) được lưu trong config của trang — không do Agency Admin nhập",
+            "Khi Agency Admin chọn các điều kiện, hệ thống áp công thức từ hợp đồng để tính tổng phụ phí",
+            "Các bảng tham chiếu (Dịch vụ gia tăng nhanh, Phí đóng gói, Dịch vụ gia tăng khác) hiển thị read-only, không lưu vào bảng giá"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Mỗi zone card trong tab \"Chuyển phát nhanh\" có toggle \"Phụ phí\". Khi mở, section hiển thị: dropdown loại hàng hoá (hàng thường / nguyên khối / quá khổ), checkbox \"Cước chuyển hoàn\", checkbox \"Ngoại thành\" (phụ phí 20%), ô nhập số lượng xe nâng, tổng phụ phí được tính tự động.",
+            "AC2: Dữ liệu phụ phí hiển thị đúng theo hợp đồng 1231/2026/HĐDV-247: phụ phí ngoại thành 20%, phụ phí nhiên liệu 24% (hiệu lực 01/05/2026–31/07/2026), phí hàng nguyên khối 10%, phí hàng quá khổ 10%, phí thuê xe nâng 625.000đ/lần.",
+            "AC3: Trang hiển thị bảng tham chiếu \"Dịch vụ gia tăng nhanh\" với 2 loại: Phát trong ngày và Phát hẹn giờ — dưới dạng read-only.",
+            "AC4: Trang hiển thị bảng tham chiếu \"Phí đóng gói\" theo vật liệu đóng gói — dưới dạng read-only.",
+            "AC5: Trang hiển thị bảng \"Dịch vụ gia tăng khác\" với 21 dịch vụ bổ sung (bao gồm: Chụp hình, Khai giá hàng hóa, Hàng đông lạnh, Phí an ninh, và các dịch vụ khác theo hợp đồng) — dưới dạng read-only.",
+            "AC6: Tất cả dữ liệu trong các bảng tham chiếu là read-only — Agency Admin không thể chỉnh sửa."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-11",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC - Bảng giá 247Express: Chuyển phát nhanh tiết kiệm & Chuyển phát đường bộ",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn cấu hình bảng giá cho dịch vụ \"Chuyển phát nhanh tiết kiệm\" và \"Chuyển phát đường bộ\" của 247Express theo 5 vùng giao với cơ chế giá base đến 5kg cộng thêm theo 4 band khối lượng để xác định giá bán phù hợp với từng tuyến.",
+          "notes": [],
+          "userFlow": [
+            "Agency Admin mở trang \"Tạo bảng giá 247Express\" → tab \"Chuyển phát nhanh tiết kiệm\" hoặc \"Chuyển phát đường bộ\"",
+            "Hệ thống hiển thị 5 zone card: Nội tỉnh 1, Nội tỉnh 2, Đến 300km, Đến 1000km, Trên 1000km",
+            "Mỗi zone card có: ô nhập giá \"đến 5kg\" (base price) và 4 ô \"giá cộng thêm mỗi 1kg tiếp theo\" chia theo band",
+            "Mỗi ô hiển thị giá vốn tham chiếu tương ứng",
+            "Agency Admin nhập giá bán tại từng ô và có thể bật toggle \"Vượt cân\" nếu cần"
+          ],
+          "systemFlow": [
+            "5 zone card được render cố định theo schema của từng dịch vụ — không dùng \"Mốc khối lượng\" chung như dịch vụ Chuyển phát nhanh",
+            "Mỗi zone có cấu trúc cố định: 1 ô \"đến 5kg\" + 4 ô \"cộng thêm 1kg\" (đến 50kg / đến 200kg / đến 500kg / trên 500kg)",
+            "Giá vốn là dữ liệu tham chiếu cố định từ hợp đồng — khác nhau giữa 2 dịch vụ",
+            "Dữ liệu tab tiết kiệm và tab đường bộ lưu hoàn toàn độc lập"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Chuyển phát nhanh tiết kiệm\" và tab \"Chuyển phát đường bộ\" mỗi tab hiển thị 5 zone card theo đúng thứ tự: (1) Nội tỉnh 1, (2) Nội tỉnh 2, (3) Đến 300km, (4) Đến 1000km, (5) Trên 1000km.",
+            "AC2: Mỗi zone card có 2 phần cấu hình: (1) Giá \"đến 5kg\" (base price, 1 ô nhập giá bán + giá vốn tham chiếu), (2) \"Giá cộng thêm mỗi 1kg tiếp theo\" với 4 band: đến 50kg / đến 200kg / đến 500kg / trên 500kg — mỗi band có ô nhập giá bán và giá vốn tham chiếu.",
+            "AC3: Hai dịch vụ có cùng cấu trúc zone nhưng giá vốn (247Express cost) khác nhau — hệ thống hiển thị đúng giá vốn theo từng dịch vụ đang chọn.",
+            "AC4: Cả 2 tab đều hiển thị ghi chú rõ ràng: \"Chưa có dữ liệu phụ phí cho dịch vụ này\" — không hiển thị toggle \"Phụ phí\" và không tái sử dụng dữ liệu phụ phí của dịch vụ Chuyển phát nhanh.",
+            "AC5: Mỗi zone card có toggle \"Vượt cân\" — khi bật, hiển thị form cấu hình cước vượt cân theo cú pháp \"Tăng X đồng trên mỗi Y gram\".",
+            "AC6: Dữ liệu của tab Chuyển phát nhanh tiết kiệm và tab Chuyển phát đường bộ lưu độc lập với nhau và với tab Chuyển phát nhanh."
+          ]
         }
       ]
     },

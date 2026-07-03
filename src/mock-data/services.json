@@ -30,14 +30,12 @@
     "serviceTypeId": "DE",
     "priceTableId": "PRC247001",
     "deliveryZones": [
-      "noi-tinh",
-      "lien-tinh-gan",
-      "lien-tinh-xa"
+      { "province": "TP. Hồ Chí Minh", "district": "Tất cả quận/huyện" },
+      { "province": "Đồng Nai", "district": "Tất cả quận/huyện" },
+      { "province": "Hà Nội", "district": "Tất cả quận/huyện" }
     ],
-    "shopConnectionIds": [
-      "sc-001",
-      "sc-002"
-    ]
+    "shopConnectionIds": [],
+    "hubIds": ["HUB-SGN-001"]
   },
   {
     "id": "svc-003",
@@ -69,13 +67,12 @@
     "serviceTypeId": "TF",
     "priceTableId": "PRC247001",
     "deliveryZones": [
-      "noi-tinh",
-      "lien-tinh-gan",
-      "lien-tinh-xa"
+      { "province": "TP. Hồ Chí Minh", "district": "Tất cả quận/huyện" },
+      { "province": "Đồng Nai", "district": "Tất cả quận/huyện" },
+      { "province": "Hà Nội", "district": "Tất cả quận/huyện" }
     ],
-    "shopConnectionIds": [
-      "sc-003"
-    ]
+    "shopConnectionIds": [],
+    "hubIds": ["HUB-SGN-001"]
   },
   {
     "id": "svc-005",
@@ -91,12 +88,11 @@
     "serviceTypeId": "TH",
     "priceTableId": "PRC247001",
     "deliveryZones": [
-      "lien-tinh-gan",
-      "lien-tinh-xa"
+      { "province": "Đồng Nai", "district": "Tất cả quận/huyện" },
+      { "province": "Hà Nội", "district": "Tất cả quận/huyện" }
     ],
-    "shopConnectionIds": [
-      "sc-001"
-    ]
+    "shopConnectionIds": [],
+    "hubIds": ["HUB-SGN-001"]
   },
   {
     "id": "svc-006",
@@ -127,10 +123,9 @@
     "category": "international",
     "serviceTypeId": "IE",
     "priceTableId": "PRC247001",
-    "deliveryZones": [
-      "quoc-te"
-    ],
-    "shopConnectionIds": []
+    "deliveryZones": [],
+    "shopConnectionIds": [],
+    "hubIds": ["HUB-SGN-001"]
   },
   {
     "id": "svc-008",
@@ -145,9 +140,8 @@
     "category": "international",
     "serviceTypeId": "IM",
     "priceTableId": "PRC247001",
-    "deliveryZones": [
-      "quoc-te"
-    ],
-    "shopConnectionIds": []
+    "deliveryZones": [],
+    "shopConnectionIds": [],
+    "hubIds": ["HUB-SGN-001"]
   }
 ]

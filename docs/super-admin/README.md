@@ -39,3 +39,10 @@ _Chưa có stories_
 ## Cài đặt - Thông tin tài khoản
 
 _Chưa có stories_
+
+## Duyệt yêu cầu
+
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [GSA] Duyệt yêu cầu: Duyệt kết nối Shop ID GHN của đại lý | [duyet-ket-noi-shop-id-ghn.md](./approvals/duyet-ket-noi-shop-id-ghn.md) | — | [Draft] |
+| [GSA] Duyệt yêu cầu: Duyệt kích hoạt nhà vận chuyển mới (247Express) | [duyet-kich-hoat-nha-van-chuyen-moi.md](./approvals/duyet-kich-hoat-nha-van-chuyen-moi.md) | — | [Draft] |

@@ -22,15 +22,50 @@ function shopCalcTierFee(amount: number, tiers: ShopFeeTier[]): number {
   return Math.round(amount * parseFloat(tier.percentFee) / 100 + parseFloat(tier.fixedFee))
 }
 
-// Phí ship = tra theo bảng giá (zones × weight) của dịch vụ — chưa có ô nhập tỉnh gửi/nhận
-// trên form nên tạm lấy vùng đầu tiên (rẻ nhất/gần nhất) của bảng giá làm mặc định.
-function shopFeeFromPriceTable(service: AgencyService, weightGram: number): number {
+// 10 tỉnh đủ để demo (không phải danh sách 63 tỉnh thật) — dùng đúng token 'TP.HCM' như
+// zones trong pricing.json (GHN) để match được theo tuyến, khác với 'TP. Hồ Chí Minh' ở
+// ServiceDetail.tsx (agency-admin, chỉ hiển thị, không cần khớp dữ liệu bảng giá).
+const PROVINCES = [
+  'Hà Nội', 'TP.HCM', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ',
+  'Bình Dương', 'Đồng Nai', 'Bà Rịa - Vũng Tàu', 'Quảng Ninh', 'Nghệ An',
+]
+
+// Dùng để ước lượng vùng cho 247Express (không có from/to như GHN, tính theo miền)
+const PROVINCE_REGION: Record<string, 'bac' | 'trung' | 'nam'> = {
+  'Hà Nội': 'bac', 'Hải Phòng': 'bac', 'Quảng Ninh': 'bac',
+  'Đà Nẵng': 'trung', 'Nghệ An': 'trung',
+  'TP.HCM': 'nam', 'Bình Dương': 'nam', 'Đồng Nai': 'nam', 'Bà Rịa - Vũng Tàu': 'nam', 'Cần Thơ': 'nam',
+}
+
+function parseProvince(address: string): string {
+  const parts = address.split(',')
+  return parts[parts.length - 1].trim()
+}
+
+// GHN: zones có {from,to,label} cố định theo tuyến, có zone "Khác" làm fallback.
+// 247Express: zones chỉ có {label} (Nội tỉnh/Liên tỉnh gần/xa/Quốc tế) vì tính theo
+// ClientHubID + khoảng cách thật qua API — ở đây ước lượng vùng theo miền cho demo.
+function resolveZoneIndex(priceTable: any, fromProvince: string, toProvince: string): number {
+  const zones: any[] = priceTable.zones ?? []
+  const isRouteBased = zones.length > 0 && 'from' in zones[0]
+  if (isRouteBased) {
+    let idx = zones.findIndex(z => z.from === fromProvince && z.to === toProvince)
+    if (idx === -1) idx = zones.findIndex(z => z.from === fromProvince && z.to === 'Khác')
+    return idx === -1 ? 0 : idx
+  }
+  if (fromProvince === toProvince) return 0
+  return PROVINCE_REGION[fromProvince] === PROVINCE_REGION[toProvince] ? 1 : 2
+}
+
+// Phí ship = tra theo bảng giá (zones × weight) của dịch vụ, đúng theo tuyến gửi → nhận.
+function shopFeeFromPriceTable(service: AgencyService, weightGram: number, fromProvince: string, toProvince: string): number {
   const priceTable = service.priceTableId ? (allPricing as any[]).find(p => p.id === service.priceTableId) : null
   if (!priceTable) return 0
   const weights: { max: number }[] = priceTable.weights ?? []
   const weightIndex = weights.findIndex(w => weightGram <= w.max)
   const row = priceTable.prices?.[weightIndex === -1 ? weights.length - 1 : weightIndex]
-  return row?.[0] ?? 0
+  const zoneIndex = resolveZoneIndex(priceTable, fromProvince, toProvince)
+  return row?.[zoneIndex] ?? row?.[0] ?? 0
 }
 
 // ── Icons (Tabler-style SVG) ─────────────────────────────────
@@ -292,6 +327,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const [rcvName, setRcvName]                   = useState('Nguyễn Văn An')
   const [rcvPhone, setRcvPhone]                 = useState('0909888999')
   const [rcvStreet, setRcvStreet]               = useState('123 Thành Thái')
+  const [rcvProvince, setRcvProvince]           = useState(() => parseProvince(allShops.find(s => s.id === 'SHP001')!.address))
   const [productName, setProductName]           = useState('')
   const [qty, setQty]                           = useState(1)
   const [price, setPrice]                       = useState(0)
@@ -313,6 +349,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const shopConnectionId = (currentShop as any).connectionId as string | undefined
   const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
   const weightGram = Number(convertedWeight) * 1000
+  const fromProvince = parseProvince(currentShop.address)
 
   // Dịch vụ hiển thị cho shop = dịch vụ đại lý đang bật (Mặc định) và có gán Shop ID này —
   // carrier không hiển thị ra đây, đúng nguyên tắc shop không biết nhà vận chuyển nào xử lý đơn.
@@ -330,7 +367,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   )
   const cheapestInGroup = (group: AgencyService[]) =>
     group.reduce((min, s) =>
-      shopFeeFromPriceTable(s, weightGram) < shopFeeFromPriceTable(min, weightGram) ? s : min
+      shopFeeFromPriceTable(s, weightGram, fromProvince, rcvProvince) < shopFeeFromPriceTable(min, weightGram, fromProvince, rcvProvince) ? s : min
     )
 
   const [selectedServiceName, setSelectedServiceName] = useState<string>(serviceGroups[0]?.[0]?.name ?? '')
@@ -347,7 +384,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     : null
   const surcharges       = (priceTable?.surcharges ?? {}) as ShopPricingSurcharges
 
-  const feeShipping = selectedService ? shopFeeFromPriceTable(selectedService, weightGram) : 0
+  const feeShipping = selectedService ? shopFeeFromPriceTable(selectedService, weightGram, fromProvince, rcvProvince) : 0
   const feeInsurance     = declareValue && goodsValue > 0
     ? shopCalcTierFee(goodsValue, surcharges.insurance ?? [])
     : 0
@@ -408,6 +445,22 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           {value || placeholder}
         </span>
         <IcChevronDown size={20} />
+      </div>
+    )
+  }
+
+  /** Select field thật (khác FieldDropdown — có onChange), cùng style bg-F9FAFB + chevron */
+  function FieldSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+    return (
+      <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 12, width: '100%', position: 'relative' }}>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', border: 'none', outline: 'none', background: 'transparent', appearance: 'none', cursor: 'pointer' }}
+        >
+          {options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+        <div style={{ pointerEvents: 'none' }}><IcChevronDown size={20} /></div>
       </div>
     )
   }
@@ -529,7 +582,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <FieldInput value={rcvStreet} onChange={setRcvStreet} placeholder="Số nhà, tên đường" />
 
                 {/* City dropdown */}
-                <FieldDropdown value="Phường Diên Hồng, Hồ Chí Minh" />
+                <FieldSelect value={rcvProvince} onChange={setRcvProvince} options={PROVINCES} />
               </div>
             </div>
 
@@ -774,7 +827,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 ) : serviceGroups.map((group) => {
                   const name = group[0].name
                   const selected = selectedServiceName === name
-                  const fee = shopFeeFromPriceTable(cheapestInGroup(group), weightGram)
+                  const fee = shopFeeFromPriceTable(cheapestInGroup(group), weightGram, fromProvince, rcvProvince)
                   return (
                     <div
                       key={name}

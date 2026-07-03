@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   PlusOutlined,
@@ -10,7 +10,7 @@ import {
   CloseOutlined,
 } from '@ant-design/icons'
 import allPriceTables from '../../../mock-data/pricing.json'
-import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247 } from '../../super-admin/agencyStore'
+import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, type ClientHub247 } from '../../super-admin/agencyStore'
 import AgencyServices from './AgencyServices'
 
 const CURRENT_AGENCY_ID = 'AGN001'
@@ -189,49 +189,122 @@ function AddShopModal({ carrier, onClose, onRequestSent }: { carrier: CarrierKey
   )
 }
 
+// ─── Modal: Yêu cầu thêm ClientHubID (chỉ hiện khi 247Express đã kích hoạt) ────
+function RequestHubModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (note: string) => void }) {
+  const [note, setNote] = useState('')
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: '#fff', borderRadius: 12, width: 480, boxShadow: '0 20px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#7C3AED', display: 'inline-block' }} />
+            <span style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY }}>Yêu cầu thêm ClientHubID</span>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: C_TEXT_SECONDARY, fontSize: 18, lineHeight: 1 }}>
+            <CloseOutlined />
+          </button>
+        </div>
+        <div style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0369A1' }}>Về việc cấp thêm Hub</div>
+            <div style={{ fontSize: 13, color: '#0C4A6E', lineHeight: 1.5 }}>Gửi yêu cầu để Super Admin phân thêm một ClientHubID (điểm lấy hàng) khác cho đại lý — ví dụ khi mở rộng kho hàng sang khu vực mới.</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_LABEL }}>Ghi chú (tùy chọn)</label>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Nêu lý do hoặc khu vực cần thêm điểm lấy hàng..."
+              rows={3}
+              style={{ width: '100%', padding: '8px 10px', border: `1px solid ${C_BORDER}`, borderRadius: 8, fontSize: 13, color: C_TEXT_PRIMARY, resize: 'vertical', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C_BORDER}`, background: '#FAFAFA' }}>
+          <button onClick={onClose} style={{ padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'pointer', fontWeight: 500 }}>
+            Huỷ
+          </button>
+          <button onClick={() => onSubmit(note)} style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: C_ACTION, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            Gửi yêu cầu
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Tab: Kết nối — 247Express ────────────────────────────────────────────────
 function TabConnect247() {
   const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
-  const clientHubId = agency?.clientHubId
-  const hub = clientHubId ? clientHubs247.find(h => h.id === clientHubId) : null
-  const isActivated = !!clientHubId && !!hub
-
-  const agencyShops = shopConnections.filter(
-    s => s.agencyId === CURRENT_AGENCY_ID && s.status === 'active'
+  const hubs = (agency?.clientHubIds ?? []).map(id => clientHubs247.find(h => h.id === id)).filter((h): h is ClientHub247 => !!h)
+  const isActivated = hubs.length > 0
+  const [showRequestModal, setShowRequestModal] = useState(false)
+  const [, forceRender] = useState(0)
+  const pendingHubRequest = carrierRequests.find(
+    r => r.agencyId === CURRENT_AGENCY_ID && r.carrier === '247Express' && r.status === 'pending'
   )
+
+  const handleSubmitRequest = (note: string) => {
+    addCarrierRequest(CURRENT_AGENCY_ID, '247Express', note)
+    setShowRequestModal(false)
+    forceRender(n => n + 1)
+  }
 
   return (
     <>
+      {showRequestModal && (
+        <RequestHubModal onClose={() => setShowRequestModal(false)} onSubmit={handleSubmitRequest} />
+      )}
+
       {/* Info banner */}
       <div style={{ margin: '12px 16px 0', padding: '12px 16px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#0369A1', marginBottom: 4 }}>Về kết nối 247Express</div>
         <div style={{ fontSize: 13, color: '#0C4A6E', lineHeight: 1.6 }}>
           247Express hoạt động ở <strong>cấp độ đại lý</strong> — không cần kết nối từng Shop ID riêng lẻ như GHN.
-          Super Admin sẽ phân <strong>ClientHubID (Mã điểm lấy hàng)</strong> cho đại lý.
-          Sau khi kích hoạt, tất cả shop của đại lý đều có thể sử dụng 247Express qua Hub được phân.
+          Super Admin sẽ phân <strong>một hoặc nhiều ClientHubID (Mã điểm lấy hàng)</strong> cho đại lý.
+          Sau khi kích hoạt, tất cả shop của đại lý đều có thể sử dụng 247Express qua các Hub được phân.
         </div>
       </div>
 
       {/* Hub assignment card */}
       <div style={{ margin: '12px 16px 0', padding: '16px', border: `1px solid ${C_BORDER}`, borderRadius: 8, background: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>Điểm lấy hàng được phân (ClientHubID)</span>
-          {isActivated
-            ? <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', fontWeight: 600 }}>Đã kích hoạt</span>
-            : <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#F9FAFB', color: '#9CA3AF', border: `1px solid ${C_BORDER}` }}>Chưa kích hoạt</span>
-          }
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>Điểm lấy hàng được phân (ClientHubID) {isActivated && `(${hubs.length})`}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isActivated
+              ? <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', fontWeight: 600 }}>Đã kích hoạt</span>
+              : <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#F9FAFB', color: '#9CA3AF', border: `1px solid ${C_BORDER}` }}>Chưa kích hoạt</span>
+            }
+            {isActivated && (
+              pendingHubRequest ? (
+                <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#FEF3C7', color: '#D97706', border: '1px solid #FDE68A', fontWeight: 600 }}>Chờ duyệt thêm Hub</span>
+              ) : (
+                <button
+                  onClick={() => setShowRequestModal(true)}
+                  style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', color: '#7C3AED', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                >
+                  + Yêu cầu thêm ClientHubID
+                </button>
+              )
+            )}
+          </div>
         </div>
 
         {isActivated ? (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '4px 0' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 8, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>
-              📦
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#7C3AED' }}>{hub!.id}</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{hub!.name}</span>
-              <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>📍 {hub!.location}</span>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {hubs.map(hub => (
+              <div key={hub.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '4px 0', borderTop: `1px solid ${C_BORDER}`, paddingTop: 12 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 8, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>
+                  📦
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#7C3AED' }}>{hub.id}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{hub.name}</span>
+                  <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>📍 {hub.location}</span>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div style={{ padding: '20px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 13, lineHeight: 1.6 }}>
@@ -242,53 +315,6 @@ function TabConnect247() {
         )}
       </div>
 
-      {/* Shops using 247Express */}
-      {isActivated && (
-        <>
-          <div style={{ padding: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
-              Shop đang sử dụng 247Express ({agencyShops.length})
-            </span>
-            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>— Tất cả shop hoạt động của đại lý</span>
-          </div>
-
-          <div style={{ padding: '8px 16px 0' }}>
-            <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-              {[
-                { label: 'Tên shop', flex: '2 0 0', minWidth: 200 },
-                { label: 'Số điện thoại', flex: '1 0 0', minWidth: 130 },
-                { label: 'Shop ID (GHN)', flex: '1 0 0', minWidth: 130 },
-              ].map((col, i) => (
-                <div key={i} style={{ flex: col.flex, minWidth: col.minWidth, padding: '6px 8px' }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>{col.label}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ height: 1, background: C_BORDER }} />
-
-            {agencyShops.length === 0 ? (
-              <div style={{ padding: '16px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 13 }}>
-                Chưa có shop nào kết nối GHN. Vào tab GHN → Kết nối để thêm shop trước.
-              </div>
-            ) : agencyShops.map(s => (
-              <React.Fragment key={s.id}>
-                <div style={{ display: 'flex', alignItems: 'center', background: '#fff' }}>
-                  <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK }}>{s.name}</span>
-                  </div>
-                  <div style={{ flex: '1 0 0', minWidth: 130, padding: '6px 8px' }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{s.phone}</span>
-                  </div>
-                  <div style={{ flex: '1 0 0', minWidth: 130, padding: '6px 8px' }}>
-                    <span style={{ fontSize: 13, fontFamily: 'monospace', color: C_TEXT_SECONDARY }}>{s.shopId}</span>
-                  </div>
-                </div>
-                <div style={{ height: 1, background: C_BORDER }} />
-              </React.Fragment>
-            ))}
-          </div>
-        </>
-      )}
     </>
   )
 }
@@ -430,7 +456,7 @@ function TabPricing247() {
   const [search, setSearch]   = useState('')
 
   const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
-  const isActivated = !!agency?.clientHubId
+  const isActivated = (agency?.clientHubIds ?? []).length > 0
 
   const filtered = (allPriceTables as any[]).filter(
     (pt) => pt.nvc === '247Express' &&
@@ -702,6 +728,61 @@ function CarrierRequestModal({ carrier, onClose, onSubmit }: {
   )
 }
 
+// ─── Carrier selector — embedded inside each section tab ─────────────────────
+function CarrierSelector({ selectedCarrier, onSelect, allowedCarriers, onRequestCarrier }: {
+  selectedCarrier: CarrierKey
+  onSelect: (c: CarrierKey) => void
+  allowedCarriers: string[]
+  onRequestCarrier: (c: typeof CARRIERS[number]) => void
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px 8px', flexShrink: 0 }}>
+      <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginRight: 4 }}>Nhà vận chuyển:</span>
+      {CARRIERS.map((c) => {
+        const active = selectedCarrier === c.key
+        const enabled = allowedCarriers.includes(c.key)
+        const pendingReq = !enabled && carrierRequests.find(
+          r => r.agencyId === CURRENT_AGENCY_ID && r.carrier === c.key && r.status === 'pending'
+        )
+        return (
+          <button
+            key={c.key}
+            onClick={() => {
+              if (enabled) onSelect(c.key)
+              else if (!pendingReq) onRequestCarrier(c)
+            }}
+            title={pendingReq ? 'Đang chờ Super Admin duyệt' : undefined}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+              transition: 'all 0.15s',
+              cursor: enabled ? 'pointer' : (pendingReq ? 'default' : 'pointer'),
+              border: enabled
+                ? (active ? `1.5px solid ${c.color}` : `1.5px solid ${C_BORDER}`)
+                : (pendingReq ? '1.5px solid #FCD34D' : `1.5px dashed ${C_BORDER}`),
+              background: enabled ? (active ? `${c.color}12` : '#fff') : (pendingReq ? '#FFFBEB' : '#F9FAFB'),
+              color: enabled ? (active ? c.color : C_TEXT_SECONDARY) : (pendingReq ? '#D97706' : '#9CA3AF'),
+            }}
+          >
+            {enabled ? (
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: active ? c.color : '#D1D5DB', flexShrink: 0 }} />
+            ) : pendingReq ? (
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ flexShrink: 0 }}>
+                <circle cx="5" cy="5" r="4" stroke="#D97706" strokeWidth="1.2"/>
+                <path d="M5 3v2.2l1.3 1.3" stroke="#D97706" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              <PlusOutlined style={{ fontSize: 10 }} />
+            )}
+            {c.label}
+            {pendingReq && <span style={{ fontSize: 10, background: '#FEF3C7', color: '#D97706', borderRadius: 8, padding: '1px 6px', fontWeight: 700 }}>Chờ duyệt</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function CarrierSetup() {
   const { tab } = useParams<{ tab?: string }>()
@@ -715,26 +796,6 @@ export default function CarrierSetup() {
   const [selectedCarrier, setSelectedCarrier] = useState<CarrierKey>('GHN')
   const [requestModalCarrier, setRequestModalCarrier] = useState<typeof CARRIERS[number] | null>(null)
   const [, forceRender] = useState(0)
-
-  // Carrier-aware: GHN needs active shops; 247Express needs clientHubId
-  const isCarrierReady = (carrier: CarrierKey): boolean => {
-    if (carrier === '247Express') return !!agency?.clientHubId
-    return shopConnections.some(
-      s => s.agencyId === CURRENT_AGENCY_ID && s.carrier === carrier && s.status === 'active'
-    )
-  }
-
-  const carrierReady = isCarrierReady(selectedCarrier)
-
-  const disabledTabTitle = selectedCarrier === '247Express'
-    ? 'Cần kích hoạt 247Express từ Super Admin'
-    : 'Cần có ít nhất 1 Shop ID được duyệt'
-
-  useEffect(() => {
-    if (!carrierReady && activeTab === 'pricing') {
-      setActiveTab('connect')
-    }
-  }, [selectedCarrier])
 
   const handleSubmitCarrierRequest = (note: string) => {
     if (!requestModalCarrier) return
@@ -766,62 +827,14 @@ export default function CarrierSetup() {
         </div>
       </div>
 
-      {/* Carrier selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px 12px', flexShrink: 0 }}>
-        <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginRight: 4 }}>Nhà vận chuyển:</span>
-        {CARRIERS.map((c) => {
-          const active = selectedCarrier === c.key
-          const enabled = allowedCarriers.includes(c.key)
-          const pendingReq = !enabled && carrierRequests.find(
-            r => r.agencyId === CURRENT_AGENCY_ID && r.carrier === c.key && r.status === 'pending'
-          )
-          return (
-            <button
-              key={c.key}
-              onClick={() => {
-                if (enabled) setSelectedCarrier(c.key)
-                else if (!pendingReq) setRequestModalCarrier(c)
-              }}
-              title={pendingReq ? 'Đang chờ Super Admin duyệt' : undefined}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                transition: 'all 0.15s',
-                cursor: enabled ? 'pointer' : (pendingReq ? 'default' : 'pointer'),
-                border: enabled
-                  ? (active ? `1.5px solid ${c.color}` : `1.5px solid ${C_BORDER}`)
-                  : (pendingReq ? '1.5px solid #FCD34D' : `1.5px dashed ${C_BORDER}`),
-                background: enabled ? (active ? `${c.color}12` : '#fff') : (pendingReq ? '#FFFBEB' : '#F9FAFB'),
-                color: enabled ? (active ? c.color : C_TEXT_SECONDARY) : (pendingReq ? '#D97706' : '#9CA3AF'),
-              }}
-            >
-              {enabled ? (
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: active ? c.color : '#D1D5DB', flexShrink: 0 }} />
-              ) : pendingReq ? (
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ flexShrink: 0 }}>
-                  <circle cx="5" cy="5" r="4" stroke="#D97706" strokeWidth="1.2"/>
-                  <path d="M5 3v2.2l1.3 1.3" stroke="#D97706" strokeWidth="1.2" strokeLinecap="round"/>
-                </svg>
-              ) : (
-                <PlusOutlined style={{ fontSize: 10 }} />
-              )}
-              {c.label}
-              {pendingReq && <span style={{ fontSize: 10, background: '#FEF3C7', color: '#D97706', borderRadius: 8, padding: '1px 6px', fontWeight: 700 }}>Chờ duyệt</span>}
-            </button>
-          )
-        })}
-      </div>
-
       {/* Tab bar */}
       <div style={{ display: 'flex', borderBottom: `1px solid ${C_BORDER}`, padding: '0 16px', flexShrink: 0 }}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key
-          const isDisabled = tab.key === 'pricing' && !carrierReady
           return (
             <div key={tab.key}
-              onClick={() => !isDisabled && setActiveTab(tab.key)}
-              title={isDisabled ? disabledTabTitle : undefined}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 14, fontWeight: 600, color: isDisabled ? '#D1D5DB' : (isActive ? C_ACTION : C_TEXT_SECONDARY), cursor: isDisabled ? 'not-allowed' : 'pointer', borderBottom: isActive && !isDisabled ? `2px solid ${C_ACTION}` : '2px solid transparent', marginBottom: -1, userSelect: 'none' as const, transition: 'color 0.15s' }}>
+              onClick={() => setActiveTab(tab.key)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 14, fontWeight: 600, color: isActive ? C_ACTION : C_TEXT_SECONDARY, cursor: 'pointer', borderBottom: isActive ? `2px solid ${C_ACTION}` : '2px solid transparent', marginBottom: -1, userSelect: 'none' as const, transition: 'color 0.15s' }}>
               <span style={{ fontSize: 15 }}>{tab.icon}</span>
               {tab.label}
             </div>
@@ -829,11 +842,26 @@ export default function CarrierSetup() {
         })}
       </div>
 
-      {/* Tab content — scrollable */}
+      {/* Tab content — scrollable. Each tab embeds its own carrier selector */}
       <div style={{ flex: '1 0 0', overflowY: 'auto' }}>
-        {activeTab === 'connect'  && <TabConnect carrier={selectedCarrier} />}
-        {activeTab === 'services' && <AgencyServices carrier={selectedCarrier} />}
-        {activeTab === 'pricing'  && <TabPricing carrier={selectedCarrier} />}
+        {activeTab === 'connect' && (
+          <>
+            <CarrierSelector selectedCarrier={selectedCarrier} onSelect={setSelectedCarrier} allowedCarriers={allowedCarriers} onRequestCarrier={setRequestModalCarrier} />
+            <TabConnect carrier={selectedCarrier} />
+          </>
+        )}
+        {activeTab === 'services' && (
+          <>
+            <CarrierSelector selectedCarrier={selectedCarrier} onSelect={setSelectedCarrier} allowedCarriers={allowedCarriers} onRequestCarrier={setRequestModalCarrier} />
+            <AgencyServices carrier={selectedCarrier} />
+          </>
+        )}
+        {activeTab === 'pricing' && (
+          <>
+            <CarrierSelector selectedCarrier={selectedCarrier} onSelect={setSelectedCarrier} allowedCarriers={allowedCarriers} onRequestCarrier={setRequestModalCarrier} />
+            <TabPricing carrier={selectedCarrier} />
+          </>
+        )}
       </div>
     </div>
   )

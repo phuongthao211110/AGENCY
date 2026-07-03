@@ -219,6 +219,75 @@
           ]
         }
       ]
+    },
+    {
+      "key": "approvals",
+      "title": "Duyệt yêu cầu",
+      "stories": [
+        {
+          "id": "GSA-APV-1",
+          "jiraKey": "",
+          "title": "[GSA] Duyệt yêu cầu: Duyệt kết nối Shop ID GHN của đại lý",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn xem và xử lý các yêu cầu kết nối Shop ID GHN đang chờ duyệt từ các đại lý để kiểm soát việc đại lý nào được phép kết nối tài khoản GHN nào vào hệ thống.",
+          "notes": [],
+          "userFlow": [
+            "Super Admin truy cập menu \"Approvals\"",
+            "Hệ thống hiển thị danh sách yêu cầu đang chờ duyệt; Super Admin có thể lọc theo loại: \"Kết nối Shop ID GHN\" / \"Kích hoạt nhà vận chuyển\"",
+            "Super Admin xem thông tin từng yêu cầu kết nối Shop ID (tên đại lý, tên cửa hàng GHN, Shop ID, SĐT, ngày yêu cầu)",
+            "Super Admin click \"Duyệt\" → xác nhận → yêu cầu được chấp nhận",
+            "Hoặc Super Admin click \"Từ chối\" → nhập lý do từ chối → gửi"
+          ],
+          "systemFlow": [
+            "Khi Agency Admin hoàn thành OTP kết nối Shop ID GHN (AGA-CARRIER-1), hệ thống tạo một pending request trong queue Approvals",
+            "Super Admin load trang Approvals → hệ thống fetch danh sách pending requests phân loại theo loại yêu cầu",
+            "Khi Super Admin duyệt → status request chuyển \"approved\", Shop ID được activate trong tài khoản đại lý",
+            "Khi Super Admin từ chối → status chuyển \"rejected\", lý do từ chối được lưu và đại lý thấy trạng thái bị từ chối trong tab \"Kết nối\" của Thiết lập NVC"
+          ],
+          "crossPlatformImpact": [
+            "Agency Admin — Thiết lập NVC / tab Kết nối: Sau khi được duyệt, Shop ID hiển thị trạng thái \"Đã kết nối\" trong danh sách. Khi bị từ chối, hiển thị trạng thái \"Bị từ chối\" kèm lý do."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Trang Approvals hiển thị danh sách yêu cầu đang chờ duyệt với khả năng lọc theo loại: \"Kết nối Shop ID GHN\" và \"Kích hoạt nhà vận chuyển\".",
+            "AC2: Mỗi yêu cầu kết nối Shop ID trong danh sách hiển thị: Tên đại lý (mã đại lý), Tên cửa hàng GHN, Shop ID, Số điện thoại, Ngày yêu cầu, Trạng thái.",
+            "AC3: Super Admin có thể Approve yêu cầu → Shop ID được kích hoạt trong tài khoản đại lý; Agency Admin thấy Shop ID hiển thị \"Đã kết nối\" trong tab \"Kết nối\" của Thiết lập NVC.",
+            "AC4: Super Admin có thể Reject yêu cầu → bắt buộc nhập lý do từ chối (tối đa 500 ký tự); Agency Admin thấy trạng thái \"Bị từ chối\" kèm lý do trên cùng yêu cầu.",
+            "AC5: Khi không có yêu cầu chờ duyệt thuộc loại \"Kết nối Shop ID GHN\", hệ thống hiển thị trạng thái empty phù hợp."
+          ]
+        },
+        {
+          "id": "GSA-APV-2",
+          "jiraKey": "",
+          "title": "[GSA] Duyệt yêu cầu: Duyệt kích hoạt nhà vận chuyển mới (247Express)",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn xem và xử lý các yêu cầu kích hoạt nhà vận chuyển mới (ví dụ: 247Express) từ đại lý và khi duyệt, gán ClientHubID (Mã điểm lấy hàng) cho đại lý đó để đại lý có thể sử dụng nhà vận chuyển trong hệ thống.",
+          "notes": [],
+          "userFlow": [
+            "Super Admin vào trang Approvals → lọc loại \"Kích hoạt nhà vận chuyển\"",
+            "Hệ thống hiển thị danh sách yêu cầu kích hoạt NVC đang chờ",
+            "Super Admin xem chi tiết yêu cầu: tên đại lý, NVC muốn kích hoạt, ghi chú của đại lý",
+            "Super Admin click \"Duyệt\" → hệ thống hiển thị bước bổ sung: chọn ClientHubID từ danh sách hub khả dụng",
+            "Super Admin chọn ClientHubID → xác nhận duyệt → đại lý được kích hoạt NVC 247Express với hub đã gán",
+            "Hoặc Super Admin click \"Từ chối\" → nhập lý do → gửi"
+          ],
+          "systemFlow": [
+            "Khi Agency Admin submit yêu cầu kích hoạt NVC mới trong tab \"Kết nối\" (kèm ghi chú), hệ thống tạo pending request loại \"carrier-activation\"",
+            "Khi Super Admin duyệt và chọn ClientHubID: hệ thống gán ClientHubID cho agency_id tương ứng, kích hoạt NVC 247Express trong tài khoản đại lý",
+            "Sau khi approved: Agency Admin thấy 247Express \"Đã kích hoạt\" cùng ClientHubID trong tab \"Kết nối\" của Thiết lập NVC",
+            "Khi từ chối: status request chuyển \"rejected\", lý do được lưu"
+          ],
+          "crossPlatformImpact": [
+            "Agency Admin — Thiết lập NVC / tab Kết nối: Sau khi được duyệt, 247Express hiển thị trạng thái \"Đã kích hoạt\" cùng ClientHubID được gán. Agency Admin có thể tạo dịch vụ và bảng giá 247Express."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Trong danh sách Approvals, mỗi yêu cầu kích hoạt NVC hiển thị: Tên đại lý (mã đại lý), Nhà vận chuyển yêu cầu kích hoạt, Ghi chú của đại lý, Ngày yêu cầu.",
+            "AC2: Khi Super Admin click \"Duyệt\" yêu cầu kích hoạt 247Express, hệ thống hiển thị bước bổ sung: dropdown chọn ClientHubID (Mã điểm lấy hàng) bắt buộc từ danh sách hub khả dụng. Không thể xác nhận duyệt khi chưa chọn ClientHubID.",
+            "AC3: Sau khi duyệt thành công, Agency Admin được kích hoạt NVC 247Express và được gán ClientHubID tương ứng. Agency Admin có thể tạo dịch vụ 247Express và bảng giá 247Express.",
+            "AC4: Super Admin có thể từ chối yêu cầu → bắt buộc nhập lý do từ chối (tối đa 500 ký tự); Agency Admin thấy trạng thái \"Bị từ chối\" kèm lý do trong tab \"Kết nối\".",
+            "AC5: Super Admin có thể xem lịch sử các yêu cầu đã xử lý (approved / rejected) bên cạnh danh sách chờ duyệt hiện tại, với thông tin người xử lý và thời gian."
+          ]
+        }
+      ]
     }
   ],
   "history": [
@@ -226,6 +295,11 @@
       "version": "1.0.0",
       "date": "2026-04-15",
       "summary": "Khởi tạo document — Login/Logout, Quản lý Đại lý (7 user stories), Cài đặt"
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-07-02",
+      "summary": "Thêm section Duyệt yêu cầu (GSA-APV-1, GSA-APV-2) — Approvals: kết nối Shop ID GHN và kích hoạt nhà vận chuyển mới"
     }
   ]
 }
