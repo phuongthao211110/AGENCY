@@ -206,19 +206,23 @@ function Toast({ visible }: { visible: boolean }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 // ── Duyệt 247Express — 2 bước: (1) chọn dịch vụ, (2) chọn ClientHubID — cả 2 đều multi-select ──
-function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onConfirm, onCancel }: {
+function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, requestedHubIds, onConfirm, onReject, onCancel }: {
   agencyName: string
   excludeHubIds?: string[]
   excludeServiceIds?: string[]
+  requestedHubIds?: string[]
   onConfirm: (hubIds: string[], serviceIds: string[]) => void
+  onReject: () => void
   onCancel: () => void
 }) {
-  const [step, setStep] = useState<'services' | 'hubs'>('services')
+  // Yêu cầu thêm địa điểm gửi hàng không liên quan tới dịch vụ — bỏ qua bước chọn dịch vụ, vào thẳng bước chọn hub.
+  const [step, setStep] = useState<'services' | 'hubs'>(requestedHubIds ? 'hubs' : 'services')
   const [selectedServices, setSelectedServices] = useState<string[]>([])
-  const [selectedHubs, setSelectedHubs] = useState<string[]>([])
+  const [selectedHubs, setSelectedHubs] = useState<string[]>(requestedHubIds ?? [])
 
   const availableServices = SERVICE_TYPES_247.filter(s => !(excludeServiceIds ?? []).includes(s.id))
   const availableHubs = clientHubs247.filter(h => !(excludeHubIds ?? []).includes(h.id))
+  const canContinueStep1 = selectedServices.length > 0
 
   const toggleService = (id: string) =>
     setSelectedServices(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
@@ -256,11 +260,12 @@ function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onC
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          <button onClick={onReject} style={{ padding: '4px 12px', background: 'none', border: `1px solid #FCA5A5`, borderRadius: 6, fontSize: 12, color: '#DC2626', cursor: 'pointer' }}>Từ chối</button>
           <button onClick={onCancel} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Huỷ</button>
           <button
-            onClick={() => selectedServices.length > 0 && setStep('hubs')}
-            disabled={selectedServices.length === 0}
-            style={{ padding: '4px 14px', background: selectedServices.length > 0 ? '#8B5CF6' : '#D1D5DB', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', cursor: selectedServices.length > 0 ? 'pointer' : 'not-allowed' }}
+            onClick={() => canContinueStep1 && setStep('hubs')}
+            disabled={!canContinueStep1}
+            style={{ padding: '4px 14px', background: canContinueStep1 ? '#8B5CF6' : '#D1D5DB', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', cursor: canContinueStep1 ? 'pointer' : 'not-allowed' }}
           >
             Tiếp tục ({selectedServices.length})
           </button>
@@ -272,7 +277,7 @@ function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onC
   return (
     <div style={{ padding: '10px 12px', background: '#F5F3FF', borderTop: `1px solid #C4B5FD` }}>
       <div style={{ fontSize: 12, color: '#5B21B6', fontWeight: 600, marginBottom: 8 }}>
-        Bước 2/2 — Chọn Mã điểm lấy hàng (ClientHubID) cho <span style={{ color: '#3B82F6' }}>{agencyName}</span>
+        {requestedHubIds ? 'Chọn địa điểm gửi hàng cho' : 'Bước 2/2 — Chọn Địa điểm gửi hàng cho'} <span style={{ color: '#3B82F6' }}>{agencyName}</span>
       </div>
       <div style={{ maxHeight: 200, overflowY: 'auto', border: `1px solid #C4B5FD`, borderRadius: 8, background: '#fff', marginBottom: 8 }}>
         {availableHubs.length === 0 ? (
@@ -282,7 +287,10 @@ function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onC
         ))}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-        <button onClick={() => setStep('services')} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Quay lại</button>
+        {!requestedHubIds && (
+          <button onClick={() => setStep('services')} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Quay lại</button>
+        )}
+        <button onClick={onReject} style={{ padding: '4px 12px', background: 'none', border: `1px solid #FCA5A5`, borderRadius: 6, fontSize: 12, color: '#DC2626', cursor: 'pointer' }}>Từ chối</button>
         <button onClick={onCancel} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Huỷ</button>
         <button
           onClick={() => selectedHubs.length > 0 && onConfirm(selectedHubs, selectedServices)}
@@ -496,7 +504,7 @@ export default function AgencyDetail() {
                     {ALL_CARRIERS.map((carrier) => {
                       const enabled = (agency.allowedCarriers ?? ['GHN']).includes(carrier.key)
                       const isLocked = carrier.key === 'GHN'
-                      const pendingReq = !enabled ? carrierRequests.find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'pending') : undefined
+                      const pendingReq = carrierRequests.find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'pending')
                       const rejectedReq = !enabled && carrierRequests.find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'rejected')
                       return (
                         <div key={carrier.key} style={{ display: 'flex', flexDirection: 'column', gap: 0, border: `1px solid ${enabled ? carrier.color + '40' : (pendingReq ? '#FCD34D' : C_BORDER)}`, borderRadius: 8, overflow: 'hidden', background: enabled ? carrier.color + '08' : (pendingReq ? '#FFFBEB' : '#FAFAFA') }}>
@@ -509,17 +517,7 @@ export default function AgencyDetail() {
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              {pendingReq ? (
-                                <>
-                                  <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#FEF3C7', color: '#D97706' }}>Chờ duyệt</span>
-                                  {approvingCarrierId !== pendingReq.id && (
-                                    <button onClick={() => { setApprovingCarrierId(pendingReq.id); setRejectingCarrierId(null) }} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Duyệt</button>
-                                  )}
-                                  {approvingCarrierId !== pendingReq.id && (
-                                    <button onClick={() => { setRejectingCarrierId(pendingReq.id); setRejectCarrierReason('') }} style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid #E5E7EB`, background: '#fff', color: '#DC2626', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Từ chối</button>
-                                  )}
-                                </>
-                              ) : (
+                              {(enabled || !pendingReq) && (
                                 <>
                                   <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: enabled ? '#F0FDF4' : (rejectedReq ? '#FEF2F2' : '#F3F4F6'), color: enabled ? '#16A34A' : (rejectedReq ? '#DC2626' : '#9CA3AF') }}>
                                     {enabled ? 'Đang hoạt động' : (rejectedReq ? 'Đã từ chối' : 'Chưa kích hoạt')}
@@ -533,6 +531,17 @@ export default function AgencyDetail() {
                                   )}
                                 </>
                               )}
+                              {pendingReq && (
+                                <>
+                                  <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#FEF3C7', color: '#D97706' }}>Chờ duyệt</span>
+                                  {approvingCarrierId !== pendingReq.id && (
+                                    <button onClick={() => { setApprovingCarrierId(pendingReq.id); setRejectingCarrierId(null) }} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Duyệt</button>
+                                  )}
+                                  {approvingCarrierId !== pendingReq.id && (
+                                    <button onClick={() => { setRejectingCarrierId(pendingReq.id); setRejectCarrierReason('') }} style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid #E5E7EB`, background: '#fff', color: '#DC2626', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Từ chối</button>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </div>
                           {/* Pending request detail */}
@@ -541,17 +550,25 @@ export default function AgencyDetail() {
                               <span style={{ fontWeight: 600 }}>Ghi chú từ đại lý: </span>{pendingReq.note}
                             </div>
                           )}
+                          {pendingReq?.requestedHubIds && pendingReq.requestedHubIds.length > 0 && (
+                            <div style={{ padding: '8px 12px', borderTop: '1px solid #FDE68A', background: '#FFFDF0', fontSize: 12, color: '#92400E' }}>
+                              <span style={{ fontWeight: 600 }}>Địa điểm được yêu cầu: </span>
+                              {pendingReq.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
+                            </div>
+                          )}
                           {/* Duyệt form 2 bước: chọn dịch vụ trước, ClientHubID sau — cả 2 multi-select */}
                           {approvingCarrierId === pendingReq?.id && (
                             <CarrierApprovalForm
                               agencyName={agency.name}
                               excludeHubIds={agency.clientHubIds}
                               excludeServiceIds={agency.allowedServices247}
+                              requestedHubIds={pendingReq!.requestedHubIds}
                               onConfirm={(hubIds, serviceIds) => {
                                 approveCarrierRequest(pendingReq!.id, hubIds, serviceIds)
                                 setApprovingCarrierId(null)
                                 forceRender(n => n + 1)
                               }}
+                              onReject={() => { setApprovingCarrierId(null); setRejectingCarrierId(pendingReq!.id); setRejectCarrierReason('') }}
                               onCancel={() => setApprovingCarrierId(null)}
                             />
                           )}
@@ -582,7 +599,7 @@ export default function AgencyDetail() {
                             <div style={{ padding: '10px 12px', borderTop: `1px solid ${carrier.color}20` }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                                 <span style={{ fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>
-                                  ClientHubID đã cấp ({(agency.clientHubIds ?? []).length})
+                                  Địa điểm gửi hàng đã cấp ({(agency.clientHubIds ?? []).length})
                                 </span>
                                 {addingHubFor !== carrier.key && (
                                   <button
@@ -595,7 +612,7 @@ export default function AgencyDetail() {
                               </div>
 
                               {(agency.clientHubIds ?? []).length === 0 ? (
-                                <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa cấp ClientHubID nào.</div>
+                                <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa cấp địa điểm gửi hàng nào.</div>
                               ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                   {(agency.clientHubIds ?? []).map(hubId => {
@@ -617,7 +634,7 @@ export default function AgencyDetail() {
                                     onChange={e => setNewHubId(e.target.value)}
                                     style={{ flex: 1, padding: '5px 8px', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_PRIMARY }}
                                   >
-                                    <option value="">— Chọn ClientHubID —</option>
+                                    <option value="">— Chọn địa điểm gửi hàng —</option>
                                     {clientHubs247.filter(h => !(agency.clientHubIds ?? []).includes(h.id)).map(h => (
                                       <option key={h.id} value={h.id}>{h.id} — {h.name}</option>
                                     ))}

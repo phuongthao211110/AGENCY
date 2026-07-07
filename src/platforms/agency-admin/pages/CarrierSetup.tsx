@@ -189,27 +189,79 @@ function AddShopModal({ carrier, onClose, onRequestSent }: { carrier: CarrierKey
   )
 }
 
-// ─── Modal: Yêu cầu thêm ClientHubID (chỉ hiện khi 247Express đã kích hoạt) ────
-function RequestHubModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (note: string) => void }) {
+// ─── Modal: Yêu cầu thêm địa điểm gửi hàng (chỉ hiện khi 247Express đã kích hoạt) ────
+// Đại lý chỉ được CHỌN từ catalog địa điểm có sẵn (clientHubs247) chưa được phân cho mình —
+// không tự tạo địa điểm mới (đó là việc của Super Admin).
+function RequestHubModal({ availableHubs, onClose, onSubmit }: {
+  availableHubs: ClientHub247[]
+  onClose: () => void
+  onSubmit: (data: { hubIds: string[]; note: string }) => void
+}) {
+  const [selectedHubs, setSelectedHubs] = useState<string[]>([])
   const [note, setNote] = useState('')
+
+  const toggleHub = (id: string) =>
+    setSelectedHubs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{ background: '#fff', borderRadius: 12, width: 480, boxShadow: '0 20px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}` }}>
+      <div style={{ background: '#fff', borderRadius: 12, width: 480, maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}`, position: 'sticky', top: 0, background: '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#7C3AED', display: 'inline-block' }} />
-            <span style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY }}>Yêu cầu thêm ClientHubID</span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY }}>Yêu cầu thêm địa điểm gửi hàng</span>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: C_TEXT_SECONDARY, fontSize: 18, lineHeight: 1 }}>
             <CloseOutlined />
           </button>
         </div>
-        <div style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#0369A1' }}>Về việc cấp thêm Hub</div>
-            <div style={{ fontSize: 13, color: '#0C4A6E', lineHeight: 1.5 }}>Gửi yêu cầu để Super Admin phân thêm một ClientHubID (điểm lấy hàng) khác cho đại lý — ví dụ khi mở rộng kho hàng sang khu vực mới.</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0369A1' }}>Về việc cấp thêm địa điểm gửi hàng</div>
+            <div style={{ fontSize: 13, color: '#0C4A6E', lineHeight: 1.5 }}>Chọn một hoặc nhiều địa điểm có sẵn để Super Admin xem xét và phân thêm cho đại lý — ví dụ khi mở rộng kho hàng sang khu vực mới.</div>
           </div>
+
+          {availableHubs.length === 0 ? (
+            <div style={{ padding: '16px', textAlign: 'center', fontSize: 13, color: C_TEXT_SECONDARY, background: C_BG_HEADER, borderRadius: 8 }}>
+              Không còn địa điểm nào khả dụng — liên hệ Super Admin để tạo thêm.
+            </div>
+          ) : (
+            <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${C_BORDER}` }}>
+              {availableHubs.map((hub, i) => {
+                const isSelected = selectedHubs.includes(hub.id)
+                return (
+                  <div key={hub.id}>
+                    <div
+                      onClick={() => toggleHub(hub.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', cursor: 'pointer', background: isSelected ? '#FFF9F7' : '#fff' }}
+                    >
+                      <div style={{
+                        width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                        border: isSelected ? 'none' : '1.5px solid #D1D5DB',
+                        background: isSelected ? C_ACTION : '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {isSelected && (
+                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                            <path d="M1 3.5L3.8 6.5L9 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#7C3AED', fontFamily: 'monospace' }}>{hub.id}</div>
+                        <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
+                          <span style={{ fontWeight: 500, color: C_TEXT_PRIMARY }}>{hub.name}</span> — {hub.location}
+                        </div>
+                      </div>
+                    </div>
+                    {i < availableHubs.length - 1 && <div style={{ height: 1, background: '#F5F5F5' }} />}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_LABEL }}>Ghi chú (tùy chọn)</label>
             <textarea
@@ -225,8 +277,11 @@ function RequestHubModal({ onClose, onSubmit }: { onClose: () => void; onSubmit:
           <button onClick={onClose} style={{ padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'pointer', fontWeight: 500 }}>
             Huỷ
           </button>
-          <button onClick={() => onSubmit(note)} style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: C_ACTION, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-            Gửi yêu cầu
+          <button
+            disabled={selectedHubs.length === 0}
+            onClick={() => selectedHubs.length > 0 && onSubmit({ hubIds: selectedHubs, note })}
+            style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: selectedHubs.length > 0 ? C_ACTION : '#D1D5DB', color: '#fff', fontSize: 13, fontWeight: 700, cursor: selectedHubs.length > 0 ? 'pointer' : 'not-allowed' }}>
+            Gửi yêu cầu ({selectedHubs.length})
           </button>
         </div>
       </div>
@@ -244,9 +299,10 @@ function TabConnect247() {
   const pendingHubRequest = carrierRequests.find(
     r => r.agencyId === CURRENT_AGENCY_ID && r.carrier === '247Express' && r.status === 'pending'
   )
+  const availableHubs = clientHubs247.filter(h => !(agency?.clientHubIds ?? []).includes(h.id))
 
-  const handleSubmitRequest = (note: string) => {
-    addCarrierRequest(CURRENT_AGENCY_ID, '247Express', note)
+  const handleSubmitRequest = (data: { hubIds: string[]; note: string }) => {
+    addCarrierRequest(CURRENT_AGENCY_ID, '247Express', data.note, data.hubIds)
     setShowRequestModal(false)
     forceRender(n => n + 1)
   }
@@ -254,7 +310,7 @@ function TabConnect247() {
   return (
     <>
       {showRequestModal && (
-        <RequestHubModal onClose={() => setShowRequestModal(false)} onSubmit={handleSubmitRequest} />
+        <RequestHubModal availableHubs={availableHubs} onClose={() => setShowRequestModal(false)} onSubmit={handleSubmitRequest} />
       )}
 
       {/* Info banner */}
@@ -262,7 +318,7 @@ function TabConnect247() {
         <div style={{ fontSize: 13, fontWeight: 700, color: '#0369A1', marginBottom: 4 }}>Về kết nối 247Express</div>
         <div style={{ fontSize: 13, color: '#0C4A6E', lineHeight: 1.6 }}>
           247Express hoạt động ở <strong>cấp độ đại lý</strong> — không cần kết nối từng Shop ID riêng lẻ như GHN.
-          Super Admin sẽ phân <strong>một hoặc nhiều ClientHubID (Mã điểm lấy hàng)</strong> cho đại lý.
+          Super Admin sẽ phân <strong>một hoặc nhiều địa điểm gửi hàng</strong> cho đại lý.
           Sau khi kích hoạt, tất cả shop của đại lý đều có thể sử dụng 247Express qua các Hub được phân.
         </div>
       </div>
@@ -270,7 +326,7 @@ function TabConnect247() {
       {/* Hub assignment card */}
       <div style={{ margin: '12px 16px 0', padding: '16px', border: `1px solid ${C_BORDER}`, borderRadius: 8, background: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>Điểm lấy hàng được phân (ClientHubID) {isActivated && `(${hubs.length})`}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>Địa điểm gửi hàng được phân {isActivated && `(${hubs.length})`}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {isActivated
               ? <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', fontWeight: 600 }}>Đã kích hoạt</span>
@@ -284,7 +340,7 @@ function TabConnect247() {
                   onClick={() => setShowRequestModal(true)}
                   style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', color: '#7C3AED', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                 >
-                  + Yêu cầu thêm ClientHubID
+                  + Yêu cầu thêm địa điểm gửi hàng
                 </button>
               )
             )}
@@ -309,7 +365,7 @@ function TabConnect247() {
         ) : (
           <div style={{ padding: '20px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 13, lineHeight: 1.6 }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>🔒</div>
-            Chưa có ClientHubID được phân.<br />
+            Chưa có địa điểm gửi hàng được phân.<br />
             Liên hệ Super Admin để được kích hoạt 247Express.
           </div>
         )}
@@ -469,7 +525,7 @@ function TabPricing247() {
         <div style={{ margin: '8px 16px 0', padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
           <span style={{ fontSize: 13, color: '#92400E' }}>
-            247Express chưa được kích hoạt. Liên hệ Super Admin để được phân ClientHubID trước khi tạo bảng giá.
+            247Express chưa được kích hoạt. Liên hệ Super Admin để được phân địa điểm gửi hàng trước khi tạo bảng giá.
           </span>
         </div>
       )}
@@ -477,7 +533,7 @@ function TabPricing247() {
       <div style={{ margin: '8px 16px 0', padding: '10px 14px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8 }}>
         <span style={{ fontSize: 13, color: '#0369A1', lineHeight: 1.5 }}>
           Giá trong bảng là <strong>giá bán cho shop</strong> — đã gồm phần chênh lệch đại lý so với chi phí 247Express báo qua API <code>GetPriceForCustomerAPI</code>.
-          Vùng tính theo khoảng cách từ ClientHubID → tỉnh/quận/phường nhận hàng.
+          Vùng tính theo khoảng cách từ địa điểm gửi hàng → tỉnh/quận/phường nhận hàng.
         </span>
       </div>
 

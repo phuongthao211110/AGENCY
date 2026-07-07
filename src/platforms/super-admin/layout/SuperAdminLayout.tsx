@@ -6,6 +6,7 @@ import {
   BellOutlined,
   UserOutlined,
   BankOutlined,
+  EnvironmentOutlined,
   SettingOutlined,
   LogoutOutlined,
   RightOutlined,
@@ -17,6 +18,7 @@ import PlatformSwitcher from '../../../components/PlatformSwitcher'
 
 const NAV_ITEMS = [
   { key: '/super-admin/agencies', icon: <BankOutlined />, label: 'Đại lý' },
+  { key: '/super-admin/hubs-247', icon: <EnvironmentOutlined />, label: 'Địa chỉ lấy hàng 247' },
 ]
 
 const SETTINGS_ITEM = { key: '/super-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }

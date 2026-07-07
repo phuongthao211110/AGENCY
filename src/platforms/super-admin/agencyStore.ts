@@ -143,6 +143,9 @@ export interface CarrierRequest {
   rejectionReason?: string
   hubIds?: string[]
   serviceIds?: string[]
+  // Các ClientHubID có sẵn trong clientHubs247 mà đại lý xin gán thêm (RequestHubModal) —
+  // đại lý chỉ được chọn từ catalog có sẵn, không tự tạo địa điểm mới
+  requestedHubIds?: string[]
 }
 
 export const carrierRequests: CarrierRequest[] = [
@@ -151,12 +154,13 @@ export const carrierRequests: CarrierRequest[] = [
   { id: 'cr-003', agencyId: 'AGN004', carrier: '247Express', status: 'pending', requestedAt: '2025-06-15', note: '' },
 ]
 
-export function addCarrierRequest(agencyId: string, carrier: string, note?: string): CarrierRequest {
+export function addCarrierRequest(agencyId: string, carrier: string, note?: string, requestedHubIds?: string[]): CarrierRequest {
   const req: CarrierRequest = {
     id: `cr-${Date.now()}`,
     agencyId, carrier, status: 'pending',
     requestedAt: new Date().toISOString().slice(0, 10),
     note,
+    ...(requestedHubIds?.length ? { requestedHubIds } : {}),
   }
   carrierRequests.push(req)
   return req
@@ -180,6 +184,20 @@ export function approveCarrierRequest(id: string, hubIds: string[], serviceIds: 
     const newServices = serviceIds.filter(s => !(agency.allowedServices247 ?? []).includes(s))
     if (newServices.length) agency.allowedServices247 = [...(agency.allowedServices247 ?? []), ...newServices]
   }
+}
+
+// Super Admin tạo 1 địa điểm gửi hàng mới vào catalog chung (clientHubs247) — dùng khi
+// duyệt yêu cầu của đại lý mà catalog chưa có địa điểm phù hợp để gán.
+export function createClientHub(data: { address: string; wardName: string; districtName: string; provinceName: string; contactName: string; contactPhone: string }): ClientHub247 {
+  const { address, wardName, districtName, provinceName, contactName, contactPhone } = data
+  const newHub: ClientHub247 = {
+    id: `HUB-NEW-${Date.now()}`,
+    name: `Địa điểm ${districtName}, ${provinceName}`,
+    location: `${address}, ${wardName}, ${districtName}, ${provinceName}`,
+    address, wardName, districtName, provinceName, contactName, contactPhone,
+  }
+  clientHubs247.push(newHub)
+  return newHub
 }
 
 export function rejectCarrierRequest(id: string, reason: string) {

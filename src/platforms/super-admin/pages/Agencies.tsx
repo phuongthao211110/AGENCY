@@ -74,19 +74,23 @@ function RejectInput({ onConfirm, onCancel }: { onConfirm: (r: string) => void; 
 
 // ── Chọn ClientHubID khi duyệt kích hoạt/cấp thêm 247Express ───────────────────
 // ── Duyệt 247Express — 2 bước: (1) chọn dịch vụ, (2) chọn ClientHubID — cả 2 đều multi-select ──
-function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onConfirm, onCancel }: {
+function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, requestedHubIds, onConfirm, onReject, onCancel }: {
   agencyName: string
   excludeHubIds?: string[]
   excludeServiceIds?: string[]
+  requestedHubIds?: string[]
   onConfirm: (hubIds: string[], serviceIds: string[]) => void
+  onReject: () => void
   onCancel: () => void
 }) {
-  const [step, setStep] = useState<'services' | 'hubs'>('services')
+  // Yêu cầu thêm địa điểm gửi hàng không liên quan tới dịch vụ — bỏ qua bước chọn dịch vụ, vào thẳng bước chọn hub.
+  const [step, setStep] = useState<'services' | 'hubs'>(requestedHubIds ? 'hubs' : 'services')
   const [selectedServices, setSelectedServices] = useState<string[]>([])
-  const [selectedHubs, setSelectedHubs] = useState<string[]>([])
+  const [selectedHubs, setSelectedHubs] = useState<string[]>(requestedHubIds ?? [])
 
   const availableServices = SERVICE_TYPES_247.filter(s => !(excludeServiceIds ?? []).includes(s.id))
   const availableHubs = clientHubs247.filter(h => !(excludeHubIds ?? []).includes(h.id))
+  const canContinueStep1 = selectedServices.length > 0
 
   const toggleService = (id: string) =>
     setSelectedServices(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
@@ -124,11 +128,12 @@ function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onC
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          <button onClick={onReject} style={{ padding: '6px 14px', background: 'none', border: `1px solid #FCA5A5`, borderRadius: 6, fontSize: 12, color: '#DC2626', cursor: 'pointer' }}>Từ chối</button>
           <button onClick={onCancel} style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Huỷ</button>
           <button
-            onClick={() => selectedServices.length > 0 && setStep('hubs')}
-            disabled={selectedServices.length === 0}
-            style={{ padding: '6px 18px', background: selectedServices.length > 0 ? '#8B5CF6' : '#D1D5DB', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', cursor: selectedServices.length > 0 ? 'pointer' : 'not-allowed' }}
+            onClick={() => canContinueStep1 && setStep('hubs')}
+            disabled={!canContinueStep1}
+            style={{ padding: '6px 18px', background: canContinueStep1 ? '#8B5CF6' : '#D1D5DB', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', cursor: canContinueStep1 ? 'pointer' : 'not-allowed' }}
           >
             Tiếp tục ({selectedServices.length})
           </button>
@@ -140,7 +145,7 @@ function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onC
   return (
     <div style={{ padding: '12px 12px 10px', background: '#F5F3FF', borderTop: `1px solid #C4B5FD` }}>
       <div style={{ fontSize: 13, color: '#5B21B6', fontWeight: 600, marginBottom: 10 }}>
-        Bước 2/2 — Chọn Mã điểm lấy hàng (ClientHubID) cho <span style={{ color: C_LINK }}>{agencyName}</span>
+        {requestedHubIds ? 'Chọn địa điểm gửi hàng cho' : 'Bước 2/2 — Chọn Địa điểm gửi hàng cho'} <span style={{ color: C_LINK }}>{agencyName}</span>
       </div>
       <div style={{ maxHeight: 220, overflowY: 'auto', border: `1px solid #C4B5FD`, borderRadius: 8, background: '#fff', marginBottom: 10 }}>
         {availableHubs.length === 0 ? (
@@ -150,7 +155,10 @@ function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, onC
         ))}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-        <button onClick={() => setStep('services')} style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Quay lại</button>
+        {!requestedHubIds && (
+          <button onClick={() => setStep('services')} style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Quay lại</button>
+        )}
+        <button onClick={onReject} style={{ padding: '6px 14px', background: 'none', border: `1px solid #FCA5A5`, borderRadius: 6, fontSize: 12, color: '#DC2626', cursor: 'pointer' }}>Từ chối</button>
         <button onClick={onCancel} style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Huỷ</button>
         <button
           onClick={() => selectedHubs.length > 0 && onConfirm(selectedHubs, selectedServices)}
@@ -243,6 +251,11 @@ function QuickApproveModal({ agencyId, agencyName, onClose, onUpdate }: {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>Kích hoạt / cấp thêm hub {r.carrier}</div>
                             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{r.requestedAt}{r.note ? ` · ${r.note}` : ''}</div>
+                            {r.requestedHubIds && r.requestedHubIds.length > 0 && (
+                              <div style={{ fontSize: 12, color: '#92400E', marginTop: 2 }}>
+                                Địa điểm được yêu cầu: {r.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
+                              </div>
+                            )}
                           </div>
                           {!isRejecting && !isApproving && (
                             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
@@ -256,7 +269,9 @@ function QuickApproveModal({ agencyId, agencyName, onClose, onUpdate }: {
                             agencyName={agency?.name ?? r.agencyId}
                             excludeHubIds={agency?.clientHubIds}
                             excludeServiceIds={agency?.allowedServices247}
+                            requestedHubIds={r.requestedHubIds}
                             onConfirm={(hubIds, serviceIds) => handleApproveCarrier(r.id, hubIds, serviceIds)}
+                            onReject={() => { setApprovingId(null); setRejectingId(r.id) }}
                             onCancel={() => setApprovingId(null)}
                           />
                         )}

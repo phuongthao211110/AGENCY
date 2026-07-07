@@ -878,7 +878,7 @@ export default function PricingCreate247() {
           <span style={{ fontSize: 22, fontWeight: 600, color: C_TEXT_PRIMARY }}>Tạo bảng giá 247Express</span>
         </div>
         <p style={{ fontSize: 13, color: C_TEXT_SECONDARY, margin: '0 0 16px 32px', lineHeight: 1.6 }}>
-          Giá nhập ở đây là <strong>giá bán cho shop</strong>. Vùng tính theo khoảng cách đường bộ từ ClientHubID của đại lý.
+          Giá nhập ở đây là <strong>giá bán cho shop</strong>. Vùng tính theo khoảng cách đường bộ từ địa điểm gửi hàng của đại lý.
           247Express có <strong>3 dịch vụ</strong> với vùng tính giá riêng — mỗi bảng giá chỉ ứng với 1 dịch vụ, chọn ở mục "Thông tin bảng giá" bên dưới.
         </p>
 
@@ -1029,7 +1029,7 @@ export default function PricingCreate247() {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
           {!canSave && (
             <span style={{ fontSize: 12, color: '#9CA3AF', alignSelf: 'center' }}>
-              {!hasHub ? 'Đại lý chưa được phân ClientHubID' : 'Nhập tên bảng giá'}
+              {!hasHub ? 'Đại lý chưa được phân địa điểm gửi hàng' : 'Nhập tên bảng giá'}
             </span>
           )}
           <button
