@@ -489,7 +489,7 @@ export default function ServiceDetail() {
         name: editForm.name.trim(), carrier: editForm.carrier, desc: editForm.desc, scope: editForm.scope,
         maxWeightKg: editForm.maxWeightKg, category: editForm.category, enabled: true,
         priceTableId: editForm.carrier === 'GHN' ? editForm.priceTableId : undefined,
-        serviceTypeId: editForm.carrier === '247Express' ? editForm.serviceTypeId : undefined,
+        serviceTypeId: editForm.carrier === '247Express' ? 'DE' : undefined,
         deliveryZones: editForm.carrier === '247Express' ? editForm.deliveryZones : undefined,
         shopConnectionIds: editForm.carrier === 'GHN' ? editForm.shopConnectionIds : [],
         hubIds: editForm.carrier === '247Express' ? editForm.hubIds : undefined,
@@ -532,10 +532,6 @@ export default function ServiceDetail() {
 
   const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
   const agencyHubs = (agency?.clientHubIds ?? []).map(id => clientHubs247.find(h => h.id === id)).filter((h): h is ClientHub247 => !!h)
-  // Chỉ hiện dịch vụ Super Admin đã duyệt cho đại lý — agency cũ chưa có field này thì hiện tất cả
-  const availableServiceTypes = agency?.allowedServices247
-    ? SERVICE_TYPES_247.filter(s => agency.allowedServices247!.includes(s.id))
-    : SERVICE_TYPES_247
 
   const canCreate = !!editForm.name.trim() &&
     (editForm.carrier === '247Express' ? editForm.hubIds.length > 0 : editForm.shopConnectionIds.length > 0)
@@ -700,14 +696,9 @@ export default function ServiceDetail() {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                           <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Mã dịch vụ (ServiceTypeID)</span>
-                          <select
-                            value={editForm.serviceTypeId ?? ''}
-                            onChange={e => setEditForm(f => ({ ...f, serviceTypeId: e.target.value }))}
-                            style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '7px 10px', fontSize: 14, color: C_TEXT_PRIMARY, background: '#fff', outline: 'none', cursor: 'pointer' }}
-                          >
-                            <option value="">— Chọn mã dịch vụ —</option>
-                            {availableServiceTypes.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-                          </select>
+                          <span style={{ fontSize: 14, fontWeight: 500, color: C_TEXT_PRIMARY, padding: '7px 0' }}>
+                            {SERVICE_TYPES_247.find(s => s.id === 'DE')?.label}
+                          </span>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                           <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Bảng giá bán cho shop (Mặc định)</span>

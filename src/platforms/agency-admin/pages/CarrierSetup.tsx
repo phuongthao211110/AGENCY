@@ -299,6 +299,10 @@ function TabConnect247() {
   const pendingHubRequest = carrierRequests.find(
     r => r.agencyId === CURRENT_AGENCY_ID && r.carrier === '247Express' && r.status === 'pending'
   )
+  // Yêu cầu cấp thêm hub gần nhất bị Super Admin từ chối — nếu không hiện rõ, đại lý chỉ thấy
+  // nút "+ Yêu cầu thêm địa điểm gửi hàng" quay lại bình thường, tưởng nhầm là chưa từng gửi.
+  const rejectedHubRequest = !pendingHubRequest &&
+    [...carrierRequests].reverse().find(r => r.agencyId === CURRENT_AGENCY_ID && r.carrier === '247Express' && r.status === 'rejected')
   const availableHubs = clientHubs247.filter(h => !(agency?.clientHubIds ?? []).includes(h.id))
 
   const handleSubmitRequest = (data: { hubIds: string[]; note: string }) => {
@@ -346,6 +350,24 @@ function TabConnect247() {
             )}
           </div>
         </div>
+
+        {/* Yêu cầu gần nhất bị từ chối — nếu không hiện rõ, đại lý chỉ thấy nút yêu cầu quay lại
+            bình thường và không biết Super Admin đã phản hồi (và vì sao). */}
+        {rejectedHubRequest && (
+          <div style={{ marginBottom: 12, padding: '10px 12px', background: '#FFF5F5', border: '1px solid #FCA5A5', borderRadius: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#DC2626', marginBottom: 2 }}>
+              Yêu cầu {isActivated ? 'cấp thêm địa điểm gửi hàng' : 'kích hoạt 247Express'} đã bị từ chối
+            </div>
+            {rejectedHubRequest.requestedHubIds && rejectedHubRequest.requestedHubIds.length > 0 && (
+              <div style={{ fontSize: 12, color: '#7F1D1D' }}>
+                Địa điểm đã yêu cầu: {rejectedHubRequest.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
+              </div>
+            )}
+            <div style={{ fontSize: 12, color: '#7F1D1D' }}>
+              Lý do: {rejectedHubRequest.rejectionReason || '(không có lý do cụ thể)'}
+            </div>
+          </div>
+        )}
 
         {isActivated ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

@@ -5,7 +5,19 @@ import { shopTheme } from '../../../theme/platforms'
 import allOrders from '../../../mock-data/orders.json'
 import allShops from '../../../mock-data/shops.json'
 import allPricing from '../../../mock-data/pricing.json'
+import letterPricingTable from '../../../mock-data/pricing-letter-247.json'
+import roadFreightPricingTable from '../../../mock-data/pricing-roadfreight-247.json'
 import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
+import { agenciesList, clientHubs247 } from '../../super-admin/agencyStore'
+
+// ── Design tokens (hoisted above module-scope consts that reference them) ──
+const C_TEXT_PRIMARY   = '#111827'
+const C_TEXT_BODY      = '#050505'
+const C_TEXT_SECONDARY = '#6B7280'
+const C_LINK           = '#3B82F6'
+const C_ACTION         = '#FF5200'
+const C_BORDER         = '#E5E7EB'
+const C_BG_HEADER      = '#F3F4F6'
 
 // ── Fee calculation helpers ──────────────────────────────────
 type ShopFeeTier = { id: string; fromValue: string; toValue: string; fixedFee: string; percentFee: string }
@@ -30,6 +42,12 @@ const PROVINCES = [
   'Bình Dương', 'Đồng Nai', 'Bà Rịa - Vũng Tàu', 'Quảng Ninh', 'Nghệ An',
 ]
 
+// "Cho thử hàng" bị bỏ theo yêu cầu — 247Express Thư/tài liệu không hỗ trợ cho thử.
+const VIEW_GOODS_OPTIONS: { value: 'none' | 'view_no_try'; label: string }[] = [
+  { value: 'none',         label: 'Không cho xem hàng' },
+  { value: 'view_no_try',  label: 'Cho xem hàng không thử' },
+]
+
 // Dùng để ước lượng vùng cho 247Express (không có from/to như GHN, tính theo miền)
 const PROVINCE_REGION: Record<string, 'bac' | 'trung' | 'nam'> = {
   'Hà Nội': 'bac', 'Hải Phòng': 'bac', 'Quảng Ninh': 'bac',
@@ -40,6 +58,12 @@ const PROVINCE_REGION: Record<string, 'bac' | 'trung' | 'nam'> = {
 function parseProvince(address: string): string {
   const parts = address.split(',')
   return parts[parts.length - 1].trim()
+}
+
+// clientHubs247 dùng tên tỉnh đầy đủ theo API 247Express (VD "TP. Hồ Chí Minh"), trong khi
+// PROVINCE_REGION/PROVINCES ở trên dùng tên rút gọn cho demo (VD "TP.HCM") — quy đổi để tra vùng đúng.
+function hubProvinceLabel(provinceName: string): string {
+  return provinceName === 'TP. Hồ Chí Minh' ? 'TP.HCM' : provinceName
 }
 
 // GHN: zones có {from,to,label} cố định theo tuyến, có zone "Khác" làm fallback.
@@ -85,8 +109,17 @@ function IcCube() {
 function IcClipboard() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><path d="M9 12h6M9 16h4"/></svg>
 }
+function IcReceipt() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+}
 function IcChevronDown({ size = 20 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+}
+function IcChevronRight({ size = 20 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+}
+function IcSearch() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
 }
 function IcTruck() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>
@@ -134,6 +167,28 @@ function CheckboxBlue({ checked, onChange }: { checked: boolean; onChange: () =>
           <path d="M1 4L4.5 7.5L11 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       )}
+    </div>
+  )
+}
+
+// ── 1 dòng dịch vụ gia tăng (DVGT) đơn giản: tick chọn + phí tự tính, không sửa số.
+// disabledReason (nếu có) thay thế note bằng lý do không đủ điều kiện (ví dụ sai khoảng cân nặng)
+// và chặn tick — dùng cho các DVGT có điều kiện theo hợp đồng (ví dụ "chỉ áp dụng TL ≤ 2kg").
+// Popup DVGT chỉ hiển thị tên dịch vụ — không hiển thị giá tiền (kể cả trong mô tả/note gốc,
+// vì các note đó có chứa số tiền theo hợp đồng, VD "5.000đ/vận đơn"). disabledReason vẫn hiển thị
+// vì đó là điều kiện áp dụng (không phải giá tiền), giúp người dùng hiểu vì sao không tick được.
+function VasCheckboxRow({ checked, onChange, label, disabledReason, extra }: {
+  checked: boolean; onChange: () => void; label: string; disabledReason?: string; extra?: React.ReactNode
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, minHeight: 32, padding: '6px 0', opacity: disabledReason ? 0.5 : 1 }}>
+      <div style={{ paddingTop: 2 }}><CheckboxBlue checked={checked && !disabledReason} onChange={disabledReason ? () => {} : onChange} /></div>
+      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap', paddingTop: 1 }}>{label}</span>
+      {disabledReason && (
+        <span style={{ flex: 1, fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px', paddingTop: 3 }}>{disabledReason}</span>
+      )}
+      {!disabledReason && <span style={{ flex: 1 }} />}
+      {extra}
     </div>
   )
 }
@@ -290,17 +345,23 @@ function OrderSettingsModal({ open, onClose }: { open: boolean; onClose: () => v
 }
 
 // ── Shared sub-components (defined outside to keep stable references across renders) ──
-function NumericWithUnit({ value, onChange, unit, width, flex1, disabled }: {
-  value: number; onChange: (v: number) => void; unit: string; width?: number; flex1?: boolean; disabled?: boolean
+function NumericWithUnit({ value, onChange, unit, width, flex1, disabled, readOnly }: {
+  value: number; onChange?: (v: number) => void; unit: string; width?: number; flex1?: boolean; disabled?: boolean; readOnly?: boolean
 }) {
   return (
     <div style={{ background: disabled ? '#F3F4F6' : '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto', ...(flex1 ? { flex: 1, minWidth: 0 } : { width: width ?? 180, flexShrink: 0 }) }}>
-      <input
-        value={value === 0 ? '0' : value.toLocaleString('en-US')}
-        onChange={(e) => onChange(parseFloat(e.target.value.replace(/,/g, '')) || 0)}
-        type="text" disabled={disabled}
-        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
-      />
+      {readOnly ? (
+        <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', lineHeight: '20px', minWidth: 0 }}>
+          {value.toLocaleString('en-US')}
+        </span>
+      ) : (
+        <input
+          value={value === 0 ? '0' : value.toLocaleString('en-US')}
+          onChange={(e) => onChange?.(parseFloat(e.target.value.replace(/,/g, '')) || 0)}
+          type="text" disabled={disabled}
+          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
+        />
+      )}
       <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{unit}</span>
       </div>
@@ -318,6 +379,201 @@ function InfoRow({ label, hint, children }: { label: string; hint?: boolean; chi
       {children}
     </div>
   )
+}
+
+// ── Drawer card/field building blocks (shared by CreateOrderDrawer + CreateLetterDrawer) ──
+const drawerCard: React.CSSProperties = {
+  background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+  display: 'flex', flexDirection: 'column', width: '100%',
+}
+function CardHeader({ icon, label, right }: { icon: React.ReactNode; label: string; right?: React.ReactNode }) {
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+        {icon}
+        <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label}</span>
+        {right}
+      </div>
+      <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+    </>
+  )
+}
+function FieldInput({ value, onChange, placeholder, style: extra }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; style?: React.CSSProperties
+}) {
+  return (
+    <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', ...extra }}>
+      <input
+        value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px' }}
+      />
+    </div>
+  )
+}
+function FieldDropdown({ placeholder, value }: { placeholder?: string; value?: string }) {
+  return (
+    <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', width: '100%' }}>
+      <span style={{ flex: 1, fontSize: 14, color: value ? C_TEXT_PRIMARY : '#9CA3AF', lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {value || placeholder}
+      </span>
+      <IcChevronDown size={20} />
+    </div>
+  )
+}
+function FieldSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 12, width: '100%', position: 'relative' }}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', border: 'none', outline: 'none', background: 'transparent', appearance: 'none', cursor: 'pointer' }}
+      >
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <div style={{ pointerEvents: 'none' }}><IcChevronDown size={20} /></div>
+    </div>
+  )
+}
+function LinkText({ children }: { children: React.ReactNode }) {
+  return <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{children}</span>
+}
+
+// ── 247Express "Thư" (letter) pricing model — mirrors Hợp đồng 1231/2026/HĐDV-247, dịch vụ
+// Chuyển phát nhanh. Zone/khoảng cách thật giữa các tỉnh không có trong data demo (chỉ có
+// PROVINCE_REGION theo miền) nên "Đến 300km"/"Trên 300km" được suy ra từ cùng-miền/khác-miền,
+// và mốc "Đến 100KM" của bảng dịch vụ gia tăng nhanh không bao giờ được chọn tới — đây là
+// giới hạn đã biết của dữ liệu demo, không phải thiếu sót khi đọc hợp đồng.
+const LETTER_HUB_PROVINCE = 'TP.HCM'
+const LETTER_TABLE = letterPricingTable as any
+
+function isSameUnorderedPair(a: string, b: string, pair: [string, string]): boolean {
+  return (a === pair[0] && b === pair[1]) || (a === pair[1] && b === pair[0])
+}
+function resolveLetterMainZone(from: string, to: string): number {
+  if (from === to) return from === LETTER_HUB_PROVINCE ? 0 : 1
+  if (isSameUnorderedPair(from, to, ['TP.HCM', 'Hà Nội'])) return 5
+  if (isSameUnorderedPair(from, to, ['TP.HCM', 'Đà Nẵng']) || isSameUnorderedPair(from, to, ['Đà Nẵng', 'Hà Nội'])) return 4
+  return PROVINCE_REGION[from] === PROVINCE_REGION[to] ? 2 : 3
+}
+function letterMainFee(zoneIdx: number, weightGram: number): number {
+  const brackets: number[] = LETTER_TABLE.weightBracketsGram
+  if (weightGram <= brackets[brackets.length - 1]) {
+    const rowIdx = brackets.findIndex(b => weightGram <= b)
+    return LETTER_TABLE.prices[rowIdx === -1 ? brackets.length - 1 : rowIdx][zoneIdx]
+  }
+  let fee = LETTER_TABLE.prices[brackets.length - 1][zoneIdx]
+  let currentWeight = brackets[brackets.length - 1]
+  const steps = Math.ceil((weightGram - currentWeight) / 500)
+  for (let i = 0; i < steps; i++) {
+    currentWeight += 500
+    const rate = currentWeight <= 10000
+      ? LETTER_TABLE.overweightPer500g.from2to10kg[zoneIdx]
+      : LETTER_TABLE.overweightPer500g.over10kg[zoneIdx]
+    fee += rate
+  }
+  return fee
+}
+function letterKhaiGiaFee(goodsValue: number): number {
+  const { percent, minFee } = LETTER_TABLE.surcharges.insuranceFlat
+  return Math.max(parseInt(minFee, 10), Math.round(goodsValue * percent / 100))
+}
+function letterDongKiemFee(units: number): number {
+  return Math.max(20000, units * 1000)
+}
+function letterDongLanhFee(weightGram: number): number {
+  return Math.round((weightGram / 1000) * 15000)
+}
+function letterBaoPhatFee(): number {
+  return parseInt(LETTER_TABLE.surcharges.baoPhat.fee, 10)
+}
+function letterChupHinhFee(photoCount: number): number {
+  const { feePerPhoto, minFee, maxPhotos } = LETTER_TABLE.surcharges.chupHinh
+  const count = Math.min(photoCount, maxPhotos)
+  return Math.max(parseInt(minFee, 10), count * parseInt(feePerPhoto, 10))
+}
+function letterPhatHangSieuThiFee(units: number): number {
+  const { baseFee, feePerUnit } = LETTER_TABLE.surcharges.phatHangSieuThi
+  return parseInt(baseFee, 10) + units * parseInt(feePerUnit, 10)
+}
+function letterPhiAnNinhFee(weightGram: number): number {
+  const { feePerKg, minFee } = LETTER_TABLE.surcharges.phiAnNinh
+  return Math.max(parseInt(minFee, 10), Math.round((weightGram / 1000) * parseInt(feePerKg, 10)))
+}
+function letterHangVunFee(weightGram: number): number {
+  const { feePerKg, minFee } = LETTER_TABLE.surcharges.hangVun
+  return Math.max(parseInt(minFee, 10), Math.round((weightGram / 1000) * parseInt(feePerKg, 10)))
+}
+function letterSmsFee(messageCount: number): number {
+  return messageCount * parseInt(LETTER_TABLE.surcharges.sms.feePerMessage, 10)
+}
+function letterFloorFee(weightGram: number, key: 'giaoHangLenTang' | 'nhanHangLenTang'): number {
+  return Math.round((weightGram / 1000) * parseInt(LETTER_TABLE.surcharges[key].feePerKg, 10))
+}
+function letterHangExpressFee(weightGram: number): number {
+  return Math.round((weightGram / 1000) * parseInt(LETTER_TABLE.surcharges.hangExpress.feePerKg, 10))
+}
+function letterHoSoThauFee(weightGram: number): number {
+  const { baseFee, perKgOver2kg } = LETTER_TABLE.surcharges.hoSoThau
+  const extraKg = Math.max(0, Math.ceil((weightGram - 2000) / 1000))
+  return parseInt(baseFee, 10) + extraKg * parseInt(perKgOver2kg, 10)
+}
+function letterFlatFee(key: 'layIdCaNhan' | 'nguoiNhanThanhToan' | 'ngoaiGioHanhChinh' | 'phatHangTanTay' | 'phatUuTien' | 'thongTinDayDu' | 'thuKyKhachHang'): number {
+  return parseInt(LETTER_TABLE.surcharges[key].fee, 10)
+}
+
+// ── 247Express "Chuyển phát đường bộ" — dịch vụ thứ 2 bên cạnh Chuyển phát nhanh, dùng
+// cùng hợp đồng 1231/2026/HĐDV-247. Cước chính tính theo kg (không theo gram như Thư), 5 vùng
+// khác với 6 vùng của Chuyển phát nhanh (không có tuyến HCM-ĐN/HN riêng). Các DVGT dùng chung
+// số tiền giống Chuyển phát nhanh (Báo phát, Chụp hình, Khai giá, Đồng kiểm, Lấy ID cá nhân...)
+// nên tái dùng thẳng các hàm letterXFee() ở trên — chỉ thêm hàm riêng cho phần khác biệt
+// (cước chính theo kg, Hàng quá khổ, xe nâng, phí đóng gói). Phụ phí ngoại thành/nhiên liệu
+// của dịch vụ này CHƯA có số liệu hợp đồng (để 0 trong JSON) — chờ bổ sung khi có ảnh đầy đủ.
+const ROAD_TABLE = roadFreightPricingTable as any
+
+function resolveRoadZone(from: string, to: string): number {
+  if (from === to) return from === LETTER_HUB_PROVINCE ? 0 : 1
+  const regionA = PROVINCE_REGION[from]
+  const regionB = PROVINCE_REGION[to]
+  if (regionA === regionB) return 2
+  const isBacNam = (regionA === 'bac' && regionB === 'nam') || (regionA === 'nam' && regionB === 'bac')
+  return isBacNam ? 4 : 3
+}
+function roadFreightTierRate(zoneIdx: number, weightKg: number): number {
+  const tiers: { uptoKg: number | null; rates: number[] }[] = ROAD_TABLE.perKgTiers
+  const tier = tiers.find(t => t.uptoKg === null || weightKg <= t.uptoKg) ?? tiers[tiers.length - 1]
+  return tier.rates[zoneIdx]
+}
+function roadFreightMainFee(zoneIdx: number, weightKg: number): number {
+  const base = ROAD_TABLE.baseFeeUpTo5kg[zoneIdx]
+  if (weightKg <= 5) return base
+  const w = Math.ceil(weightKg)
+  const tiers: { uptoKg: number | null; rates: number[] }[] = ROAD_TABLE.perKgTiers
+  let fee = base
+  let prevBoundary = 5
+  for (const tier of tiers) {
+    const tierTop = tier.uptoKg === null ? w : Math.min(w, tier.uptoKg)
+    if (tierTop > prevBoundary) {
+      fee += (tierTop - prevBoundary) * tier.rates[zoneIdx]
+      prevBoundary = tierTop
+    }
+    if (tier.uptoKg !== null && w <= tier.uptoKg) break
+  }
+  return fee
+}
+function roadFreightHangQuaKhoFee(zoneIdx: number, weightKg: number): number {
+  const rate = roadFreightTierRate(zoneIdx, weightKg)
+  if (weightKg < 15) return Math.round((15 - weightKg) * rate)
+  return Math.round(weightKg * (ROAD_TABLE.surcharges.hangQuaKhoPercent / 100) * rate)
+}
+function roadFreightXeNangFee(lanCount: number): number {
+  return lanCount * parseInt(ROAD_TABLE.surcharges.xeNang.feePerLan, 10)
+}
+function roadFreightDongGoiFee(materialId: string, weightKg: number): number {
+  const material = ROAD_TABLE.dongGoi.find((m: any) => m.id === materialId)
+  if (!material) return 0
+  if (material.feePerKien) return parseInt(material.feePerKien, 10)
+  const extraKg = Math.max(0, Math.ceil((weightKg - 1) / 5))
+  return parseInt(material.upTo1kg, 10) + extraKg * parseInt(material.per5kg, 10)
 }
 
 // ── CreateOrderDrawer ────────────────────────────────────────
@@ -402,76 +658,6 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     ? cod + (shipCollect > 0 ? shipCollect : 0)
     : cod + feeShipping
 
-  // ── Shared sub-components ──
-
-  /** Card wrapper: white bg, border, rounded-6px */
-  const card: React.CSSProperties = {
-    background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
-    display: 'flex', flexDirection: 'column', width: '100%',
-  }
-
-  /** Section header row with icon */
-  function CardHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
-    return (
-      <>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
-          {icon}
-          <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label}</span>
-        </div>
-        <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
-      </>
-    )
-  }
-
-  /** Input field: bg-F9FAFB, no border, rounded-6 */
-  function FieldInput({ value, onChange, placeholder, style: extra }: {
-    value: string; onChange: (v: string) => void; placeholder?: string; style?: React.CSSProperties
-  }) {
-    return (
-      <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', ...extra }}>
-        <input
-          value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px' }}
-        />
-      </div>
-    )
-  }
-
-  /** Dropdown field: bg-F9FAFB + chevron */
-  function FieldDropdown({ placeholder, value }: { placeholder?: string; value?: string }) {
-    return (
-      <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', width: '100%' }}>
-        <span style={{ flex: 1, fontSize: 14, color: value ? C_TEXT_PRIMARY : '#9CA3AF', lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {value || placeholder}
-        </span>
-        <IcChevronDown size={20} />
-      </div>
-    )
-  }
-
-  /** Select field thật (khác FieldDropdown — có onChange), cùng style bg-F9FAFB + chevron */
-  function FieldSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
-    return (
-      <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 12, width: '100%', position: 'relative' }}>
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', border: 'none', outline: 'none', background: 'transparent', appearance: 'none', cursor: 'pointer' }}
-        >
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-        <div style={{ pointerEvents: 'none' }}><IcChevronDown size={20} /></div>
-      </div>
-    )
-  }
-
-  /** Number input + unit badge (kg/cm/đ) — bg-F9FAFB left + bg-F3F4F6 badge right.
-   *  Pass width for fixed-width (right panel), omit for flex-1 (left panel). */
-  /** Linked text (right side notes/payment/source) */
-  function LinkText({ children }: { children: React.ReactNode }) {
-    return <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{children}</span>
-  }
-
   return (
     <>
       {/* Backdrop */}
@@ -514,7 +700,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
 
             {/* ── Bên gửi card ── */}
-            <div style={card}>
+            <div style={drawerCard}>
               <CardHeader icon={<IcStore />} label="Bên gửi" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
                 {/* Sender address selector */}
@@ -553,7 +739,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
 
             {/* ── Bên nhận card ── */}
-            <div style={card}>
+            <div style={drawerCard}>
               <CardHeader icon={<IcUser />} label="Bên nhận" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
                 {/* Name + Phone row */}
@@ -587,7 +773,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
 
             {/* ── Sản phẩm card ── */}
-            <div style={{ ...card, flex: 1 }}>
+            <div style={{ ...drawerCard, flex: 1 }}>
               <CardHeader icon={<IcCube />} label="Sản phẩm" />
 
               {/* Product table — flex-ROWS so every cell in a row shares the same height */}
@@ -709,7 +895,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           <div style={{ width: 400, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
 
             {/* ── Thông tin đơn hàng card ── */}
-            <div style={{ ...card, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ ...drawerCard, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, flexShrink: 0 }}>
                 <IcClipboard />
@@ -801,7 +987,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
 
             {/* ── Dịch vụ card ── */}
-            <div style={{ ...card, flexShrink: 0 }}>
+            <div style={{ ...drawerCard, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
                 <IcTruck />
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
@@ -862,7 +1048,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
             {/* ── Action card ── */}
             {/* ── Danh sách phí card ── */}
-            <div style={{ ...card, flexShrink: 0 }}>
+            <div style={{ ...drawerCard, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px' }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phụ phí</span>
               </div>
@@ -885,7 +1071,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
 
             {/* ── Action card ── */}
-            <div style={{ ...card, flexShrink: 0, gap: 8, padding: 8 }}>
+            <div style={{ ...drawerCard, flexShrink: 0, gap: 8, padding: 8 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#F9FAFB', borderRadius: 6, padding: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng phí vận chuyển</span>
@@ -921,14 +1107,656 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   )
 }
 
-// ── Design tokens ────────────────────────────────────────────
-const C_TEXT_PRIMARY   = '#111827'
-const C_TEXT_BODY      = '#050505'
-const C_TEXT_SECONDARY = '#6B7280'
-const C_LINK           = '#3B82F6'
-const C_ACTION         = '#FF5200'
-const C_BORDER         = '#E5E7EB'
-const C_BG_HEADER      = '#F3F4F6'
+// ── CreateLetterDrawer ("Tạo thư, tài liệu") ────────
+// Cùng khung layout với CreateOrderDrawer (theo yêu cầu "giữ nguyên layout giống tạo đơn hàng
+// GHN"), nhưng phần Dịch vụ/Phụ phí đọc đúng theo LETTER_TABLE (khớp Hợp đồng 1231/2026/HĐDV-247,
+// dịch vụ Chuyển phát nhanh) thay vì bảng giá generic dùng chung của CreateOrderDrawer.
+// Hợp đồng chỉ có 1 bảng cước cho dịch vụ Chuyển phát nhanh — dùng chung 1 layout cho mọi loại
+// (thư/bưu phẩm/bưu kiện), không tách tab/pill theo loại. Không còn mặc định cân nặng 0.2kg kiểu
+// "thư nhẹ" — để 0 cho shop tự nhập đúng cân nặng thực tế. Hỗ trợ nhiều sản phẩm trong 1 lần gửi
+// (bảng "Sản phẩm" có nút "+ Thêm sản phẩm", khác với ghost-row trang trí không chức năng của
+// CreateOrderDrawer gốc).
+function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [rcvName, setRcvName]           = useState('Nguyễn Văn An')
+  const [rcvPhone, setRcvPhone]         = useState('0909888999')
+  const [rcvStreet, setRcvStreet]       = useState('123 Thành Thái')
+  const [rcvProvince, setRcvProvince]   = useState(() => parseProvince(allShops.find(s => s.id === 'SHP001')!.address))
+  const [weight, setWeight]             = useState(0.2)
+  const [dimD, setDimD]                 = useState(10)
+  const [dimR, setDimR]                 = useState(10)
+  const [dimC, setDimC]                 = useState(10)
+  const [otherCollectValue, setOtherCollectValue] = useState(0)
+  const [goodsValue, setGoodsValue]     = useState(0)
+  const [shopCode, setShopCode]         = useState('')
+  const [letterContent, setLetterContent] = useState('')
+  const [viewGoodsPolicy, setViewGoodsPolicy] = useState<'none' | 'view_no_try'>('none')
+  const [viewGoodsPickerOpen, setViewGoodsPickerOpen] = useState(false)
+  const [declareValue, setDeclareValue] = useState(false)
+  const [ngoaiThanh, setNgoaiThanh]     = useState(false)
+  const [dongKiem, setDongKiem]         = useState(false)
+  const [dongKiemUnits, setDongKiemUnits] = useState(1)
+  const [dongLanh, setDongLanh]         = useState(false)
+  const [baoPhat, setBaoPhat]           = useState(false)
+  const [chupHinh, setChupHinh]         = useState(false)
+  const [chupHinhCount, setChupHinhCount] = useState(1)
+  const [layIdCaNhan, setLayIdCaNhan]   = useState(false)
+  const [nguoiNhanThanhToan, setNguoiNhanThanhToan] = useState(false)
+  const [ngoaiGioHanhChinh, setNgoaiGioHanhChinh]   = useState(false)
+  const [phatHangSieuThi, setPhatHangSieuThi]       = useState(false)
+  const [phatHangSieuThiUnits, setPhatHangSieuThiUnits] = useState(1)
+  const [phatHangTanTay, setPhatHangTanTay] = useState(false)
+  const [phatUuTien, setPhatUuTien]     = useState(false)
+  const [phiAnNinh, setPhiAnNinh]       = useState(false)
+  const [thongTinDayDu, setThongTinDayDu] = useState(false)
+  const [thuKyKhachHang, setThuKyKhachHang] = useState(false)
+  const [smsOn, setSmsOn]               = useState(false)
+  const [smsCount, setSmsCount]         = useState(1)
+  const [giaoHangLenTang, setGiaoHangLenTang] = useState(false)
+  const [nhanHangLenTang, setNhanHangLenTang] = useState(false)
+  const [hangExpress, setHangExpress]   = useState(false)
+  const [hangVun, setHangVun]           = useState(false)
+  const [hoSoThau, setHoSoThau]         = useState(false)
+  const [letterService, setLetterService] = useState<'nhanh' | 'duongbo'>('nhanh')
+  const [xeNang, setXeNang]             = useState(false)
+  const [xeNangCount, setXeNangCount]   = useState(1)
+  const [hangQuaKho, setHangQuaKho]     = useState(false)
+  const [dongGoiMaterial, setDongGoiMaterial] = useState<string>('none')
+  const [vasModalOpen, setVasModalOpen] = useState(false)
+  const [vasSearch, setVasSearch]       = useState('')
+  const [senderHubId, setSenderHubId]   = useState('')
+  const [senderPickerOpen, setSenderPickerOpen] = useState(false)
+
+  const currentShop = allShops.find(s => s.id === 'SHP001')!
+  // 247Express bắt buộc lấy hàng tại 1 trong các địa điểm gửi hàng (ClientHubID) đã được
+  // Super Admin cấp cho đại lý — khác GHN (lấy tại địa chỉ shop tự thiết lập).
+  const currentAgency = agenciesList.find(a => a.id === currentShop.agencyId)
+  const agencyHubs = clientHubs247.filter(h => (currentAgency?.clientHubIds ?? []).includes(h.id))
+  const selectedHub = agencyHubs.find(h => h.id === senderHubId) ?? agencyHubs[0]
+
+  useEffect(() => {
+    if (!senderPickerOpen) return
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-sender-hub-menu]')) setSenderPickerOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [senderPickerOpen])
+
+  useEffect(() => {
+    if (!viewGoodsPickerOpen) return
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-view-goods-menu]')) setViewGoodsPickerOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [viewGoodsPickerOpen])
+
+  const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
+  const weightGram = Number(convertedWeight) * 1000
+  const fromProvince = selectedHub ? hubProvinceLabel(selectedHub.provinceName) : parseProvince(currentShop.address)
+
+  const now = new Date()
+  const createdAt = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} - ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`
+
+  // ── Fee calculations (theo đúng công thức hợp đồng) ──
+  // API tạo đơn CustomerAPICreateOrder không có field nào để client gửi số tiền phụ phí —
+  // client chỉ gửi InformFee (giá trị khai) + ExtraServices (mã dịch vụ, không kèm amount);
+  // 247Express tự tính phí và trả lại trong response. Vì vậy toàn bộ các dòng phụ phí dưới đây
+  // là SỐ TỰ TÍNH, không cho shop tự ghi đè (không có khái niệm "custom amount" khớp với API).
+  const isNhanh = letterService === 'nhanh'
+  const isDuongBo = letterService === 'duongbo'
+  const activeTable = isNhanh ? LETTER_TABLE : ROAD_TABLE
+  const weightKg = weightGram / 1000
+
+  const mainZoneIdx = resolveLetterMainZone(fromProvince, rcvProvince)
+  const roadZoneIdx = resolveRoadZone(fromProvince, rcvProvince)
+  const feeMain = isNhanh ? letterMainFee(mainZoneIdx, weightGram) : roadFreightMainFee(roadZoneIdx, weightKg)
+
+  const feeNgoaiThanh = ngoaiThanh ? Math.round(feeMain * activeTable.surcharges.ngoaiThanhPercent / 100) : 0
+
+  const feeKhaiGia = declareValue && goodsValue > 0 ? letterKhaiGiaFee(goodsValue) : 0
+
+  const feeDongKiem = dongKiem ? letterDongKiemFee(dongKiemUnits) : 0
+
+  const feeDongLanh = dongLanh && isNhanh ? letterDongLanhFee(weightGram) : 0
+
+  const feeBaoPhat = baoPhat ? letterBaoPhatFee() : 0
+
+  const feeChupHinh = chupHinh ? letterChupHinhFee(chupHinhCount) : 0
+  const feeLayIdCaNhan = layIdCaNhan ? letterFlatFee('layIdCaNhan') : 0
+  const feeNguoiNhanThanhToan = nguoiNhanThanhToan ? letterFlatFee('nguoiNhanThanhToan') : 0
+  const feeNgoaiGioHanhChinh = ngoaiGioHanhChinh ? letterFlatFee('ngoaiGioHanhChinh') : 0
+  const feePhatHangSieuThi = phatHangSieuThi ? letterPhatHangSieuThiFee(phatHangSieuThiUnits) : 0
+  const feePhatHangTanTay = phatHangTanTay ? letterFlatFee('phatHangTanTay') : 0
+  const phatUuTienEligible = weightGram <= LETTER_TABLE.surcharges.phatUuTien.maxWeightGram
+  const feePhatUuTien = phatUuTien && phatUuTienEligible && isNhanh ? letterFlatFee('phatUuTien') : 0
+  const feePhiAnNinh = phiAnNinh && isNhanh ? letterPhiAnNinhFee(weightGram) : 0
+  const feeThongTinDayDu = thongTinDayDu ? letterFlatFee('thongTinDayDu') : 0
+  const feeThuKyKhachHang = thuKyKhachHang ? letterFlatFee('thuKyKhachHang') : 0
+  const feeSms = smsOn ? letterSmsFee(smsCount) : 0
+  const floorEligible = weightGram >= LETTER_TABLE.surcharges.giaoHangLenTang.minWeightGram
+  const feeGiaoHangLenTang = giaoHangLenTang && floorEligible ? letterFloorFee(weightGram, 'giaoHangLenTang') : 0
+  const feeNhanHangLenTang = nhanHangLenTang && floorEligible ? letterFloorFee(weightGram, 'nhanHangLenTang') : 0
+  const hangExpressEligible = weightGram > LETTER_TABLE.surcharges.hangExpress.minWeightGram
+  const feeHangExpress = hangExpress && hangExpressEligible && !hoSoThau && isNhanh ? letterHangExpressFee(weightGram) : 0
+  const feeHangVun = hangVun && isNhanh ? letterHangVunFee(weightGram) : 0
+  const feeHoSoThau = hoSoThau && isNhanh ? letterHoSoThauFee(weightGram) : 0
+
+  const feeHangQuaKho = hangQuaKho && isDuongBo ? roadFreightHangQuaKhoFee(roadZoneIdx, weightKg) : 0
+  const feeXeNang = xeNang && isDuongBo ? roadFreightXeNangFee(xeNangCount) : 0
+  const feeDongGoi = isDuongBo && dongGoiMaterial !== 'none' ? roadFreightDongGoiFee(dongGoiMaterial, weightKg) : 0
+
+  const totalShipping = feeMain + feeNgoaiThanh + feeKhaiGia + feeDongKiem + feeDongLanh
+    + feeBaoPhat + feeChupHinh + feeLayIdCaNhan + feeNguoiNhanThanhToan + feeNgoaiGioHanhChinh + feePhatHangSieuThi
+    + feePhatHangTanTay + feePhatUuTien + feePhiAnNinh + feeThongTinDayDu + feeThuKyKhachHang + feeSms
+    + feeGiaoHangLenTang + feeNhanHangLenTang + feeHangExpress + feeHangVun + feeHoSoThau
+    + feeHangQuaKho + feeXeNang + feeDongGoi
+  // Hợp đồng 247Express (pricing-letter-247.json / pricing-roadfreight-247.json) chưa có mục
+  // thuế/VAT — dùng mức VAT phổ biến hiện hành (8%) trên tổng cước + DVGT, chỉ mang tính demo.
+  const feeVat = Math.round(totalShipping * 0.08)
+  const grandTotal = totalShipping + feeVat
+
+  // ── Dịch vụ gia tăng (DVGT) — gộp về 1 modal tìm-kiếm-được vì hợp đồng có rất nhiều dịch vụ
+  // (24+ mục), thay vì list dài cố định trong card "Dịch vụ" như trước. Mỗi item vẫn giữ đúng
+  // state/công thức phí cũ — modal chỉ đổi lớp hiển thị + cách chọn.
+  const vasItems: { key: string; label: string; note?: string; checked: boolean; toggle: () => void; disabledReason?: string; fee: number; extra?: React.ReactNode }[] = [
+    { key: 'declareValue', label: 'Khai giá trị hàng', note: '0,75% giá trị khai, tối thiểu 20.000đ', checked: declareValue, toggle: () => setDeclareValue(v => !v), fee: feeKhaiGia },
+    { key: 'ngoaiThanh', label: 'Địa chỉ ngoại thành', note: '+20% cước', checked: ngoaiThanh, toggle: () => setNgoaiThanh(v => !v), fee: feeNgoaiThanh },
+    {
+      key: 'dongKiem', label: 'Đồng kiểm vận đơn', checked: dongKiem, toggle: () => setDongKiem(v => !v), fee: feeDongKiem,
+      extra: dongKiem ? <NumericWithUnit value={dongKiemUnits} onChange={setDongKiemUnits} unit="đơn vị" width={140} /> : undefined,
+    },
+    ...(isNhanh ? [{ key: 'dongLanh', label: 'Hàng đông lạnh', note: '15.000đ/kg, không tính phí Express nếu có', checked: dongLanh, toggle: () => setDongLanh(v => !v), fee: feeDongLanh }] : []),
+    { key: 'baoPhat', label: 'Báo phát', note: '5.000đ/vận đơn, miễn phí nếu thất lạc', checked: baoPhat, toggle: () => setBaoPhat(v => !v), fee: feeBaoPhat },
+    {
+      key: 'chupHinh', label: 'Chụp hình', note: '2.000đ/hình, tối thiểu 5.000đ, tối đa 10 hình', checked: chupHinh, toggle: () => setChupHinh(v => !v), fee: feeChupHinh,
+      extra: chupHinh ? <NumericWithUnit value={chupHinhCount} onChange={(v) => setChupHinhCount(Math.min(10, Math.max(1, v)))} unit="hình" width={140} /> : undefined,
+    },
+    {
+      key: 'phatHangSieuThi', label: 'Phát hàng siêu thị', note: '100.000đ + 1.000đ/đơn vị kiểm đếm', checked: phatHangSieuThi, toggle: () => setPhatHangSieuThi(v => !v), fee: feePhatHangSieuThi,
+      extra: phatHangSieuThi ? <NumericWithUnit value={phatHangSieuThiUnits} onChange={setPhatHangSieuThiUnits} unit="đơn vị" width={140} /> : undefined,
+    },
+    {
+      key: 'sms', label: 'Dịch vụ tin nhắn SMS', note: '1.000đ/tin, tối đa 160 ký tự/tin', checked: smsOn, toggle: () => setSmsOn(v => !v), fee: feeSms,
+      extra: smsOn ? <NumericWithUnit value={smsCount} onChange={setSmsCount} unit="tin" width={140} /> : undefined,
+    },
+    { key: 'layIdCaNhan', label: 'Lấy ID cá nhân', note: '10.000đ/vận đơn, miễn phí nếu thất lạc', checked: layIdCaNhan, toggle: () => setLayIdCaNhan(v => !v), fee: feeLayIdCaNhan },
+    { key: 'nguoiNhanThanhToan', label: 'Người nhận thanh toán', note: '20.000đ/vận đơn', checked: nguoiNhanThanhToan, toggle: () => setNguoiNhanThanhToan(v => !v), fee: feeNguoiNhanThanhToan },
+    { key: 'ngoaiGioHanhChinh', label: 'Ngoài giờ hành chánh', note: '50.000đ/vận đơn, miễn phí nếu thất lạc', checked: ngoaiGioHanhChinh, toggle: () => setNgoaiGioHanhChinh(v => !v), fee: feeNgoaiGioHanhChinh },
+    { key: 'phatHangTanTay', label: 'Phát hàng tận tay', note: '10.000đ/vận đơn, miễn phí nếu thất lạc', checked: phatHangTanTay, toggle: () => setPhatHangTanTay(v => !v), fee: feePhatHangTanTay },
+    { key: 'thongTinDayDu', label: 'Thông tin đầy đủ', note: '5.000đ/vận đơn, miễn phí nếu thất lạc', checked: thongTinDayDu, toggle: () => setThongTinDayDu(v => !v), fee: feeThongTinDayDu },
+    { key: 'thuKyKhachHang', label: 'Thư ký khách hàng', note: '50.000đ/vận đơn, miễn phí nếu thất lạc', checked: thuKyKhachHang, toggle: () => setThuKyKhachHang(v => !v), fee: feeThuKyKhachHang },
+    {
+      key: 'giaoHangLenTang', label: 'Giao hàng lên/xuống tầng (đầu nhận)', note: '250đ/kg, chỉ áp dụng đơn ≥ 50kg', checked: giaoHangLenTang, toggle: () => setGiaoHangLenTang(v => !v), fee: feeGiaoHangLenTang,
+      disabledReason: floorEligible ? undefined : 'Chỉ áp dụng đơn hàng có trọng lượng từ 50kg trở lên',
+    },
+    {
+      key: 'nhanHangLenTang', label: 'Nhận hàng lên/xuống tầng (đầu gửi)', note: '250đ/kg, chỉ áp dụng đơn ≥ 50kg', checked: nhanHangLenTang, toggle: () => setNhanHangLenTang(v => !v), fee: feeNhanHangLenTang,
+      disabledReason: floorEligible ? undefined : 'Chỉ áp dụng đơn hàng có trọng lượng từ 50kg trở lên',
+    },
+    ...(isNhanh ? [
+      {
+        key: 'phatUuTien', label: 'Phát ưu tiên', note: '30.000đ/vận đơn, chỉ áp dụng TL ≤ 2kg', checked: phatUuTien, toggle: () => setPhatUuTien(v => !v), fee: feePhatUuTien,
+        disabledReason: phatUuTienEligible ? undefined : 'Chỉ áp dụng vận đơn có TL ≤ 2kg — cân nặng hiện tại vượt mức',
+      },
+      { key: 'phiAnNinh', label: 'Phí an ninh', note: '12.000đ/kg, tối thiểu 200.000đ/vận đơn', checked: phiAnNinh, toggle: () => setPhiAnNinh(v => !v), fee: feePhiAnNinh },
+      {
+        key: 'hangExpress', label: 'Hàng Express', note: '10.000đ/kg, áp dụng cho vận đơn > 2kg', checked: hangExpress, toggle: () => setHangExpress(v => !v), fee: feeHangExpress,
+        disabledReason: !hangExpressEligible ? 'Chỉ áp dụng vận đơn > 2kg' : hoSoThau ? 'Không tính phí Express khi đã chọn Hồ sơ thầu' : undefined,
+      },
+      { key: 'hangVun', label: 'Hàng VUN', note: '12.000đ/kg, tối thiểu 200.000đ/vận đơn', checked: hangVun, toggle: () => setHangVun(v => !v), fee: feeHangVun },
+      { key: 'hoSoThau', label: 'Hồ sơ thầu', note: '200.000đ + 15.000đ/kg trên 2kg — không tính phí Phát hẹn giờ/trong ngày, Express', checked: hoSoThau, toggle: () => setHoSoThau(v => !v), fee: feeHoSoThau },
+    ] : []),
+    ...(isDuongBo ? [
+      { key: 'hangQuaKho', label: 'Hàng quá khổ', note: '10%, tính theo nấc cước + công thức TL so với 15kg', checked: hangQuaKho, toggle: () => setHangQuaKho(v => !v), fee: feeHangQuaKho },
+      {
+        key: 'xeNang', label: 'Phụ phí thuê xe nâng', note: '625.000đ/lần phát sinh', checked: xeNang, toggle: () => setXeNang(v => !v), fee: feeXeNang,
+        extra: xeNang ? <NumericWithUnit value={xeNangCount} onChange={setXeNangCount} unit="lần" width={140} /> : undefined,
+      },
+      ...ROAD_TABLE.dongGoi.map((m: any) => ({
+        key: `dongGoi_${m.id}`, label: m.label, checked: dongGoiMaterial === m.id,
+        toggle: () => setDongGoiMaterial(v => v === m.id ? 'none' : m.id),
+        fee: dongGoiMaterial === m.id ? feeDongGoi : 0,
+      })),
+    ] : []),
+  ]
+  const vasFiltered = vasItems.filter(i => i.label.toLowerCase().includes(vasSearch.trim().toLowerCase()))
+  const vasSelected = vasItems.filter(i => i.checked)
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 200,
+          opacity: open ? 1 : 0, pointerEvents: open ? 'auto' : 'none',
+          transition: 'opacity 0.25s',
+        }}
+      />
+      <div style={{
+        position: 'fixed', top: 0, right: 0,
+        width: 980, height: '100vh',
+        background: '#fff', boxShadow: '0 0 20px rgba(0,0,0,0.2)',
+        zIndex: 201, display: 'flex', flexDirection: 'column',
+        transform: open ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', flexShrink: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Tạo thư, tài liệu</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+            <IcX />
+          </button>
+        </div>
+        <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+        <div style={{ flex: 1, display: 'flex', gap: 6, padding: 6, background: '#F3F4F6', overflow: 'hidden', alignItems: 'flex-start' }}>
+
+          {/* ════ LEFT COLUMN ════ */}
+          <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
+
+            <div style={drawerCard}>
+              <CardHeader icon={<IcStore />} label="Bên gửi" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ width: 110, flexShrink: 0, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Địa chỉ KH</span>
+                  <div style={{ position: 'relative', flex: 1, minWidth: 0 }} data-sender-hub-menu>
+                    <div
+                      onClick={() => agencyHubs.length > 0 && setSenderPickerOpen(v => !v)}
+                      style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', gap: 12, cursor: agencyHubs.length > 0 ? 'pointer' : 'default', alignItems: 'center' }}
+                    >
+                      {selectedHub ? (
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {selectedHub.name} - {selectedHub.location}
+                        </span>
+                      ) : (
+                        <span style={{ flex: 1, fontSize: 14, color: '#9CA3AF', lineHeight: '20px' }}>Đại lý chưa có địa điểm gửi hàng 247Express</span>
+                      )}
+                      {agencyHubs.length > 0 && <div style={{ flexShrink: 0, display: 'flex' }}><IcChevronDown /></div>}
+                    </div>
+                    {senderPickerOpen && agencyHubs.length > 0 && (
+                      <div style={{
+                        position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+                        background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden',
+                      }}>
+                        {agencyHubs.map(hub => (
+                          <div
+                            key={hub.id}
+                            onClick={() => { setSenderHubId(hub.id); setSenderPickerOpen(false) }}
+                            style={{ padding: '8px 12px', cursor: 'pointer', background: hub.id === selectedHub?.id ? '#FFF4ED' : 'transparent' }}
+                            onMouseEnter={(e) => { if (hub.id !== selectedHub?.id) e.currentTarget.style.background = '#F9FAFB' }}
+                            onMouseLeave={(e) => { if (hub.id !== selectedHub?.id) e.currentTarget.style.background = 'transparent' }}
+                          >
+                            <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{hub.name} - {hub.contactPhone}</div>
+                            <div style={{ fontSize: 13, color: '#6B7280', lineHeight: '18px' }}>{hub.location}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={drawerCard}>
+              <CardHeader icon={<IcUser />} label="Bên nhận" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <div style={{ flex: 1, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px' }}>
+                    <input
+                      value={rcvName} onChange={(e) => setRcvName(e.target.value)}
+                      style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 200, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      value={rcvPhone} onChange={(e) => setRcvPhone(e.target.value)}
+                      style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px' }}
+                    />
+                  </div>
+                </div>
+                <FieldInput value={rcvStreet} onChange={setRcvStreet} placeholder="Số nhà, tên đường" />
+                <FieldSelect value={rcvProvince} onChange={setRcvProvince} options={PROVINCES} />
+              </div>
+            </div>
+
+            {/* ── Sản phẩm card — thư/tài liệu không có khái niệm tên hàng/giá bán như đơn
+                hàng GHN, chỉ cần khối lượng + kích thước để tính phí theo hợp đồng. Tab
+                "Hàng hoá" disabled vì drawer này chỉ tạo được vận đơn Tài liệu — gửi hàng hoá
+                dùng "Tạo đơn hàng" (CreateOrderDrawer). ── */}
+            <div style={{ ...drawerCard, flex: 1 }}>
+              <CardHeader icon={<IcCube />} label="Sản phẩm" right={
+                <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 6, padding: 2, flexShrink: 0 }}>
+                  <div style={{ padding: '4px 12px', borderRadius: 4, background: '#111827', color: '#fff', fontSize: 13, fontWeight: 600, lineHeight: '18px' }}>
+                    Tài liệu
+                  </div>
+                  <div style={{ padding: '4px 12px', borderRadius: 4, color: '#9CA3AF', fontSize: 13, fontWeight: 600, lineHeight: '18px', cursor: 'not-allowed' }}>
+                    Hàng hoá
+                  </div>
+                </div>
+              } />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Khối lượng</span>
+                  <NumericWithUnit value={weight} onChange={setWeight} unit="kg" flex1 />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Kích thước</span>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 2 }}>
+                    {([['D', dimD, setDimD], ['R', dimR, setDimR], ['C', dimC, setDimC]] as const).map(([lbl, val, set]) => (
+                      <div key={lbl} style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
+                        <span style={{ flexShrink: 0, fontSize: 14, color: '#9CA3AF', lineHeight: '20px', whiteSpace: 'nowrap' }}>{lbl}:</span>
+                        <input
+                          value={val} onChange={(e) => (set as (v: number) => void)(parseFloat(e.target.value) || 0)} type="number"
+                          style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', padding: '0 8px' }}
+                        />
+                        <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>cm</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ paddingLeft: 84, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khối lượng quy đổi: {convertedWeight}kg</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ════ RIGHT COLUMN ════ */}
+          <div style={{ width: 400, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+
+            {/* Toàn bộ 3 card dưới đây cuộn CÙNG NHAU trong 1 vùng — tránh trường hợp 1 card bị
+                giới hạn chiều cao khiến nội dung cuối (checkbox phụ phí, ghi chú) bị khuất mà
+                không có dấu hiệu cuộn rõ ràng. Action card (Lưu nháp/Tạo đơn) đứng ngoài, cố định. */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+
+            <div style={{ ...drawerCard, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, flexShrink: 0 }}>
+                <IcClipboard />
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Thông tin thư</span>
+                <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px', whiteSpace: 'nowrap' }}>Tạo lúc {createdAt}</span>
+              </div>
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+              <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                  <InfoRow label="Mã đơn shop">
+                    <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', width: 180, flexShrink: 0 }}>
+                      <input
+                        value={shopCode} onChange={(e) => setShopCode(e.target.value)}
+                        placeholder="Mã đơn shop"
+                        style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: '#9CA3AF', background: 'transparent', lineHeight: '20px' }}
+                      />
+                    </div>
+                  </InfoRow>
+                  <InfoRow label="Giá trị hàng hoá">
+                    <NumericWithUnit value={goodsValue} onChange={setGoodsValue} unit="đ" />
+                  </InfoRow>
+                  <InfoRow label="Giá trị thu khác">
+                    <NumericWithUnit value={otherCollectValue} onChange={setOtherCollectValue} unit="đ" />
+                  </InfoRow>
+                </div>
+
+                <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+                {/* DVGT — hợp đồng có 24+ dịch vụ gia tăng nên gộp vào 1 modal tìm-kiếm-được
+                    thay vì list dài trong card "Dịch vụ", đưa lên Thông tin thư cho dễ thấy. */}
+                <div style={{ padding: 8 }}>
+                  <div
+                    onClick={() => setVasModalOpen(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 32 }}
+                  >
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>DVGT</span>
+                    {vasSelected.length === 0 ? (
+                      <span style={{ flex: 1, fontSize: 14, color: '#9CA3AF', lineHeight: '20px' }}>Chọn dịch vụ gia tăng</span>
+                    ) : (
+                      <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {vasSelected.map(item => (
+                          <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F3F4F6', borderRadius: 6, padding: '4px 8px' }}>
+                            <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '16px' }}>{item.label}</span>
+                            <span
+                              onClick={(e) => { e.stopPropagation(); item.toggle() }}
+                              style={{ cursor: 'pointer', color: '#9CA3AF', fontSize: 14, lineHeight: '16px' }}
+                            >×</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ flexShrink: 0, display: 'flex' }}><IcChevronRight /></div>
+                  </div>
+                </div>
+
+                <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0' }}>
+                    <span style={{ color: C_TEXT_PRIMARY }}>
+                      Nội dung <span style={{ color: '#EF4444' }}>*</span>
+                    </span>
+                    <div style={{ background: '#F9FAFB', borderRadius: 6, border: `1px solid ${letterContent ? C_BORDER : '#FCA5A5'}`, padding: '6px 12px' }}>
+                      <textarea
+                        value={letterContent} onChange={(e) => setLetterContent(e.target.value)}
+                        placeholder="Nhập nội dung thư, tài liệu (bắt buộc)"
+                        required
+                        style={{ width: '100%', minHeight: 60, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+                  {[{ label: 'Ghi chú thu khác', link: 'Thêm ghi chú' }].map(({ label, link }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
+                      <LinkText>{link}</LinkText>
+                    </div>
+                  ))}
+                  <div style={{ position: 'relative' }} data-view-goods-menu>
+                    <div
+                      onClick={() => setViewGoodsPickerOpen(v => !v)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0', cursor: 'pointer' }}
+                    >
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Ghi chú xem hàng</span>
+                      <LinkText>{VIEW_GOODS_OPTIONS.find(o => o.value === viewGoodsPolicy)?.label}</LinkText>
+                    </div>
+                    {viewGoodsPickerOpen && (
+                      <div style={{
+                        position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 240,
+                        background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 8,
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden', padding: 4,
+                      }}>
+                        {VIEW_GOODS_OPTIONS.map(opt => {
+                          const active = opt.value === viewGoodsPolicy
+                          return (
+                            <div
+                              key={opt.value}
+                              onClick={() => { setViewGoodsPolicy(opt.value); setViewGoodsPickerOpen(false) }}
+                              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 6, cursor: 'pointer' }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <div style={{
+                                width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                                border: `2px solid ${active ? '#111827' : C_BORDER}`,
+                                background: active ? '#111827' : '#fff',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>
+                                {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
+                              </div>
+                              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{opt.label}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {[{ label: 'Nguồn tạo', link: 'Facebook' }].map(({ label, link }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
+                      <LinkText>{link}</LinkText>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Dịch vụ card ── */}
+            <div style={{ ...drawerCard, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+                <IcTruck />
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
+              </div>
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                {([
+                  ['nhanh', 'Chuyển phát nhanh (Thư, tài liệu)'],
+                  ['duongbo', 'Chuyển phát đường bộ'],
+                ] as const).map(([key, label]) => (
+                  <div
+                    key={key}
+                    onClick={() => setLetterService(key)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
+                      border: `1px solid ${letterService === key ? '#111827' : C_BORDER}`,
+                    }}
+                  >
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: `2px solid ${letterService === key ? '#111827' : C_BORDER}`,
+                      background: letterService === key ? '#111827' : '#fff',
+                    }}>
+                      {letterService === key && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px' }}>Dịch vụ</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label} — 247Express</span>
+                    </div>
+                    <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px', flexShrink: 0 }}>Phí ship:</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      {(letterService === key ? feeMain : (key === 'nhanh' ? letterMainFee(mainZoneIdx, weightGram) : roadFreightMainFee(roadZoneIdx, weightKg))).toLocaleString('vi-VN')}đ
+                    </span>
+                  </div>
+                ))}
+                {isDuongBo && (
+                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>
+                    Thời gian giao dự kiến: {ROAD_TABLE.deliveryTimeDays[roadZoneIdx]} ngày
+                  </span>
+                )}
+
+              </div>
+            </div>
+
+            {/* ── Phụ phí card — liệt kê từng DVGT đã chọn + thuế, tương tự bố cục "Phụ phí"
+                tham khảo. Chỉ hiện dòng cho dịch vụ đang được chọn (24+ DVGT nên không liệt kê
+                hết, tránh danh sách toàn 0đ). Nằm trong vùng cuộn chung với Thông tin thư/Phí
+                vận chuyển ở trên — chỉ Action card đứng ngoài, cố định. ── */}
+            <div style={drawerCard}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+                <IcReceipt />
+                <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phụ phí</span>
+              </div>
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                {vasSelected.length === 0 ? (
+                  <span style={{ fontSize: 14, color: '#9CA3AF', lineHeight: '20px' }}>Chưa chọn dịch vụ gia tăng nào</span>
+                ) : vasSelected.map(item => (
+                  <div key={item.key} style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{item.label}</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{item.fee.toLocaleString('vi-VN')}đ</span>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Thuế VAT (8%)</span>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{feeVat.toLocaleString('vi-VN')}đ</span>
+                </div>
+              </div>
+            </div>
+
+            </div>
+
+            {/* ── Action card ── */}
+            <div style={{ ...drawerCard, flexShrink: 0, gap: 8, padding: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#F9FAFB', borderRadius: 6, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng phí vận chuyển</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+                    {grandTotal.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                >
+                  Lưu nháp
+                </button>
+                <button
+                  onClick={onClose}
+                  style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
+                >
+                  Tạo đơn
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {vasModalOpen && (
+        <>
+          <div onClick={() => setVasModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300 }} />
+          <div style={{
+            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+            width: 600, maxHeight: '80vh', background: '#fff', borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 301, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: '20px 48px 12px' }}>
+              <span style={{ fontSize: 20, fontWeight: 700, color: C_ACTION, lineHeight: '28px' }}>Dịch vụ gia tăng</span>
+              <button onClick={() => setVasModalOpen(false)} style={{ position: 'absolute', right: 16, top: 16, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+                <IcX />
+              </button>
+            </div>
+            <div style={{ padding: '0 16px 12px' }}>
+              <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <IcSearch />
+                <input
+                  value={vasSearch} onChange={(e) => setVasSearch(e.target.value)}
+                  placeholder="Tìm kiếm"
+                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                />
+              </div>
+            </div>
+            <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 16px' }}>
+              {vasFiltered.length === 0 ? (
+                <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy dịch vụ phù hợp</div>
+              ) : vasFiltered.map(item => (
+                <VasCheckboxRow
+                  key={item.key} checked={item.checked} onChange={item.toggle} label={item.label}
+                  disabledReason={item.disabledReason} extra={item.extra}
+                />
+              ))}
+            </div>
+            <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: 16, flexShrink: 0 }}>
+              <button
+                onClick={() => setVasModalOpen(false)}
+                style={{ padding: '8px 20px', borderRadius: 6, border: `1px solid ${C_ACTION}`, background: '#fff', color: C_ACTION, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={() => setVasModalOpen(false)}
+                style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: C_ACTION, color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+              >
+                Chọn
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
 
 // ── Data ─────────────────────────────────────────────────────
 const myOrders = allOrders.filter((o) => o.shopId === 'SHP001')
@@ -1821,9 +2649,20 @@ export default function ShopOrders() {
   const [page, setPage]             = useState(1)
   const [pageSize, setPageSize]     = useState(50)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [letterDrawerOpen, setLetterDrawerOpen] = useState(false)
+  const [createMenuOpen, setCreateMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+
+  useEffect(() => {
+    if (!createMenuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-create-order-menu]')) setCreateMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [createMenuOpen])
 
   const ordersByTab: Record<string, typeof myOrders> = {
     draft:         myOrders.filter((o) => o.status === 'pending'),
@@ -1892,16 +2731,41 @@ export default function ShopOrders() {
             <IcSettings />
             <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Cài đặt đơn hàng</span>
           </button>
-          <button
-            onClick={() => setDrawerOpen(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px',
-              background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0,
-            }}
-          >
-            <PlusOutlined style={{ color: '#fff', fontSize: 16 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo đơn hàng</span>
-          </button>
+          <div style={{ position: 'relative', flexShrink: 0 }} data-create-order-menu>
+            <button
+              onClick={() => setCreateMenuOpen(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px',
+                background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer',
+              }}
+            >
+              <PlusOutlined style={{ color: '#fff', fontSize: 16 }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo đơn hàng</span>
+              <IcChevronDown size={16} />
+            </button>
+            {createMenuOpen && (
+              <div style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 220,
+                background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden',
+              }}>
+                {[
+                  { label: 'Tạo đơn hàng', onClick: () => setDrawerOpen(true) },
+                  { label: 'Tạo thư, tài liệu', onClick: () => setLetterDrawerOpen(true) },
+                ].map(item => (
+                  <div
+                    key={item.label}
+                    onClick={() => { item.onClick(); setCreateMenuOpen(false) }}
+                    style={{ padding: '8px 12px', fontSize: 14, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}
@@ -1986,6 +2850,7 @@ export default function ShopOrders() {
 
       {/* Create Order Drawer */}
       <CreateOrderDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <CreateLetterDrawer open={letterDrawerOpen} onClose={() => setLetterDrawerOpen(false)} />
       <OrderSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       {/* Order Detail Drawer */}
       <OrderDetailDrawer order={selectedOrder} open={detailOpen} onClose={() => setDetailOpen(false)} />

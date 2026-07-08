@@ -1,0 +1,63 @@
+{
+  "id": "PRC247LETTER",
+  "name": "Bảng giá Thư 247Express (Chuyển phát nhanh)",
+  "agencyId": "AGN001",
+  "nvc": "247Express",
+  "isDefault": false,
+  "description": "Đúng theo Hợp đồng cung cấp và sử dụng dịch vụ vận chuyển số 1231/2026/HĐDV-247, dịch vụ Chuyển phát nhanh — áp dụng riêng cho luồng \"Tạo thư\" (thư/tài liệu), giá cước từ Hồ Chí Minh đến toàn quốc",
+  "status": "active",
+  "createdAt": "2026-07-03",
+  "kind": "letter247",
+  "zones": [
+    { "label": "Nội tỉnh 1" },
+    { "label": "Nội tỉnh 2" },
+    { "label": "Đến 300km" },
+    { "label": "Trên 300km" },
+    { "label": "Nội tỉnh 1 (HCM-ĐN / ĐN-HN)" },
+    { "label": "Nội tỉnh 1 (HCM-HN)" }
+  ],
+  "weightBracketsGram": [50, 100, 250, 500, 1000, 1500, 2000],
+  "prices": [
+    [9200, 11900, 11900, 12600, 11300, 11900],
+    [10100, 15700, 15700, 17500, 14900, 15700],
+    [12600, 20700, 20700, 25000, 19700, 20700],
+    [16300, 28800, 28800, 33100, 27400, 28800],
+    [20000, 40000, 40000, 48100, 42700, 45000],
+    [23800, 49900, 49900, 61800, 54600, 57500],
+    [27600, 58800, 58800, 74400, 66400, 69900]
+  ],
+  "overweightPer500g": {
+    "from2to10kg": [2100, 4700, 4700, 11200, 9900, 10500],
+    "over10kg": [2100, 4700, 4700, 10000, 8900, 9400]
+  },
+  "surcharges": {
+    "ngoaiThanhPercent": 20,
+    "nhienLieuPercent": 24,
+    "insuranceFlat": { "percent": 0.75, "minFee": "20000" },
+    "codFee": [
+      { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "1" },
+      { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.5" },
+      { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "2" }
+    ],
+    "baoPhat": { "fee": "5000", "note": "5.000đ/vận đơn, miễn phí khi bưu gửi bị thất lạc" },
+    "chupHinh": { "feePerPhoto": "2000", "minFee": "5000", "maxPhotos": 10 },
+    "layIdCaNhan": { "fee": "10000" },
+    "nguoiNhanThanhToan": { "fee": "20000" },
+    "ngoaiGioHanhChinh": { "fee": "50000" },
+    "phatHangSieuThi": { "baseFee": "100000", "feePerUnit": "1000" },
+    "phatHangTanTay": { "fee": "10000" },
+    "phatUuTien": { "fee": "30000", "maxWeightGram": 2000 },
+    "phiAnNinh": { "feePerKg": "12000", "minFee": "200000" },
+    "thongTinDayDu": { "fee": "5000" },
+    "thuKyKhachHang": { "fee": "50000" },
+    "sms": { "feePerMessage": "1000", "maxChars": 160 },
+    "giaoHangLenTang": { "feePerKg": "250", "minWeightGram": 50000 },
+    "nhanHangLenTang": { "feePerKg": "250", "minWeightGram": 50000 },
+    "hangExpress": { "feePerKg": "10000", "minWeightGram": 2000 },
+    "hangVun": { "feePerKg": "12000", "minFee": "200000" },
+    "hoSoThau": { "baseFee": "200000", "perKgOver2kg": "15000" }
+  },
+  "vasZones": ["Nội tỉnh 1", "Nội tỉnh 2", "Đến 100KM", "Đến 300KM", "Trên 300KM"],
+  "vasSameDay": { "upTo2kg": [30000, 70000, 70000, 100000, 250000], "per500g": [3000, 5000, 5000, 7000, 9000] },
+  "vasScheduled": { "upTo2kg": [30000, 50000, 50000, 70000, 90000], "per500g": [3000, 5000, 5000, 7000, 9000] }
+}

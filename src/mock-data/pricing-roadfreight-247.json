@@ -1,0 +1,56 @@
+{
+  "id": "PRC247ROADFREIGHT",
+  "name": "Bảng giá Chuyển phát đường bộ 247Express",
+  "agencyId": "AGN001",
+  "nvc": "247Express",
+  "isDefault": false,
+  "description": "Đúng theo Hợp đồng cung cấp và sử dụng dịch vụ vận chuyển số 1231/2026/HĐDV-247, dịch vụ Chuyển phát đường bộ — áp dụng riêng cho luồng \"Tạo thư\" khi shop chọn dịch vụ Chuyển phát đường bộ thay vì Chuyển phát nhanh. Phần phụ phí ngoại thành/nhiên liệu của dịch vụ này CHƯA có số liệu (chờ bổ sung), tạm để 0.",
+  "status": "active",
+  "createdAt": "2026-07-05",
+  "kind": "roadfreight247",
+  "zones": [
+    { "label": "Nội tỉnh 1" },
+    { "label": "Nội tỉnh 2" },
+    { "label": "Đến 300km" },
+    { "label": "Đến 1000km" },
+    { "label": "Trên 1000km" }
+  ],
+  "baseFeeUpTo5kg": [27000, 32000, 32000, 40500, 54000],
+  "perKgTiers": [
+    { "uptoKg": 50, "rates": [3200, 3800, 3800, 4800, 6400] },
+    { "uptoKg": 200, "rates": [2500, 2900, 2900, 3700, 5200] },
+    { "uptoKg": 500, "rates": [2200, 2600, 2600, 3300, 4600] },
+    { "uptoKg": null, "rates": [2000, 2400, 2400, 3100, 4400] }
+  ],
+  "deliveryTimeDays": ["01-02", "02-03", "02-03", "02-04", "04-05"],
+  "roundingNote": "Từ nấc 5kg trở lên, phần lẻ được làm tròn 1kg để tính cước",
+  "surcharges": {
+    "ngoaiThanhPercent": 0,
+    "nhienLieuPercent": 0,
+    "hangQuaKhoPercent": 10,
+    "xeNang": { "feePerLan": "625000" },
+    "baoPhat": { "fee": "5000" },
+    "chupHinh": { "feePerPhoto": "2000", "minFee": "5000", "maxPhotos": 10 },
+    "khaiGia": { "percent": 0.75, "minFee": "20000" },
+    "dongKiem": { "feePerUnit": "1000", "minFee": "20000" },
+    "layIdCaNhan": { "fee": "10000" },
+    "nguoiNhanThanhToan": { "fee": "20000" },
+    "ngoaiGioHanhChinh": { "fee": "50000" },
+    "phatHangSieuThi": { "baseFee": "100000", "feePerUnit": "1000" },
+    "phatHangTanTay": { "fee": "10000" },
+    "thongTinDayDu": { "fee": "5000" },
+    "thuKyKhachHang": { "fee": "50000" },
+    "sms": { "feePerMessage": "1000", "maxChars": 160 },
+    "giaoHangLenTang": { "feePerKg": "250", "minWeightGram": 50000 },
+    "nhanHangLenTang": { "feePerKg": "250", "minWeightGram": 50000 }
+  },
+  "dongGoi": [
+    { "id": "go", "label": "Đóng gỗ", "upTo1kg": "30000", "per5kg": "10000" },
+    { "id": "goXop", "label": "Đóng gỗ xốp", "upTo1kg": "40000", "per5kg": "15000" },
+    { "id": "carton", "label": "Đóng carton", "upTo1kg": "10000", "per5kg": "10000" },
+    { "id": "cartonXop", "label": "Đóng carton xốp", "upTo1kg": "20000", "per5kg": "15000" },
+    { "id": "ongNhua", "label": "Đóng ống nhựa", "upTo1kg": "30000", "per5kg": "10000" },
+    { "id": "pallet", "label": "Đóng pallet", "feePerKien": "170000" },
+    { "id": "khac", "label": "Đóng khác", "upTo1kg": "30000", "per5kg": "10000" }
+  ]
+}

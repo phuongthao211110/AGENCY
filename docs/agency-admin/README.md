@@ -29,6 +29,14 @@
 
 _Chưa có stories_
 
+## Đối soát & Chuyển khoản
+
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [AGA] Đối soát: Tạo phiên đối soát GHN | [tao-phien-doi-soat-ghn.md](./reconciliation/tao-phien-doi-soat-ghn.md) | — | [Draft] |
+| Phiên nhà vận chuyển (Phiên GHN) | [phien-nha-van-chuyen.md](./reconciliation/phien-nha-van-chuyen.md) | — | [Draft] |
+| Phiên shop (tự sinh) | [phien-shop.md](./reconciliation/phien-shop.md) | — | [Draft] |
+
 ## Hệ thống
 
 | Story | File | Jira | Status |

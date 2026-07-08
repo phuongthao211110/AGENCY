@@ -14,7 +14,7 @@ import {
   BarChartOutlined,
   LockOutlined,
 } from '@ant-design/icons'
-import { agenciesList, setAllowedCarriers, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub, SERVICE_TYPES_247 } from '../agencyStore'
+import { agenciesList, setAllowedCarriers, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub } from '../agencyStore'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY = '#111827'
@@ -205,27 +205,20 @@ function Toast({ visible }: { visible: boolean }) {
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-// ── Duyệt 247Express — 2 bước: (1) chọn dịch vụ, (2) chọn ClientHubID — cả 2 đều multi-select ──
-function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, requestedHubIds, onConfirm, onReject, onCancel }: {
+// 247Express hiện chỉ còn 1 dịch vụ (DE — Chuyển phát nhanh) nên bỏ bước chọn dịch
+// vụ, duyệt luôn thẳng vào chọn địa điểm gửi hàng.
+function CarrierApprovalForm({ agencyName, excludeHubIds, requestedHubIds, onConfirm, onReject, onCancel }: {
   agencyName: string
   excludeHubIds?: string[]
-  excludeServiceIds?: string[]
   requestedHubIds?: string[]
   onConfirm: (hubIds: string[], serviceIds: string[]) => void
   onReject: () => void
   onCancel: () => void
 }) {
-  // Yêu cầu thêm địa điểm gửi hàng không liên quan tới dịch vụ — bỏ qua bước chọn dịch vụ, vào thẳng bước chọn hub.
-  const [step, setStep] = useState<'services' | 'hubs'>(requestedHubIds ? 'hubs' : 'services')
-  const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [selectedHubs, setSelectedHubs] = useState<string[]>(requestedHubIds ?? [])
 
-  const availableServices = SERVICE_TYPES_247.filter(s => !(excludeServiceIds ?? []).includes(s.id))
   const availableHubs = clientHubs247.filter(h => !(excludeHubIds ?? []).includes(h.id))
-  const canContinueStep1 = selectedServices.length > 0
 
-  const toggleService = (id: string) =>
-    setSelectedServices(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   const toggleHub = (id: string) =>
     setSelectedHubs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
 
@@ -246,38 +239,10 @@ function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, req
     </div>
   )
 
-  if (step === 'services') {
-    return (
-      <div style={{ padding: '10px 12px', background: '#F5F3FF', borderTop: `1px solid #C4B5FD` }}>
-        <div style={{ fontSize: 12, color: '#5B21B6', fontWeight: 600, marginBottom: 8 }}>
-          Bước 1/2 — Chọn dịch vụ 247Express cho <span style={{ color: '#3B82F6' }}>{agencyName}</span>
-        </div>
-        <div style={{ maxHeight: 200, overflowY: 'auto', border: `1px solid #C4B5FD`, borderRadius: 8, background: '#fff', marginBottom: 8 }}>
-          {availableServices.length === 0 ? (
-            <div style={{ padding: '14px', textAlign: 'center', fontSize: 12, color: C_TEXT_SECONDARY }}>Đại lý đã được duyệt toàn bộ dịch vụ hiện có.</div>
-          ) : availableServices.map(svc => (
-            <CheckRow key={svc.id} label={svc.label} checked={selectedServices.includes(svc.id)} onToggle={() => toggleService(svc.id)} />
-          ))}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-          <button onClick={onReject} style={{ padding: '4px 12px', background: 'none', border: `1px solid #FCA5A5`, borderRadius: 6, fontSize: 12, color: '#DC2626', cursor: 'pointer' }}>Từ chối</button>
-          <button onClick={onCancel} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Huỷ</button>
-          <button
-            onClick={() => canContinueStep1 && setStep('hubs')}
-            disabled={!canContinueStep1}
-            style={{ padding: '4px 14px', background: canContinueStep1 ? '#8B5CF6' : '#D1D5DB', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', cursor: canContinueStep1 ? 'pointer' : 'not-allowed' }}
-          >
-            Tiếp tục ({selectedServices.length})
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div style={{ padding: '10px 12px', background: '#F5F3FF', borderTop: `1px solid #C4B5FD` }}>
       <div style={{ fontSize: 12, color: '#5B21B6', fontWeight: 600, marginBottom: 8 }}>
-        {requestedHubIds ? 'Chọn địa điểm gửi hàng cho' : 'Bước 2/2 — Chọn Địa điểm gửi hàng cho'} <span style={{ color: '#3B82F6' }}>{agencyName}</span>
+        {requestedHubIds ? 'Chọn địa điểm gửi hàng cho' : 'Chọn Địa điểm gửi hàng cho'} <span style={{ color: '#3B82F6' }}>{agencyName}</span>
       </div>
       <div style={{ maxHeight: 200, overflowY: 'auto', border: `1px solid #C4B5FD`, borderRadius: 8, background: '#fff', marginBottom: 8 }}>
         {availableHubs.length === 0 ? (
@@ -287,13 +252,10 @@ function CarrierApprovalForm({ agencyName, excludeHubIds, excludeServiceIds, req
         ))}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-        {!requestedHubIds && (
-          <button onClick={() => setStep('services')} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Quay lại</button>
-        )}
         <button onClick={onReject} style={{ padding: '4px 12px', background: 'none', border: `1px solid #FCA5A5`, borderRadius: 6, fontSize: 12, color: '#DC2626', cursor: 'pointer' }}>Từ chối</button>
         <button onClick={onCancel} style={{ padding: '4px 12px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Huỷ</button>
         <button
-          onClick={() => selectedHubs.length > 0 && onConfirm(selectedHubs, selectedServices)}
+          onClick={() => selectedHubs.length > 0 && onConfirm(selectedHubs, ['DE'])}
           disabled={selectedHubs.length === 0}
           style={{ padding: '4px 14px', background: selectedHubs.length > 0 ? '#8B5CF6' : '#D1D5DB', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, color: '#fff', cursor: selectedHubs.length > 0 ? 'pointer' : 'not-allowed' }}
         >
@@ -506,6 +468,11 @@ export default function AgencyDetail() {
                       const isLocked = carrier.key === 'GHN'
                       const pendingReq = carrierRequests.find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'pending')
                       const rejectedReq = !enabled && carrierRequests.find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'rejected')
+                      // Yêu cầu "cấp thêm hub" bị từ chối trên carrier ĐÃ kích hoạt — rejectedReq ở trên
+                      // chỉ bắt trường hợp carrier chưa kích hoạt, nên cần biến riêng để không bị mất
+                      // thông báo khi đại lý đã hoạt động nhưng yêu cầu thêm hub gần nhất bị từ chối.
+                      const rejectedHubReq = enabled && !pendingReq &&
+                        [...carrierRequests].reverse().find(r => r.agencyId === agency.id && r.carrier === carrier.key && r.status === 'rejected')
                       return (
                         <div key={carrier.key} style={{ display: 'flex', flexDirection: 'column', gap: 0, border: `1px solid ${enabled ? carrier.color + '40' : (pendingReq ? '#FCD34D' : C_BORDER)}`, borderRadius: 8, overflow: 'hidden', background: enabled ? carrier.color + '08' : (pendingReq ? '#FFFBEB' : '#FAFAFA') }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px' }}>
@@ -556,12 +523,11 @@ export default function AgencyDetail() {
                               {pendingReq.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
                             </div>
                           )}
-                          {/* Duyệt form 2 bước: chọn dịch vụ trước, ClientHubID sau — cả 2 multi-select */}
+                          {/* Duyệt — chỉ còn chọn ClientHubID, dịch vụ 247Express cố định 1 loại */}
                           {approvingCarrierId === pendingReq?.id && (
                             <CarrierApprovalForm
                               agencyName={agency.name}
                               excludeHubIds={agency.clientHubIds}
-                              excludeServiceIds={agency.allowedServices247}
                               requestedHubIds={pendingReq!.requestedHubIds}
                               onConfirm={(hubIds, serviceIds) => {
                                 approveCarrierRequest(pendingReq!.id, hubIds, serviceIds)
@@ -591,6 +557,23 @@ export default function AgencyDetail() {
                                   style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: rejectCarrierReason.trim() ? '#DC2626' : '#D1D5DB', color: '#fff', fontSize: 12, fontWeight: 700, cursor: rejectCarrierReason.trim() ? 'pointer' : 'not-allowed' }}>
                                   Xác nhận từ chối
                                 </button>
+                              </div>
+                            </div>
+                          )}
+                          {/* Yêu cầu cấp thêm hub gần nhất bị từ chối — hiện rõ để Super Admin biết đại lý
+                              đang chờ phản hồi, tránh tưởng nhầm là chưa có yêu cầu nào. */}
+                          {carrier.key === '247Express' && rejectedHubReq && (
+                            <div style={{ padding: '10px 12px', borderTop: '1px solid #FCA5A5', background: '#FFF5F5' }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: '#DC2626', marginBottom: 2 }}>
+                                Yêu cầu cấp thêm địa điểm gửi hàng đã bị từ chối
+                              </div>
+                              {rejectedHubReq.requestedHubIds && rejectedHubReq.requestedHubIds.length > 0 && (
+                                <div style={{ fontSize: 12, color: '#7F1D1D' }}>
+                                  Địa điểm đã yêu cầu: {rejectedHubReq.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
+                                </div>
+                              )}
+                              <div style={{ fontSize: 12, color: '#7F1D1D' }}>
+                                Lý do: {rejectedHubReq.rejectionReason || '(không có lý do cụ thể)'}
                               </div>
                             </div>
                           )}

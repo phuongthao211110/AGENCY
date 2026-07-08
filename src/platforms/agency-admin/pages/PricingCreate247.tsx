@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeftOutlined, InfoCircleOutlined, CalculatorOutlined, PlusOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons'
 import { agenciesList, clientHubs247, type ClientHub247 } from '../../super-admin/agencyStore'
 
 const CURRENT_AGENCY_ID = 'AGN001'
@@ -11,17 +11,10 @@ const C_TEXT_SECONDARY = '#6B7280'
 const C_TEXT_LABEL     = '#4B5563'
 const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
-const C_BG_FORM        = '#F9FAFB'
 
-// ─── 3 dịch vụ 247Express — mỗi dịch vụ có vùng tính giá riêng theo hợp đồng
-// số 1231/2026/HĐDV-247 ─────────────────────────────────────────────────────────
-type ServiceKey = 'nhanh' | 'tietkiem' | 'duongbo'
-
-const SERVICE_LABELS: Record<ServiceKey, string> = {
-  nhanh:    'Chuyển phát nhanh',
-  tietkiem: 'Chuyển phát nhanh tiết kiệm',
-  duongbo:  'Chuyển phát đường bộ',
-}
+// ─── 247Express hiện chỉ còn 1 dịch vụ được hỗ trợ tạo bảng giá: Chuyển phát
+// nhanh — theo hợp đồng số 1231/2026/HĐDV-247 ────────────────────────────────────
+const SERVICE_LABEL = 'Chuyển phát nhanh'
 
 // ─── Vùng 247Express — theo Hợp đồng cung cấp và sử dụng dịch vụ vận chuyển
 // số 1231/2026/HĐDV-247, mục A.1 "Cước chính" (Dịch vụ chuyển phát nhanh),
@@ -61,131 +54,11 @@ const DEFAULT_STEP_OVER_10KG: Record<Zone247, number> = {
 // Tier vượt cân động cho dịch vụ Chuyển phát nhanh (toGram rỗng = không giới hạn)
 type OverweightTier247 = { id: string; toGram: string; stepGram: string }
 
-// Cước chính — giá cố định cho ≤ cân nặng chuẩn (tự cấu hình theo từng vùng,
-// giống GHN), sau đó áp dụng tier vượt cân cho phần còn lại
-function mainFreightCost(
-  zone: Zone247,
-  gram: number,
-  basePrice: Record<Zone247, string>,
-  standardWeight: Record<Zone247, string>,
-  tiers: OverweightTier247[],
-  increaseByTier: Record<string, Record<Zone247, number>>,
-): number {
-  if (gram <= 0) return 0
-  const base = Number(basePrice[zone]) || 0
-  const boundary0 = Number(standardWeight[zone]) || 0
-  if (gram <= boundary0) return base
-  let cost = base
-  let boundary = boundary0
-  for (const tier of tiers) {
-    if (gram <= boundary) break
-    const stepGram = Number(tier.stepGram) || 500
-    const increase = increaseByTier[tier.id]?.[zone] ?? 0
-    const tierEnd = tier.toGram.trim() === '' ? Infinity : Number(tier.toGram)
-    const effectiveEnd = Math.min(gram, tierEnd)
-    const steps = Math.ceil((effectiveEnd - boundary) / stepGram)
-    cost += steps * increase
-    boundary = tierEnd
-  }
-  return cost
-}
 
-// "Nấc cước phí tương ứng TL" dùng cho phụ phí HNK/HQK
-function tierStepRate(
-  zone: Zone247,
-  weightKg: number,
-  tiers: OverweightTier247[],
-  increaseByTier: Record<string, Record<Zone247, number>>,
-): number {
-  const gram = weightKg * 1000
-  for (const tier of tiers) {
-    const tierEnd = tier.toGram.trim() === '' ? Infinity : Number(tier.toGram)
-    if (gram <= tierEnd) return increaseByTier[tier.id]?.[zone] ?? 0
-  }
-  return increaseByTier[tiers[tiers.length - 1]?.id]?.[zone] ?? 0
-}
-
-const REMOTE_SURCHARGE_PERCENT = 20   // Phụ phí ngoại thành
-const FUEL_SURCHARGE_PERCENT   = 24   // Phụ phí nhiên liệu, hiệu lực 01/05/2026-31/07/2026
-const HNK_PERCENT              = 10   // Cước hàng nguyên khối
-const HQK_PERCENT              = 10   // Cước hàng quá khổ
-const FORKLIFT_FEE             = 625000 // đ/lần thuê xe nâng/phương tiện chuyên dụng
-
-function hnkFee(zone: Zone247, weightKg: number, tiers: OverweightTier247[], increaseByTier: Record<string, Record<Zone247, number>>): number {
-  return weightKg * (HNK_PERCENT / 100) * tierStepRate(zone, weightKg, tiers, increaseByTier)
-}
-
-function hqkFee(zone: Zone247, weightKg: number, tiers: OverweightTier247[], increaseByTier: Record<string, Record<Zone247, number>>): number {
-  if (weightKg < 15) return (15 - weightKg) * tierStepRate(zone, weightKg, tiers, increaseByTier)
-  return weightKg * (HQK_PERCENT / 100) * tierStepRate(zone, weightKg, tiers, increaseByTier)
-}
-
-// ─── Vùng dùng cho "Chuyển phát nhanh tiết kiệm" và "Chuyển phát đường bộ" — 5
-// vùng, giá theo "đến 5kg" + cộng thêm mỗi 1kg tiếp theo (khác cấu trúc "Chuyển
-// phát nhanh" ở trên, theo đúng hợp đồng) ───────────────────────────────────────
-type Zone5 = 'ntl1' | 'ntl2' | 'den300' | 'den1000' | 'tren1000'
-
-const ZONES5: Zone5[] = ['ntl1', 'ntl2', 'den300', 'den1000', 'tren1000']
-
-const ZONE5_LABELS: Record<Zone5, string> = {
-  ntl1:     'Nội tỉnh 1',
-  ntl2:     'Nội tỉnh 2',
-  den300:   'Đến 300 km',
-  den1000:  'Đến 1000 km',
-  tren1000: 'Trên 1000 km',
-}
-
-const ZONE5_COLORS: Record<Zone5, string> = {
-  ntl1: '#16A34A', ntl2: '#0D9488', den300: '#2563EB', den1000: '#C2410C', tren1000: '#7C3AED',
-}
-
-type WeightBand5 = { label: string; toKg: number; rates: Record<Zone5, number> }
-
-// Chuyển phát nhanh tiết kiệm — mục "Cước chính"
-const TIETKIEM_BANDS: WeightBand5[] = [
-  { label: 'Đến 50kg',   toKg: 50,       rates: { ntl1: 3800, ntl2: 6000, den300: 6000, den1000: 9000, tren1000: 14100 } },
-  { label: 'Đến 200kg',  toKg: 200,      rates: { ntl1: 3200, ntl2: 5100, den300: 5100, den1000: 7700, tren1000: 12000 } },
-  { label: 'Đến 500kg',  toKg: 500,      rates: { ntl1: 2600, ntl2: 4400, den300: 4400, den1000: 6500, tren1000: 10200 } },
-  { label: 'Trên 500kg', toKg: Infinity, rates: { ntl1: 2500, ntl2: 3500, den300: 3500, den1000: 5200, tren1000: 8100 } },
-]
-const TIETKIEM_TRANSIT: Record<Zone5, string> = {
-  ntl1: '1 - 1.5 ngày', ntl2: '1 - 2 ngày', den300: '1 - 2 ngày', den1000: '1 - 3 ngày', tren1000: '3 - 4 ngày',
-}
-
-// Chuyển phát đường bộ — mục "Cước chính"
-const DUONGBO_BANDS: WeightBand5[] = [
-  { label: 'Đến 50kg',   toKg: 50,       rates: { ntl1: 3200, ntl2: 3800, den300: 3800, den1000: 4800, tren1000: 6400 } },
-  { label: 'Đến 200kg',  toKg: 200,      rates: { ntl1: 2500, ntl2: 2900, den300: 2900, den1000: 3700, tren1000: 5200 } },
-  { label: 'Đến 500kg',  toKg: 500,      rates: { ntl1: 2200, ntl2: 2600, den300: 2600, den1000: 3300, tren1000: 4600 } },
-  { label: 'Trên 500kg', toKg: Infinity, rates: { ntl1: 2000, ntl2: 2400, den300: 2400, den1000: 3100, tren1000: 4400 } },
-]
-const DUONGBO_TRANSIT: Record<Zone5, string> = {
-  ntl1: '1 - 2 ngày', ntl2: '2 - 3 ngày', den300: '2 - 3 ngày', den1000: '2 - 4 ngày', tren1000: '4 - 5 ngày',
-}
-
-// Tier vượt cân động cho dịch vụ Tiết kiệm / Đường bộ (toKg rỗng = không giới hạn)
-type OverweightBandConfig = { id: string; toKg: string; stepKg: string }
-
-const makeBandConfig = (bands: WeightBand5[], prefix: string): OverweightBandConfig[] =>
-  bands.map((b, i) => ({
-    id: `${prefix}${i + 1}`,
-    toKg: b.toKg === Infinity ? '' : String(b.toKg),
-    stepKg: '1',
-  }))
-
-// ─── Dịch vụ gia tăng nhanh (mục 3.1, 3.2) — vùng tính riêng, không dùng 6 vùng
-// của cước chính ────────────────────────────────────────────────────────────────
-const FAST_SERVICE_ZONES = ['Nội tỉnh 1', 'Nội tỉnh 2', 'Đến 100km', 'Đến 300km', 'Trên 300km']
-
-const SAME_DAY_ROWS: { label: string; values: number[] }[] = [
-  { label: 'Đến 2kg',            values: [30000, 70000, 70000, 100000, 250000] },
-  { label: '+500gr tiếp theo',   values: [3000, 5000, 5000, 7000, 9000] },
-]
-
-const SCHEDULED_ROWS: { label: string; values: number[] }[] = [
-  { label: 'Đến 2kg',            values: [30000, 50000, 50000, 70000, 90000] },
-  { label: '+500gr tiếp theo',   values: [3000, 5000, 5000, 7000, 9000] },
-]
+// ─── Dịch vụ gia tăng nhanh (mục 3.1, 3.2) — Phát trong ngày / Phát hẹn giờ, giờ
+// nằm trong đúng 6 vùng của cước chính (mỗi vùng tự nhập giá riêng), không dùng
+// bảng vùng riêng như trước ─────────────────────────────────────────────────────
+const FAST_SERVICE_ROW_LABELS = ['Đến 2kg', '+500gr tiếp theo']
 
 type PackagingMaterial = { label: string; upTo1kg?: number; per5kg?: number; flatPerUnit?: number }
 
@@ -258,34 +131,66 @@ function SectionCard({ title, subtitle, children }: { title: React.ReactNode; su
   )
 }
 
+// ─── Dòng gộp có thể mở/thu gọn — thay cho tab "Phụ phí" cũ theo từng vùng,
+// cùng kiểu tương tác với bảng giá GHN (1 dòng, bấm vào mở rộng nội dung) ──────
+function ExpandableRow({ label, open, onToggle, children }: {
+  label: string; open: boolean; onToggle: () => void; children: React.ReactNode
+}) {
+  return (
+    <div>
+      <div
+        onClick={onToggle}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', cursor: 'pointer' }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: C_TEXT_SECONDARY, flexShrink: 0 }} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY, flex: 1 }}>{label}</span>
+        <span style={{ fontSize: 12, color: C_ACTION, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+          {open ? 'Thu gọn' : 'Xem chi tiết'}
+          <span style={{ display: 'inline-block', transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+        </span>
+      </div>
+      {open && <div style={{ padding: '0 0 12px' }}>{children}</div>}
+    </div>
+  )
+}
+
 // ─── Dịch vụ gia tăng nhanh (Phát trong ngày / Phát hẹn giờ) — đại lý tự nhập
 // giá bán cho shop theo từng mốc × vùng ───────────────────────────────────────
-function FastServiceTable({ rows, sell, onChangeSell }: {
-  rows: { label: string; values: number[] }[]
-  sell: string[][]
-  onChangeSell: (rowIndex: number, zoneIndex: number, v: string) => void
+// ─── Dịch vụ gia tăng nhanh cho 1 vùng cụ thể — Phát trong ngày / Phát hẹn giờ
+// × 2 mốc trọng lượng, nằm trong tab riêng của từng ZoneBlock ──────────────────
+function FastServiceZoneFields({ sameDay, scheduled, onChangeSameDay, onChangeScheduled }: {
+  sameDay: [string, string]
+  scheduled: [string, string]
+  onChangeSameDay: (rowIndex: 0 | 1, v: string) => void
+  onChangeScheduled: (rowIndex: 0 | 1, v: string) => void
 }) {
   return (
     <div style={{ overflowX: 'auto' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: `1.2fr repeat(${FAST_SERVICE_ZONES.length}, 1fr)`, minWidth: 760 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', minWidth: 420 }}>
         <div style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Trọng lượng</div>
-        {FAST_SERVICE_ZONES.map(z => (
-          <div key={z} style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>{z}</div>
-        ))}
-        {rows.map((r, ri) => (
-          <Fragment key={r.label}>
-            <div style={{ padding: '9px 16px', borderTop: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{r.label}</div>
-            {r.values.map((_, zi) => (
-              <div key={zi} style={{ padding: '6px 12px', borderTop: `1px solid ${C_BORDER}`, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <input
-                  type="number"
-                  value={sell[ri]?.[zi] ?? ''}
-                  onChange={e => onChangeSell(ri, zi, e.target.value)}
-                  placeholder="Giá bán"
-                  style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '4px 7px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
-                />
-              </div>
-            ))}
+        <div style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Phát trong ngày</div>
+        <div style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Phát hẹn giờ</div>
+        {FAST_SERVICE_ROW_LABELS.map((label, ri) => (
+          <Fragment key={label}>
+            <div style={{ padding: '9px 16px', borderTop: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{label}</div>
+            <div style={{ padding: '6px 12px', borderTop: `1px solid ${C_BORDER}` }}>
+              <input
+                type="number"
+                value={sameDay[ri] ?? ''}
+                onChange={e => onChangeSameDay(ri as 0 | 1, e.target.value)}
+                placeholder="Giá bán"
+                style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '4px 7px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ padding: '6px 12px', borderTop: `1px solid ${C_BORDER}` }}>
+              <input
+                type="number"
+                value={scheduled[ri] ?? ''}
+                onChange={e => onChangeScheduled(ri as 0 | 1, e.target.value)}
+                placeholder="Giá bán"
+                style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '4px 7px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
           </Fragment>
         ))}
       </div>
@@ -499,258 +404,6 @@ function OverweightTierList247({
   )
 }
 
-// ─── "Phụ phí" theo vùng — ngoại thành, nhiên liệu, HNK/HQK, xe nâng (theo hợp
-// đồng, tính cho đúng vùng đang mở) ─────────────────────────────────────────────
-function ZoneFreightCalculator({
-  zone, basePrice, standardWeight, overweightTiers, increaseByTier,
-}: {
-  zone: Zone247
-  basePrice: Record<Zone247, string>
-  standardWeight: Record<Zone247, string>
-  overweightTiers: OverweightTier247[]
-  increaseByTier: Record<string, Record<Zone247, number>>
-}) {
-  const [weight, setWeight] = useState('10')
-  const [cargoType, setCargoType] = useState<'thuong' | 'hnk' | 'hqk'>('thuong')
-  const [includeReturn, setIncludeReturn] = useState(false)
-  const [applyRemote, setApplyRemote] = useState(true)
-  const [forkliftCount, setForkliftCount] = useState('0')
-
-  const weightKg = Math.max(Number(weight) || 0, 0)
-  const base = mainFreightCost(zone, weightKg * 1000, basePrice, standardWeight, overweightTiers, increaseByTier)
-  const returnFee = includeReturn ? base : 0
-  const remote = applyRemote ? (base + returnFee) * (REMOTE_SURCHARGE_PERCENT / 100) : 0
-  const fuel = (base + returnFee + remote) * (FUEL_SURCHARGE_PERCENT / 100)
-  const hnk = cargoType === 'hnk' ? hnkFee(zone, weightKg, overweightTiers, increaseByTier) : 0
-  const hqk = cargoType === 'hqk' ? hqkFee(zone, weightKg, overweightTiers, increaseByTier) : 0
-  const forklift = (Number(forkliftCount) || 0) * FORKLIFT_FEE
-  const total = base + returnFee + remote + fuel + hnk + hqk + forklift
-
-  const row = (label: string, value: number, dim = false) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 13 }}>
-      <span style={{ color: dim ? C_TEXT_SECONDARY : C_TEXT_PRIMARY }}>{label}</span>
-      <span style={{ color: dim ? C_TEXT_SECONDARY : C_TEXT_PRIMARY, fontWeight: dim ? 400 : 600 }}>{value.toLocaleString()}đ</span>
-    </div>
-  )
-
-  return (
-    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' as const }}>
-      <div style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: C_TEXT_LABEL }}>
-          <CalculatorOutlined /> Ước tính phí phát sinh
-        </div>
-        <div style={{ width: 160 }}>
-          <InputField label="Khối lượng" type="number" value={weight} onChange={setWeight} suffix="kg" />
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 13, color: C_TEXT_LABEL }}>Loại hàng</span>
-          <div style={{ display: 'inline-flex', gap: 1, background: '#F3F4F6', borderRadius: 6, padding: 2, width: 'fit-content' }}>
-            {([
-              { key: 'thuong' as const, label: 'Hàng thường' },
-              { key: 'hnk' as const,    label: 'Nguyên khối' },
-              { key: 'hqk' as const,    label: 'Quá khổ' },
-            ]).map(opt => {
-              const active = cargoType === opt.key
-              return (
-                <button key={opt.key} onClick={() => setCargoType(opt.key)}
-                  style={{
-                    fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 5, border: 'none', cursor: 'pointer',
-                    background: active ? '#fff' : 'transparent', color: active ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
-                    boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                  }}>
-                  {opt.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C_TEXT_PRIMARY, cursor: 'pointer' }}>
-          <input type="checkbox" checked={includeReturn} onChange={e => setIncludeReturn(e.target.checked)} />
-          Có cước chuyển hoàn (= 100% cước chiều đi)
-        </label>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C_TEXT_PRIMARY, cursor: 'pointer' }}>
-          <input type="checkbox" checked={applyRemote} onChange={e => setApplyRemote(e.target.checked)} />
-          Điểm giao thuộc khu vực ngoại thành (áp phụ phí ngoại thành)
-        </label>
-
-        <InputField label="Số lần thuê xe nâng / phương tiện chuyên dụng" type="number" value={forkliftCount} onChange={setForkliftCount} suffix="lần" />
-      </div>
-
-      <div style={{ flex: '1 1 260px', background: C_BG_FORM, border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '12px 16px', alignSelf: 'flex-start' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL, marginBottom: 4 }}>Chi tiết cước ({weightKg}kg)</div>
-        {row('Cước chính', base)}
-        {includeReturn && row('Cước chuyển hoàn', returnFee)}
-        {applyRemote && row(`Phụ phí ngoại thành (${REMOTE_SURCHARGE_PERCENT}%)`, remote, true)}
-        {row(`Phụ phí nhiên liệu (${FUEL_SURCHARGE_PERCENT}%, đến 31/07/2026)`, fuel, true)}
-        {cargoType === 'hnk' && row(`Cước hàng nguyên khối (${HNK_PERCENT}%)`, hnk, true)}
-        {cargoType === 'hqk' && row('Cước hàng quá khổ', hqk, true)}
-        {forklift > 0 && row('Phụ phí thuê xe nâng', forklift, true)}
-        <div style={{ height: 1, background: C_BORDER, margin: '6px 0' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>Tổng cước</span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: C_ACTION }}>{Math.round(total).toLocaleString()}đ</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── "Chuyển phát nhanh tiết kiệm" / "Chuyển phát đường bộ" — nội dung 1 vùng ──
-function FiveZoneBody({
-  zone, sellBase, setSellBase, standardWeight, setStandardWeight,
-}: {
-  zone: Zone5
-  sellBase: Record<Zone5, string>
-  setSellBase: (updater: (prev: Record<Zone5, string>) => Record<Zone5, string>) => void
-  standardWeight: Record<Zone5, string>
-  setStandardWeight: (updater: (prev: Record<Zone5, string>) => Record<Zone5, string>) => void
-}) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Cân nặng chuẩn</span>
-        <div style={{ position: 'relative', width: 110 }}>
-          <input
-            type="number"
-            value={standardWeight[zone]}
-            onChange={e => { const v = e.target.value; setStandardWeight(prev => ({ ...prev, [zone]: v })) }}
-            placeholder="5000"
-            style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '5px 22px 5px 8px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
-          />
-          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>g</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Giá bán chuẩn</span>
-        <input
-          type="number"
-          value={sellBase[zone]}
-          onChange={e => { const v = e.target.value; setSellBase(prev => ({ ...prev, [zone]: v })) }}
-          placeholder="Giá bán"
-          style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '5px 8px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: 160, boxSizing: 'border-box' }}
-        />
-      </div>
-    </div>
-  )
-}
-
-// ─── "Vượt cân" cho 5 vùng — tier động, thêm/xoá được, tất cả đều chỉnh sửa
-// được tự do (không khoá mốc mặc định nào) ──────────────────────────────────
-function FiveZoneOverweightRows({
-  zone, standardWeight, bands, sellBands, onUpdateBand, onUpdateSell, onRemoveBand, onAddBand,
-}: {
-  zone: Zone5
-  standardWeight: Record<Zone5, string>
-  bands: OverweightBandConfig[]
-  sellBands: Record<string, Record<Zone5, string>>
-  onUpdateBand: (id: string, field: 'toKg' | 'stepKg', v: string) => void
-  onUpdateSell: (id: string, zone: Zone5, v: string) => void
-  onRemoveBand: (id: string) => void
-  onAddBand: () => void
-}) {
-  const inlineInput: React.CSSProperties = {
-    border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '3px 6px', fontSize: 13, fontWeight: 600,
-    color: C_TEXT_PRIMARY, outline: 'none', textAlign: 'center', width: 90,
-  }
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {bands.map((band, idx) => {
-        const isLast = idx === bands.length - 1
-        return (
-          <div key={band.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C_TEXT_SECONDARY, flexWrap: 'wrap' as const }}>
-            <span>•</span>
-            <span>Đến</span>
-            {isLast && band.toKg.trim() === '' ? (
-              <span style={{ fontWeight: 600 }}>∞</span>
-            ) : (
-              <input type="number" value={band.toKg} onChange={e => onUpdateBand(band.id, 'toKg', e.target.value)} placeholder="∞" style={{ ...inlineInput, width: 70 }} />
-            )}
-            <span>kg&nbsp;: Tăng</span>
-            <input type="number" value={sellBands[band.id]?.[zone] ?? ''} onChange={e => onUpdateSell(band.id, zone, e.target.value)} style={inlineInput} />
-            <span>đ trên mỗi</span>
-            <input type="number" value={band.stepKg} onChange={e => onUpdateBand(band.id, 'stepKg', e.target.value)} placeholder="1" style={{ ...inlineInput, width: 50 }} />
-            <span>kg</span>
-            <button
-              onClick={() => onRemoveBand(band.id)}
-              disabled={bands.length <= 1}
-              style={{ border: 'none', background: 'transparent', cursor: bands.length <= 1 ? 'not-allowed' : 'pointer', color: bands.length <= 1 ? '#D1D5DB' : '#9CA3AF', padding: '0 4px', marginLeft: 4 }}
-              title="Xoá mốc này"
-            >
-              ✕
-            </button>
-          </div>
-        )
-      })}
-      <button
-        onClick={onAddBand}
-        style={{ display: 'flex', alignItems: 'center', gap: 5, border: 'none', background: 'transparent', color: C_ACTION, fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '4px 0', marginTop: 2 }}
-      >
-        <PlusOutlined style={{ fontSize: 12 }} />
-        Thêm mốc vượt cân
-      </button>
-      <div style={{ fontSize: 11, color: '#9CA3AF' }}>Ô "Đến" để trống nghĩa là không giới hạn (trở lên). Từ mốc cân nặng chuẩn ({(Number(standardWeight[zone]) || 0) / 1000}kg) trở lên, phần lẻ được làm tròn 1kg để tính cước.</div>
-    </div>
-  )
-}
-
-// ─── Danh sách block theo vùng cho dịch vụ 5 vùng (tiết kiệm / đường bộ) ──────
-function FiveZoneServiceBlocks({
-  service, bands, transit,
-  sellBase, setSellBase, sellBands,
-  standardWeight, setStandardWeight,
-  onUpdateBand, onUpdateSell, onRemoveBand, onAddBand,
-}: {
-  service: ServiceKey
-  bands: OverweightBandConfig[]
-  transit: Record<Zone5, string>
-  sellBase: Record<Zone5, string>
-  setSellBase: (updater: (prev: Record<Zone5, string>) => Record<Zone5, string>) => void
-  sellBands: Record<string, Record<Zone5, string>>
-  standardWeight: Record<Zone5, string>
-  setStandardWeight: (updater: (prev: Record<Zone5, string>) => Record<Zone5, string>) => void
-  onUpdateBand: (id: string, field: 'toKg' | 'stepKg', v: string) => void
-  onUpdateSell: (id: string, zone: Zone5, v: string) => void
-  onRemoveBand: (id: string) => void
-  onAddBand: () => void
-}) {
-  return (
-    <>
-      {ZONES5.map(z => (
-        <ZoneBlock
-          key={z}
-          color={ZONE5_COLORS[z]}
-          label={ZONE5_LABELS[z]}
-          body={<FiveZoneBody zone={z} sellBase={sellBase} setSellBase={setSellBase} standardWeight={standardWeight} setStandardWeight={setStandardWeight} />}
-          sections={[
-            {
-              key: 'overweight',
-              label: 'Vượt cân',
-              count: bands.length,
-              content: (
-                <FiveZoneOverweightRows
-                  zone={z} standardWeight={standardWeight} bands={bands} sellBands={sellBands}
-                  onUpdateBand={onUpdateBand} onUpdateSell={onUpdateSell}
-                  onRemoveBand={onRemoveBand} onAddBand={onAddBand}
-                />
-              ),
-            },
-            { key: 'transit', label: 'Thời gian giao', count: 1, content: <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{transit[z]}</span> },
-          ]}
-        />
-      ))}
-
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
-        <InfoCircleOutlined style={{ color: '#D97706', fontSize: 15, marginTop: 2, flexShrink: 0 }} />
-        <div style={{ fontSize: 13, color: '#92400E', lineHeight: 1.6 }}>
-          Phụ phí (ngoại thành, nhiên liệu, hàng nguyên khối/quá khổ...), dịch vụ gia tăng và phí đóng gói cho dịch vụ <strong>{SERVICE_LABELS[service]}</strong> chưa có trong tài liệu hợp đồng đã cung cấp — sẽ bổ sung khi có dữ liệu.
-        </div>
-      </div>
-    </>
-  )
-}
-
 export default function PricingCreate247() {
   const navigate = useNavigate()
   const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
@@ -759,58 +412,6 @@ export default function PricingCreate247() {
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-
-  const [activeService, setActiveService] = useState<ServiceKey>('nhanh')
-
-  const makeEmptySell5 = (): Record<Zone5, string> => Object.fromEntries(ZONES5.map(z => [z, ''])) as Record<Zone5, string>
-
-  const makeStandardWeight5 = (): Record<Zone5, string> => Object.fromEntries(ZONES5.map(z => [z, '5000'])) as Record<Zone5, string>
-
-  // ── Tiết kiệm state ──────────────────────────────────────────────────────────
-  const [tietkiemSellBase, setTietkiemSellBase] = useState<Record<Zone5, string>>(makeEmptySell5)
-  const [tietkiemStandardWeight, setTietkiemStandardWeight] = useState<Record<Zone5, string>>(makeStandardWeight5)
-  const [tietkiemBands, setTietkiemBands] = useState<OverweightBandConfig[]>(() => makeBandConfig(TIETKIEM_BANDS, 'tb'))
-  const [tietkiemSellBands, setTietkiemSellBands] = useState<Record<string, Record<Zone5, string>>>(
-    () => Object.fromEntries(makeBandConfig(TIETKIEM_BANDS, 'tb').map(b => [b.id, makeEmptySell5()]))
-  )
-
-  const addTietkiemBand = () => {
-    const id = `tb${Date.now()}`
-    setTietkiemBands(prev => [...prev, { id, toKg: '', stepKg: '1' }])
-    setTietkiemSellBands(prev => ({ ...prev, [id]: makeEmptySell5() }))
-  }
-  const removeTietkiemBand = (id: string) => {
-    if (tietkiemBands.length <= 1) return
-    setTietkiemBands(prev => prev.filter(b => b.id !== id))
-    setTietkiemSellBands(prev => { const next = { ...prev }; delete next[id]; return next })
-  }
-  const updateTietkiemBand = (id: string, field: 'toKg' | 'stepKg', v: string) =>
-    setTietkiemBands(prev => prev.map(b => b.id === id ? { ...b, [field]: v } : b))
-  const updateTietkiemSell = (id: string, zone: Zone5, v: string) =>
-    setTietkiemSellBands(prev => ({ ...prev, [id]: { ...prev[id], [zone]: v } }))
-
-  // ── Đường bộ state ───────────────────────────────────────────────────────────
-  const [duongboSellBase, setDuongboSellBase] = useState<Record<Zone5, string>>(makeEmptySell5)
-  const [duongboStandardWeight, setDuongboStandardWeight] = useState<Record<Zone5, string>>(makeStandardWeight5)
-  const [duongboBands, setDuongboBands] = useState<OverweightBandConfig[]>(() => makeBandConfig(DUONGBO_BANDS, 'db'))
-  const [duongboSellBands, setDuongboSellBands] = useState<Record<string, Record<Zone5, string>>>(
-    () => Object.fromEntries(makeBandConfig(DUONGBO_BANDS, 'db').map(b => [b.id, makeEmptySell5()]))
-  )
-
-  const addDuongboBand = () => {
-    const id = `db${Date.now()}`
-    setDuongboBands(prev => [...prev, { id, toKg: '', stepKg: '1' }])
-    setDuongboSellBands(prev => ({ ...prev, [id]: makeEmptySell5() }))
-  }
-  const removeDuongboBand = (id: string) => {
-    if (duongboBands.length <= 1) return
-    setDuongboBands(prev => prev.filter(b => b.id !== id))
-    setDuongboSellBands(prev => { const next = { ...prev }; delete next[id]; return next })
-  }
-  const updateDuongboBand = (id: string, field: 'toKg' | 'stepKg', v: string) =>
-    setDuongboBands(prev => prev.map(b => b.id === id ? { ...b, [field]: v } : b))
-  const updateDuongboSell = (id: string, zone: Zone5, v: string) =>
-    setDuongboSellBands(prev => ({ ...prev, [id]: { ...prev[id], [zone]: v } }))
 
   // ── Chuyển phát nhanh state ──────────────────────────────────────────────────
   const [nhanhBasePrice, setNhanhBasePrice] = useState<Record<Zone247, string>>(
@@ -849,19 +450,30 @@ export default function PricingCreate247() {
     setOverweightIncrease247(prev => { const next = { ...prev }; delete next[id]; return next })
   }
 
-  // Giá bán cho shop — Dịch vụ gia tăng nhanh (Phát trong ngày / Phát hẹn giờ)
-  const [sameDaySell, setSameDaySell] = useState<string[][]>(() => SAME_DAY_ROWS.map(() => FAST_SERVICE_ZONES.map(() => '')))
-  const [scheduledSell, setScheduledSell] = useState<string[][]>(() => SCHEDULED_ROWS.map(() => FAST_SERVICE_ZONES.map(() => '')))
+  // Giá bán cho shop — Dịch vụ gia tăng nhanh (Phát trong ngày / Phát hẹn giờ),
+  // giờ theo đúng 6 vùng của cước chính thay vì bảng vùng riêng
+  const makeEmptyFastSell = (): Record<Zone247, [string, string]> =>
+    Object.fromEntries(ZONES.map(z => [z, ['', '']])) as Record<Zone247, [string, string]>
+  const [sameDaySell, setSameDaySell] = useState<Record<Zone247, [string, string]>>(makeEmptyFastSell)
+  const [scheduledSell, setScheduledSell] = useState<Record<Zone247, [string, string]>>(makeEmptyFastSell)
 
-  const updateSameDaySell = (rowIndex: number, zoneIndex: number, v: string) =>
-    setSameDaySell(prev => prev.map((row, i) => i === rowIndex ? row.map((c, j) => j === zoneIndex ? v : c) : row))
-  const updateScheduledSell = (rowIndex: number, zoneIndex: number, v: string) =>
-    setScheduledSell(prev => prev.map((row, i) => i === rowIndex ? row.map((c, j) => j === zoneIndex ? v : c) : row))
+  const updateSameDaySell = (zone: Zone247, rowIndex: 0 | 1, v: string) =>
+    setSameDaySell(prev => ({ ...prev, [zone]: prev[zone].map((c, i) => i === rowIndex ? v : c) as [string, string] }))
+  const updateScheduledSell = (zone: Zone247, rowIndex: 0 | 1, v: string) =>
+    setScheduledSell(prev => ({ ...prev, [zone]: prev[zone].map((c, i) => i === rowIndex ? v : c) as [string, string] }))
 
   // Giá bán cho shop — Dịch vụ gia tăng khác (text tự do, mỗi dịch vụ 1 đơn vị khác nhau)
   const [extraServiceSell, setExtraServiceSell] = useState<string[]>(() => EXTRA_SERVICES.map(() => ''))
   const updateExtraServiceSell = (index: number, v: string) =>
     setExtraServiceSell(prev => prev.map((x, i) => i === index ? v : x))
+
+  // Phụ phí ngoại thành — giá bán cho shop (% trên cước chính), thay cho máy tính ước
+  // tính theo từng vùng trước đây
+  const [remoteSurchargeSell, setRemoteSurchargeSell] = useState('')
+
+  const [openRows, setOpenRows] = useState<Set<'ngoaiThanh' | 'dongGoiDVGT'>>(new Set())
+  const toggleRow = (key: 'ngoaiThanh' | 'dongGoiDVGT') =>
+    setOpenRows(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next })
 
   const canSave = name.trim().length > 0 && hasHub
 
@@ -879,7 +491,7 @@ export default function PricingCreate247() {
         </div>
         <p style={{ fontSize: 13, color: C_TEXT_SECONDARY, margin: '0 0 16px 32px', lineHeight: 1.6 }}>
           Giá nhập ở đây là <strong>giá bán cho shop</strong>. Vùng tính theo khoảng cách đường bộ từ địa điểm gửi hàng của đại lý.
-          247Express có <strong>3 dịch vụ</strong> với vùng tính giá riêng — mỗi bảng giá chỉ ứng với 1 dịch vụ, chọn ở mục "Thông tin bảng giá" bên dưới.
+          Bảng giá áp dụng cho dịch vụ <strong>{SERVICE_LABEL}</strong> của 247Express.
         </p>
 
         {hasHub && (
@@ -894,7 +506,7 @@ export default function PricingCreate247() {
           </div>
         )}
 
-        {/* Basic info — mỗi bảng giá chỉ ứng với ĐÚNG 1 dịch vụ 247Express */}
+        {/* Basic info — chỉ còn dịch vụ Chuyển phát nhanh, không cần chọn */}
         <SectionCard title="Thông tin bảng giá">
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
@@ -902,57 +514,19 @@ export default function PricingCreate247() {
               <InputField label="Mô tả" value={description} onChange={setDescription} placeholder="VD: Áp dụng cho tất cả shop" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>
-                Dịch vụ <span style={{ color: '#EF4444' }}>*</span>
-                <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, fontWeight: 400 }}> — mỗi bảng giá chỉ áp dụng cho 1 dịch vụ</span>
-              </span>
+              <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Dịch vụ</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-                {(Object.keys(SERVICE_LABELS) as ServiceKey[]).map(key => {
-                  const active = activeService === key
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setActiveService(key)}
-                      style={{
-                        padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                        border: active ? `1.5px solid ${C_ACTION}` : `1.5px solid ${C_BORDER}`,
-                        background: active ? '#FFF4ED' : '#fff',
-                        color: active ? C_ACTION : C_TEXT_SECONDARY,
-                      }}
-                    >
-                      {SERVICE_LABELS[key]}
-                    </button>
-                  )
-                })}
+                <span style={{
+                  padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+                  border: `1.5px solid ${C_ACTION}`, background: '#FFF4ED', color: C_ACTION,
+                }}>
+                  {SERVICE_LABEL}
+                </span>
               </div>
             </div>
           </div>
         </SectionCard>
 
-        {activeService === 'tietkiem' && (
-          <FiveZoneServiceBlocks
-            service="tietkiem"
-            bands={tietkiemBands} transit={TIETKIEM_TRANSIT}
-            sellBase={tietkiemSellBase} setSellBase={setTietkiemSellBase}
-            sellBands={tietkiemSellBands}
-            standardWeight={tietkiemStandardWeight} setStandardWeight={setTietkiemStandardWeight}
-            onUpdateBand={updateTietkiemBand} onUpdateSell={updateTietkiemSell}
-            onRemoveBand={removeTietkiemBand} onAddBand={addTietkiemBand}
-          />
-        )}
-        {activeService === 'duongbo' && (
-          <FiveZoneServiceBlocks
-            service="duongbo"
-            bands={duongboBands} transit={DUONGBO_TRANSIT}
-            sellBase={duongboSellBase} setSellBase={setDuongboSellBase}
-            standardWeight={duongboStandardWeight} setStandardWeight={setDuongboStandardWeight}
-            sellBands={duongboSellBands}
-            onUpdateBand={updateDuongboBand} onUpdateSell={updateDuongboSell}
-            onRemoveBand={removeDuongboBand} onAddBand={addDuongboBand}
-          />
-        )}
-
-        {activeService === 'nhanh' && (
         <>
         {/* Mỗi vùng là 1 block — cân nặng chuẩn + giá bán chuẩn (giống GHN), vượt cân và phụ phí riêng */}
         {ZONES.map(z => (
@@ -986,16 +560,15 @@ export default function PricingCreate247() {
                 ),
               },
               {
-                key: 'surcharge',
-                label: 'Phụ phí',
-                count: 5,
+                key: 'fastService',
+                label: 'Dịch vụ nhanh',
+                count: 2,
                 content: (
-                  <ZoneFreightCalculator
-                    zone={z}
-                    basePrice={nhanhBasePrice}
-                    standardWeight={nhanhStandardWeight}
-                    overweightTiers={overweightTiers247}
-                    increaseByTier={overweightIncrease247}
+                  <FastServiceZoneFields
+                    sameDay={sameDaySell[z]}
+                    scheduled={scheduledSell[z]}
+                    onChangeSameDay={(rowIndex, v) => updateSameDaySell(z, rowIndex, v)}
+                    onChangeScheduled={(rowIndex, v) => updateScheduledSell(z, rowIndex, v)}
                   />
                 ),
               },
@@ -1003,27 +576,31 @@ export default function PricingCreate247() {
           />
         ))}
 
-        {/* Dịch vụ gia tăng & phụ phí khác — gộp chung 1 chỗ */}
-        <SectionCard title="Dịch vụ gia tăng & phụ phí khác (247Express)">
-          <div style={{ padding: '12px 20px 4px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Dịch vụ gia tăng nhanh</div>
-          <div style={{ padding: '0 20px 4px', fontSize: 12, color: C_TEXT_SECONDARY }}>Phát trong ngày · Phát hẹn giờ (đã bao gồm phí Express)</div>
-          <div style={{ padding: '4px 20px 4px', fontSize: 13, fontWeight: 600, color: C_TEXT_LABEL }}>Phát trong ngày</div>
-          <div style={{ padding: '0 0 12px' }}><FastServiceTable rows={SAME_DAY_ROWS} sell={sameDaySell} onChangeSell={updateSameDaySell} /></div>
-          <div style={{ padding: '4px 20px 4px', fontSize: 13, fontWeight: 600, color: C_TEXT_LABEL }}>Phát hẹn giờ</div>
-          <div style={{ padding: '0 0 10px' }}><FastServiceTable rows={SCHEDULED_ROWS} sell={scheduledSell} onChangeSell={updateScheduledSell} /></div>
+        {/* Phụ phí ngoại thành + Phí đóng gói & Dịch vụ gia tăng — mỗi mục 1 dòng,
+            bấm vào mở rộng, thay cho tab "Phụ phí" theo từng vùng trước đây */}
+        <SectionCard title="Phụ phí & dịch vụ gia tăng (247Express)">
+          <ExpandableRow label="Phụ phí ngoại thành" open={openRows.has('ngoaiThanh')} onToggle={() => toggleRow('ngoaiThanh')}>
+            <div style={{ padding: '0 20px' }}>
+              <div style={{ width: 200 }}>
+                <InputField label="Giá bán cho shop" type="number" value={remoteSurchargeSell} onChange={setRemoteSurchargeSell} suffix="% cước chính" placeholder="VD: 20" />
+              </div>
+              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 6 }}>Áp dụng khi điểm giao thuộc khu vực ngoại thành, tính trên cước chính của tuyến.</div>
+            </div>
+          </ExpandableRow>
 
-          <div style={{ height: 1, background: C_BORDER, margin: '4px 0' }} />
+          <div style={{ height: 1, background: C_BORDER }} />
 
-          <div style={{ padding: '12px 20px 4px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Phí đóng gói</div>
-          <div style={{ padding: '0 0 10px' }}><PackagingTable /></div>
+          <ExpandableRow label="Phí đóng gói & Dịch vụ gia tăng" open={openRows.has('dongGoiDVGT')} onToggle={() => toggleRow('dongGoiDVGT')}>
+            <div style={{ padding: '12px 20px 4px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Phí đóng gói</div>
+            <div style={{ padding: '0 0 10px' }}><PackagingTable /></div>
 
-          <div style={{ height: 1, background: C_BORDER, margin: '4px 0' }} />
+            <div style={{ height: 1, background: C_BORDER, margin: '4px 0' }} />
 
-          <div style={{ padding: '12px 20px 4px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Dịch vụ gia tăng khác</div>
-          <div style={{ padding: '0 0 10px' }}><ExtraServicesTable sell={extraServiceSell} onChangeSell={updateExtraServiceSell} /></div>
+            <div style={{ padding: '12px 20px 4px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Dịch vụ gia tăng khác</div>
+            <div style={{ padding: '0 0 10px' }}><ExtraServicesTable sell={extraServiceSell} onChangeSell={updateExtraServiceSell} /></div>
+          </ExpandableRow>
         </SectionCard>
         </>
-        )}
 
         {/* Actions */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
