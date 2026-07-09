@@ -321,6 +321,17 @@ function TabConnect247() {
     [...carrierRequests].reverse().find(r => r.agencyId === CURRENT_AGENCY_ID && r.carrier === '247Express' && r.status === 'rejected')
   const availableHubs = clientHubs247.filter(h => !(agency?.clientHubIds ?? []).includes(h.id))
 
+  const pendingHubIds = pendingHubRequest?.requestedHubIds ?? []
+  const pendingHubs = pendingHubIds.map(id => clientHubs247.find(h => h.id === id)).filter((h): h is ClientHub247 => !!h)
+  const hubRows: { hub: ClientHub247; status: 'approved' | 'pending' }[] = [
+    ...hubs.map(hub => ({ hub, status: 'approved' as const })),
+    ...pendingHubs.map(hub => ({ hub, status: 'pending' as const })),
+  ]
+  const hubStatusBadge = (status: 'approved' | 'pending') =>
+    status === 'approved'
+      ? <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', whiteSpace: 'nowrap' }}>Đã duyệt</span>
+      : <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#FFFBEB', color: '#D97706', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>Chờ duyệt</span>
+
   const handleSubmitRequest = (data: { hubIds: string[]; note: string }) => {
     addCarrierRequest(CURRENT_AGENCY_ID, '247Express', data.note, data.hubIds)
     setShowRequestModal(false)
@@ -346,12 +357,10 @@ function TabConnect247() {
       {/* Hub assignment card */}
       <div style={{ margin: '12px 16px 0', padding: '16px', border: `1px solid ${C_BORDER}`, borderRadius: 8, background: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>Địa điểm gửi hàng được phân {isActivated && `(${hubs.length})`}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>
+            Địa điểm gửi hàng được phân {hubRows.length > 0 && `(${hubs.length} đã duyệt${pendingHubs.length > 0 ? ` · ${pendingHubs.length} chờ duyệt` : ''})`}
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isActivated
-              ? <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', fontWeight: 600 }}>Đã kích hoạt</span>
-              : <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#F9FAFB', color: '#9CA3AF', border: `1px solid ${C_BORDER}` }}>Chưa kích hoạt</span>
-            }
             {isActivated && (
               pendingHubRequest ? (
                 <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 12, background: '#FEF3C7', color: '#D97706', border: '1px solid #FDE68A', fontWeight: 600 }}>Chờ duyệt thêm Hub</span>
@@ -385,15 +394,18 @@ function TabConnect247() {
           </div>
         )}
 
-        {isActivated ? (
+        {hubRows.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {hubs.map(hub => (
-              <div key={hub.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '4px 0', borderTop: `1px solid ${C_BORDER}`, paddingTop: 12 }}>
+            {hubRows.map(({ hub, status }) => (
+              <div key={hub.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '4px 0', borderTop: `1px solid ${C_BORDER}`, paddingTop: 12, opacity: status === 'pending' ? 0.85 : 1 }}>
                 <div style={{ width: 48, height: 48, borderRadius: 8, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>
                   📦
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <span style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#7C3AED' }}>{hub.id}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#7C3AED' }}>{hub.id}</span>
+                    {hubStatusBadge(status)}
+                  </div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{hub.name}</span>
                   <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>📍 {hub.location}</span>
                 </div>
@@ -537,13 +549,6 @@ function TabConnect({ carrier }: { carrier: CarrierKey }) {
 }
 
 // ─── Tab: Bảng giá — 247Express ──────────────────────────────────────────────
-const ZONE_247_COLORS = [
-  { bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0' },
-  { bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' },
-  { bg: '#FFF7ED', color: '#C2410C', border: '#FDBA74' },
-  { bg: '#F5F3FF', color: '#7C3AED', border: '#DDD6FE' },
-]
-
 function TabPricing247() {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState<string | null>(null)
@@ -567,13 +572,6 @@ function TabPricing247() {
           </span>
         </div>
       )}
-
-      <div style={{ margin: '8px 16px 0', padding: '10px 14px', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8 }}>
-        <span style={{ fontSize: 13, color: '#0369A1', lineHeight: 1.5 }}>
-          Giá trong bảng là <strong>giá bán cho shop</strong> — đã gồm phần chênh lệch đại lý so với chi phí 247Express báo qua API <code>GetPriceForCustomerAPI</code>.
-          Vùng tính theo khoảng cách từ địa điểm gửi hàng → tỉnh/quận/phường nhận hàng.
-        </span>
-      </div>
 
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
@@ -601,9 +599,8 @@ function TabPricing247() {
         <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
           {[
             { label: 'Tên bảng giá', flex: '2 0 0',    minWidth: 200 },
-            { label: 'Ngày tạo',     flex: '0 0 100px', minWidth: 100 },
-            { label: 'Vùng giá',     flex: '2 0 0',     minWidth: 240 },
-            { label: 'Mô tả',        flex: '2 0 0',     minWidth: 160 },
+            { label: 'Ngày tạo',     flex: '1 0 0',     minWidth: 110 },
+            { label: 'Mô tả',        flex: '3 0 0',     minWidth: 180 },
           ].map((col, i) => (
             <div key={i} style={{ flex: col.flex, minWidth: col.minWidth, padding: '6px 8px' }}>
               <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>{col.label}</span>
@@ -614,9 +611,7 @@ function TabPricing247() {
 
         {filtered.length === 0 ? (
           <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Chưa có bảng giá nào</div>
-        ) : filtered.map((pt: any) => {
-          const zones: { label: string }[] = pt.zones ?? []
-          return (
+        ) : filtered.map((pt: any) => (
           <React.Fragment key={pt.id}>
             <div
               style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}` }}
@@ -632,31 +627,19 @@ function TabPricing247() {
                   <span style={{ display: 'inline-block', fontSize: 11, padding: '1px 6px', borderRadius: 8, background: '#EDE9FE', color: '#7C3AED', border: '1px solid #DDD6FE', alignSelf: 'flex-start' }}>Mặc định</span>
                 )}
               </div>
-              <div style={{ flex: '0 0 100px', minWidth: 100, padding: '6px 8px' }}>
+              <div style={{ flex: '1 0 0', minWidth: 110, padding: '6px 8px' }}>
                 <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>
                   {pt.createdAt ? pt.createdAt.split('-').reverse().join('/') : '—'}
                 </span>
               </div>
-              <div style={{ flex: '2 0 0', minWidth: 240, padding: '6px 8px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {zones.map((z, i) => {
-                  const c = ZONE_247_COLORS[i % ZONE_247_COLORS.length]
-                  return (
-                    <span key={i} style={{
-                      fontSize: 11, padding: '2px 8px', borderRadius: 10, whiteSpace: 'nowrap',
-                      background: c.bg, color: c.color, border: `1px solid ${c.border}`,
-                    }}>{z.label}</span>
-                  )
-                })}
-              </div>
-              <div style={{ flex: '2 0 0', minWidth: 160, padding: '6px 8px', overflow: 'hidden' }}>
+              <div style={{ flex: '3 0 0', minWidth: 180, padding: '6px 8px', overflow: 'hidden' }}>
                 <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {pt.description || ''}
                 </span>
               </div>
             </div>
           </React.Fragment>
-          )
-        })}
+        ))}
       </div>
     </>
   )
