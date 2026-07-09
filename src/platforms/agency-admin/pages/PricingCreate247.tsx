@@ -60,18 +60,6 @@ type OverweightTier247 = { id: string; toGram: string; stepGram: string }
 // bảng vùng riêng như trước ─────────────────────────────────────────────────────
 const FAST_SERVICE_ROW_LABELS = ['Đến 2kg', '+500gr tiếp theo']
 
-type PackagingMaterial = { label: string; upTo1kg?: number; per5kg?: number; flatPerUnit?: number }
-
-const PACKAGING_MATERIALS: PackagingMaterial[] = [
-  { label: 'Đóng gỗ',         upTo1kg: 30000, per5kg: 10000 },
-  { label: 'Đóng gỗ xốp',     upTo1kg: 40000, per5kg: 15000 },
-  { label: 'Đóng carton',     upTo1kg: 10000, per5kg: 10000 },
-  { label: 'Đóng carton xốp', upTo1kg: 20000, per5kg: 15000 },
-  { label: 'Đóng ống nhựa',   upTo1kg: 30000, per5kg: 10000 },
-  { label: 'Đóng pallet',     flatPerUnit: 170000 },
-  { label: 'Đóng khác',       upTo1kg: 30000, per5kg: 10000 },
-]
-
 // ─── Mục 3.4 — Các dịch vụ gia tăng khác (đầy đủ theo hợp đồng) ────────────────
 const EXTRA_SERVICES: { label: string; fee: string; note: string }[] = [
   { label: 'Báo phát',                            fee: '5.000đ/vận đơn',                    note: 'Miễn phí khi bưu gửi bị thất lạc' },
@@ -190,30 +178,6 @@ function FastServiceZoneFields({ sameDay, scheduled, onChangeSameDay, onChangeSc
                 placeholder="Giá bán"
                 style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '4px 7px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
               />
-            </div>
-          </Fragment>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── Bảng tĩnh: Phí đóng gói ───────────────────────────────────────────────────
-function PackagingTable() {
-  return (
-    <div style={{ overflowX: 'auto' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', minWidth: 520 }}>
-        {['Loại vật liệu', 'Đến 1kg', 'Mỗi 5kg tiếp theo'].map(h => (
-          <div key={h} style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>{h}</div>
-        ))}
-        {PACKAGING_MATERIALS.map((m) => (
-          <Fragment key={m.label}>
-            <div style={{ padding: '9px 16px', borderTop: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{m.label}</div>
-            <div style={{ padding: '9px 16px', borderTop: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_PRIMARY }}>
-              {m.flatPerUnit ? `${m.flatPerUnit.toLocaleString()}đ/cái` : `${m.upTo1kg!.toLocaleString()}đ`}
-            </div>
-            <div style={{ padding: '9px 16px', borderTop: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_SECONDARY }}>
-              {m.flatPerUnit ? '—' : `${m.per5kg!.toLocaleString()}đ`}
             </div>
           </Fragment>
         ))}
@@ -590,13 +554,7 @@ export default function PricingCreate247() {
 
           <div style={{ height: 1, background: C_BORDER }} />
 
-          <ExpandableRow label="Phí đóng gói & Dịch vụ gia tăng" open={openRows.has('dongGoiDVGT')} onToggle={() => toggleRow('dongGoiDVGT')}>
-            <div style={{ padding: '12px 20px 4px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Phí đóng gói</div>
-            <div style={{ padding: '0 0 10px' }}><PackagingTable /></div>
-
-            <div style={{ height: 1, background: C_BORDER, margin: '4px 0' }} />
-
-            <div style={{ padding: '12px 20px 4px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Dịch vụ gia tăng khác</div>
+          <ExpandableRow label="Dịch vụ gia tăng khác" open={openRows.has('dongGoiDVGT')} onToggle={() => toggleRow('dongGoiDVGT')}>
             <div style={{ padding: '0 0 10px' }}><ExtraServicesTable sell={extraServiceSell} onChangeSell={updateExtraServiceSell} /></div>
           </ExpandableRow>
         </SectionCard>
