@@ -275,12 +275,11 @@ function NhanhZoneBody({
               const v = raw !== '' && !isNaN(num) && num > 2000 ? '2000' : raw
               setStandardWeight(prev => ({ ...prev, [zone]: v }))
             }}
-            placeholder="1000"
+            placeholder="Tối đa 2kg"
             style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '5px 22px 5px 8px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
           />
           <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>g</span>
         </div>
-        <span style={{ fontSize: 11, color: '#9CA3AF' }}>Tối đa 2000g</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Giá bán chuẩn</span>
@@ -324,7 +323,7 @@ function OverweightTierList247({
             {isLast && tier.toGram.trim() === '' ? (
               <span style={{ fontWeight: 600 }}>∞</span>
             ) : (
-              <input type="number" value={tier.toGram} onChange={e => onUpdateTier(tier.id, 'toGram', e.target.value)} placeholder="∞" style={{ ...inlineInput, width: 70 }} />
+              <input type="number" value={tier.toGram} onChange={e => onUpdateTier(tier.id, 'toGram', e.target.value)} placeholder="Tối đa 2kg" style={{ ...inlineInput, width: 70 }} />
             )}
             <span>g&nbsp;: Tăng</span>
             <input type="number" value={increaseByTier[tier.id]?.[zone] ?? 0} onChange={e => onUpdateIncrease(tier.id, zone, Number(e.target.value) || 0)} style={inlineInput} />
