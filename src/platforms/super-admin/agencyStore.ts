@@ -205,6 +205,17 @@ export function rejectCarrierRequest(id: string, reason: string) {
   if (req) { req.status = 'rejected'; req.rejectionReason = reason }
 }
 
+// Tra lịch sử: hub này đã từng bị từ chối cho đại lý này chưa (yêu cầu gần nhất bị từ chối
+// có chứa hub đó) — dùng để cảnh báo đại lý khi request lại, và cho Super Admin biết ngữ
+// cảnh khi duyệt yêu cầu mới trùng hub đã từng bị từ chối. excludeRequestId để bỏ qua chính
+// yêu cầu đang xét (tránh 1 yêu cầu tự tham chiếu chính nó).
+export function findPastHubRejection(agencyId: string, carrier: string, hubId: string, excludeRequestId?: string): CarrierRequest | undefined {
+  return [...carrierRequests].reverse().find(r =>
+    r.agencyId === agencyId && r.carrier === carrier && r.status === 'rejected' &&
+    r.id !== excludeRequestId && (r.requestedHubIds ?? []).includes(hubId)
+  )
+}
+
 // Cấp thêm 1 ClientHubID cho đại lý đã kích hoạt 247Express (ngoài luồng duyệt yêu cầu)
 export function grantAdditionalHub(agencyId: string, clientHubId: string) {
   const agency = agenciesList.find(a => a.id === agencyId)

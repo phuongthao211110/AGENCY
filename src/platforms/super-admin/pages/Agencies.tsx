@@ -6,7 +6,7 @@ import { superAdminTheme } from '../../../theme/platforms'
 import {
   agenciesList, shopConnections, carrierRequests, clientHubs247,
   approveShopConnection, rejectShopConnection,
-  approveCarrierRequest, rejectCarrierRequest,
+  approveCarrierRequest, rejectCarrierRequest, findPastHubRejection,
 } from '../agencyStore'
 
 // ── Design tokens ────────────────────────────────────────────
@@ -218,6 +218,15 @@ function QuickApproveModal({ agencyId, agencyName, onClose, onUpdate }: {
                                 Địa điểm được yêu cầu: {r.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
                               </div>
                             )}
+                            {r.requestedHubIds?.filter(id => findPastHubRejection(r.agencyId, r.carrier, id, r.id)).map(id => {
+                              const past = findPastHubRejection(r.agencyId, r.carrier, id, r.id)!
+                              const hubName = clientHubs247.find(h => h.id === id)?.name ?? id
+                              return (
+                                <div key={id} style={{ fontSize: 12, color: '#DC2626', marginTop: 2 }}>
+                                  ⚠ {hubName} — đã từng bị từ chối ({past.requestedAt}): {past.rejectionReason || '(không có lý do cụ thể)'}
+                                </div>
+                              )
+                            })}
                           </div>
                           {!isRejecting && !isApproving && (
                             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>

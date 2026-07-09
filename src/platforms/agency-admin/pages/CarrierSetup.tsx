@@ -10,7 +10,7 @@ import {
   CloseOutlined,
 } from '@ant-design/icons'
 import allPriceTables from '../../../mock-data/pricing.json'
-import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, type ClientHub247 } from '../../super-admin/agencyStore'
+import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, findPastHubRejection, type ClientHub247 } from '../../super-admin/agencyStore'
 import AgencyServices from './AgencyServices'
 
 const CURRENT_AGENCY_ID = 'AGN001'
@@ -230,6 +230,7 @@ function RequestHubModal({ availableHubs, onClose, onSubmit }: {
             <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${C_BORDER}` }}>
               {availableHubs.map((hub, i) => {
                 const isSelected = selectedHubs.includes(hub.id)
+                const pastRejection = findPastHubRejection(CURRENT_AGENCY_ID, '247Express', hub.id)
                 return (
                   <div key={hub.id}>
                     <div
@@ -249,10 +250,25 @@ function RequestHubModal({ availableHubs, onClose, onSubmit }: {
                         )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#7C3AED', fontFamily: 'monospace' }}>{hub.id}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#7C3AED', fontFamily: 'monospace' }}>{hub.id}</span>
+                          {pastRejection && (
+                            <span
+                              title={`Đã từng bị từ chối (${pastRejection.requestedAt}) — Lý do: ${pastRejection.rejectionReason || '(không có lý do cụ thể)'}`}
+                              style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', cursor: 'help', whiteSpace: 'nowrap' }}
+                            >
+                              ⚠ Đã từng bị từ chối
+                            </span>
+                          )}
+                        </div>
                         <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
                           <span style={{ fontWeight: 500, color: C_TEXT_PRIMARY }}>{hub.name}</span> — {hub.location}
                         </div>
+                        {pastRejection && (
+                          <div style={{ fontSize: 12, color: '#B91C1C', marginTop: 2 }}>
+                            Lý do lần trước: {pastRejection.rejectionReason || '(không có lý do cụ thể)'}
+                          </div>
+                        )}
                       </div>
                     </div>
                     {i < availableHubs.length - 1 && <div style={{ height: 1, background: '#F5F5F5' }} />}

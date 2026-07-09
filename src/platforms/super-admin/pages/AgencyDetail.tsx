@@ -14,7 +14,7 @@ import {
   BarChartOutlined,
   LockOutlined,
 } from '@ant-design/icons'
-import { agenciesList, setAllowedCarriers, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub } from '../agencyStore'
+import { agenciesList, setAllowedCarriers, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub, findPastHubRejection } from '../agencyStore'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY = '#111827'
@@ -523,6 +523,15 @@ export default function AgencyDetail() {
                               {pendingReq.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
                             </div>
                           )}
+                          {pendingReq?.requestedHubIds?.filter(id => findPastHubRejection(pendingReq!.agencyId, pendingReq!.carrier, id, pendingReq!.id)).map(id => {
+                            const past = findPastHubRejection(pendingReq!.agencyId, pendingReq!.carrier, id, pendingReq!.id)!
+                            const hubName = clientHubs247.find(h => h.id === id)?.name ?? id
+                            return (
+                              <div key={id} style={{ padding: '8px 12px', borderTop: '1px solid #FCA5A5', background: '#FFF5F5', fontSize: 12, color: '#DC2626' }}>
+                                ⚠ {hubName} — đã từng bị từ chối ({past.requestedAt}): {past.rejectionReason || '(không có lý do cụ thể)'}
+                              </div>
+                            )
+                          })}
                           {/* Duyệt — chỉ còn chọn ClientHubID, dịch vụ 247Express cố định 1 loại */}
                           {approvingCarrierId === pendingReq?.id && (
                             <CarrierApprovalForm
