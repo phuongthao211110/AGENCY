@@ -435,8 +435,11 @@ export default function PricingCreate247() {
   // tính theo từng vùng trước đây
   const [remoteSurchargeSell, setRemoteSurchargeSell] = useState('')
 
-  const [openRows, setOpenRows] = useState<Set<'ngoaiThanh' | 'dongGoiDVGT'>>(new Set())
-  const toggleRow = (key: 'ngoaiThanh' | 'dongGoiDVGT') =>
+  // Phí hoàn hàng — theo hợp đồng, cước chuyển hoàn bằng cước chiều đi (mục 2.1)
+  const [returnFeeSell, setReturnFeeSell] = useState('')
+
+  const [openRows, setOpenRows] = useState<Set<'ngoaiThanh' | 'hoanHang' | 'dongGoiDVGT'>>(new Set())
+  const toggleRow = (key: 'ngoaiThanh' | 'hoanHang' | 'dongGoiDVGT') =>
     setOpenRows(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next })
 
   const canSave = name.trim().length > 0 && hasHub
@@ -549,6 +552,19 @@ export default function PricingCreate247() {
                 <InputField label="Giá bán cho shop" type="number" value={remoteSurchargeSell} onChange={setRemoteSurchargeSell} suffix="% cước chính" placeholder="VD: 20" />
               </div>
               <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 6 }}>Áp dụng khi điểm giao thuộc khu vực ngoại thành, tính trên cước chính của tuyến.</div>
+            </div>
+          </ExpandableRow>
+
+          <div style={{ height: 1, background: C_BORDER }} />
+
+          <ExpandableRow label="Phí hoàn hàng" open={openRows.has('hoanHang')} onToggle={() => toggleRow('hoanHang')}>
+            <div style={{ padding: '0 20px' }}>
+              <div style={{ width: 200 }}>
+                <InputField label="Giá bán cho shop" type="number" value={returnFeeSell} onChange={setReturnFeeSell} suffix="% cước chiều đi" placeholder="VD: 100" />
+              </div>
+              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 6 }}>
+                Theo hợp đồng, cước chuyển hoàn = 100% cước chiều đi khi vận đơn bị hoàn về đơn vị gửi.
+              </div>
             </div>
           </ExpandableRow>
 
