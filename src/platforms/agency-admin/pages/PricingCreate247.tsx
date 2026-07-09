@@ -55,11 +55,6 @@ const DEFAULT_STEP_OVER_10KG: Record<Zone247, number> = {
 type OverweightTier247 = { id: string; toGram: string; stepGram: string }
 
 
-// ─── Dịch vụ gia tăng nhanh (mục 3.1, 3.2) — Phát trong ngày / Phát hẹn giờ, giờ
-// nằm trong đúng 6 vùng của cước chính (mỗi vùng tự nhập giá riêng), không dùng
-// bảng vùng riêng như trước ─────────────────────────────────────────────────────
-const FAST_SERVICE_ROW_LABELS = ['Đến 2kg', '+500gr tiếp theo']
-
 // ─── Mục 3.4 — Các dịch vụ gia tăng khác (đầy đủ theo hợp đồng) ────────────────
 const EXTRA_SERVICES: { label: string; fee: string; note: string }[] = [
   { label: 'Báo phát',                            fee: '5.000đ/vận đơn',                    note: 'Miễn phí khi bưu gửi bị thất lạc' },
@@ -142,50 +137,34 @@ function ExpandableRow({ label, open, onToggle, children }: {
   )
 }
 
-// ─── Dịch vụ gia tăng nhanh (Phát trong ngày / Phát hẹn giờ) — đại lý tự nhập
-// giá bán cho shop theo từng mốc × vùng ───────────────────────────────────────
-// ─── Dịch vụ gia tăng nhanh cho 1 vùng cụ thể — Phát trong ngày / Phát hẹn giờ
-// × 2 mốc trọng lượng, nằm trong tab riêng của từng ZoneBlock ──────────────────
-function FastServiceZoneFields({ sameDay, scheduled, onChangeSameDay, onChangeScheduled }: {
-  sameDay: [string, string]
-  scheduled: [string, string]
-  onChangeSameDay: (rowIndex: 0 | 1, v: string) => void
-  onChangeScheduled: (rowIndex: 0 | 1, v: string) => void
+// ─── 1 dòng phụ phí trong tab "Phụ phí" của từng vùng — bullet + tên phí +
+// nút Thêm/Xoá, giống kiểu SurchargeList của bảng giá GHN ─────────────────────
+function SurchargeItemRow({ label, open, onAdd, onRemove, children }: {
+  label: string; open: boolean; onAdd: () => void; onRemove: () => void; children: React.ReactNode
 }) {
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', minWidth: 420 }}>
-        <div style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Trọng lượng</div>
-        <div style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Phát trong ngày</div>
-        <div style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Phát hẹn giờ</div>
-        {FAST_SERVICE_ROW_LABELS.map((label, ri) => (
-          <Fragment key={label}>
-            <div style={{ padding: '9px 16px', borderTop: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>{label}</div>
-            <div style={{ padding: '6px 12px', borderTop: `1px solid ${C_BORDER}` }}>
-              <input
-                type="number"
-                value={sameDay[ri] ?? ''}
-                onChange={e => onChangeSameDay(ri as 0 | 1, e.target.value)}
-                placeholder="Giá bán"
-                style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '4px 7px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
-              />
-            </div>
-            <div style={{ padding: '6px 12px', borderTop: `1px solid ${C_BORDER}` }}>
-              <input
-                type="number"
-                value={scheduled[ri] ?? ''}
-                onChange={e => onChangeScheduled(ri as 0 | 1, e.target.value)}
-                placeholder="Giá bán"
-                style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '4px 7px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
-              />
-            </div>
-          </Fragment>
-        ))}
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: C_TEXT_SECONDARY, flexShrink: 0 }} />
+        <span style={{ fontSize: 13, fontWeight: 500, color: C_TEXT_PRIMARY, flex: 1 }}>{label}</span>
+        {open ? (
+          <button onClick={onRemove} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', color: '#EF4444', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '2px 0' }}>
+            Xoá
+          </button>
+        ) : (
+          <button onClick={onAdd} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', color: '#3B82F6', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '2px 0' }}>
+            <PlusOutlined style={{ fontSize: 11 }} />
+            Thêm
+          </button>
+        )}
       </div>
+      {open && <div style={{ padding: '4px 0 10px' }}>{children}</div>}
     </div>
   )
 }
 
+// ─── Dịch vụ gia tăng nhanh (Phát trong ngày / Phát hẹn giờ) — đại lý tự nhập
+// giá bán cho shop theo từng mốc × vùng ───────────────────────────────────────
 // ─── Dịch vụ gia tăng khác — đại lý tự nhập "Giá bán cho shop" (text tự do vì
 // đơn vị mỗi dịch vụ khác nhau: đ/vận đơn, đ/kg, %, hoặc "Liên hệ 247Express") ─
 function ExtraServicesTable({ sell, onChangeSell }: {
@@ -414,33 +393,29 @@ export default function PricingCreate247() {
     setOverweightIncrease247(prev => { const next = { ...prev }; delete next[id]; return next })
   }
 
-  // Giá bán cho shop — Dịch vụ gia tăng nhanh (Phát trong ngày / Phát hẹn giờ),
-  // giờ theo đúng 6 vùng của cước chính thay vì bảng vùng riêng
-  const makeEmptyFastSell = (): Record<Zone247, [string, string]> =>
-    Object.fromEntries(ZONES.map(z => [z, ['', '']])) as Record<Zone247, [string, string]>
-  const [sameDaySell, setSameDaySell] = useState<Record<Zone247, [string, string]>>(makeEmptyFastSell)
-  const [scheduledSell, setScheduledSell] = useState<Record<Zone247, [string, string]>>(makeEmptyFastSell)
-
-  const updateSameDaySell = (zone: Zone247, rowIndex: 0 | 1, v: string) =>
-    setSameDaySell(prev => ({ ...prev, [zone]: prev[zone].map((c, i) => i === rowIndex ? v : c) as [string, string] }))
-  const updateScheduledSell = (zone: Zone247, rowIndex: 0 | 1, v: string) =>
-    setScheduledSell(prev => ({ ...prev, [zone]: prev[zone].map((c, i) => i === rowIndex ? v : c) as [string, string] }))
-
   // Giá bán cho shop — Dịch vụ gia tăng khác (text tự do, mỗi dịch vụ 1 đơn vị khác nhau)
   const [extraServiceSell, setExtraServiceSell] = useState<string[]>(() => EXTRA_SERVICES.map(() => ''))
   const updateExtraServiceSell = (index: number, v: string) =>
     setExtraServiceSell(prev => prev.map((x, i) => i === index ? v : x))
 
-  // Phụ phí ngoại thành — giá bán cho shop (% trên cước chính), thay cho máy tính ước
-  // tính theo từng vùng trước đây
-  const [remoteSurchargeSell, setRemoteSurchargeSell] = useState('')
+  // Phụ phí ngoại thành + Phí hoàn hàng — giá bán cho shop theo từng vùng, nằm
+  // trong tab riêng của mỗi ZoneBlock (giống Vượt cân)
+  const makeEmptyZoneSell = (): Record<Zone247, string> => Object.fromEntries(ZONES.map(z => [z, ''])) as Record<Zone247, string>
+  const [remoteSurchargeSell, setRemoteSurchargeSell] = useState<Record<Zone247, string>>(makeEmptyZoneSell)
+  const [returnFeeSell, setReturnFeeSell] = useState<Record<Zone247, string>>(makeEmptyZoneSell)
 
-  // Phí hoàn hàng — theo hợp đồng, cước chuyển hoàn bằng cước chiều đi (mục 2.1)
-  const [returnFeeSell, setReturnFeeSell] = useState('')
+  const updateRemoteSurchargeSell = (zone: Zone247, v: string) =>
+    setRemoteSurchargeSell(prev => ({ ...prev, [zone]: v }))
+  const updateReturnFeeSell = (zone: Zone247, v: string) =>
+    setReturnFeeSell(prev => ({ ...prev, [zone]: v }))
 
-  const [openRows, setOpenRows] = useState<Set<'ngoaiThanh' | 'hoanHang' | 'dongGoiDVGT'>>(new Set())
-  const toggleRow = (key: 'ngoaiThanh' | 'hoanHang' | 'dongGoiDVGT') =>
-    setOpenRows(prev => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next })
+  // Tab "Phụ phí" của mỗi vùng — theo dõi mục nào đang mở (key dạng "<vùng>:<mục>"),
+  // giống cơ chế Thêm/Xoá của SurchargeList bên bảng giá GHN
+  const [openSurchargeItems, setOpenSurchargeItems] = useState<Set<string>>(new Set())
+  const openSurchargeItem = (key: string) => setOpenSurchargeItems(prev => new Set(prev).add(key))
+  const closeSurchargeItem = (key: string) => setOpenSurchargeItems(prev => { const next = new Set(prev); next.delete(key); return next })
+
+  const [dongGoiDVGTOpen, setDongGoiDVGTOpen] = useState(false)
 
   const canSave = name.trim().length > 0 && hasHub
 
@@ -527,50 +502,63 @@ export default function PricingCreate247() {
                 ),
               },
               {
-                key: 'fastService',
-                label: 'Dịch vụ nhanh',
-                count: 2,
-                content: (
-                  <FastServiceZoneFields
-                    sameDay={sameDaySell[z]}
-                    scheduled={scheduledSell[z]}
-                    onChangeSameDay={(rowIndex, v) => updateSameDaySell(z, rowIndex, v)}
-                    onChangeScheduled={(rowIndex, v) => updateScheduledSell(z, rowIndex, v)}
-                  />
-                ),
+                key: 'surcharge',
+                label: 'Phụ phí',
+                count: [remoteSurchargeSell[z], returnFeeSell[z]].filter(v => v.trim() !== '').length,
+                content: (() => {
+                  const remoteKey = `${z}:ngoaiThanh`
+                  const returnKey = `${z}:hoanHang`
+                  const remoteOpen = openSurchargeItems.has(remoteKey) || remoteSurchargeSell[z].trim() !== ''
+                  const returnOpen = openSurchargeItems.has(returnKey) || returnFeeSell[z].trim() !== ''
+                  return (
+                    <div>
+                      <SurchargeItemRow
+                        label="Phụ phí ngoại thành"
+                        open={remoteOpen}
+                        onAdd={() => openSurchargeItem(remoteKey)}
+                        onRemove={() => { updateRemoteSurchargeSell(z, ''); closeSurchargeItem(remoteKey) }}
+                      >
+                        <div style={{ width: 200 }}>
+                          <InputField
+                            label="Giá bán cho shop" type="number"
+                            value={remoteSurchargeSell[z]} onChange={v => updateRemoteSurchargeSell(z, v)}
+                            suffix="% cước chính" placeholder="VD: 20"
+                          />
+                        </div>
+                      </SurchargeItemRow>
+
+                      <div style={{ height: 1, background: C_BORDER }} />
+
+                      <SurchargeItemRow
+                        label="Phí hoàn hàng"
+                        open={returnOpen}
+                        onAdd={() => openSurchargeItem(returnKey)}
+                        onRemove={() => { updateReturnFeeSell(z, ''); closeSurchargeItem(returnKey) }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div style={{ width: 200 }}>
+                            <InputField
+                              label="Giá bán cho shop" type="number"
+                              value={returnFeeSell[z]} onChange={v => updateReturnFeeSell(z, v)}
+                              suffix="% cước chiều đi" placeholder="VD: 100"
+                            />
+                          </div>
+                          <div style={{ fontSize: 12, color: '#9CA3AF' }}>
+                            Theo hợp đồng, cước chuyển hoàn = 100% cước chiều đi khi vận đơn bị hoàn về đơn vị gửi.
+                          </div>
+                        </div>
+                      </SurchargeItemRow>
+                    </div>
+                  )
+                })(),
               },
             ]}
           />
         ))}
 
-        {/* Phụ phí ngoại thành + Phí đóng gói & Dịch vụ gia tăng — mỗi mục 1 dòng,
-            bấm vào mở rộng, thay cho tab "Phụ phí" theo từng vùng trước đây */}
-        <SectionCard title="Phụ phí & dịch vụ gia tăng (247Express)">
-          <ExpandableRow label="Phụ phí ngoại thành" open={openRows.has('ngoaiThanh')} onToggle={() => toggleRow('ngoaiThanh')}>
-            <div style={{ padding: '0 20px' }}>
-              <div style={{ width: 200 }}>
-                <InputField label="Giá bán cho shop" type="number" value={remoteSurchargeSell} onChange={setRemoteSurchargeSell} suffix="% cước chính" placeholder="VD: 20" />
-              </div>
-              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 6 }}>Áp dụng khi điểm giao thuộc khu vực ngoại thành, tính trên cước chính của tuyến.</div>
-            </div>
-          </ExpandableRow>
-
-          <div style={{ height: 1, background: C_BORDER }} />
-
-          <ExpandableRow label="Phí hoàn hàng" open={openRows.has('hoanHang')} onToggle={() => toggleRow('hoanHang')}>
-            <div style={{ padding: '0 20px' }}>
-              <div style={{ width: 200 }}>
-                <InputField label="Giá bán cho shop" type="number" value={returnFeeSell} onChange={setReturnFeeSell} suffix="% cước chiều đi" placeholder="VD: 100" />
-              </div>
-              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 6 }}>
-                Theo hợp đồng, cước chuyển hoàn = 100% cước chiều đi khi vận đơn bị hoàn về đơn vị gửi.
-              </div>
-            </div>
-          </ExpandableRow>
-
-          <div style={{ height: 1, background: C_BORDER }} />
-
-          <ExpandableRow label="Dịch vụ gia tăng khác" open={openRows.has('dongGoiDVGT')} onToggle={() => toggleRow('dongGoiDVGT')}>
+        {/* Dịch vụ gia tăng khác — 1 dòng, bấm vào mở rộng */}
+        <SectionCard title="Dịch vụ gia tăng (247Express)">
+          <ExpandableRow label="Dịch vụ gia tăng khác" open={dongGoiDVGTOpen} onToggle={() => setDongGoiDVGTOpen(v => !v)}>
             <div style={{ padding: '0 0 10px' }}><ExtraServicesTable sell={extraServiceSell} onChangeSell={updateExtraServiceSell} /></div>
           </ExpandableRow>
         </SectionCard>
