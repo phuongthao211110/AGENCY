@@ -267,13 +267,20 @@ function NhanhZoneBody({
         <div style={{ position: 'relative', width: 110 }}>
           <input
             type="number"
+            max={2000}
             value={standardWeight[zone]}
-            onChange={e => { const v = e.target.value; setStandardWeight(prev => ({ ...prev, [zone]: v })) }}
+            onChange={e => {
+              const raw = e.target.value
+              const num = Number(raw)
+              const v = raw !== '' && !isNaN(num) && num > 2000 ? '2000' : raw
+              setStandardWeight(prev => ({ ...prev, [zone]: v }))
+            }}
             placeholder="1000"
             style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '5px 22px 5px 8px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
           />
           <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>g</span>
         </div>
+        <span style={{ fontSize: 11, color: '#9CA3AF' }}>Tối đa 2000g</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Giá bán chuẩn</span>
@@ -535,17 +542,12 @@ export default function PricingCreate247() {
                         onAdd={() => openSurchargeItem(returnKey)}
                         onRemove={() => { updateReturnFeeSell(z, ''); closeSurchargeItem(returnKey) }}
                       >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          <div style={{ width: 200 }}>
-                            <InputField
-                              label="Giá bán cho shop" type="number"
-                              value={returnFeeSell[z]} onChange={v => updateReturnFeeSell(z, v)}
-                              suffix="% cước chiều đi" placeholder="VD: 100"
-                            />
-                          </div>
-                          <div style={{ fontSize: 12, color: '#9CA3AF' }}>
-                            Theo hợp đồng, cước chuyển hoàn = 100% cước chiều đi khi vận đơn bị hoàn về đơn vị gửi.
-                          </div>
+                        <div style={{ width: 200 }}>
+                          <InputField
+                            label="Giá bán cho shop" type="number"
+                            value={returnFeeSell[z]} onChange={v => updateReturnFeeSell(z, v)}
+                            suffix="% cước chiều đi" placeholder="VD: 100"
+                          />
                         </div>
                       </SurchargeItemRow>
                     </div>
