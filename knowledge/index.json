@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "lastResearched": {
+    "super-admin": "2026-05-29T01:43:04.599Z",
+    "agency-admin": "2026-05-29T07:13:22.282Z",
+    "shop": "2026-05-29T01:40:19.817Z"
+  },
+  "stats": {
+    "totalElements": 705,
+    "totalMappings": 0,
+    "pendingReresearch": []
+  }
+}

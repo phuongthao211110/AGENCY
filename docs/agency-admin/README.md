@@ -34,6 +34,7 @@ _Chưa có stories_
 | Story | File | Jira | Status |
 |-------|------|------|--------|
 | [AGA] Đối soát: Tạo phiên đối soát GHN | [tao-phien-doi-soat-ghn.md](./reconciliation/tao-phien-doi-soat-ghn.md) | — | [Draft] |
+| [AGA] Đối soát: Mapping chỉ số bảng "Phiên GHN" | [mapping-chi-so-phien-ghn.md](./reconciliation/mapping-chi-so-phien-ghn.md) | — | [Draft] |
 | Phiên nhà vận chuyển (Phiên GHN) | [phien-nha-van-chuyen.md](./reconciliation/phien-nha-van-chuyen.md) | — | [Draft] |
 | Phiên shop (tự sinh) | [phien-shop.md](./reconciliation/phien-shop.md) | — | [Draft] |
 

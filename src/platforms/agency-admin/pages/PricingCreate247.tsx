@@ -102,6 +102,26 @@ function InputField({ label, value, onChange, placeholder, type = 'text', suffix
   )
 }
 
+function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <div
+      onClick={onChange}
+      role="switch"
+      aria-checked={checked}
+      style={{
+        width: 40, height: 22, borderRadius: 999, flexShrink: 0, cursor: 'pointer',
+        background: checked ? '#16A34A' : '#D1D5DB', position: 'relative', transition: 'background 0.15s',
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: 2, left: checked ? 20 : 2,
+        width: 18, height: 18, borderRadius: '50%', background: '#fff',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.2)', transition: 'left 0.15s',
+      }} />
+    </div>
+  )
+}
+
 function SectionCard({ title, subtitle, children }: { title: React.ReactNode; subtitle?: string; children: React.ReactNode }) {
   return (
     <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 12, overflow: 'hidden', background: '#fff', boxShadow: '0px 1px 2px rgba(0,0,0,0.06)', marginBottom: 16 }}>
@@ -163,6 +183,35 @@ function SurchargeItemRow({ label, open, onAdd, onRemove, children }: {
   )
 }
 
+// ─── 1 dòng "radio + input" cho phụ phí chỉ có duy nhất 1 chế độ (%) — cùng
+// kiểu hiển thị với lựa chọn "Số tiền cố định / % cước phí tuyến" của Phí hoàn
+// hàng bên bảng giá GHN, nhưng chỉ có % vì hợp đồng 247Express hiện chỉ định
+// nghĩa phụ phí này theo %, không có mức cố định ─────────────────────────────
+function PercentSurchargeInput({ label, value, onChange, placeholder, trailingText }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; trailingText: string
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+      <div style={{
+        width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+        border: `5px solid ${C_ACTION}`, background: '#fff', boxSizing: 'border-box',
+      }} />
+      <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', width: 140 }}>{label}</span>
+      <div style={{ position: 'relative', width: 130 }}>
+        <input
+          type="number"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          style={{ border: `1px solid ${C_BORDER}`, borderRadius: 5, padding: '5px 26px 5px 8px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', width: '100%', boxSizing: 'border-box' }}
+        />
+        <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>%</span>
+      </div>
+      <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>{trailingText}</span>
+    </div>
+  )
+}
+
 // ─── Dịch vụ gia tăng nhanh (Phát trong ngày / Phát hẹn giờ) — đại lý tự nhập
 // giá bán cho shop theo từng mốc × vùng ───────────────────────────────────────
 // ─── Dịch vụ gia tăng khác — đại lý tự nhập "Giá bán cho shop" (text tự do vì
@@ -199,53 +248,61 @@ function ExtraServicesTable({ sell, onChangeSell }: {
 // ─── Khối cấu hình theo vùng — mỗi vùng là 1 block riêng, đúng phong cách
 // RouteBlock của GHN: header cố định + 2 nút chuyển tab "Vượt cân" / "Phụ phí" ──
 function ZoneBlock({
-  color, label, body, sections,
+  color, label, body, sections, enabled, onToggleEnabled,
 }: {
   color: string
   label: string
   body: React.ReactNode
   sections: { key: string; label: string; count: number; content: React.ReactNode }[]
+  enabled: boolean
+  onToggleEnabled: () => void
 }) {
   const [active, setActive] = useState<string | null>(null)
   return (
-    <div style={{ position: 'relative', border: `1px solid ${C_BORDER}`, borderLeft: `4px solid ${color}`, borderRadius: 8, padding: 16, background: '#fff', marginBottom: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' as const }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>{label}</span>
+    <div style={{ position: 'relative', border: `1px solid ${C_BORDER}`, borderLeft: `4px solid ${enabled ? color : C_BORDER}`, borderRadius: 8, padding: 16, background: '#fff', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: enabled ? 14 : 0, flexWrap: 'wrap' as const }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <ToggleSwitch checked={enabled} onChange={onToggleEnabled} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: enabled ? C_TEXT_PRIMARY : C_TEXT_SECONDARY }}>{label}</span>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          {sections.map(s => {
-            const isActive = active === s.key
-            return (
-              <button key={s.key} onClick={() => setActive(v => v === s.key ? null : s.key)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  height: 32, padding: '0 12px', cursor: 'pointer', borderRadius: 6, fontSize: 13, fontWeight: 500,
-                  border: isActive ? `1px solid ${C_ACTION}` : 'none',
-                  background: isActive ? '#FFF4ED' : C_BG_HEADER,
-                  color: isActive ? C_ACTION : C_TEXT_SECONDARY,
-                  transition: 'all 0.15s', whiteSpace: 'nowrap',
-                }}
-              >
-                {s.label}
-                <span style={{
-                  fontSize: 11, fontWeight: 600, lineHeight: '16px', padding: '0 5px', borderRadius: 8,
-                  background: isActive ? C_ACTION : '#D1D5DB', color: isActive ? '#fff' : '#6B7280', minWidth: 18, textAlign: 'center',
-                }}>{s.count}</span>
-              </button>
-            )
-          })}
-        </div>
+        {enabled && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            {sections.map(s => {
+              const isActive = active === s.key
+              return (
+                <button key={s.key} onClick={() => setActive(v => v === s.key ? null : s.key)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    height: 32, padding: '0 12px', cursor: 'pointer', borderRadius: 6, fontSize: 13, fontWeight: 500,
+                    border: isActive ? `1px solid ${C_ACTION}` : 'none',
+                    background: isActive ? '#FFF4ED' : C_BG_HEADER,
+                    color: isActive ? C_ACTION : C_TEXT_SECONDARY,
+                    transition: 'all 0.15s', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {s.label}
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, lineHeight: '16px', padding: '0 5px', borderRadius: 8,
+                    background: isActive ? C_ACTION : '#D1D5DB', color: isActive ? '#fff' : '#6B7280', minWidth: 18, textAlign: 'center',
+                  }}>{s.count}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      {body}
+      {enabled && (
+        <>
+          {body}
 
-      {sections.map(s => active === s.key && (
-        <div key={s.key} style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C_BORDER}` }}>
-          {s.content}
-        </div>
-      ))}
+          {sections.map(s => active === s.key && (
+            <div key={s.key} style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C_BORDER}` }}>
+              {s.content}
+            </div>
+          ))}
+        </>
+      )}
     </div>
   )
 }
@@ -371,6 +428,23 @@ export default function PricingCreate247() {
     () => Object.fromEntries(ZONES.map(z => [z, '1000'])) as Record<Zone247, string>
   )
 
+  // Bật/tắt từng tuyến — tuyến tắt sẽ không áp dụng cho bảng giá này
+  const [zoneEnabled, setZoneEnabled] = useState<Record<Zone247, boolean>>(
+    () => Object.fromEntries(ZONES.map(z => [z, true])) as Record<Zone247, boolean>
+  )
+  const toggleZoneEnabled = (z: Zone247) =>
+    setZoneEnabled(prev => ({ ...prev, [z]: !prev[z] }))
+
+  // Áp dụng đồng giá cho các tuyến — điền nhanh khối lượng/giá chuẩn cho mọi tuyến đang bật
+  const [bulkWeight, setBulkWeight] = useState('')
+  const [bulkPrice, setBulkPrice] = useState('')
+  const applyBulkToAllZones = () => {
+    if (!bulkWeight && !bulkPrice) return
+    const enabledZones = ZONES.filter(z => zoneEnabled[z])
+    if (bulkWeight) setNhanhStandardWeight(prev => ({ ...prev, ...Object.fromEntries(enabledZones.map(z => [z, bulkWeight])) }))
+    if (bulkPrice) setNhanhBasePrice(prev => ({ ...prev, ...Object.fromEntries(enabledZones.map(z => [z, bulkPrice])) }))
+  }
+
   const makeOverweightTiers247 = (): OverweightTier247[] => [
     { id: 'ow1', toGram: '10000', stepGram: '500' },
     { id: 'ow2', toGram: '', stepGram: '500' },
@@ -476,12 +550,36 @@ export default function PricingCreate247() {
         </SectionCard>
 
         <>
-        {/* Mỗi vùng là 1 block — cân nặng chuẩn + giá bán chuẩn (giống GHN), vượt cân và phụ phí riêng */}
+        {/* Danh sách tuyến — bật/tắt từng tuyến + điền nhanh đồng giá cho các tuyến đang bật */}
+        <SectionCard title={`Danh sách tuyến (${ZONES.length})`}>
+          <div style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' as const }}>
+              <InputField label="Khối lượng chuẩn" type="number" value={bulkWeight} onChange={setBulkWeight} placeholder="VD: 1000" suffix="g" />
+              <InputField label="Giá chuẩn" type="number" value={bulkPrice} onChange={setBulkPrice} placeholder="VD: 15000" suffix="đ" />
+              <button
+                onClick={applyBulkToAllZones}
+                disabled={!bulkWeight && !bulkPrice}
+                style={{
+                  height: 34, padding: '0 16px', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
+                  cursor: (!bulkWeight && !bulkPrice) ? 'default' : 'pointer',
+                  background: (!bulkWeight && !bulkPrice) ? C_BG_HEADER : C_ACTION,
+                  color: (!bulkWeight && !bulkPrice) ? C_TEXT_SECONDARY : '#fff',
+                }}
+              >
+                Áp dụng đồng giá cho các tuyến
+              </button>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Mỗi vùng là 1 block — bật/tắt tuyến, cân nặng chuẩn + giá bán chuẩn (giống GHN), vượt cân và phụ phí riêng */}
         {ZONES.map(z => (
           <ZoneBlock
             key={z}
             color={ZONE_COLORS[z]}
             label={ZONE_LABELS[z]}
+            enabled={zoneEnabled[z]}
+            onToggleEnabled={() => toggleZoneEnabled(z)}
             body={
               <NhanhZoneBody
                 zone={z}
@@ -524,13 +622,13 @@ export default function PricingCreate247() {
                         onAdd={() => openSurchargeItem(remoteKey)}
                         onRemove={() => { updateRemoteSurchargeSell(z, ''); closeSurchargeItem(remoteKey) }}
                       >
-                        <div style={{ width: 200 }}>
-                          <InputField
-                            label="Giá bán cho shop" type="number"
-                            value={remoteSurchargeSell[z]} onChange={v => updateRemoteSurchargeSell(z, v)}
-                            suffix="% cước chính" placeholder="VD: 20"
-                          />
-                        </div>
+                        <PercentSurchargeInput
+                          label="% cước chính"
+                          value={remoteSurchargeSell[z]}
+                          onChange={v => updateRemoteSurchargeSell(z, v)}
+                          placeholder="VD: 20"
+                          trailingText="trên cước chính / đơn hàng"
+                        />
                       </SurchargeItemRow>
 
                       <div style={{ height: 1, background: C_BORDER }} />

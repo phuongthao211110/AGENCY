@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
-import { PlusOutlined, SearchOutlined, LinkOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, CloseOutlined } from '@ant-design/icons'
+import { PlusOutlined, SearchOutlined, LinkOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, CloseOutlined, StopOutlined, PlayCircleOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import allShops from '../../../mock-data/shops.json'
@@ -231,16 +231,74 @@ function THead({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: 
       {cell('Đơn hàng',     '1 0 0', 160, 'right')}
       {cell('Tổng COD (₫)', '1 0 0', 160, 'right')}
       {cell('Doanh thu (₫)','1 0 0', 160, 'right')}
+      {cell('Trạng thái',   '1 0 0', 160)}
+    </div>
+  )
+}
+
+// ── Status tabs ────────────────────────────────────────────────
+type StatusTab = 'active' | 'inactive'
+
+function StatusTabs({ tab, activeCount, inactiveCount, onChange }: {
+  tab: StatusTab; activeCount: number; inactiveCount: number; onChange: (t: StatusTab) => void
+}) {
+  const TabBtn = ({ value, label, count }: { value: StatusTab; label: string; count: number }) => {
+    const isSelected = tab === value
+    return (
+      <div
+        onClick={() => onChange(value)}
+        style={{
+          display:'flex', alignItems:'center', gap:8, padding:'8px 16px',
+          borderRadius:8, cursor:'pointer', userSelect:'none',
+          background: isSelected ? '#111827' : '#fff',
+          border: `1px solid ${isSelected ? '#111827' : C_BORDER}`,
+        }}
+      >
+        <span style={{ fontSize:14, fontWeight:600, color: isSelected ? '#fff' : C_TEXT_PRIMARY }}>{label}</span>
+        <span style={{ fontSize:13, fontWeight:700, color: isSelected ? '#fff' : C_LINK }}>{count}</span>
+      </div>
+    )
+  }
+  return (
+    <div style={{ display:'flex', gap:8, padding:'0 16px 8px', flexShrink:0 }}>
+      <TabBtn value="active"   label="Đang hoạt động"  count={activeCount} />
+      <TabBtn value="inactive" label="Ngừng hoạt động" count={inactiveCount} />
+    </div>
+  )
+}
+
+// ── Bulk action bar ─────────────────────────────────────────────
+function BulkActionBar({ count, tab, onClose, onBulkAction }: {
+  count: number; tab: StatusTab; onClose: () => void; onBulkAction: () => void
+}) {
+  const isActiveTab = tab === 'active'
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 16px', background:'#111827', flexShrink:0 }}>
+      <CloseOutlined onClick={onClose} style={{ color:'#fff', cursor:'pointer', fontSize:16 }} />
+      <span style={{ color:'#fff', fontSize:14 }}>Đã chọn {count}</span>
+      <div style={{ flex:1 }} />
+      <button
+        onClick={onBulkAction}
+        style={{
+          display:'flex', alignItems:'center', gap:8,
+          background: isActiveTab ? '#374151' : '#16A34A', color:'#fff', border:'none',
+          borderRadius:6, padding:'8px 16px', fontSize:14, fontWeight:600, cursor:'pointer',
+        }}
+      >
+        {isActiveTab ? <StopOutlined /> : <PlayCircleOutlined />}
+        {isActiveTab ? 'Ngưng hoạt động' : 'Kích hoạt'}
+      </button>
     </div>
   )
 }
 
 // ── Table row ─────────────────────────────────────────────────
 type Shop = typeof shops[0]
-function TRow({ shop, checked, onToggle, onClick }: {
-  shop: Shop; checked: boolean; onToggle: () => void; onClick: () => void
+function TRow({ shop, status, checked, onToggle, onClick }: {
+  shop: Shop; status: string; checked: boolean; onToggle: () => void; onClick: () => void
 }) {
   const [hover, setHover] = useState(false)
+  const isInactive = status === 'inactive'
   return (
     <div
       style={{
@@ -260,14 +318,11 @@ function TRow({ shop, checked, onToggle, onClick }: {
         {/* Shop */}
         <div style={{ flex:'1 0 0', minWidth:240, padding:'6px 8px', display:'flex', flexDirection:'column', gap:2 }}>
           <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <span style={{ fontSize:14, fontWeight:700, color: shop.status === 'inactive' ? '#9CA3AF' : C_LINK, lineHeight:'20px' }}>{shop.name}</span>
-            {shop.status === 'inactive' && (
-              <span style={{ fontSize:11, fontWeight:500, color:'#6B7280', background:'#F3F4F6', border:'1px solid #D1D5DB', borderRadius:4, padding:'1px 6px', lineHeight:'16px', whiteSpace:'nowrap' }}>Inactive</span>
-            )}
+            <span style={{ fontSize:14, fontWeight:700, color: C_LINK, lineHeight:'20px' }}>{shop.name}</span>
           </div>
           <span style={{ fontSize:12, color: C_TEXT_SECONDARY, lineHeight:'16px' }}>
             {shop.id}
-            {shop.status === 'inactive' && (shop as any).selfDeletedAt && (
+            {isInactive && (shop as any).selfDeletedAt && (
               <> · Tự xoá {((shop as any).selfDeletedAt as string).split('-').reverse().join('/')}</>
             )}
           </span>
@@ -288,6 +343,12 @@ function TRow({ shop, checked, onToggle, onClick }: {
         {/* Doanh thu */}
         <div style={{ flex:'1 0 0', minWidth:160, padding:'6px 8px', textAlign:'right' }}>
           <span style={{ fontSize:14, color: C_TEXT_PRIMARY, lineHeight:'20px' }}>{fmt(shop.revenue)}</span>
+        </div>
+        {/* Trạng thái */}
+        <div style={{ flex:'1 0 0', minWidth:160, padding:'6px 8px' }}>
+          <span style={{ fontSize:14, fontWeight:600, color: isInactive ? '#DC2626' : '#16A34A' }}>
+            {isInactive ? 'Ngừng hoạt động' : 'Đang hoạt động'}
+          </span>
         </div>
     </div>
   )
@@ -558,6 +619,42 @@ export default function Shops() {
   const [pageSize, setPageSize]   = useState(50)
   const [copied, setCopied]       = useState(false)
   const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [statusOverride, setStatusOverride] = useState<Record<string, 'active' | 'inactive'>>({})
+  const [tab, setTab] = useState<StatusTab>('active')
+  const [bulkDeactivateConfirm, setBulkDeactivateConfirm] = useState(false)
+
+  const getStatus = (shop: Shop) => {
+    if (shop.id in statusOverride) return statusOverride[shop.id]
+    // `shops` is a snapshot spread-copied at module load, so after a remount
+    // (e.g. route away and back) its `status` field can be stale — read the
+    // live shared `allShops` record instead, since deactivate/reactivate
+    // mutate that shared array in place.
+    return (allShops.find((s) => s.id === shop.id)?.status ?? shop.status) as string
+  }
+
+  const setStatusFor = (ids: Iterable<string>, status: 'active' | 'inactive') => {
+    const idList = Array.from(ids)
+    setStatusOverride((prev) => {
+      const next = { ...prev }
+      idList.forEach((id) => { next[id] = status })
+      return next
+    })
+    idList.forEach((id) => {
+      const raw = allShops.find((s) => s.id === id)
+      if (raw) (raw as any).status = status
+    })
+  }
+
+  const confirmBulkDeactivate = () => {
+    setStatusFor(selected, 'inactive')
+    setSelected(new Set())
+    setBulkDeactivateConfirm(false)
+  }
+
+  const handleBulkReactivate = () => {
+    setStatusFor(selected, 'active')
+    setSelected(new Set())
+  }
 
   const copyPortalUrl = () => {
     navigator.clipboard.writeText(SHOP_PORTAL_URL).catch(() => {})
@@ -565,11 +662,20 @@ export default function Shops() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const filtered = shops.filter(
-    (s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.phone.includes(search)
-  )
+  const activeCount   = shops.filter((s) => getStatus(s) !== 'inactive').length
+  const inactiveCount = shops.filter((s) => getStatus(s) === 'inactive').length
+
+  const filtered = shops
+    .filter((s) => (tab === 'active' ? getStatus(s) !== 'inactive' : getStatus(s) === 'inactive'))
+    .filter((s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.phone.includes(search))
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
   const allChecked = paginated.length > 0 && paginated.every((s) => selected.has(s.id))
+
+  const changeTab = (t: StatusTab) => {
+    setTab(t)
+    setSelected(new Set())
+    setPage(1)
+  }
 
   const toggleAll = () => {
     const next = new Set(selected)
@@ -654,6 +760,9 @@ export default function Shops() {
           </div>
         </div>
 
+        {/* Status tabs */}
+        <StatusTabs tab={tab} activeCount={activeCount} inactiveCount={inactiveCount} onChange={changeTab} />
+
         {/* Search */}
         <div style={{ padding:'8px 16px', flexShrink:0 }}>
           <div style={{
@@ -681,6 +790,7 @@ export default function Shops() {
                 <TRow
                   key={shop.id}
                   shop={shop}
+                  status={getStatus(shop)}
                   checked={selected.has(shop.id)}
                   onToggle={() => toggleOne(shop.id)}
                   onClick={() => navigate(`/agency-admin/shops/${shop.id}`)}
@@ -690,19 +800,54 @@ export default function Shops() {
           </div>
         </div>
 
-        {/* Pagination */}
+        {/* Footer — bulk action bar when shops are selected, pagination otherwise */}
         <div style={{ borderTop:`1px solid ${C_BORDER}` }}>
-          <Pagination
-            page={page}
-            total={filtered.length}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={(s) => { setPageSize(s); setPage(1) }}
-          />
+          {selected.size > 0 ? (
+            <BulkActionBar
+              count={selected.size}
+              tab={tab}
+              onClose={() => setSelected(new Set())}
+              onBulkAction={() => (tab === 'active' ? setBulkDeactivateConfirm(true) : handleBulkReactivate())}
+            />
+          ) : (
+            <Pagination
+              page={page}
+              total={filtered.length}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(s) => { setPageSize(s); setPage(1) }}
+            />
+          )}
         </div>
       </div>
 
       <ExportOrdersModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} />
+
+      {/* Confirm bulk deactivate modal */}
+      {bulkDeactivateConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '28px 32px', width: 400, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY, marginBottom: 8 }}>Ngưng hoạt động shop</div>
+            <div style={{ fontSize: 14, color: C_TEXT_SECONDARY, marginBottom: 24, lineHeight: '22px' }}>
+              <strong style={{ color: C_TEXT_PRIMARY }}>{selected.size} shop</strong> đã chọn sẽ bị ngưng hoạt động. Shop sẽ không thể đăng nhập hoặc tạo đơn mới. Dữ liệu lịch sử vẫn được giữ nguyên.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                onClick={() => setBulkDeactivateConfirm(false)}
+                style={{ height: 36, padding: '0 18px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={confirmBulkDeactivate}
+                style={{ height: 36, padding: '0 18px', border: 'none', borderRadius: 6, background: '#374151', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Xác nhận ngưng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ConfigProvider>
   )
 }

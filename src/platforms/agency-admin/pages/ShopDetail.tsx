@@ -6,7 +6,6 @@ import {
   EyeOutlined,
   EyeInvisibleOutlined,
   EditOutlined,
-  StopOutlined,
   CalendarOutlined,
   InboxOutlined,
   DollarOutlined,
@@ -51,6 +50,21 @@ function KpiCard({ icon, label, value, iconColor }: {
       </div>
       <div style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY }}>{value}</div>
     </div>
+  )
+}
+
+// ─── Carrier tag — phân biệt dịch vụ GHN vs 247Express cùng tên ───────────────
+const CARRIER_COLOR: Record<string, string> = { GHN: '#EE4D2D', '247Express': '#1677FF' }
+function CarrierTag({ carrier }: { carrier: string }) {
+  const color = CARRIER_COLOR[carrier] ?? C_TEXT_SECONDARY
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 700, color,
+      background: color + '18', border: `1px solid ${color}40`,
+      borderRadius: 4, padding: '1px 6px', lineHeight: '16px', flexShrink: 0,
+    }}>
+      {carrier}
+    </span>
   )
 }
 
@@ -229,35 +243,7 @@ export default function ShopDetail() {
 
   // Must be before any early returns (React hook rule)
   const [activeTab, setActiveTab] = useState<TabKey>('info')
-  const [shopStatus, setShopStatus] = useState<string>(() => allShops.find((s) => s.id === id)?.status ?? 'active')
-  const [deactivatedByAgency, setDeactivatedByAgency] = useState(false)
-  const [showDeactivateModal, setShowDeactivateModal] = useState(false)
-  const [editHistory, setEditHistory] = useState<EditHistoryItem[]>(SHOP_HISTORY)
-
-  const handleDeactivate = () => {
-    setShopStatus('inactive')
-    setDeactivatedByAgency(true)
-    setShowDeactivateModal(false)
-    const now = new Date()
-    const dateStr = now.toISOString().slice(0, 10)
-    const timeStr = now.toTimeString().slice(0, 5)
-    setEditHistory((prev) => [
-      { id: Date.now().toString(), date: dateStr, time: timeStr, operator: 'Admin Đại lý', field: 'Trạng thái', oldValue: 'Hoạt động', newValue: 'Ngưng hoạt động' },
-      ...prev,
-    ])
-  }
-
-  const handleReactivate = () => {
-    setShopStatus('active')
-    setDeactivatedByAgency(false)
-    const now = new Date()
-    const dateStr = now.toISOString().slice(0, 10)
-    const timeStr = now.toTimeString().slice(0, 5)
-    setEditHistory((prev) => [
-      { id: Date.now().toString(), date: dateStr, time: timeStr, operator: 'Admin Đại lý', field: 'Trạng thái', oldValue: 'Ngưng hoạt động', newValue: 'Hoạt động' },
-      ...prev,
-    ])
-  }
+  const [editHistory] = useState<EditHistoryItem[]>(SHOP_HISTORY)
 
   const shop = allShops.find((s) => s.id === id)
 
@@ -285,6 +271,10 @@ export default function ShopDetail() {
   const totalOrders = shop.totalOrders
   const totalCOD    = totalOrders * 35_000
   const revenue     = totalCOD * 0.028
+
+  const isInactive       = shop.status === 'inactive'
+  const isSelfDeleted    = isInactive && Boolean((shop as any).selfDeletedAt)
+  const isAgencyDeactivated = isInactive && !isSelfDeleted
 
   return (
     <div
@@ -379,43 +369,32 @@ export default function ShopDetail() {
         {activeTab === 'info' && (
           <>
             {/* Inactive notice banner — agency deactivated */}
-            {shopStatus === 'inactive' && deactivatedByAgency && (
-              <div style={{ background: '#F9FAFB', border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Shop đã bị ngưng hoạt động</span>
-                  <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Shop không thể đăng nhập hoặc tạo đơn mới trong thời gian này.</span>
-                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 4 }}>Dữ liệu lịch sử (đơn hàng, đối soát) vẫn được lưu trữ để tra cứu.</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-                  <button onClick={handleReactivate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16A34A', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 14px', fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer' }}>
-                    Kích hoạt lại
-                  </button>
-                </div>
+            {isAgencyDeactivated && (
+              <div style={{ background: '#F9FAFB', border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Shop đã bị ngưng hoạt động</span>
+                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Shop không thể đăng nhập hoặc tạo đơn mới trong thời gian này.</span>
+                <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 4 }}>
+                  Dữ liệu lịch sử (đơn hàng, đối soát) vẫn được lưu trữ để tra cứu. Vào danh sách Shop để kích hoạt lại.
+                </span>
               </div>
             )}
 
             {/* Inactive notice banner — self deleted */}
-            {shopStatus === 'inactive' && !deactivatedByAgency && (shop as any).selfDeletedAt && (
-              <div style={{ background: '#FFF7ED', border: '1px solid #FECBA1', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: '#92400E', lineHeight: '20px' }}>Shop đã tự xoá tài khoản</span>
-                  {(shop as any).selfDeletedAt && (
-                    <span style={{ fontSize: 13, color: '#92400E' }}>Ngày xoá: {((shop as any).selfDeletedAt as string).split('-').reverse().join('/')}</span>
-                  )}
-                  {(shop as any).selfDeleteReason && (
-                    <span style={{ fontSize: 13, color: '#92400E' }}>Lý do: {(shop as any).selfDeleteReason}</span>
-                  )}
-                  {(shop as any).selfDeleteNote && (
-                    <span style={{ fontSize: 13, color: '#92400E' }}>Ghi chú: {(shop as any).selfDeleteNote}</span>
-                  )}
-                  <span style={{ fontSize: 12, color: '#78350F', marginTop: 4 }}>Dữ liệu lịch sử (đơn hàng, đối soát) vẫn được lưu trữ để tra cứu.</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-                  <button onClick={handleReactivate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16A34A', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 14px', fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer' }}>
-                    Kích hoạt lại tài khoản
-                  </button>
-                  <span style={{ fontSize: 11, color: '#92400E' }}>Chỉ dùng nếu shop đổi ý và liên hệ lại.</span>
-                </div>
+            {isSelfDeleted && (
+              <div style={{ background: '#FFF7ED', border: '1px solid #FECBA1', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#92400E', lineHeight: '20px' }}>Shop đã tự xoá tài khoản</span>
+                {(shop as any).selfDeletedAt && (
+                  <span style={{ fontSize: 13, color: '#92400E' }}>Ngày xoá: {((shop as any).selfDeletedAt as string).split('-').reverse().join('/')}</span>
+                )}
+                {(shop as any).selfDeleteReason && (
+                  <span style={{ fontSize: 13, color: '#92400E' }}>Lý do: {(shop as any).selfDeleteReason}</span>
+                )}
+                {(shop as any).selfDeleteNote && (
+                  <span style={{ fontSize: 13, color: '#92400E' }}>Ghi chú: {(shop as any).selfDeleteNote}</span>
+                )}
+                <span style={{ fontSize: 12, color: '#78350F', marginTop: 4 }}>
+                  Dữ liệu lịch sử (đơn hàng, đối soát) vẫn được lưu trữ để tra cứu. Vào danh sách Shop để kích hoạt lại nếu shop đổi ý.
+                </span>
               </div>
             )}
 
@@ -470,7 +449,10 @@ export default function ShopDetail() {
                       <div key={svc.id}>
                         <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', background: '#fff' }}>
                           <div style={{ flex: '2 0 0', minWidth: 160 }}>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{svc.name}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{svc.name}</span>
+                              <CarrierTag carrier={svc.carrier} />
+                            </div>
                             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{svc.desc}</div>
                           </div>
                           <div style={{ flex: '2 0 0', minWidth: 200 }}>
@@ -491,8 +473,8 @@ export default function ShopDetail() {
               </div>
             </SectionCard>
 
-            {/* Action buttons — hidden when shop is inactive */}
-            {shopStatus !== 'inactive' && (
+            {/* Action buttons — hidden when shop is inactive; deactivate/reactivate lives in danh sách Shop */}
+            {!isInactive && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, padding: 16 }}>
                 <button
                   style={{
@@ -505,45 +487,6 @@ export default function ShopDetail() {
                   <EditOutlined style={{ fontSize: 16 }} />
                   Chỉnh sửa
                 </button>
-                <button
-                  onClick={() => setShowDeactivateModal(true)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    background: '#fff', color: '#374151',
-                    border: `1px solid ${C_BORDER}`,
-                    borderRadius: 6, padding: '8px 12px',
-                    fontSize: 14, fontWeight: 600, lineHeight: '20px', cursor: 'pointer',
-                  }}
-                >
-                  <StopOutlined style={{ fontSize: 16 }} />
-                  Ngưng hoạt động
-                </button>
-              </div>
-            )}
-
-            {/* Confirm deactivate modal */}
-            {showDeactivateModal && (
-              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ background: '#fff', borderRadius: 12, padding: '28px 32px', width: 400, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY, marginBottom: 8 }}>Ngưng hoạt động shop</div>
-                  <div style={{ fontSize: 14, color: C_TEXT_SECONDARY, marginBottom: 24, lineHeight: '22px' }}>
-                    Shop <strong style={{ color: C_TEXT_PRIMARY }}>{shop.name}</strong> sẽ bị ngưng hoạt động. Shop sẽ không thể đăng nhập hoặc tạo đơn mới. Dữ liệu lịch sử vẫn được giữ nguyên.
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                    <button
-                      onClick={() => setShowDeactivateModal(false)}
-                      style={{ height: 36, padding: '0 18px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
-                    >
-                      Huỷ
-                    </button>
-                    <button
-                      onClick={handleDeactivate}
-                      style={{ height: 36, padding: '0 18px', border: 'none', borderRadius: 6, background: '#374151', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      Xác nhận ngưng
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
           </>

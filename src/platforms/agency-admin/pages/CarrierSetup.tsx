@@ -13,7 +13,7 @@ import allPriceTables from '../../../mock-data/pricing.json'
 import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, findPastHubRejection, type ClientHub247 } from '../../super-admin/agencyStore'
 import AgencyServices from './AgencyServices'
 
-const CURRENT_AGENCY_ID = 'AGN001'
+const CURRENT_AGENCY_ID = 'AGN003' // DEMO TẠM: đại lý Đà Nẵng chưa từng kết nối 247Express — đổi lại 'AGN001' sau khi demo xong
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -426,11 +426,14 @@ function TabConnect247() {
 }
 
 // ─── Tab: Kết nối (GHN) ──────────────────────────────────────────────────────
-function TabConnect({ carrier }: { carrier: CarrierKey }) {
+function TabConnect({ carrier, showModal, setShowModal }: {
+  carrier: CarrierKey
+  showModal: boolean
+  setShowModal: (v: boolean) => void
+}) {
   if (carrier === '247Express') return <TabConnect247 />
 
   const [search, setSearch]       = useState('')
-  const [showModal, setShowModal] = useState(false)
   const [hovered, setHovered]     = useState<string | null>(null)
   const [, forceRender]           = useState(0)
 
@@ -469,11 +472,6 @@ function TabConnect({ carrier }: { carrier: CarrierKey }) {
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm kiếm"
               style={{ border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', width: 200 }} />
           </div>
-          <button onClick={() => setShowModal(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
-            <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Kết nối</span>
-          </button>
         </div>
       </div>
 
@@ -755,9 +753,8 @@ function TabPricing({ carrier }: { carrier: CarrierKey }) {
 function CarrierRequestModal({ carrier, onClose, onSubmit }: {
   carrier: typeof CARRIERS[number]
   onClose: () => void
-  onSubmit: (note: string) => void
+  onSubmit: () => void
 }) {
-  const [note, setNote] = useState('')
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
@@ -779,24 +776,14 @@ function CarrierRequestModal({ carrier, onClose, onSubmit }: {
             <div style={{ fontSize: 13, fontWeight: 700, color: '#0369A1' }}>Về {carrier.label}</div>
             <div style={{ fontSize: 13, color: '#0C4A6E', lineHeight: 1.5 }}>{carrier.fullName} — mạng lưới giao hàng liên tỉnh nhanh, tích hợp đối soát tự động. Sau khi được duyệt, bạn có thể thêm Shop ID và tạo dịch vụ.</div>
           </div>
-          {/* Note field */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_LABEL }}>Ghi chú (tùy chọn)</label>
-            <textarea
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              placeholder="Nêu lý do hoặc nhu cầu kết nối với nhà vận chuyển này..."
-              rows={3}
-              style={{ width: '100%', padding: '8px 10px', border: `1px solid ${C_BORDER}`, borderRadius: 8, fontSize: 13, color: C_TEXT_PRIMARY, resize: 'vertical', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
+          <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: 1.5 }}>Bạn có chắc chắn muốn gửi yêu cầu kết nối {carrier.label} đến Super Admin?</div>
         </div>
         {/* Footer */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C_BORDER}`, background: '#FAFAFA' }}>
           <button onClick={onClose} style={{ padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'pointer', fontWeight: 500 }}>
             Huỷ
           </button>
-          <button onClick={() => onSubmit(note)} style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: C_ACTION, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+          <button onClick={onSubmit} style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: C_ACTION, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
             Gửi yêu cầu
           </button>
         </div>
@@ -806,14 +793,16 @@ function CarrierRequestModal({ carrier, onClose, onSubmit }: {
 }
 
 // ─── Carrier selector — embedded inside each section tab ─────────────────────
-function CarrierSelector({ selectedCarrier, onSelect, allowedCarriers, onRequestCarrier }: {
+function CarrierSelector({ selectedCarrier, onSelect, allowedCarriers, onRequestCarrier, action }: {
   selectedCarrier: CarrierKey
   onSelect: (c: CarrierKey) => void
   allowedCarriers: string[]
   onRequestCarrier: (c: typeof CARRIERS[number]) => void
+  action?: React.ReactNode
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px 8px', flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '12px 16px 8px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginRight: 4 }}>Nhà vận chuyển:</span>
       {CARRIERS.map((c) => {
         const active = selectedCarrier === c.key
@@ -856,6 +845,8 @@ function CarrierSelector({ selectedCarrier, onSelect, allowedCarriers, onRequest
           </button>
         )
       })}
+      </div>
+      {action}
     </div>
   )
 }
@@ -872,11 +863,12 @@ export default function CarrierSetup() {
 
   const [selectedCarrier, setSelectedCarrier] = useState<CarrierKey>('GHN')
   const [requestModalCarrier, setRequestModalCarrier] = useState<typeof CARRIERS[number] | null>(null)
+  const [showAddShopModal, setShowAddShopModal] = useState(false)
   const [, forceRender] = useState(0)
 
-  const handleSubmitCarrierRequest = (note: string) => {
+  const handleSubmitCarrierRequest = () => {
     if (!requestModalCarrier) return
-    addCarrierRequest(CURRENT_AGENCY_ID, requestModalCarrier.key, note)
+    addCarrierRequest(CURRENT_AGENCY_ID, requestModalCarrier.key)
     setRequestModalCarrier(null)
     forceRender(n => n + 1)
   }
@@ -923,8 +915,18 @@ export default function CarrierSetup() {
       <div style={{ flex: '1 0 0', overflowY: 'auto' }}>
         {activeTab === 'connect' && (
           <>
-            <CarrierSelector selectedCarrier={selectedCarrier} onSelect={setSelectedCarrier} allowedCarriers={allowedCarriers} onRequestCarrier={setRequestModalCarrier} />
-            <TabConnect carrier={selectedCarrier} />
+            <CarrierSelector
+              selectedCarrier={selectedCarrier} onSelect={setSelectedCarrier}
+              allowedCarriers={allowedCarriers} onRequestCarrier={setRequestModalCarrier}
+              action={selectedCarrier === 'GHN' ? (
+                <button onClick={() => setShowAddShopModal(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
+                  <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Kết nối</span>
+                </button>
+              ) : undefined}
+            />
+            <TabConnect carrier={selectedCarrier} showModal={showAddShopModal} setShowModal={setShowAddShopModal} />
           </>
         )}
         {activeTab === 'services' && (

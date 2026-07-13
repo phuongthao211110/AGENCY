@@ -233,6 +233,38 @@
       "title": "Đối soát & Chuyển khoản",
       "stories": [
         {
+          "id": "AGA-RECON-2",
+          "jiraKey": "",
+          "title": "[AGA] Đối soát: Mapping chỉ số bảng \"Phiên GHN\" — nguồn dữ liệu và công thức tính",
+          "userStory": "Là Agency Admin và dev team, tôi muốn biết rõ mỗi chỉ số hiển thị trong trang chi tiết \"Phiên GHN\" (AgencyReconciliationDetail.tsx) được lấy từ field nào trong mock data hoặc tính như thế nào tại runtime, để tin tưởng vào kết quả đối soát chênh lệch và xác định được điểm nào hệ thống đang thiếu dữ liệu so với file COD GHN thật.",
+          "notes": [
+            "GAP — Hoàn lại phí chuyển hoàn (4): File GHN thật có dòng này trong tổng quan phiên. Schema CarrierSession hiện không có field tương ứng. Cần bổ sung khi làm hệ thống thật.",
+            "GAP — Ghi nợ cho phiên sau: File GHN thật tách thành dòng riêng biệt. outstandingDebt hiện chỉ phản ánh nợ tồn của phiên đang xem — cần thêm field carryForwardDebt nếu làm thật.",
+            "GAP — Cột hành trình đơn: File GHN thật có 4 cột (Người nhận, Địa chỉ nhận, Ngày tạo, Ngày giao/trả) không có trong ItemRecord hiện tại.",
+            "Field thừa chưa dùng: item.codFee và item.partialDeliveryFee có trong carrier-reconciliation-items.json nhưng không dùng ở UI. Cần confirm với BA.",
+            "Hai nguồn tính totalFee: session.totalFee (lưu sẵn) và items.reduce(sum ghnFee) (runtime) cùng hiển thị trên hai card riêng — cần chọn source of truth khi làm hệ thống thật.",
+            "shopName không hiển thị ở bảng phiên GHN (chỉ dùng ở AgencyReconciliationShopDetail.tsx) — thiết kế có chủ đích, không phải bug."
+          ],
+          "userFlow": [
+            "[Session-level — map 1:1] ghnSessionCode → mã phiên; paymentDate → ngày; totalReconcile → Tổng đối soát; outstandingDebt → Nợ tồn; transferFee → Phí CK COD; netReceived → Thực nhận; totalFee → Phí dịch vụ",
+            "[Session-level — tính runtime] Tổng đơn = items.length; Số lệch = items.filter(status !== MATCH).length; Card 'Tổng phí DV (GHN)' = items.reduce(sum ghnFee)",
+            "[Session-level — map cứng] ghnShopId → tên khách hàng GHN tra qua GHN_SHOP_NAMES hardcode trong AgencyReconciliationDetail.tsx",
+            "[Session-level — GAP] Hoàn lại phí chuyển hoàn (4) và Ghi nợ cho phiên sau: không có field tương ứng trong schema hiện tại",
+            "[Item-level — map 1:1] orderCode, customerOrderCode, ghnStatus, ghnCOD/systemCOD, failedDeliveryCOD, prepaid, discount, deliveryFee, redeliveryFee, insuranceFee, returnFee, serviceFee/systemFee, totalReconcileItem",
+            "[Item-level — chỉ số riêng hệ thống] item.status (MATCH/MISMATCH/NOT_FOUND) — kết quả so khớp COD và phí dịch vụ; không có trong file GHN gốc",
+            "[Item-level — GAP] Người nhận, Địa chỉ nhận, Ngày tạo, Ngày giao/trả: có trong file GHN thật nhưng không có field tương ứng trong ItemRecord"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Các chỉ số session-level map 1:1 từ JSON field (carrier-reconciliation.json) hiển thị đúng: ghnSessionCode → mã phiên, paymentDate → ngày, totalReconcile → Tổng đối soát, outstandingDebt → Nợ tồn, transferFee → Phí chuyển khoản COD, netReceived → Thực nhận, totalFee → Phí dịch vụ.",
+            "AC2: Các chỉ số tính runtime được tính đúng: Tổng đơn = items.length; Số lệch = số item có status !== 'MATCH'; Card 'Tổng phí DV (GHN)' = items.reduce((sum, item) => sum + item.ghnFee, 0).",
+            "AC3: item.status (MATCH/MISMATCH/NOT_FOUND) và 'Số lệch' là chỉ số riêng của hệ thống — không có trong file GHN gốc, được tính dựa trên so sánh ghnCOD vs systemCOD và serviceFee vs systemFee.",
+            "AC4: Màu cảnh báo tô đỏ áp dụng đúng: ghnCOD tô đỏ khi ghnCOD !== systemCOD; serviceFee tô đỏ khi Math.abs(item.serviceFee) !== item.systemFee. Đơn NOT_FOUND hiển thị orderCode màu xám thay vì link xanh.",
+            "AC5: Tên khách hàng GHN được tra qua map cứng GHN_SHOP_NAMES trong AgencyReconciliationDetail.tsx dựa trên session.ghnShopId. Nếu ghnShopId không có trong map → hiển thị fallback hoặc để trống."
+          ],
+          "status": "draft"
+        },
+        {
           "id": "AGA-RECON-1",
           "jiraKey": "",
           "title": "[AGA] Đối soát: Tạo phiên đối soát GHN",

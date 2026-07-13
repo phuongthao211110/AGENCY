@@ -1,0 +1,486 @@
+{
+  "version": "1.1",
+  "updatedAt": "2026-06-08T07:44:54.113Z",
+  "entries": {
+    "tạo mới dịch vụ": {
+      "synonyms": [
+        "Tạo dịch vụ mới",
+        "Thêm dịch vụ mới",
+        "Tạo mới",
+        "Tạo mới dịch vụ",
+        "Tạo dịch vụ"
+      ],
+      "confidence": 0.98,
+      "source": "learned",
+      "learnedAt": "2026-05-29"
+    },
+    "tìm kiếm": {
+      "synonyms": [
+        "đơn hàng\n\ntạo, chỉnh sửa và quản lý đơn hàng\n\ncài đặt đơn hàng\ntạo đơn hàng mới",
+        "đơn nháp\n0\nđã huỷ\n0"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "hiển thị 10": {
+      "synonyms": [
+        "1\n2"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "đến trang": {
+      "synonyms": [
+        "1\n2",
+        "đại lý\n\ndanh sách quản lý tất cả đại lý\n\ntạo đại lý mới"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tên đại lý": {
+      "synonyms": [
+        "tên đại lý",
+        "tên đại lý",
+        "tên đại lý",
+        "tên đại lý",
+        "tên đại lý"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "họ tên chủ đại lý": {
+      "synonyms": [
+        "họ tên chủ đại lý",
+        "họ tên chủ đại lý",
+        "họ tên chủ đại lý",
+        "họ tên chủ đại lý",
+        "họ tên chủ đại lý"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "số điện thoại": {
+      "synonyms": [
+        "số điện thoại",
+        "số điện thoại",
+        "số điện thoại",
+        "số điện thoại",
+        "số điện thoại"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "địa chỉ": {
+      "synonyms": [
+        "số nhà, tên đường",
+        "địa chỉ",
+        "địa chỉ",
+        "địa chỉ",
+        "địa chỉ"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tendaily": {
+      "synonyms": [
+        "https://admin-",
+        ".fabopos.com",
+        "sao chép"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tenshop": {
+      "synonyms": [
+        ".fabopos.com",
+        "sao chép"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tên shop": {
+      "synonyms": [
+        "tên shop",
+        "tên shop",
+        "tên shop",
+        "tên shop",
+        "tên shop"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "họ tên chủ shop": {
+      "synonyms": [
+        "họ tên chủ shop",
+        "họ tên chủ shop",
+        "họ tên chủ shop",
+        "họ tên chủ shop",
+        "tên shop",
+        "thông tin cơ bản"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "mật khẩu của shop": {
+      "synonyms": [
+        "sao chép",
+        "mật khẩu của shop",
+        "mật khẩu của shop"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "thêm dịch vụ": {
+      "synonyms": [
+        "dịch vụ\nbảng giá"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "chọn địa chỉ gửi": {
+      "synonyms": [
+        "bên gửi"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "chọn ca lấy hàng (tuỳ chọn)": {
+      "synonyms": [
+        "bên gửi"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "số nhà, tên đường": {
+      "synonyms": [
+        "tỉnh/thành, quận/huyện, phường/xã"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tên sản phẩm": {
+      "synonyms": [
+        "tên sản phẩm\nsl: 0\ngiá bán\nkl / kt"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "kg": {
+      "synonyms": [
+        "khối lượng",
+        "khối lượng quy đổi: 0.2kg"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "d:": {
+      "synonyms": [
+        "cm",
+        "kích thước",
+        "khối lượng quy đổi: 0.2kg"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "r:": {
+      "synonyms": [
+        "cm",
+        "kích thước",
+        "khối lượng quy đổi: 0.2kg"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "c:": {
+      "synonyms": [
+        "cm",
+        "kích thước",
+        "khối lượng quy đổi: 0.2kg"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "mã đơn shop": {
+      "synonyms": [
+        "mã đơn shop",
+        "khai giá trị hàng",
+        "khai giá trị hàng",
+        "khai giá trị hàng",
+        "thông tin đơn hàng\ntạo lúc: 08:40 - 29/05/2026",
+        "khai giá trị hàng"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "cod": {
+      "synonyms": [
+        "khai giá trị hàng"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "giảm giá": {
+      "synonyms": [
+        "khai giá trị hàng"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "thu ship khách hàng": {
+      "synonyms": [
+        "khai giá trị hàng"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "giá trị hàng": {
+      "synonyms": [
+        "khai giá trị hàng"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "cho xem hàng không thử": {
+      "synonyms": [
+        "ghi chú xem hàng",
+        "ghi chú nội bộ\nthêm ghi chú",
+        "ghi chú đơn hàng\nthêm ghi chú",
+        "khai giá trị hàng"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tiền mặt (thu hộ cod)": {
+      "synonyms": [
+        "thanh toán",
+        "ghi chú nội bộ\nthêm ghi chú",
+        "ghi chú đơn hàng\nthêm ghi chú",
+        "khai giá trị hàng"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "facebook": {
+      "synonyms": [
+        "nguồn tạo",
+        "ghi chú nội bộ\nthêm ghi chú",
+        "ghi chú đơn hàng\nthêm ghi chú",
+        "khai giá trị hàng"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "shop trả phí ship": {
+      "synonyms": [
+        "dịch vụ"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "mật khẩu cũ": {
+      "synonyms": [
+        "mật khẩu cũ",
+        "mật khẩu cũ",
+        "mật khẩu cũ",
+        "mật khẩu cũ"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "mật khẩu mới": {
+      "synonyms": [
+        "mật khẩu mới",
+        "mật khẩu mới",
+        "mật khẩu mới",
+        "mật khẩu mới"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "nhập lại mật khẩu mới": {
+      "synonyms": [
+        "nhập lại mật khẩu mới",
+        "nhập lại mật khẩu mới",
+        "nhập lại mật khẩu mới",
+        "nhập lại mật khẩu mới"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "xác nhận mật khẩu mới": {
+      "synonyms": [
+        "xác nhận mật khẩu mới",
+        "xác nhận mật khẩu mới",
+        "xác nhận mật khẩu mới",
+        "xác nhận mật khẩu mới"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tên dịch vụ": {
+      "synonyms": [
+        "tên dịch vụ",
+        "tên dịch vụ",
+        "tên dịch vụ",
+        "tên dịch vụ",
+        "tên dịch vụ"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "mã dịch vụ": {
+      "synonyms": [
+        "mã dịch vụ",
+        "mã dịch vụ",
+        "mã dịch vụ",
+        "mã dịch vụ",
+        "mã dịch vụ"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "mô tả": {
+      "synonyms": [
+        "mô tả",
+        "mô tả",
+        "mô tả",
+        "mô tả",
+        "tên dịch vụ",
+        "thông tin cơ bản"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "bảng giá (mặc định)": {
+      "synonyms": [
+        "tự chọn bảng giá sau",
+        "bảng giá (mặc định)",
+        "bảng giá (mặc định)"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tên bảng giá": {
+      "synonyms": [
+        "tên bảng giá",
+        "tên bảng giá",
+        "tên bảng giá",
+        "tên bảng giá",
+        "tên bảng giá",
+        "thông tin cơ bản"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "khối lượng chuẩn": {
+      "synonyms": [
+        "khối lượng chuẩn",
+        "khối lượng chuẩn"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "giá chuẩn": {
+      "synonyms": [
+        "giá chuẩn",
+        "giá chuẩn"
+      ],
+      "confidence": 0.9,
+      "source": "research"
+    },
+    "tạo dịch vụ": {
+      "synonyms": [
+        "Tạo mới",
+        "Tạo",
+        "Tạo dịch vụ mới"
+      ],
+      "confidence": 0.91,
+      "source": "learned",
+      "learnedAt": "2026-06-05",
+      "reasoning": "UI button uses abbreviated form 'Tạo mới' for space efficiency; context infers 'dịch vụ' from page"
+    },
+    "tab dịch vụ": {
+      "synonyms": [
+        "Dịch vụ"
+      ],
+      "confidence": 0.98,
+      "source": "learned",
+      "learnedAt": "2026-05-29",
+      "reasoning": "Tab labels omit the word 'tab' and show only the category label"
+    },
+    "lưu": {
+      "synonyms": [
+        "Tạo mới",
+        "Tạo"
+      ],
+      "confidence": 0.8,
+      "source": "learned",
+      "learnedAt": "2026-05-29",
+      "reasoning": "In create-service flow, the action button text is 'Tạo mới' (Create New) not 'Lưu' (Save); semantic shift from generic save to domain-specific action"
+    },
+    "tạo mới": {
+      "synonyms": [
+        "Tạo"
+      ],
+      "confidence": 0.82,
+      "source": "learned",
+      "learnedAt": "2026-05-29",
+      "reasoning": "Shortened variant on service creation page button. UI shows 'Tạo' as standalone button text"
+    },
+    "đăng nhập": {
+      "synonyms": [
+        "Đăng xuất"
+      ],
+      "confidence": 0.7,
+      "source": "learned",
+      "learnedAt": "2026-05-29",
+      "reasoning": "Mismatch indicates test runs in wrong state or page context. Logout button found instead of login—may indicate test after login or incorrect flow selection"
+    },
+    "trang tạo mới dịch vụ, điền đầy đủ thông tin cơ bản": {
+      "synonyms": [
+        "Tạo"
+      ],
+      "confidence": 0.92,
+      "source": "learned",
+      "learnedAt": "2026-05-29",
+      "reasoning": "Long intent description maps to short button label — 'Tạo' triggers the full service creation action after form fill"
+    },
+    "tùy chỉnh": {
+      "synonyms": [
+        "Tuỳ chỉnh khu vực",
+        "Tùy chỉnh khu vực"
+      ],
+      "confidence": 0.91,
+      "source": "learned",
+      "learnedAt": "2026-06-01",
+      "reasoning": "UI shows 'Tuỳ chỉnh khu vực' (Customize Area), which is a more specific form of the generic 'tùy chỉnh' (customize). Valid in regional/location customization context."
+    },
+    "dịch vụ": {
+      "synonyms": [
+        "Dịch vụ"
+      ],
+      "confidence": 0.95,
+      "source": "learned",
+      "learnedAt": "2026-06-02",
+      "reasoning": "Tab label: test refers to 'service tab', UI shows tab header labeled 'Service'"
+    },
+    "tàu chỉnh": {
+      "synonyms": [
+        "Tuỳ chỉnh khu vực"
+      ],
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-06-04",
+      "reasoning": "UI variant is the full label. 'Tuỳ chỉnh khu vực' includes area/region specificity while test uses the shortened form."
+    },
+    "tạo": {
+      "synonyms": [
+        "Tạo"
+      ],
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-06-05",
+      "reasoning": "Create button on form — uppercase 'Tạo' is the submit button label"
+    }
+  }
+}

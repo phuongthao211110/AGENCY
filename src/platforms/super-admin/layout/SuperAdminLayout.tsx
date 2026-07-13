@@ -15,11 +15,19 @@ import {
 import { superAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
 import PlatformSwitcher from '../../../components/PlatformSwitcher'
+import { agenciesList, shopConnections, carrierRequests } from '../agencyStore'
 
 const NAV_ITEMS = [
   { key: '/super-admin/agencies', icon: <BankOutlined />, label: 'Đại lý' },
   { key: '/super-admin/hubs-247', icon: <EnvironmentOutlined />, label: 'Địa chỉ lấy hàng 247' },
 ]
+
+function countAgenciesWithPendingRequests() {
+  const agencyIds = new Set<string>()
+  shopConnections.filter(s => s.status === 'pending' && s.carrier === 'GHN').forEach(s => agencyIds.add(s.agencyId))
+  carrierRequests.filter(r => r.status === 'pending').forEach(r => agencyIds.add(r.agencyId))
+  return agenciesList.filter(a => agencyIds.has(a.id)).length
+}
 
 const SETTINGS_ITEM = { key: '/super-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }
 
@@ -39,6 +47,7 @@ export default function SuperAdminLayout() {
   }, [])
 
   const isActive = (key: string) => location.pathname.startsWith(key)
+  const pendingAgenciesCount = countAgenciesWithPendingRequests()
 
   return (
     <ConfigProvider theme={superAdminTheme}>
@@ -89,6 +98,9 @@ export default function SuperAdminLayout() {
                     {item.icon}
                   </span>
                   <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.key === '/super-admin/agencies' && pendingAgenciesCount > 0 && (
+                    <Badge count={pendingAgenciesCount} size="small" />
+                  )}
                 </div>
               )
             })}

@@ -139,6 +139,9 @@ export interface CarrierRequest {
   carrier: string
   status: 'pending' | 'approved' | 'rejected'
   requestedAt: string
+  // Giờ gửi yêu cầu (HH:mm) — tách riêng khỏi requestedAt (chỉ chứa ngày, format
+  // YYYY-MM-DD) để không phải sửa các chỗ đang parse requestedAt bằng split('-')
+  requestedTime?: string
   note?: string
   rejectionReason?: string
   hubIds?: string[]
@@ -149,16 +152,21 @@ export interface CarrierRequest {
 }
 
 export const carrierRequests: CarrierRequest[] = [
-  { id: 'cr-001', agencyId: 'AGN001', carrier: '247Express', status: 'approved', requestedAt: '2025-06-01', note: 'Muốn mở rộng dịch vụ vận chuyển liên tỉnh', hubIds: ['HUB-SGN-001'], serviceIds: ['DE', 'TF'] },
-  { id: 'cr-002', agencyId: 'AGN002', carrier: '247Express', status: 'pending', requestedAt: '2025-06-08', note: 'Shop có nhu cầu giao hàng quốc tế' },
-  { id: 'cr-003', agencyId: 'AGN004', carrier: '247Express', status: 'pending', requestedAt: '2025-06-15', note: '' },
+  { id: 'cr-001', agencyId: 'AGN001', carrier: '247Express', status: 'approved', requestedAt: '2025-06-01', requestedTime: '09:12', note: 'Muốn mở rộng dịch vụ vận chuyển liên tỉnh', hubIds: ['HUB-SGN-001'], serviceIds: ['DE', 'TF'] },
+  { id: 'cr-002', agencyId: 'AGN002', carrier: '247Express', status: 'pending', requestedAt: '2025-06-08', requestedTime: '14:35', note: 'Shop có nhu cầu giao hàng quốc tế' },
+  { id: 'cr-003', agencyId: 'AGN004', carrier: '247Express', status: 'pending', requestedAt: '2025-06-15', requestedTime: '10:47', note: '' },
+  { id: 'cr-004', agencyId: 'AGN001', carrier: '247Express', status: 'approved', requestedAt: '2025-06-20', requestedTime: '16:03', note: 'Mở rộng thêm 2 địa điểm gửi hàng phía Bắc và Miền Trung', hubIds: ['HUB-HAN-001', 'HUB-DAN-001'], requestedHubIds: ['HUB-HAN-001', 'HUB-DAN-001'], serviceIds: ['DE'] },
+  { id: 'cr-005', agencyId: 'AGN001', carrier: '247Express', status: 'pending', requestedAt: '2025-06-28', requestedTime: '08:50', note: 'Xin thêm địa điểm gửi hàng khu vực Hải Phòng', requestedHubIds: ['HUB-HPH-001'] },
+  { id: 'cr-006', agencyId: 'AGN001', carrier: '247Express', status: 'rejected', requestedAt: '2025-06-18', requestedTime: '11:24', note: 'Xin thêm địa điểm gửi hàng khu vực Huế', requestedHubIds: ['HUB-HUE-001'], rejectionReason: 'Khu vực chưa đủ nhu cầu vận chuyển, xem xét lại sau quý sau' },
 ]
 
 export function addCarrierRequest(agencyId: string, carrier: string, note?: string, requestedHubIds?: string[]): CarrierRequest {
+  const now = new Date()
   const req: CarrierRequest = {
     id: `cr-${Date.now()}`,
     agencyId, carrier, status: 'pending',
-    requestedAt: new Date().toISOString().slice(0, 10),
+    requestedAt: now.toISOString().slice(0, 10),
+    requestedTime: now.toTimeString().slice(0, 5),
     note,
     ...(requestedHubIds?.length ? { requestedHubIds } : {}),
   }
@@ -166,9 +174,11 @@ export function addCarrierRequest(agencyId: string, carrier: string, note?: stri
   return req
 }
 
-// Duyệt yêu cầu 247Express — cần chọn dịch vụ (ServiceTypeID) TRƯỚC, sau đó mới
-// chọn ClientHubID; cả 2 đều cho phép chọn nhiều trong 1 lần duyệt.
-export function approveCarrierRequest(id: string, hubIds: string[], serviceIds: string[]) {
+// Duyệt yêu cầu 247Express. Với yêu cầu kết nối lần đầu (đại lý chưa kích hoạt),
+// duyệt chỉ mở kết nối + dịch vụ — KHÔNG cấp hub cùng lúc; Super Admin cấp hub bằng
+// action riêng ("+ Cấp thêm Hub") sau khi kết nối đã được duyệt. Với yêu cầu xin
+// thêm địa điểm gửi hàng (đại lý đã kích hoạt), hubIds truyền vào chính là hub được cấp.
+export function approveCarrierRequest(id: string, hubIds: string[] = [], serviceIds: string[] = ['DE']) {
   const req = carrierRequests.find(r => r.id === id)
   if (!req) return
   req.status = 'approved'

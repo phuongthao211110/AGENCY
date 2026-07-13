@@ -1,0 +1,242 @@
+{
+  "version": "1.0",
+  "updatedAt": "2026-06-08T07:45:08.884Z",
+  "entries": {
+    "thiết lập ghn": {
+      "text": "Thiết lập GHN",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "cài đặt ghn": {
+      "text": "Thiết lập GHN",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "nhà vận chuyển": {
+      "text": "Thiết lập GHN",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "quản lý shop": {
+      "text": "Shop",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "danh sách shop": {
+      "text": "Shop",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "cài đặt": {
+      "text": "Cài đặt",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "settings": {
+      "text": "Cài đặt",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "dịch vụ": {
+      "text": "Dịch vụ",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "bảng giá": {
+      "text": "Bảng giá",
+      "confidence": 1,
+      "source": "seed",
+      "learnedAt": "2026-05-28"
+    },
+    "tạo mới dịch vụ": {
+      "text": "Tạo dịch vụ mới",
+      "learnedAt": "2026-05-28",
+      "source": "learned"
+    },
+    "form tạo mới dịch vụ": {
+      "text": "Tạo",
+      "learnedAt": "2026-05-28",
+      "source": "learned"
+    },
+    "tạo dịch vụ": {
+      "text": "Tạo mới",
+      "learnedAt": "2026-06-02",
+      "source": "learned"
+    },
+    "tab dịch vụ": {
+      "text": "Dịch vụ",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "tạo đại lý": {
+      "text": "QUẢN LÝ\nShop\nThiết lập GHN",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "hàng nhẹ": {
+      "text": "200432 - cửa hàng 2",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "lưu": {
+      "text": "Tạo mới",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "trang tạo mới dịch vụ, điền đầy đủ thông tin cơ bản": {
+      "text": "Tạo",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "hàng nặng": {
+      "text": "200432 - cửa hàng 2",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "nút lưu tạo dịch vụ": {
+      "text": "Tạo",
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-05-29"
+    },
+    "đăng nhập super admin domain": {
+      "text": "Đăng xuất",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "đăng nhập": {
+      "text": "Đăng xuất",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "tạo": {
+      "text": "Tạo",
+      "confidence": 0.95,
+      "source": "learned",
+      "learnedAt": "2026-05-29"
+    },
+    "\"tất cả\" cho địa điểm lấy hàng": {
+      "text": "200432 - cửa hàng 2",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "\"tất cả\" cho địa điểm giao hàng": {
+      "text": "200432 - cửa hàng 2",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "tùy chỉnh": {
+      "text": "Tuỳ chỉnh khu vực",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "loại địa chỉ \"địa chỉ cũ\"": {
+      "text": "Tuỳ chỉnh khu vực",
+      "learnedAt": "2026-05-29",
+      "source": "learned"
+    },
+    "trang tạo mới dịch vụ điền cơ bản": {
+      "text": "Tạo",
+      "confidence": 0.85,
+      "source": "learned",
+      "learnedAt": "2026-06-01"
+    },
+    "theo tuyến - khối lượng": {
+      "text": "Áp dụng đồng giá cho các tuyến",
+      "learnedAt": "2026-06-01",
+      "source": "learned"
+    },
+    "tab bảng giá": {
+      "text": "Bảng giá",
+      "confidence": 0.85,
+      "source": "chat-learned",
+      "learnedAt": "2026-06-01"
+    },
+    "nút tạo mới bảng giá": {
+      "text": "Tạo mới",
+      "confidence": 0.85,
+      "source": "chat-learned",
+      "learnedAt": "2026-06-01"
+    },
+    "nút viết test case": {
+      "text": "🧪 Viết Test Case",
+      "confidence": 0.9,
+      "source": "chat-learned",
+      "learnedAt": "2026-06-01"
+    },
+    "tạo dịch vụ mới": {
+      "text": "Tạo dịch vụ mới",
+      "confidence": 0.95,
+      "source": "learned",
+      "learnedAt": "2026-06-03"
+    },
+    "tạo mới": {
+      "text": "Tạo mới",
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-06-03"
+    },
+    "tùy chỉnh khu vực": {
+      "text": "Tuỳ chỉnh khu vực",
+      "confidence": 0.95,
+      "source": "learned",
+      "learnedAt": "2026-06-03"
+    },
+    "trang tạo mới dịch vụ điền đầy đủ thông tin cơ bản": {
+      "text": "Tạo",
+      "confidence": 0.85,
+      "source": "learned",
+      "learnedAt": "2026-06-03"
+    },
+    "nút tạo trên form dịch vụ": {
+      "text": "Tạo",
+      "confidence": 0.85,
+      "source": "learned",
+      "learnedAt": "2026-06-03"
+    },
+    "trang tạo mới dịch vụ": {
+      "text": "Tạo",
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-06-03"
+    },
+    "tạo (button)": {
+      "text": "Tạo",
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-06-03"
+    },
+    "trang tạo mới dịch vụ điền đầy đủ": {
+      "text": "Tạo",
+      "confidence": 0.85,
+      "source": "learned",
+      "learnedAt": "2026-06-04"
+    },
+    "trang tạo mới dịch vụ điền thông tin cơ bản": {
+      "text": "Tạo",
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-06-04"
+    },
+    "tạo mới dịch vụ điền thông tin cơ bản": {
+      "text": "Tạo",
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-06-04"
+    },
+    "tạo mới (service form)": {
+      "text": "Tạo",
+      "confidence": 0.9,
+      "source": "learned",
+      "learnedAt": "2026-06-07"
+    }
+  }
+}
