@@ -8,7 +8,7 @@ import allPricing from '../../../mock-data/pricing.json'
 import letterPricingTable from '../../../mock-data/pricing-letter-247.json'
 import roadFreightPricingTable from '../../../mock-data/pricing-roadfreight-247.json'
 import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
-import { agenciesList, clientHubs247 } from '../../super-admin/agencyStore'
+import { clientHubs247 } from '../../super-admin/agencyStore'
 
 // ── Design tokens (hoisted above module-scope consts that reference them) ──
 const C_TEXT_PRIMARY   = '#111827'
@@ -1163,24 +1163,17 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
   const [dongGoiMaterial, setDongGoiMaterial] = useState<string>('none')
   const [vasModalOpen, setVasModalOpen] = useState(false)
   const [vasSearch, setVasSearch]       = useState('')
-  const [senderHubId, setSenderHubId]   = useState('')
-  const [senderPickerOpen, setSenderPickerOpen] = useState(false)
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
-  // 247Express bắt buộc lấy hàng tại 1 trong các địa điểm gửi hàng (ClientHubID) đã được
-  // Super Admin cấp cho đại lý — khác GHN (lấy tại địa chỉ shop tự thiết lập).
-  const currentAgency = agenciesList.find(a => a.id === currentShop.agencyId)
-  const agencyHubs = clientHubs247.filter(h => (currentAgency?.clientHubIds ?? []).includes(h.id))
-  const selectedHub = agencyHubs.find(h => h.id === senderHubId) ?? agencyHubs[0]
-
-  useEffect(() => {
-    if (!senderPickerOpen) return
-    const handler = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement).closest('[data-sender-hub-menu]')) setSenderPickerOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [senderPickerOpen])
+  // 247Express bắt buộc lấy hàng tại 1 địa điểm gửi hàng (ClientHubID) cố định — mỗi dịch
+  // vụ 247Express (ServiceDetail.tsx, mục "Chọn địa điểm gửi hàng") chỉ gắn ĐÚNG 1 hub, nên
+  // lấy thẳng hub của dịch vụ 247Express đang bật đầu tiên của đại lý, không cần suy đoán
+  // qua tỉnh của shop nữa — luôn chính xác vì hub đã được đại lý gán cố định cho dịch vụ.
+  // Shop không cần biết/thấy hub này (UI vẫn hiển thị địa chỉ shop bình thường).
+  const primary247Service = servicesList.find(
+    s => s.agencyId === currentShop.agencyId && s.carrier === '247Express' && s.enabled && (s.hubIds?.length ?? 0) > 0
+  )
+  const selectedHub = clientHubs247.find(h => h.id === primary247Service?.hubIds?.[0])
 
   useEffect(() => {
     if (!viewGoodsPickerOpen) return
@@ -1359,40 +1352,11 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ width: 110, flexShrink: 0, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Địa chỉ KH</span>
-                  <div style={{ position: 'relative', flex: 1, minWidth: 0 }} data-sender-hub-menu>
-                    <div
-                      onClick={() => agencyHubs.length > 0 && setSenderPickerOpen(v => !v)}
-                      style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', gap: 12, cursor: agencyHubs.length > 0 ? 'pointer' : 'default', alignItems: 'center' }}
-                    >
-                      {selectedHub ? (
-                        <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {selectedHub.name} - {selectedHub.location}
-                        </span>
-                      ) : (
-                        <span style={{ flex: 1, fontSize: 14, color: '#9CA3AF', lineHeight: '20px' }}>Đại lý chưa có địa điểm gửi hàng 247Express</span>
-                      )}
-                      {agencyHubs.length > 0 && <div style={{ flexShrink: 0, display: 'flex' }}><IcChevronDown /></div>}
-                    </div>
-                    {senderPickerOpen && agencyHubs.length > 0 && (
-                      <div style={{
-                        position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
-                        background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
-                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden',
-                      }}>
-                        {agencyHubs.map(hub => (
-                          <div
-                            key={hub.id}
-                            onClick={() => { setSenderHubId(hub.id); setSenderPickerOpen(false) }}
-                            style={{ padding: '8px 12px', cursor: 'pointer', background: hub.id === selectedHub?.id ? '#FFF4ED' : 'transparent' }}
-                            onMouseEnter={(e) => { if (hub.id !== selectedHub?.id) e.currentTarget.style.background = '#F9FAFB' }}
-                            onMouseLeave={(e) => { if (hub.id !== selectedHub?.id) e.currentTarget.style.background = 'transparent' }}
-                          >
-                            <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{hub.name} - {hub.contactPhone}</div>
-                            <div style={{ fontSize: 13, color: '#6B7280', lineHeight: '18px' }}>{hub.location}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  {/* Hiển thị địa chỉ shop như đơn GHN bình thường — không lộ việc điểm lấy
+                      hàng thực tế là kho/hub của 247Express (senderHub tính ngầm ở trên) */}
+                  <div style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px' }}>
+                    <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{currentShop.ownerName} - {currentShop.phone}</div>
+                    <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{currentShop.address}</div>
                   </div>
                 </div>
               </div>

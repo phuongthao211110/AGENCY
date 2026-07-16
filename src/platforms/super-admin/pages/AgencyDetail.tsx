@@ -472,16 +472,20 @@ export default function AgencyDetail() {
                               {pendingReq && (
                                 <>
                                   <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#FEF3C7', color: '#D97706' }}>Chờ duyệt</span>
-                                  <button
-                                    onClick={() => {
-                                      // Duyệt kết nối/yêu cầu 247Express trước — không chọn hub ở bước này —
-                                      // rồi mới mở form chọn hub riêng (áp dụng cho cả kết nối lần đầu và xin thêm hub)
-                                      approveCarrierRequest(pendingReq.id, [], ['DE'])
-                                      setDefaultHubSelection(pendingReq.requestedHubIds)
-                                      setAddingHubFor(carrier.key)
-                                      forceRender(n => n + 1)
-                                    }}
-                                    style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Duyệt</button>
+                                  {/* Kết nối lần đầu (chưa enabled) — vẫn cần duyệt kết nối trước, không có
+                                      hub cụ thể nào ở bước này. Đã enabled = đây là xin thêm hub, không có gì
+                                      để "duyệt kết nối" cả — chỉ cần chọn hub (xem block bên dưới), chọn hub
+                                      xong = duyệt luôn, nên không hiện nút Duyệt riêng ở đây. */}
+                                  {!enabled && (
+                                    <button
+                                      onClick={() => {
+                                        approveCarrierRequest(pendingReq.id, [], ['DE'])
+                                        setDefaultHubSelection(pendingReq.requestedHubIds)
+                                        setAddingHubFor(carrier.key)
+                                        forceRender(n => n + 1)
+                                      }}
+                                      style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Duyệt</button>
+                                  )}
                                   <button onClick={() => { setRejectingCarrierId(pendingReq.id); setRejectCarrierReason('') }} style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid #E5E7EB`, background: '#fff', color: '#DC2626', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Từ chối</button>
                                 </>
                               )}
@@ -499,6 +503,13 @@ export default function AgencyDetail() {
                               {pendingReq.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
                             </div>
                           )}
+                          {pendingReq?.requestedAddress && (
+                            <div style={{ padding: '8px 12px', borderTop: '1px solid #FDE68A', background: '#FFFDF0', fontSize: 12, color: '#92400E' }}>
+                              <span style={{ fontWeight: 600 }}>Đại lý đề xuất địa chỉ mới: </span>
+                              {pendingReq.requestedAddress.address}, {pendingReq.requestedAddress.wardName}, {pendingReq.requestedAddress.districtName}, {pendingReq.requestedAddress.provinceName}
+                              {' · '}Liên hệ: {pendingReq.requestedAddress.contactName} - {pendingReq.requestedAddress.contactPhone}
+                            </div>
+                          )}
                           {pendingReq?.requestedHubIds?.filter(id => findPastHubRejection(pendingReq!.agencyId, pendingReq!.carrier, id, pendingReq!.id)).map(id => {
                             const past = findPastHubRejection(pendingReq!.agencyId, pendingReq!.carrier, id, pendingReq!.id)!
                             const hubName = clientHubs247.find(h => h.id === id)?.name ?? id
@@ -508,6 +519,18 @@ export default function AgencyDetail() {
                               </div>
                             )
                           })}
+                          {/* Xin thêm hub (đã enabled) — chọn hub có sẵn, "Cấp" = duyệt luôn, gộp 1 bước */}
+                          {carrier.key === '247Express' && enabled && pendingReq && rejectingCarrierId !== pendingReq.id && (
+                            <HubGrantList
+                              agencyName={agency.name}
+                              excludeHubIds={agency.clientHubIds}
+                              defaultSelected={pendingReq.requestedHubIds}
+                              onGrant={(hubIds) => {
+                                approveCarrierRequest(pendingReq.id, hubIds, ['DE'])
+                                forceRender(n => n + 1)
+                              }}
+                            />
+                          )}
                           {/* Reject form inline */}
                           {rejectingCarrierId === pendingReq?.id && (
                             <div style={{ padding: '10px 12px', borderTop: `1px solid #FCA5A5`, background: '#FFF5F5', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -540,6 +563,11 @@ export default function AgencyDetail() {
                               {rejectedHubReq.requestedHubIds && rejectedHubReq.requestedHubIds.length > 0 && (
                                 <div style={{ fontSize: 12, color: '#7F1D1D' }}>
                                   Địa điểm đã yêu cầu: {rejectedHubReq.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
+                                </div>
+                              )}
+                              {rejectedHubReq.requestedAddress && (
+                                <div style={{ fontSize: 12, color: '#7F1D1D' }}>
+                                  Địa chỉ đã đề xuất: {rejectedHubReq.requestedAddress.address}, {rejectedHubReq.requestedAddress.wardName}, {rejectedHubReq.requestedAddress.districtName}, {rejectedHubReq.requestedAddress.provinceName}
                                 </div>
                               )}
                               <div style={{ fontSize: 12, color: '#7F1D1D' }}>

@@ -21,7 +21,8 @@
     "clientHubIds": [
       "HUB-SGN-001",
       "HUB-HAN-001",
-      "HUB-DAN-001"
+      "HUB-DAN-001",
+      "HUB-HPH-001"
     ],
     "allowedServices247": [
       "DE",

@@ -149,6 +149,17 @@ export interface CarrierRequest {
   // Các ClientHubID có sẵn trong clientHubs247 mà đại lý xin gán thêm (RequestHubModal) —
   // đại lý chỉ được chọn từ catalog có sẵn, không tự tạo địa điểm mới
   requestedHubIds?: string[]
+  // Đại lý đề xuất 1 địa chỉ MỚI (chưa có trong catalog clientHubs247) khi xin thêm hub —
+  // đại lý chỉ điền địa chỉ mong muốn, KHÔNG tự tạo ClientHubID. Super Admin xem địa chỉ
+  // này rồi quyết định tạo hub mới (createClientHub) hoặc gán hub có sẵn phù hợp.
+  requestedAddress?: {
+    address: string
+    wardName: string
+    districtName: string
+    provinceName: string
+    contactName: string
+    contactPhone: string
+  }
 }
 
 export const carrierRequests: CarrierRequest[] = [
@@ -156,11 +167,18 @@ export const carrierRequests: CarrierRequest[] = [
   { id: 'cr-002', agencyId: 'AGN002', carrier: '247Express', status: 'pending', requestedAt: '2025-06-08', requestedTime: '14:35', note: 'Shop có nhu cầu giao hàng quốc tế' },
   { id: 'cr-003', agencyId: 'AGN004', carrier: '247Express', status: 'pending', requestedAt: '2025-06-15', requestedTime: '10:47', note: '' },
   { id: 'cr-004', agencyId: 'AGN001', carrier: '247Express', status: 'approved', requestedAt: '2025-06-20', requestedTime: '16:03', note: 'Mở rộng thêm 2 địa điểm gửi hàng phía Bắc và Miền Trung', hubIds: ['HUB-HAN-001', 'HUB-DAN-001'], requestedHubIds: ['HUB-HAN-001', 'HUB-DAN-001'], serviceIds: ['DE'] },
-  { id: 'cr-005', agencyId: 'AGN001', carrier: '247Express', status: 'pending', requestedAt: '2025-06-28', requestedTime: '08:50', note: 'Xin thêm địa điểm gửi hàng khu vực Hải Phòng', requestedHubIds: ['HUB-HPH-001'] },
-  { id: 'cr-006', agencyId: 'AGN001', carrier: '247Express', status: 'rejected', requestedAt: '2025-06-18', requestedTime: '11:24', note: 'Xin thêm địa điểm gửi hàng khu vực Huế', requestedHubIds: ['HUB-HUE-001'], rejectionReason: 'Khu vực chưa đủ nhu cầu vận chuyển, xem xét lại sau quý sau' },
+  // cr-005, cr-006: đại lý CHỈ điền địa chỉ mong muốn (requestedAddress) — không tự chọn
+  // ClientHubID có sẵn, vì đại lý không biết địa chỉ chính xác của hub. Trùng khớp với
+  // HUB-HPH-001/HUB-HUE-001 trong catalog chỉ là ngẫu nhiên (để demo Super Admin có thể
+  // chọn gán hub có sẵn thay vì tạo mới khi duyệt).
+  { id: 'cr-005', agencyId: 'AGN001', carrier: '247Express', status: 'approved', requestedAt: '2025-06-28', requestedTime: '08:50', note: 'Xin thêm địa điểm gửi hàng khu vực Hải Phòng', requestedAddress: { address: '120 Lê Lợi', wardName: 'Minh Khai', districtName: 'Hồng Bàng', provinceName: 'Hải Phòng', contactName: 'Vũ Đình Khoa', contactPhone: '0981000005' }, hubIds: ['HUB-HPH-001'], serviceIds: ['DE'] },
+  { id: 'cr-006', agencyId: 'AGN001', carrier: '247Express', status: 'rejected', requestedAt: '2025-06-18', requestedTime: '11:24', note: 'Xin thêm địa điểm gửi hàng khu vực Huế', requestedAddress: { address: '58 Hùng Vương', wardName: 'Phú Nhuận', districtName: 'TP. Huế', provinceName: 'Thừa Thiên Huế', contactName: 'Hoàng Thị Mai', contactPhone: '0981000007' }, rejectionReason: 'Khu vực chưa đủ nhu cầu vận chuyển, xem xét lại sau quý sau' },
 ]
 
-export function addCarrierRequest(agencyId: string, carrier: string, note?: string, requestedHubIds?: string[]): CarrierRequest {
+export function addCarrierRequest(
+  agencyId: string, carrier: string, note?: string,
+  requestedHubIds?: string[], requestedAddress?: CarrierRequest['requestedAddress'],
+): CarrierRequest {
   const now = new Date()
   const req: CarrierRequest = {
     id: `cr-${Date.now()}`,
@@ -169,6 +187,7 @@ export function addCarrierRequest(agencyId: string, carrier: string, note?: stri
     requestedTime: now.toTimeString().slice(0, 5),
     note,
     ...(requestedHubIds?.length ? { requestedHubIds } : {}),
+    ...(requestedAddress ? { requestedAddress } : {}),
   }
   carrierRequests.push(req)
   return req

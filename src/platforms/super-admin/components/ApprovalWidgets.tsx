@@ -48,7 +48,7 @@ export function HubGrantList({ agencyName, excludeHubIds, defaultSelected, onGra
   excludeHubIds?: string[]
   defaultSelected?: string[]
   onGrant: (hubIds: string[]) => void
-  onClose: () => void
+  onClose?: () => void
 }) {
   const [selectedHubs, setSelectedHubs] = useState<string[]>(defaultSelected ?? [])
   const availableHubs = clientHubs247.filter(h => !(excludeHubIds ?? []).includes(h.id))
@@ -84,7 +84,9 @@ export function HubGrantList({ agencyName, excludeHubIds, defaultSelected, onGra
         })}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-        <button onClick={onClose} style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Đóng</button>
+        {onClose && (
+          <button onClick={onClose} style={{ padding: '6px 14px', background: 'none', border: `1px solid ${C_BORDER}`, borderRadius: 6, fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'pointer' }}>Đóng</button>
+        )}
         <button
           onClick={() => selectedHubs.length > 0 && onGrant(selectedHubs)}
           disabled={selectedHubs.length === 0}

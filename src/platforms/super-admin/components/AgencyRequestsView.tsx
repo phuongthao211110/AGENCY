@@ -91,6 +91,9 @@ export default function AgencyRequestsView({ agencyId, agencyName, onClose, onUp
   const [activeTab, setActiveTab] = useState<'ghn' | '247'>('ghn')
   const [statusFilter, setStatusFilter] = useState<'all' | StatusKey>('all')
   const [rejectingId, setRejectingId] = useState<string | null>(null)
+  // Từ chối hàng loạt dùng chung 1 lý do cho tất cả dòng đang chờ duyệt được chọn —
+  // tách riêng khỏi rejectingId (dùng cho từ chối từng dòng lẻ) để 2 luồng không đụng nhau.
+  const [bulkRejecting, setBulkRejecting] = useState(false)
   // Duyệt kết nối/yêu cầu 247Express xong thì mở tiếp form chọn hub ngay tại đây —
   // không gộp chọn hub vào bước duyệt, và không bắt Super Admin rời modal để tìm
   // nút "Cấp thêm Hub" ở trang chi tiết.
@@ -142,6 +145,23 @@ export default function AgencyRequestsView({ agencyId, agencyName, onClose, onUp
 
   const switchTab = (tab: 'ghn' | '247') => {
     setActiveTab(tab); setStatusFilter('all'); setPage(1); setRejectingId(null); setGrantingHubId(null)
+    setSelected(new Set()); setBulkRejecting(false)
+  }
+
+  // Chỉ những dòng đang "Chờ duyệt" trong số đã chọn mới xử lý được hàng loạt —
+  // dòng đã duyệt/từ chối trong lựa chọn sẽ bị bỏ qua.
+  const selectedPendingIds = ghnConns.filter(s => selected.has(s.id) && s.status === 'pending').map(s => s.id)
+
+  const bulkApprove = () => {
+    selectedPendingIds.forEach(id => approveShopConnection(id))
+    setSelected(new Set())
+    onUpdate()
+  }
+  const bulkReject = (reason: string) => {
+    selectedPendingIds.forEach(id => rejectShopConnection(id, reason))
+    setSelected(new Set())
+    setBulkRejecting(false)
+    onUpdate()
   }
 
   const cell = (children: React.ReactNode, flex = '1 0 0', minWidth = 140) => (
@@ -254,6 +274,7 @@ export default function AgencyRequestsView({ agencyId, agencyName, onClose, onUp
               const grantingReq = grantingHubId ? c247Reqs.find(r => r.id === grantingHubId) : undefined
 
               if (grantingReq) {
+                // Kết nối lần đầu đã duyệt (chưa có hub) — bước riêng: chọn 1 hub có sẵn để cấp.
                 return (
                   <div style={{ border: `1px solid #C4B5FD`, borderRadius: 8, overflow: 'hidden' }}>
                     <div style={{ padding: '12px 16px', background: '#F5F3FF' }}>
@@ -281,20 +302,32 @@ export default function AgencyRequestsView({ agencyId, agencyName, onClose, onUp
               }
 
               const isRejecting = rejectingId === pendingReq.id
+              // Đại lý đã kích hoạt 247Express từ trước = đây là yêu cầu XIN THÊM HUB, không phải
+              // kết nối lần đầu — không cần bước "Duyệt" riêng vì không có kết nối nào để duyệt,
+              // chỉ có việc chọn hub. Chọn hub xong (bấm "Cấp") = duyệt luôn, gộp thành 1 hành động.
+              const alreadyEnabled = (agency?.allowedCarriers ?? []).includes('247Express')
+
               return (
                 <div style={{ border: '1px solid #FDE68A', borderRadius: 8, overflow: 'hidden', background: '#FFFBEB' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: 12 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Yêu cầu kết nối 247Express đang chờ duyệt</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>
+                        {alreadyEnabled ? 'Yêu cầu thêm địa điểm gửi hàng' : 'Yêu cầu kết nối 247Express'} đang chờ duyệt
+                      </span>
                       <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>
                         {pendingReq.requestedAt.split('-').reverse().join('/')}{pendingReq.requestedTime ? ` ${pendingReq.requestedTime}` : ''} · {agency?.representative ?? '—'}
                       </span>
+                      {pendingReq.requestedAddress && (
+                        <span style={{ fontSize: 13, color: '#92400E' }}>
+                          Địa chỉ đại lý đề xuất: {pendingReq.requestedAddress.address}, {pendingReq.requestedAddress.wardName}, {pendingReq.requestedAddress.districtName}, {pendingReq.requestedAddress.provinceName}
+                        </span>
+                      )}
                     </div>
-                    {!isRejecting && (
+                    {!alreadyEnabled && !isRejecting && (
                       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                         <IconActionButton variant="approve" onClick={() => {
-                          // Duyệt kết nối/yêu cầu 247Express trước — KHÔNG chọn hub ở bước này —
-                          // rồi mới mở form chọn hub riêng (áp dụng cho cả kết nối lần đầu và xin thêm hub)
+                          // Kết nối lần đầu — duyệt kết nối trước, KHÔNG chọn hub ở bước này —
+                          // rồi mới mở form chọn hub riêng
                           approveCarrierRequest(pendingReq.id, [], ['DE'])
                           onUpdate()
                           setGrantingHubId(pendingReq.id)
@@ -302,11 +335,31 @@ export default function AgencyRequestsView({ agencyId, agencyName, onClose, onUp
                         <IconActionButton variant="reject" onClick={() => setRejectingId(pendingReq.id)} />
                       </div>
                     )}
+                    {alreadyEnabled && !isRejecting && (
+                      <button
+                        onClick={() => setRejectingId(pendingReq.id)}
+                        style={{ padding: '4px 12px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', color: '#DC2626', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
+                      >
+                        Từ chối
+                      </button>
+                    )}
                   </div>
                   {isRejecting && (
                     <RejectInput
                       onConfirm={(reason) => { rejectCarrierRequest(pendingReq.id, reason); setRejectingId(null); onUpdate() }}
                       onCancel={() => setRejectingId(null)}
+                    />
+                  )}
+                  {/* Xin thêm hub — chọn 1 hub có sẵn, "Cấp" = duyệt luôn (gộp 1 bước) */}
+                  {alreadyEnabled && !isRejecting && (
+                    <HubGrantList
+                      agencyName={agency?.name ?? agencyName}
+                      excludeHubIds={agency?.clientHubIds}
+                      defaultSelected={pendingReq.requestedHubIds}
+                      onGrant={(hubIds) => {
+                        approveCarrierRequest(pendingReq.id, hubIds, ['DE'])
+                        onUpdate()
+                      }}
                     />
                   )}
                 </div>
@@ -355,6 +408,46 @@ export default function AgencyRequestsView({ agencyId, agencyName, onClose, onUp
           </div>
         </div>
       </div>
+
+      {/* Bulk action bar — cố định đáy màn hình (fixed, không phải absolute, để không phụ
+          thuộc containing block của component cha), chỉ tab GHN, hiện khi có dòng được chọn */}
+      {activeTab === 'ghn' && selected.size > 0 && (
+        <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1001 }}>
+          {bulkRejecting && (
+            <RejectInput
+              onConfirm={(reason) => bulkReject(reason)}
+              onCancel={() => setBulkRejecting(false)}
+            />
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 24px', background: C_TEXT_PRIMARY }}>
+            <CloseOutlined
+              onClick={() => { setSelected(new Set()); setBulkRejecting(false) }}
+              style={{ color: '#fff', fontSize: 16, cursor: 'pointer' }}
+            />
+            <span style={{ color: '#fff', fontSize: 14 }}>Đã chọn {selected.size}</span>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+              {selectedPendingIds.length > 0 ? (
+                <>
+                  <button
+                    onClick={bulkApprove}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 6, border: 'none', background: '#16A34A', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    <CheckOutlined /> Duyệt
+                  </button>
+                  <button
+                    onClick={() => setBulkRejecting(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 6, border: 'none', background: '#EF4444', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    <StopOutlined /> Từ chối
+                  </button>
+                </>
+              ) : (
+                <span style={{ color: '#9CA3AF', fontSize: 13 }}>Không có dòng chờ duyệt trong lựa chọn</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

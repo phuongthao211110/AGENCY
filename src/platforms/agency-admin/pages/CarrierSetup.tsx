@@ -10,10 +10,11 @@ import {
   CloseOutlined,
 } from '@ant-design/icons'
 import allPriceTables from '../../../mock-data/pricing.json'
-import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, findPastHubRejection, type ClientHub247 } from '../../super-admin/agencyStore'
+import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, type ClientHub247 } from '../../super-admin/agencyStore'
+import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import AgencyServices from './AgencyServices'
 
-const CURRENT_AGENCY_ID = 'AGN003' // DEMO TẠM: đại lý Đà Nẵng chưa từng kết nối 247Express — đổi lại 'AGN001' sau khi demo xong
+const CURRENT_AGENCY_ID = 'AGN001'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -190,18 +191,35 @@ function AddShopModal({ carrier, onClose, onRequestSent }: { carrier: CarrierKey
 }
 
 // ─── Modal: Yêu cầu thêm địa điểm gửi hàng (chỉ hiện khi 247Express đã kích hoạt) ────
-// Đại lý chỉ được CHỌN từ catalog địa điểm có sẵn (clientHubs247) chưa được phân cho mình —
-// không tự tạo địa điểm mới (đó là việc của Super Admin).
-function RequestHubModal({ availableHubs, onClose, onSubmit }: {
-  availableHubs: ClientHub247[]
+// Đại lý KHÔNG chọn từ catalog ClientHubID có sẵn nữa — chỉ điền địa chỉ mong muốn.
+// Super Admin sẽ xem địa chỉ này và tự quyết định tạo hub mới hoặc gán hub có sẵn phù hợp.
+type RequestedAddress = {
+  address: string; wardName: string; districtName: string; provinceName: string
+  contactName: string; contactPhone: string
+}
+
+function RequestHubModal({ onClose, onSubmit }: {
   onClose: () => void
-  onSubmit: (data: { hubIds: string[]; note: string }) => void
+  onSubmit: (data: { requestedAddress: RequestedAddress; note: string }) => void
 }) {
-  const [selectedHubs, setSelectedHubs] = useState<string[]>([])
+  const [address, setAddress]           = useState('')
+  const [provinceName, setProvinceName] = useState(VIETNAM_PROVINCES[0].name)
+  const [districtName, setDistrictName] = useState(VIETNAM_PROVINCES[0].districts[0]?.name ?? '')
+  const [wardName, setWardName]         = useState('')
+  const [contactName, setContactName]   = useState('')
+  const [contactPhone, setContactPhone] = useState('')
   const [note, setNote] = useState('')
 
-  const toggleHub = (id: string) =>
-    setSelectedHubs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  const districts = VIETNAM_PROVINCES.find(p => p.name === provinceName)?.districts ?? []
+  const canSubmit = address.trim() && districtName && wardName.trim() && contactName.trim() && contactPhone.trim()
+
+  const handleProvinceChange = (value: string) => {
+    setProvinceName(value)
+    setDistrictName(VIETNAM_PROVINCES.find(p => p.name === value)?.districts[0]?.name ?? '')
+  }
+
+  const fieldStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: `1px solid ${C_BORDER}`, borderRadius: 8, fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', boxSizing: 'border-box' }
+  const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: C_TEXT_LABEL }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -219,71 +237,48 @@ function RequestHubModal({ availableHubs, onClose, onSubmit }: {
         <div style={{ padding: '20px 20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#0369A1' }}>Về việc cấp thêm địa điểm gửi hàng</div>
-            <div style={{ fontSize: 13, color: '#0C4A6E', lineHeight: 1.5 }}>Chọn một hoặc nhiều địa điểm có sẵn để Super Admin xem xét và phân thêm cho đại lý — ví dụ khi mở rộng kho hàng sang khu vực mới.</div>
+            <div style={{ fontSize: 13, color: '#0C4A6E', lineHeight: 1.5 }}>Điền địa chỉ đại lý mong muốn đặt điểm lấy hàng mới — ví dụ khi mở rộng kho hàng sang khu vực mới. Super Admin sẽ xem xét và cấp ClientHubID tương ứng.</div>
           </div>
 
-          {availableHubs.length === 0 ? (
-            <div style={{ padding: '16px', textAlign: 'center', fontSize: 13, color: C_TEXT_SECONDARY, background: C_BG_HEADER, borderRadius: 8 }}>
-              Không còn địa điểm nào khả dụng — liên hệ Super Admin để tạo thêm.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={labelStyle}>Địa chỉ (Số nhà/đường) <span style={{ color: '#EF4444' }}>*</span></label>
+            <input value={address} onChange={e => setAddress(e.target.value)} placeholder="VD: 45 Phạm Văn Đồng" style={fieldStyle} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={labelStyle}>Tỉnh / Thành phố <span style={{ color: '#EF4444' }}>*</span></label>
+              <select value={provinceName} onChange={e => handleProvinceChange(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer', background: '#fff' }}>
+                {VIETNAM_PROVINCES.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+              </select>
             </div>
-          ) : (
-            <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${C_BORDER}` }}>
-              {availableHubs.map((hub, i) => {
-                const isSelected = selectedHubs.includes(hub.id)
-                const pastRejection = findPastHubRejection(CURRENT_AGENCY_ID, '247Express', hub.id)
-                return (
-                  <div key={hub.id}>
-                    <div
-                      onClick={() => toggleHub(hub.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', cursor: 'pointer', background: isSelected ? '#FFF9F7' : '#fff' }}
-                    >
-                      <div style={{
-                        width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                        border: isSelected ? 'none' : '1.5px solid #D1D5DB',
-                        background: isSelected ? C_ACTION : '#fff',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {isSelected && (
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 3.5L3.8 6.5L9 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#7C3AED', fontFamily: 'monospace' }}>{hub.id}</span>
-                          {pastRejection && (
-                            <span
-                              title={`Đã từng bị từ chối (${pastRejection.requestedAt}) — Lý do: ${pastRejection.rejectionReason || '(không có lý do cụ thể)'}`}
-                              style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', cursor: 'help', whiteSpace: 'nowrap' }}
-                            >
-                              ⚠ Đã từng bị từ chối
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
-                          <span style={{ fontWeight: 500, color: C_TEXT_PRIMARY }}>{hub.name}</span> — {hub.location}
-                        </div>
-                        {pastRejection && (
-                          <div style={{ fontSize: 12, color: '#B91C1C', marginTop: 2 }}>
-                            Lý do lần trước: {pastRejection.rejectionReason || '(không có lý do cụ thể)'}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {i < availableHubs.length - 1 && <div style={{ height: 1, background: '#F5F5F5' }} />}
-                  </div>
-                )
-              })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={labelStyle}>Quận / Huyện <span style={{ color: '#EF4444' }}>*</span></label>
+              <select value={districtName} onChange={e => setDistrictName(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer', background: '#fff' }}>
+                {districts.map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+              </select>
             </div>
-          )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={labelStyle}>Phường / Xã <span style={{ color: '#EF4444' }}>*</span></label>
+            <input value={wardName} onChange={e => setWardName(e.target.value)} placeholder="VD: Mai Dịch" style={fieldStyle} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={labelStyle}>Tên liên hệ tại điểm gửi <span style={{ color: '#EF4444' }}>*</span></label>
+              <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="VD: Nguyễn Văn A" style={fieldStyle} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={labelStyle}>Số điện thoại liên hệ <span style={{ color: '#EF4444' }}>*</span></label>
+              <input value={contactPhone} onChange={e => setContactPhone(e.target.value.replace(/\D/g, ''))} placeholder="VD: 0981000001" style={fieldStyle} />
+            </div>
+          </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_LABEL }}>Ghi chú (tùy chọn)</label>
+            <label style={labelStyle}>Ghi chú (tùy chọn)</label>
             <textarea
               value={note}
               onChange={e => setNote(e.target.value)}
-              placeholder="Nêu lý do hoặc khu vực cần thêm điểm lấy hàng..."
+              placeholder="Nêu lý do cần thêm điểm lấy hàng này..."
               rows={3}
               style={{ width: '100%', padding: '8px 10px', border: `1px solid ${C_BORDER}`, borderRadius: 8, fontSize: 13, color: C_TEXT_PRIMARY, resize: 'vertical', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
             />
@@ -294,10 +289,13 @@ function RequestHubModal({ availableHubs, onClose, onSubmit }: {
             Huỷ
           </button>
           <button
-            disabled={selectedHubs.length === 0}
-            onClick={() => selectedHubs.length > 0 && onSubmit({ hubIds: selectedHubs, note })}
-            style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: selectedHubs.length > 0 ? C_ACTION : '#D1D5DB', color: '#fff', fontSize: 13, fontWeight: 700, cursor: selectedHubs.length > 0 ? 'pointer' : 'not-allowed' }}>
-            Gửi yêu cầu ({selectedHubs.length})
+            disabled={!canSubmit}
+            onClick={() => canSubmit && onSubmit({
+              requestedAddress: { address: address.trim(), wardName: wardName.trim(), districtName, provinceName, contactName: contactName.trim(), contactPhone: contactPhone.trim() },
+              note,
+            })}
+            style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: canSubmit ? C_ACTION : '#D1D5DB', color: '#fff', fontSize: 13, fontWeight: 700, cursor: canSubmit ? 'pointer' : 'not-allowed' }}>
+            Gửi yêu cầu
           </button>
         </div>
       </div>
@@ -319,7 +317,6 @@ function TabConnect247() {
   // nút "+ Yêu cầu thêm địa điểm gửi hàng" quay lại bình thường, tưởng nhầm là chưa từng gửi.
   const rejectedHubRequest = !pendingHubRequest &&
     [...carrierRequests].reverse().find(r => r.agencyId === CURRENT_AGENCY_ID && r.carrier === '247Express' && r.status === 'rejected')
-  const availableHubs = clientHubs247.filter(h => !(agency?.clientHubIds ?? []).includes(h.id))
 
   const pendingHubIds = pendingHubRequest?.requestedHubIds ?? []
   const pendingHubs = pendingHubIds.map(id => clientHubs247.find(h => h.id === id)).filter((h): h is ClientHub247 => !!h)
@@ -332,8 +329,8 @@ function TabConnect247() {
       ? <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', whiteSpace: 'nowrap' }}>Đã duyệt</span>
       : <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#FFFBEB', color: '#D97706', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>Chờ duyệt</span>
 
-  const handleSubmitRequest = (data: { hubIds: string[]; note: string }) => {
-    addCarrierRequest(CURRENT_AGENCY_ID, '247Express', data.note, data.hubIds)
+  const handleSubmitRequest = (data: { requestedAddress: RequestedAddress; note: string }) => {
+    addCarrierRequest(CURRENT_AGENCY_ID, '247Express', data.note, undefined, data.requestedAddress)
     setShowRequestModal(false)
     forceRender(n => n + 1)
   }
@@ -341,7 +338,7 @@ function TabConnect247() {
   return (
     <>
       {showRequestModal && (
-        <RequestHubModal availableHubs={availableHubs} onClose={() => setShowRequestModal(false)} onSubmit={handleSubmitRequest} />
+        <RequestHubModal onClose={() => setShowRequestModal(false)} onSubmit={handleSubmitRequest} />
       )}
 
       {/* Info banner */}
@@ -388,8 +385,29 @@ function TabConnect247() {
                 Địa điểm đã yêu cầu: {rejectedHubRequest.requestedHubIds.map(id => clientHubs247.find(h => h.id === id)?.name ?? id).join(', ')}
               </div>
             )}
+            {rejectedHubRequest.requestedAddress && (
+              <div style={{ fontSize: 12, color: '#7F1D1D' }}>
+                Địa chỉ đã đề xuất: {rejectedHubRequest.requestedAddress.address}, {rejectedHubRequest.requestedAddress.wardName}, {rejectedHubRequest.requestedAddress.districtName}, {rejectedHubRequest.requestedAddress.provinceName}
+              </div>
+            )}
             <div style={{ fontSize: 12, color: '#7F1D1D' }}>
               Lý do: {rejectedHubRequest.rejectionReason || '(không có lý do cụ thể)'}
+            </div>
+          </div>
+        )}
+
+        {/* Yêu cầu đang chờ duyệt là đề xuất địa chỉ mới (chưa có ClientHubID) — hiện riêng
+            vì chưa có hub.id/name để gộp vào hubRows như các hub đã có sẵn trong catalog. */}
+        {pendingHubRequest?.requestedAddress && (
+          <div style={{ marginBottom: 12, padding: '10px 12px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 2 }}>
+              Địa chỉ đề xuất đang chờ Super Admin duyệt
+            </div>
+            <div style={{ fontSize: 12, color: '#78350F' }}>
+              {pendingHubRequest.requestedAddress.address}, {pendingHubRequest.requestedAddress.wardName}, {pendingHubRequest.requestedAddress.districtName}, {pendingHubRequest.requestedAddress.provinceName}
+            </div>
+            <div style={{ fontSize: 12, color: '#78350F' }}>
+              Liên hệ: {pendingHubRequest.requestedAddress.contactName} - {pendingHubRequest.requestedAddress.contactPhone}
             </div>
           </div>
         )}

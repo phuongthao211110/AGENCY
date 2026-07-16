@@ -204,12 +204,13 @@ function ShopIdTable({ carrier, shops, selectedIds, interactive, onToggle }: {
   )
 }
 
-// ─── Chọn ClientHubID (247Express) — dùng chung cho view & edit ──────────────
-function HubIdTable({ hubs, selectedIds, interactive, onToggle }: {
+// ─── Chọn ClientHubID (247Express) — RADIO (1 dịch vụ = đúng 1 hub cố định),
+// dùng chung cho view & edit ──────────────────────────────────────────────
+function HubIdTable({ hubs, selectedIds, interactive, onSelect }: {
   hubs: ClientHub247[]
   selectedIds: string[]
   interactive: boolean
-  onToggle?: (hubId: string) => void
+  onSelect?: (hubId: string) => void
 }) {
   const rows = interactive ? hubs : hubs.filter(h => selectedIds.includes(h.id))
 
@@ -234,22 +235,15 @@ function HubIdTable({ hubs, selectedIds, interactive, onToggle }: {
             }}>
               <div
                 style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: interactive ? 'pointer' : 'default' }}
-                onClick={() => interactive && onToggle?.(hub.id)}
+                onClick={() => interactive && onSelect?.(hub.id)}
               >
                 {interactive && (
                   <div style={{
-                    width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                    border: isSelected ? 'none' : '1.5px solid #D1D5DB',
-                    background: isSelected ? '#FF5200' : '#fff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    border: isSelected ? '5px solid #FF5200' : '1.5px solid #D1D5DB',
+                    background: '#fff',
                     boxShadow: isSelected ? '0 0 0 3px rgba(255,82,0,0.12)' : 'none',
-                  }}>
-                    {isSelected && (
-                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                        <path d="M1 3.5L3.8 6.5L9 1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </div>
+                  }} />
                 )}
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#7C3AED', fontFamily: 'monospace' }}>{hub.id}</div>
               </div>
@@ -466,13 +460,11 @@ export default function ServiceDetail() {
         : [...f.shopConnectionIds, connectionId],
     }))
 
-  const toggleHub = (hubId: string) =>
-    setEditForm(f => ({
-      ...f,
-      hubIds: f.hubIds.includes(hubId)
-        ? f.hubIds.filter(hid => hid !== hubId)
-        : [...f.hubIds, hubId],
-    }))
+  // 1 dịch vụ 247Express = đúng 1 hub cố định (không phải chọn nhiều) — để khi shop chọn
+  // dịch vụ, hệ thống biết chắc chắn hub nào cần giao về, không phải suy đoán qua địa chỉ.
+  // Đại lý cần nhiều hub thì tạo nhiều dịch vụ riêng, mỗi dịch vụ gắn đúng 1 hub.
+  const selectHub = (hubId: string) =>
+    setEditForm(f => ({ ...f, hubIds: [hubId] }))
 
   const addDeliveryLocation = (entry: LocationEntry) =>
     setEditForm(f => ({ ...f, deliveryZones: [...f.deliveryZones, entry] }))
@@ -640,10 +632,10 @@ export default function ServiceDetail() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_LABEL }}>
-                      {editForm.carrier === '247Express' ? 'Chọn địa điểm gửi hàng' : `Kết nối Shop ID ${editForm.carrier}`} <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>
+                      {editForm.carrier === '247Express' ? 'Chọn địa điểm gửi hàng (đúng 1 nơi)' : `Kết nối Shop ID ${editForm.carrier}`} <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>
                     </span>
                     {editForm.carrier === '247Express' ? (
-                      <HubIdTable hubs={agencyHubs} selectedIds={editForm.hubIds} interactive onToggle={toggleHub} />
+                      <HubIdTable hubs={agencyHubs} selectedIds={editForm.hubIds} interactive onSelect={selectHub} />
                     ) : (
                       <ShopIdTable carrier={editForm.carrier} shops={editActiveShops} selectedIds={editForm.shopConnectionIds} interactive onToggle={toggleShop} />
                     )}
@@ -663,7 +655,7 @@ export default function ServiceDetail() {
                     <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>{serviceData.carrier === '247Express' ? 'Địa điểm gửi hàng' : 'Shop'}</span>
                     <span style={{ fontSize: 14, color: '#3B82F6', textDecoration: 'underline', fontWeight: 500 }}>
                       {serviceData.carrier === '247Express'
-                        ? `${serviceData.hubIds.length} địa điểm gửi hàng đang áp dụng dịch vụ`
+                        ? (serviceData.hubIds[0] ? `Địa điểm gửi hàng: ${serviceData.hubIds[0]}` : 'Chưa chọn địa điểm gửi hàng')
                         : `${serviceData.shopConnectionIds.length} shop đang áp dụng dịch vụ`}
                     </span>
                   </div>
@@ -805,7 +797,7 @@ export default function ServiceDetail() {
                       {!canCreate && (
                         <span style={{ fontSize: 12, color: '#9CA3AF' }}>
                           {!editForm.name.trim() ? 'Nhập tên dịch vụ'
-                            : editForm.carrier === '247Express' && editForm.hubIds.length === 0 ? 'Chọn ít nhất 1 địa điểm gửi hàng'
+                            : editForm.carrier === '247Express' && editForm.hubIds.length === 0 ? 'Chọn 1 địa điểm gửi hàng'
                             : editForm.carrier === 'GHN' && editForm.shopConnectionIds.length === 0 ? 'Chọn ít nhất 1 shop'
                             : ''}
                         </span>
