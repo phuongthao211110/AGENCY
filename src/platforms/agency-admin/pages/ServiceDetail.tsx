@@ -15,15 +15,10 @@ import {
   FileTextOutlined,
 } from '@ant-design/icons'
 import allPriceTables from '../../../mock-data/pricing.json'
-import { shopConnections as storeConns, agenciesList, clientHubs247, type ClientHub247, SERVICE_TYPES_247 } from '../../super-admin/agencyStore'
+import { shopConnections as storeConns, SERVICE_TYPES_247 } from '../../super-admin/agencyStore'
 import { servicesList, addService, updateService, toggleServiceEnabled } from '../serviceStore'
 
 const CURRENT_AGENCY_ID = 'AGN001'
-
-const CARRIERS: Record<string, { color: string; bg: string; border: string; label: string }> = {
-  GHN:        { color: '#FF5200', bg: '#FFF4ED', border: '#FDBA74', label: 'GHN' },
-  '247Express': { color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', label: '247' },
-}
 
 // 247Express không có "Lấy hàng" theo tỉnh/quận như GHN — điểm lấy hàng cố định
 // theo ClientHubID của đại lý. "Khu vực giao hàng" thì dùng chung cơ chế tỉnh/quận
@@ -75,6 +70,7 @@ type ServiceForm = {
   deliveryZones: LocationEntry[]
   shopConnectionIds: string[]
   hubIds: string[]
+  sendKind: 'goods' | 'letter'
 }
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
@@ -110,19 +106,6 @@ function InputField({ label, value, onChange, placeholder, type = 'text' }: {
         />
       </div>
     </div>
-  )
-}
-
-// ─── Carrier badge ────────────────────────────────────────────────────────────
-function CarrierBadge({ carrier }: { carrier: string }) {
-  const c = CARRIERS[carrier] ?? CARRIERS.GHN
-  return (
-    <span style={{
-      fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4, flexShrink: 0,
-      background: c.bg, color: c.color, border: `1px solid ${c.border}`,
-    }}>
-      {c.label}
-    </span>
   )
 }
 
@@ -194,61 +177,6 @@ function ShopIdTable({ carrier, shops, selectedIds, interactive, onToggle }: {
                 {shop.goiCuoc.length === 0
                   ? <span style={{ fontSize: 12, color: '#D1D5DB' }}>—</span>
                   : shop.goiCuoc.map(gc => <GoiCuocPill key={gc.id} gc={gc} />)}
-              </div>
-            </div>
-            {i < rows.length - 1 && <div style={{ height: 1, background: '#F5F5F5' }} />}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ─── Chọn ClientHubID (247Express) — RADIO (1 dịch vụ = đúng 1 hub cố định),
-// dùng chung cho view & edit ──────────────────────────────────────────────
-function HubIdTable({ hubs, selectedIds, interactive, onSelect }: {
-  hubs: ClientHub247[]
-  selectedIds: string[]
-  interactive: boolean
-  onSelect?: (hubId: string) => void
-}) {
-  const rows = interactive ? hubs : hubs.filter(h => selectedIds.includes(h.id))
-
-  return (
-    <div style={{ borderRadius: 8, overflow: 'hidden', border: `1px solid ${C_BORDER}` }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', background: C_BG_HEADER }}>
-        <div style={{ padding: '7px 14px', fontSize: 13, color: C_TEXT_SECONDARY }}>Địa điểm gửi hàng</div>
-        <div style={{ padding: '7px 14px', fontSize: 13, color: C_TEXT_SECONDARY }}>Điểm lấy hàng</div>
-      </div>
-      {rows.length === 0 ? (
-        <div style={{ padding: '16px', textAlign: 'center' as const, color: C_TEXT_SECONDARY, fontSize: 13, background: '#fff' }}>
-          {interactive ? 'Đại lý chưa được phân địa điểm gửi hàng nào — liên hệ Super Admin' : 'Chưa chọn hub nào'}
-        </div>
-      ) : rows.map((hub, i) => {
-        const isSelected = selectedIds.includes(hub.id)
-        return (
-          <div key={hub.id}>
-            <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 2fr',
-              background: interactive && isSelected ? '#FFF9F7' : '#fff',
-              borderLeft: interactive && isSelected ? '3px solid #FF5200' : '3px solid transparent',
-            }}>
-              <div
-                style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: interactive ? 'pointer' : 'default' }}
-                onClick={() => interactive && onSelect?.(hub.id)}
-              >
-                {interactive && (
-                  <div style={{
-                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                    border: isSelected ? '5px solid #FF5200' : '1.5px solid #D1D5DB',
-                    background: '#fff',
-                    boxShadow: isSelected ? '0 0 0 3px rgba(255,82,0,0.12)' : 'none',
-                  }} />
-                )}
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#7C3AED', fontFamily: 'monospace' }}>{hub.id}</div>
-              </div>
-              <div style={{ padding: '10px 14px', fontSize: 13, color: C_TEXT_SECONDARY }}>
-                <span style={{ fontWeight: 500, color: C_TEXT_PRIMARY }}>{hub.name}</span> — {hub.location}
               </div>
             </div>
             {i < rows.length - 1 && <div style={{ height: 1, background: '#F5F5F5' }} />}
@@ -443,8 +371,10 @@ export default function ServiceDetail() {
         priceTableId: existing.priceTableId, serviceTypeId: existing.serviceTypeId,
         deliveryZones: (existing.deliveryZones ?? []) as LocationEntry[], shopConnectionIds: existing.shopConnectionIds,
         hubIds: existing.hubIds ?? [],
+        // Dữ liệu cũ chưa có sendKind — suy theo carrier để hiển thị hợp lý (GHN → Hàng hoá, 247Express → Thư)
+        sendKind: existing.sendKind ?? (existing.carrier === '247Express' ? 'letter' : 'goods'),
       }
-    : { name: '', code: '', carrier: newCarrier, desc: '', scope: 'Toàn quốc', maxWeightKg: 20, category: 'domestic', priceTableId: '', serviceTypeId: '', deliveryZones: [], shopConnectionIds: [], hubIds: [] }
+    : { name: '', code: '', carrier: newCarrier, desc: '', scope: 'Toàn quốc', maxWeightKg: 20, category: 'domestic', priceTableId: '', serviceTypeId: '', deliveryZones: [], shopConnectionIds: [], hubIds: [], sendKind: 'goods' }
 
   const [serviceData, setServiceData] = useState<ServiceForm>(initData)
   const [isEditing, setIsEditing]     = useState(isNewService)
@@ -452,19 +382,16 @@ export default function ServiceDetail() {
 
   const setField = (key: 'name' | 'desc') => (v: string) => setEditForm(f => ({ ...f, [key]: v }))
 
+  // Chọn Shop ID → dịch vụ này là GHN, nên xoá luôn hub đã chọn (nếu có) để tránh vừa có
+  // shopConnectionIds vừa có hubIds cùng lúc (2 cơ chế loại trừ nhau).
   const toggleShop = (connectionId: string) =>
     setEditForm(f => ({
       ...f,
+      hubIds: [],
       shopConnectionIds: f.shopConnectionIds.includes(connectionId)
         ? f.shopConnectionIds.filter(cid => cid !== connectionId)
         : [...f.shopConnectionIds, connectionId],
     }))
-
-  // 1 dịch vụ 247Express = đúng 1 hub cố định (không phải chọn nhiều) — để khi shop chọn
-  // dịch vụ, hệ thống biết chắc chắn hub nào cần giao về, không phải suy đoán qua địa chỉ.
-  // Đại lý cần nhiều hub thì tạo nhiều dịch vụ riêng, mỗi dịch vụ gắn đúng 1 hub.
-  const selectHub = (hubId: string) =>
-    setEditForm(f => ({ ...f, hubIds: [hubId] }))
 
   const addDeliveryLocation = (entry: LocationEntry) =>
     setEditForm(f => ({ ...f, deliveryZones: [...f.deliveryZones, entry] }))
@@ -478,13 +405,16 @@ export default function ServiceDetail() {
     if (isNewService) {
       const created = addService({
         agencyId: CURRENT_AGENCY_ID,
-        name: editForm.name.trim(), carrier: editForm.carrier, desc: editForm.desc, scope: editForm.scope,
+        name: editForm.name.trim(), carrier: derivedCarrier, desc: editForm.desc, scope: editForm.scope,
         maxWeightKg: editForm.maxWeightKg, category: editForm.category, enabled: true,
-        priceTableId: editForm.carrier === 'GHN' ? editForm.priceTableId : undefined,
-        serviceTypeId: editForm.carrier === '247Express' ? 'DE' : undefined,
-        deliveryZones: editForm.carrier === '247Express' ? editForm.deliveryZones : undefined,
-        shopConnectionIds: editForm.carrier === 'GHN' ? editForm.shopConnectionIds : [],
-        hubIds: editForm.carrier === '247Express' ? editForm.hubIds : undefined,
+        priceTableId: editForm.priceTableId,
+        serviceTypeId: derivedCarrier === '247Express' ? 'DE' : undefined,
+        // Khu vực áp dụng dùng tĩnh "Tất cả khu vực" cho dịch vụ mới (cả 2 carrier) — không còn
+        // chọn riêng deliveryZones/hub ở bước tạo dịch vụ nữa (hub chọn lúc dispatch đơn).
+        deliveryZones: undefined,
+        shopConnectionIds: editForm.shopConnectionIds,
+        hubIds: undefined,
+        sendKind: editForm.sendKind,
       })
       navigate(`/agency-admin/carrier-setup/services/${created.id}`)
       return
@@ -496,6 +426,7 @@ export default function ServiceDetail() {
       deliveryZones: editForm.carrier === '247Express' ? editForm.deliveryZones : undefined,
       shopConnectionIds: editForm.carrier === 'GHN' ? editForm.shopConnectionIds : [],
       hubIds: editForm.carrier === '247Express' ? editForm.hubIds : undefined,
+      sendKind: editForm.sendKind,
     })
     setServiceData(editForm)
     setIsEditing(false)
@@ -513,20 +444,37 @@ export default function ServiceDetail() {
   }
 
   // 247Express dùng chung Shop ID với GHN (kích hoạt ở cấp đại lý qua ClientHub)
+  // Kết nối Shop ID luôn là Shop ID GHN dù dịch vụ đang xem là carrier nào — 247Express
+  // giờ dùng chung cơ chế Shop ID này, không còn khái niệm "Shop ID 247Express" riêng.
   const activeShops = storeConns.filter(
-    s => s.agencyId === CURRENT_AGENCY_ID && s.status === 'active' && (serviceData.carrier === 'GHN' ? s.carrier === 'GHN' : true)
+    s => s.agencyId === CURRENT_AGENCY_ID && s.status === 'active' && s.carrier === 'GHN'
   )
+  // Khi tạo mới, luôn hiện toàn bộ Shop ID GHN đang active — không còn gate theo carrier
+  // đã chọn trước, vì carrier giờ được SUY RA từ việc chọn Shop ID hay Hub (xem derivedCarrier).
+  // 247Express dùng chung Shop ID với GHN (kích hoạt ở cấp đại lý qua ClientHub) — không còn
+  // gate theo carrier đã chọn trước, vì Kết nối giờ chỉ có 1 kiểu (Shop ID) cho cả 2 carrier.
   const editActiveShops = storeConns.filter(
-    s => s.agencyId === CURRENT_AGENCY_ID && s.status === 'active' && (editForm.carrier === 'GHN' ? s.carrier === 'GHN' : true)
+    s => s.agencyId === CURRENT_AGENCY_ID && s.status === 'active' && s.carrier === 'GHN'
   )
 
-  const priceTables = (allPriceTables as any[]).filter(pt => pt.nvc === editForm.carrier)
+  // Carrier của 1 dịch vụ MỚI không còn hỏi trước qua picker, cũng không gắn theo hub nữa
+  // (hub chỉ chọn lúc dispatch, xem AgencyOrders.tsx) — được suy ra từ bảng giá đã chọn
+  // (mỗi bảng giá đã gắn sẵn carrier qua field `nvc`), vì đó là điểm khác biệt còn lại duy nhất
+  // giữa 2 carrier (serviceTypeId, danh mục phí) khi Kết nối/Khu vực áp dụng giờ giống hệt nhau.
+  const selectedPriceTable = (allPriceTables as any[]).find(pt => pt.id === editForm.priceTableId)
+  const derivedCarrier = isNewService
+    ? (selectedPriceTable?.nvc ?? '')
+    : editForm.carrier
 
-  const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
-  const agencyHubs = (agency?.clientHubIds ?? []).map(id => clientHubs247.find(h => h.id === id)).filter((h): h is ClientHub247 => !!h)
+  // Tạo mới: hiện tất cả bảng giá (cả 2 carrier) để chọn — carrier được suy ra từ lựa chọn này.
+  // Sửa dịch vụ có sẵn: giữ nguyên hành vi cũ, lọc theo carrier cố định của dịch vụ đó.
+  const priceTables = isNewService
+    ? (allPriceTables as any[])
+    : (allPriceTables as any[]).filter(pt => pt.nvc === editForm.carrier)
 
-  const canCreate = !!editForm.name.trim() &&
-    (editForm.carrier === '247Express' ? editForm.hubIds.length > 0 : editForm.shopConnectionIds.length > 0)
+  const canCreate = isNewService
+    ? !!editForm.name.trim() && editForm.shopConnectionIds.length > 0 && !!editForm.priceTableId
+    : !!editForm.name.trim() && editForm.shopConnectionIds.length > 0
 
   const isDefaultOn = !isNewService && !!existing?.enabled
 
@@ -560,7 +508,6 @@ export default function ServiceDetail() {
           <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>
             {isNewService ? 'Dịch vụ mới' : 'Thông tin dịch vụ'}
           </span>
-          <CarrierBadge carrier={serviceData.carrier} />
         </div>
         {!isNewService && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -630,15 +577,42 @@ export default function ServiceDetail() {
                     <InputField label="Mô tả" value={editForm.desc} onChange={setField('desc')} placeholder="Mô tả ngắn về dịch vụ..." />
                   </div>
 
+                  {/* Phân loại đơn dịch vụ này xử lý — gợi ý mặc định theo carrier của bảng giá
+                      đã chọn (xem onChange bảng giá bên dưới), đại lý bấm đổi lại nếu cần */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_LABEL }}>Loại đơn</span>
+                    <div style={{ display: 'flex', gap: 20 }}>
+                      {(['goods', 'letter'] as const).map(kind => {
+                        const active = editForm.sendKind === kind
+                        return (
+                          <div
+                            key={kind}
+                            onClick={() => setEditForm(f => ({ ...f, sendKind: kind }))}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                          >
+                            <div style={{
+                              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                              border: active ? '5px solid #FF5200' : '1.5px solid #D1D5DB',
+                              background: '#fff',
+                              boxShadow: active ? '0 0 0 3px rgba(255,82,0,0.12)' : 'none',
+                            }} />
+                            <span style={{ fontSize: 14, color: active ? C_TEXT_PRIMARY : C_TEXT_SECONDARY, fontWeight: active ? 600 : 400 }}>
+                              {kind === 'goods' ? 'Hàng hoá' : 'Thư, bưu phẩm'}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Không còn chọn Hub ở đây — dịch vụ (cả GHN và 247Express) đều kết nối
+                      qua Shop ID, y hệt 1 luồng duy nhất. Hub chỉ chọn lúc đại lý dispatch
+                      đơn đi 247Express (xem AgencyOrders.tsx), không phải ở bước tạo/sửa dịch vụ. */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_LABEL }}>
-                      {editForm.carrier === '247Express' ? 'Chọn địa điểm gửi hàng (đúng 1 nơi)' : `Kết nối Shop ID ${editForm.carrier}`} <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>
+                      Kết nối Shop ID <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>
                     </span>
-                    {editForm.carrier === '247Express' ? (
-                      <HubIdTable hubs={agencyHubs} selectedIds={editForm.hubIds} interactive onSelect={selectHub} />
-                    ) : (
-                      <ShopIdTable carrier={editForm.carrier} shops={editActiveShops} selectedIds={editForm.shopConnectionIds} interactive onToggle={toggleShop} />
-                    )}
+                    <ShopIdTable carrier="GHN" shops={editActiveShops} selectedIds={editForm.shopConnectionIds} interactive onToggle={toggleShop} />
                   </div>
                 </div>
               ) : (
@@ -651,25 +625,21 @@ export default function ServiceDetail() {
 
                   <LabelValue label="Mô tả" value={serviceData.desc || <span style={{ color: C_TEXT_SECONDARY }}>—</span>} />
 
+                  <LabelValue label="Loại đơn" value={serviceData.sendKind === 'letter' ? 'Thư, bưu phẩm' : 'Hàng hoá'} />
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>{serviceData.carrier === '247Express' ? 'Địa điểm gửi hàng' : 'Shop'}</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Shop</span>
                     <span style={{ fontSize: 14, color: '#3B82F6', textDecoration: 'underline', fontWeight: 500 }}>
-                      {serviceData.carrier === '247Express'
-                        ? (serviceData.hubIds[0] ? `Địa điểm gửi hàng: ${serviceData.hubIds[0]}` : 'Chưa chọn địa điểm gửi hàng')
-                        : `${serviceData.shopConnectionIds.length} shop đang áp dụng dịch vụ`}
+                      {serviceData.shopConnectionIds.length} shop đang áp dụng dịch vụ
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>{serviceData.carrier === '247Express' ? 'Chọn địa điểm gửi hàng' : `Kết nối Shop ID ${serviceData.carrier}`}</span>
-                      <InfoCircleOutlined style={{ fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'help' }} title={serviceData.carrier === '247Express' ? 'Địa điểm gửi hàng được Super Admin cấp cho đại lý' : 'Shop ID được duyệt kết nối với đại lý qua nhà vận chuyển này'} />
+                      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID</span>
+                      <InfoCircleOutlined style={{ fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'help' }} title="Shop ID được duyệt kết nối với đại lý qua nhà vận chuyển này" />
                     </div>
-                    {serviceData.carrier === '247Express' ? (
-                      <HubIdTable hubs={agencyHubs} selectedIds={serviceData.hubIds} interactive={false} />
-                    ) : (
-                      <ShopIdTable carrier={serviceData.carrier} shops={activeShops} selectedIds={serviceData.shopConnectionIds} interactive={false} />
-                    )}
+                    <ShopIdTable carrier="GHN" shops={activeShops} selectedIds={serviceData.shopConnectionIds} interactive={false} />
                   </div>
                 </div>
               )}
@@ -682,7 +652,7 @@ export default function ServiceDetail() {
               </div>
               <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                {serviceData.carrier === '247Express' ? (
+                {derivedCarrier === '247Express' ? (
                   isEditing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px' }}>
@@ -696,17 +666,25 @@ export default function ServiceDetail() {
                           <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Bảng giá bán cho shop (Mặc định)</span>
                           <select
                             value={editForm.priceTableId ?? ''}
-                            onChange={e => setEditForm(f => ({ ...f, priceTableId: e.target.value }))}
+                            onChange={e => {
+                              const pt = (allPriceTables as any[]).find(p => p.id === e.target.value)
+                              setEditForm(f => ({
+                                ...f, priceTableId: e.target.value,
+                                // Gợi ý mặc định loại đơn theo carrier của bảng giá vừa chọn — chỉ áp
+                                // dụng khi tạo mới, đại lý vẫn có thể bấm đổi lại pill bên dưới.
+                                sendKind: isNewService && pt ? (pt.nvc === '247Express' ? 'letter' : 'goods') : f.sendKind,
+                              }))
+                            }}
                             style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '7px 10px', fontSize: 14, color: C_TEXT_PRIMARY, background: '#fff', outline: 'none', cursor: 'pointer' }}
                           >
                             <option value="">— Chọn bảng giá —</option>
-                            {priceTables.map((pt: any) => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
+                            {priceTables.map((pt: any) => <option key={pt.id} value={pt.id}>{isNewService ? `${pt.name} — ${pt.nvc}` : pt.name}</option>)}
                           </select>
                         </div>
                       </div>
                       <span style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>
                         Bảng giá là giá bán cho shop (đã gồm chênh lệch đại lý) — đối chiếu với chi phí 247Express báo qua ServiceTypeID + tuyến + khối lượng thực tế.{' '}
-                        <span onClick={() => navigate('/agency-admin/carrier-setup/pricing/create-247')} style={{ color: '#3B82F6', cursor: 'pointer', textDecoration: 'underline' }}>Tạo/xem bảng giá</span>
+                        <span onClick={() => navigate('/agency-admin/carrier-setup/pricing/create')} style={{ color: '#3B82F6', cursor: 'pointer', textDecoration: 'underline' }}>Tạo/xem bảng giá</span>
                       </span>
                     </div>
                   ) : (
@@ -730,11 +708,17 @@ export default function ServiceDetail() {
                     <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Bảng giá (Mặc định)</span>
                     <select
                       value={editForm.priceTableId ?? ''}
-                      onChange={e => setEditForm(f => ({ ...f, priceTableId: e.target.value }))}
+                      onChange={e => {
+                        const pt = (allPriceTables as any[]).find(p => p.id === e.target.value)
+                        setEditForm(f => ({
+                          ...f, priceTableId: e.target.value,
+                          sendKind: isNewService && pt ? (pt.nvc === '247Express' ? 'letter' : 'goods') : f.sendKind,
+                        }))
+                      }}
                       style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '7px 10px', fontSize: 14, color: C_TEXT_PRIMARY, background: '#fff', outline: 'none', cursor: 'pointer', width: '100%', boxSizing: 'border-box' }}
                     >
                       <option value="">— Chọn bảng giá —</option>
-                      {priceTables.map((pt: any) => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
+                      {priceTables.map((pt: any) => <option key={pt.id} value={pt.id}>{isNewService ? `${pt.name} — ${pt.nvc}` : pt.name}</option>)}
                     </select>
                     <span style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>
                       Phí thực tế tính theo tuyến + khối lượng từ bảng giá GHN — không dùng phí demo cố định.
@@ -749,46 +733,27 @@ export default function ServiceDetail() {
                   </div>
                 )}
 
-                {serviceData.carrier === '247Express' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Khu vực giao hàng</span>
-                    <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px' }}>
-                        <EnvironmentOutlined style={{ color: '#16A34A' }} />
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#16A34A' }}>Giao hàng</span>
-                        <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>
-                          {(isEditing ? editForm.deliveryZones : serviceData.deliveryZones).length === 0
-                            ? 'Tất cả khu vực'
-                            : `${(isEditing ? editForm.deliveryZones : serviceData.deliveryZones).length} khu vực`}
-                        </span>
-                      </div>
+                {/* Luôn dùng "Khu vực áp dụng" tĩnh giống GHN cho mọi dịch vụ (cả GHN và
+                    247Express) — không còn khu vực giao hàng riêng theo hub/247Express nữa. */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Khu vực áp dụng</span>
+                  <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: `1px solid ${C_BORDER}` }}>
+                      <ShopOutlined style={{ color: '#3B82F6' }} />
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#3B82F6' }}>Lấy hàng</span>
+                      <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Tất cả khu vực</span>
                     </div>
-                    <button onClick={() => setShowDeliveryZoneModal(true)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                      <EyeOutlined style={{ fontSize: 13 }} />
-                      Xem khu vực
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Khu vực áp dụng</span>
-                    <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: `1px solid ${C_BORDER}` }}>
-                        <ShopOutlined style={{ color: '#3B82F6' }} />
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#3B82F6' }}>Lấy hàng</span>
-                        <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Tất cả khu vực</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px' }}>
-                        <EnvironmentOutlined style={{ color: '#16A34A' }} />
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#16A34A' }}>Giao hàng</span>
-                        <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Tất cả khu vực</span>
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px' }}>
+                      <EnvironmentOutlined style={{ color: '#16A34A' }} />
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#16A34A' }}>Giao hàng</span>
+                      <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Tất cả khu vực</span>
                     </div>
-                    <button onClick={() => setShowZoneModal(true)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                      <EyeOutlined style={{ fontSize: 13 }} />
-                      Xem khu vực
-                    </button>
                   </div>
-                )}
+                  <button onClick={() => setShowZoneModal(true)} style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                    <EyeOutlined style={{ fontSize: 13 }} />
+                    Xem khu vực
+                  </button>
+                </div>
 
                 {/* Action buttons */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }}>
@@ -797,9 +762,8 @@ export default function ServiceDetail() {
                       {!canCreate && (
                         <span style={{ fontSize: 12, color: '#9CA3AF' }}>
                           {!editForm.name.trim() ? 'Nhập tên dịch vụ'
-                            : editForm.carrier === '247Express' && editForm.hubIds.length === 0 ? 'Chọn 1 địa điểm gửi hàng'
-                            : editForm.carrier === 'GHN' && editForm.shopConnectionIds.length === 0 ? 'Chọn ít nhất 1 shop'
-                            : ''}
+                            : editForm.shopConnectionIds.length === 0 ? 'Chọn ít nhất 1 Shop ID'
+                            : 'Chọn bảng giá'}
                         </span>
                       )}
                       <button

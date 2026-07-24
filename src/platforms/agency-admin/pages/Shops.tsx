@@ -481,7 +481,12 @@ function ExportOrdersModal({ open, onClose }: { open: boolean; onClose: () => vo
       if (!matchesCarrier) return false
       return true
     })
-    downloadXlsx(`don-hang-${dateFrom}_${dateTo}.xlsx`, EXPORT_HEADERS, buildExportRows(orders))
+    // Gắn timestamp lúc export để mỗi lần tải là 1 file độc lập, không bị trùng tên
+    // (và ghi đè) khi export nhiều lần cùng 1 khoảng ngày.
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+    downloadXlsx(`don-hang-${dateFrom}_${dateTo}_${timestamp}.xlsx`, EXPORT_HEADERS, buildExportRows(orders))
     onClose()
   }
 

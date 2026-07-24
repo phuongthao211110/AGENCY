@@ -53,17 +53,19 @@ function KpiCard({ icon, label, value, iconColor }: {
   )
 }
 
-// ─── Carrier tag — phân biệt dịch vụ GHN vs 247Express cùng tên ───────────────
-const CARRIER_COLOR: Record<string, string> = { GHN: '#EE4D2D', '247Express': '#1677FF' }
-function CarrierTag({ carrier }: { carrier: string }) {
-  const color = CARRIER_COLOR[carrier] ?? C_TEXT_SECONDARY
+// ─── Loại đơn tag — phân biệt dịch vụ Hàng hoá vs Thư, bưu phẩm cùng tên ──────
+// Dữ liệu cũ trong services.json chưa có field sendKind — suy theo carrier
+// (GHN → Hàng hoá, 247Express → Thư) để không hiển thị trống/lỗi.
+function SendKindTag({ sendKind, carrier }: { sendKind?: string; carrier: string }) {
+  const kind = sendKind ?? (carrier === '247Express' ? 'letter' : 'goods')
+  const isLetter = kind === 'letter'
   return (
     <span style={{
-      fontSize: 11, fontWeight: 700, color,
-      background: color + '18', border: `1px solid ${color}40`,
+      fontSize: 11, fontWeight: 700, color: isLetter ? '#7C3AED' : '#4B5563',
+      background: isLetter ? '#F5F3FF' : '#F3F4F6', border: `1px solid ${isLetter ? '#DDD6FE' : '#E5E7EB'}`,
       borderRadius: 4, padding: '1px 6px', lineHeight: '16px', flexShrink: 0,
     }}>
-      {carrier}
+      {isLetter ? 'Thư' : 'Hàng hoá'}
     </span>
   )
 }
@@ -451,7 +453,7 @@ export default function ShopDetail() {
                           <div style={{ flex: '2 0 0', minWidth: 160 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{svc.name}</span>
-                              <CarrierTag carrier={svc.carrier} />
+                              <SendKindTag sendKind={(svc as any).sendKind} carrier={svc.carrier} />
                             </div>
                             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{svc.desc}</div>
                           </div>

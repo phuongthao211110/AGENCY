@@ -21,6 +21,23 @@ const C_BG_DISABLED    = '#F3F4F6'
 const C_BG_FORM        = '#F9FAFB'
 const C_PLACEHOLDER    = '#9CA3AF'
 
+// ─── Loại đơn tag — phân biệt dịch vụ Hàng hoá vs Thư, bưu phẩm cùng tên ──────
+// Dữ liệu cũ trong services.json chưa có field sendKind — suy theo carrier
+// (GHN → Hàng hoá, 247Express → Thư) để không hiển thị trống/lỗi.
+function SendKindTag({ sendKind, carrier }: { sendKind?: string; carrier: string }) {
+  const kind = sendKind ?? (carrier === '247Express' ? 'letter' : 'goods')
+  const isLetter = kind === 'letter'
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 700, color: isLetter ? '#7C3AED' : '#4B5563',
+      background: isLetter ? '#F5F3FF' : '#F3F4F6', border: `1px solid ${isLetter ? '#DDD6FE' : '#E5E7EB'}`,
+      borderRadius: 4, padding: '1px 6px', lineHeight: '16px', flexShrink: 0,
+    }}>
+      {isLetter ? 'Thư' : 'Hàng hoá'}
+    </span>
+  )
+}
+
 function generateShopCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   let code = 'SHOP'
@@ -294,7 +311,10 @@ export default function ShopCreate() {
                 <div key={svc.id}>
                   <div style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', background: '#fff' }}>
                     <div style={{ flex: '2 0 0', minWidth: 160 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{svc.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>{svc.name}</span>
+                        <SendKindTag sendKind={(svc as any).sendKind} carrier={svc.carrier} />
+                      </div>
                       <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{svc.desc}</div>
                     </div>
                     <div style={{ flex: '2 0 0', minWidth: 200, position: 'relative' }} data-price-dropdown={svc.id}>

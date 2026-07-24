@@ -20,7 +20,6 @@ import ShopDetail from './platforms/agency-admin/pages/ShopDetail'
 import CarrierSetup from './platforms/agency-admin/pages/CarrierSetup'
 import ServiceDetail from './platforms/agency-admin/pages/ServiceDetail'
 import PricingCreate from './platforms/agency-admin/pages/PricingCreate'
-import PricingCreate247 from './platforms/agency-admin/pages/PricingCreate247'
 import PricingDetail from './platforms/agency-admin/pages/PricingDetail'
 import AgencyOrders from './platforms/agency-admin/pages/AgencyOrders'
 import AgencyReconciliation from './platforms/agency-admin/pages/AgencyReconciliation'
@@ -80,7 +79,6 @@ export default function App() {
           <Route path="carrier-setup" element={<CarrierSetup />} />
           <Route path="carrier-setup/:tab" element={<CarrierSetup />} />
           <Route path="carrier-setup/pricing/create" element={<PricingCreate />} />
-          <Route path="carrier-setup/pricing/create-247" element={<PricingCreate247 />} />
           <Route path="carrier-setup/pricing/:id" element={<PricingDetail />} />
           <Route path="carrier-setup/services/new" element={<ServiceDetail />} />
           <Route path="carrier-setup/services/:id" element={<ServiceDetail />} />

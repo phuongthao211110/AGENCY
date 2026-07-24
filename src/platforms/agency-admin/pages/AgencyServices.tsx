@@ -14,17 +14,33 @@ const C_TEXT_LABEL     = '#4B5563'
 const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
 
-// Số "dịch vụ" (loại gói cước phân biệt) mà carrier này đang phục vụ, dựa trên shop đã gán
-function goiCuocCount(carrier: string, shopConnectionIds: string[]): number {
+// Số gói cước đang áp dụng — chỉ tính trên các shopConnectionIds thuộc carrier GHN
+// (dịch vụ 247Express hiện chưa có gói cước riêng, trả về 0 → hiển thị "Chưa áp dụng").
+function goiCuocCount(shopConnectionIds: string[]): number {
   const types = new Set<string>()
   shopConnectionIds.forEach(cid => {
     const conn = storeConns.find(s => s.id === cid)
-    if (!conn) return
-    // 247Express dùng chung Shop ID với GHN (kích hoạt ở cấp đại lý qua ClientHub)
-    if (carrier === 'GHN' && conn.carrier !== 'GHN') return
+    if (!conn || conn.carrier !== 'GHN') return
     conn.goiCuoc.forEach(gc => types.add(gc.loai))
   })
   return types.size
+}
+
+// ─── Loại đơn tag — phân biệt dịch vụ Hàng hoá vs Thư, bưu phẩm cùng tên ──────
+// Dữ liệu cũ trong services.json chưa có field sendKind — suy theo carrier
+// (GHN → Hàng hoá, 247Express → Thư) để không hiển thị trống/lỗi.
+function SendKindTag({ sendKind, carrier }: { sendKind?: string; carrier: string }) {
+  const kind = sendKind ?? (carrier === '247Express' ? 'letter' : 'goods')
+  const isLetter = kind === 'letter'
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 700, color: isLetter ? '#7C3AED' : '#4B5563',
+      background: isLetter ? '#F5F3FF' : '#F3F4F6', border: `1px solid ${isLetter ? '#DDD6FE' : '#E5E7EB'}`,
+      borderRadius: 4, padding: '1px 6px', lineHeight: '16px', flexShrink: 0,
+    }}>
+      {isLetter ? 'Thư' : 'Hàng hoá'}
+    </span>
+  )
 }
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -47,7 +63,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 // ─── Service row ──────────────────────────────────────────────────────────────
 
 function ServiceRow({ svc, onToggle, onOpen }: { svc: AgencyService; onToggle: () => void; onOpen: () => void }) {
-  const count = goiCuocCount(svc.carrier, svc.shopConnectionIds)
+  const count = goiCuocCount(svc.shopConnectionIds)
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 16,
@@ -58,14 +74,20 @@ function ServiceRow({ svc, onToggle, onOpen }: { svc: AgencyService; onToggle: (
       transition: 'opacity 0.2s',
     }}>
       {/* Dịch vụ đại lý */}
-      <div style={{ flex: '2 0 0', minWidth: 200 }}>
-        <div onClick={onOpen} style={{ fontSize: 14, fontWeight: 700, color: C_LINK, cursor: 'pointer' }}>{svc.name}</div>
-        <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>{svc.code}</div>
+      <div style={{ flex: '2 0 0', minWidth: 200, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span onClick={onOpen} style={{ fontSize: 14, fontWeight: 700, color: C_LINK, cursor: 'pointer' }}>{svc.name}</span>
+          <SendKindTag sendKind={svc.sendKind} carrier={svc.carrier} />
+        </div>
+        <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{svc.code}</div>
       </div>
 
-      {/* Dịch vụ từ carrier */}
+      {/* Gói kết nối — goiCuoc cho GHN, blank cho 247Express */}
       <div style={{ flex: '2 0 0', minWidth: 200, fontSize: 14, color: C_TEXT_PRIMARY }}>
-        {count > 0 ? `Đang áp dụng ${count} dịch vụ` : 'Chưa áp dụng'}
+        {svc.carrier === 'GHN'
+          ? (count > 0 ? `Đang áp dụng ${count} dịch vụ` : 'Chưa áp dụng')
+          : <span style={{ color: '#9CA3AF' }}>—</span>
+        }
       </div>
 
       {/* Shop */}
@@ -75,7 +97,7 @@ function ServiceRow({ svc, onToggle, onOpen }: { svc: AgencyService; onToggle: (
         </span>
       </div>
 
-      {/* Mặc định */}
+      {/* Bật/Tắt */}
       <div style={{ flex: '0 0 60px', display: 'flex', justifyContent: 'flex-end' }}>
         <Toggle on={svc.enabled} onToggle={onToggle} />
       </div>
@@ -85,7 +107,7 @@ function ServiceRow({ svc, onToggle, onOpen }: { svc: AgencyService; onToggle: (
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function AgencyServices({ carrier }: { carrier: string }) {
+export default function AgencyServices() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [, forceRender] = useState(0)
@@ -93,8 +115,9 @@ export default function AgencyServices({ carrier }: { carrier: string }) {
   const toggle = (id: string) => { toggleServiceEnabled(id); forceRender(n => n + 1) }
   const open   = (id: string) => navigate(`/agency-admin/carrier-setup/services/${id}`)
 
+  // Show ALL services for this agency regardless of carrier — carrier badge per row distinguishes them
   const filtered = servicesList.filter(
-    s => s.agencyId === CURRENT_AGENCY_ID && s.carrier === carrier &&
+    s => s.agencyId === CURRENT_AGENCY_ID &&
       (s.name.toLowerCase().includes(search.toLowerCase()) || s.code.includes(search))
   )
 
@@ -107,7 +130,10 @@ export default function AgencyServices({ carrier }: { carrier: string }) {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm kiếm"
             style={{ border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', width: '100%' }} />
         </div>
-        <button onClick={() => navigate('/agency-admin/carrier-setup/services/new', { state: { carrier } })}
+
+        {/* "Tạo dịch vụ mới" — vào thẳng form, chọn carrier ngay trong trang (CarrierPicker) thay vì hỏi trước qua dropdown */}
+        <button
+          onClick={() => navigate('/agency-admin/carrier-setup/services/new')}
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
           <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
           <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo dịch vụ mới</span>
@@ -118,9 +144,9 @@ export default function AgencyServices({ carrier }: { carrier: string }) {
       <div style={{ padding: '0 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', background: C_BG_HEADER }}>
           <div style={{ flex: '2 0 0', minWidth: 200, padding: '8px 8px', fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Dịch vụ đại lý</div>
-          <div style={{ flex: '2 0 0', minWidth: 200, padding: '8px 8px', fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Dịch vụ từ {carrier}</div>
+          <div style={{ flex: '2 0 0', minWidth: 200, padding: '8px 8px', fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Gói kết nối</div>
           <div style={{ flex: '1 0 0', minWidth: 160, padding: '8px 8px', fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL }}>Shop</div>
-          <div style={{ flex: '0 0 60px', padding: '8px 8px', fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL, textAlign: 'right' }}>Mặc định</div>
+          <div style={{ flex: '0 0 60px', padding: '8px 8px', fontSize: 12, fontWeight: 600, color: C_TEXT_LABEL, textAlign: 'right' }}>Bật/Tắt</div>
         </div>
         <div style={{ height: 1, background: C_BORDER }} />
 

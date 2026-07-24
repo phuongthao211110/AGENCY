@@ -5,6 +5,7 @@ import { ArrowLeftOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import allItemsData from '../../../mock-data/carrier-reconciliation-items.json'
 import allSessions from '../../../mock-data/carrier-reconciliation.json'
+import ordersData from '../../../mock-data/orders.json'
 
 const C_TEXT_PRIMARY   = '#111827'
 const C_TEXT_SECONDARY = '#6B7280'
@@ -76,6 +77,14 @@ type ItemRecord = {
 
 const SUCCESS_STATUSES = ['Giao hàng thành công', 'Hoàn hàng thành công']
 
+// Tra ngược orderCode → orders.json để xác định shop thật; fallback shopId tĩnh
+// trên item nếu không tìm thấy — cùng logic với deriveShopSessions() ở AgencyReconciliation.tsx
+function resolveShopId(item: { orderCode: string; shopId: string }): string {
+  const order = (ordersData as Array<{ id: string; trackingCode?: string; shopId: string }>)
+    .find(o => o.trackingCode === item.orderCode || o.id === item.orderCode)
+  return order?.shopId ?? item.shopId
+}
+
 const C_GHN = '#9CA3AF'
 const FONT_GHN = 11
 
@@ -126,7 +135,7 @@ export default function AgencyReconciliationShopDetail() {
   const nvcSession = (allSessions as any[]).find(s => s.id === session.nvcSessionId)
 
   const items = (allItemsData as ItemRecord[]).filter(
-    it => it.sessionId === session.nvcSessionId && it.shopId === session.shopId
+    it => it.sessionId === session.nvcSessionId && resolveShopId(it) === session.shopId
   )
 
   const filteredItems = items

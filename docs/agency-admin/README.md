@@ -27,7 +27,22 @@
 
 ## Quản lý đơn hàng
 
-_Chưa có stories_
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [AGENCY] Đơn hàng - Xác nhận gửi 247Express: Bắt buộc chọn hub xuất phát | [xac-nhan-gui-247express-bat-buoc-chon-hub.md](./orders/xac-nhan-gui-247express-bat-buoc-chon-hub.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách: Đổi tên tab "Chờ gửi 247Express" thành "Chờ xử lý" | [doi-ten-tab-cho-xu-ly.md](./orders/doi-ten-tab-cho-xu-ly.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách: Thêm phân loại hàng hoá | [danh-sach-them-phan-loai-hang-hoa.md](./orders/danh-sach-them-phan-loai-hang-hoa.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách: Tách "Thao tác" thành cột riêng | [tach-cot-thao-tac.md](./orders/tach-cot-thao-tac.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách & Chi tiết: Làm rõ nhãn giá ship là giá bán cho shop | [lam-ro-nhan-gia-ship.md](./orders/lam-ro-nhan-gia-ship.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách: Xem đơn hàng theo trạng thái | [xem-danh-sach-theo-trang-thai.md](./orders/xem-danh-sach-theo-trang-thai.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách: Tìm kiếm và lọc theo Shop | [tim-kiem-loc-theo-shop.md](./orders/tim-kiem-loc-theo-shop.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách: Chọn nhiều đơn hàng | [chon-nhieu-don-hang.md](./orders/chon-nhieu-don-hang.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách: Phân trang | [phan-trang-danh-sach.md](./orders/phan-trang-danh-sach.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Chi tiết: Xem thông tin đơn hàng | [xem-chi-tiet-don-hang.md](./orders/xem-chi-tiet-don-hang.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Chi tiết: Xem lịch sử trạng thái và lịch sử thao tác | [lich-su-trang-thai-thao-tac.md](./orders/lich-su-trang-thai-thao-tac.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Chi tiết: Huỷ đơn / Cập nhật đơn — CHƯA HOẠT ĐỘNG (gap) | [huy-cap-nhat-don-hang.md](./orders/huy-cap-nhat-don-hang.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Tạo đơn hàng thay shop | [tao-don-hang-thay-shop.md](./orders/tao-don-hang-thay-shop.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Import đơn hàng từ Excel | [import-don-hang.md](./orders/import-don-hang.md) | — | [Draft] |
 
 ## Đối soát & Chuyển khoản
 
@@ -35,6 +50,8 @@ _Chưa có stories_
 |-------|------|------|--------|
 | [AGA] Đối soát: Tạo phiên đối soát GHN | [tao-phien-doi-soat-ghn.md](./reconciliation/tao-phien-doi-soat-ghn.md) | — | [Draft] |
 | [AGA] Đối soát: Mapping chỉ số bảng "Phiên GHN" | [mapping-chi-so-phien-ghn.md](./reconciliation/mapping-chi-so-phien-ghn.md) | — | [Draft] |
+| [AGA] Đối soát: Xác nhận phiên GHN — tự động tách phiên shop | [xac-nhan-phien-tach-phien-shop.md](./reconciliation/xac-nhan-phien-tach-phien-shop.md) | — | [Draft] |
+| **[SRS]** Tách phiên shop — đặc tả kỹ thuật đầy đủ | [srs-tach-phien-shop.md](./reconciliation/srs-tach-phien-shop.md) | — | [Draft] |
 | Phiên nhà vận chuyển (Phiên GHN) | [phien-nha-van-chuyen.md](./reconciliation/phien-nha-van-chuyen.md) | — | [Draft] |
 | Phiên shop (tự sinh) | [phien-shop.md](./reconciliation/phien-shop.md) | — | [Draft] |
 
@@ -59,3 +76,6 @@ _Chưa có stories_
 | [AGA] Thiết lập NVC - Bảng giá 247Express: Dịch vụ Chuyển phát nhanh | [tao-bang-gia-247-chuyen-phat-nhanh.md](./carrier-setup/tao-bang-gia-247-chuyen-phat-nhanh.md) | — | [Draft] |
 | [AGA] Thiết lập NVC - Bảng giá 247Express: Phụ phí & Dịch vụ gia tăng | [tao-bang-gia-247-phu-phi-dich-vu-gia-tang.md](./carrier-setup/tao-bang-gia-247-phu-phi-dich-vu-gia-tang.md) | — | [Draft] |
 | [AGA] Thiết lập NVC - Bảng giá 247Express: Chuyển phát nhanh tiết kiệm & Chuyển phát đường bộ | [tao-bang-gia-247-tiet-kiem-duong-bo.md](./carrier-setup/tao-bang-gia-247-tiet-kiem-duong-bo.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Tạo mới dịch vụ: Thêm phân loại hàng | [tao-moi-dich-vu-them-phan-loai-hang.md](./carrier-setup/tao-moi-dich-vu-them-phan-loai-hang.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Chi tiết dịch vụ: Thêm phân loại hàng hoá | [chi-tiet-dich-vu-them-phan-loai-hang-hoa.md](./carrier-setup/chi-tiet-dich-vu-them-phan-loai-hang-hoa.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Danh sách dịch vụ: Thêm phân loại hàng hoá | [danh-sach-dich-vu-them-phan-loai-hang-hoa.md](./carrier-setup/danh-sach-dich-vu-them-phan-loai-hang-hoa.md) | — | [Draft] |

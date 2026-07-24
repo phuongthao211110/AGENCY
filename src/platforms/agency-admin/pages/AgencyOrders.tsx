@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { ConfigProvider } from 'antd'
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
+import { PlusOutlined, SearchOutlined, InfoCircleOutlined, DownloadOutlined, CloseOutlined } from '@ant-design/icons'
+import * as XLSX from 'xlsx'
 import { agencyAdminTheme } from '../../../theme/platforms'
-import allOrders from '../../../mock-data/orders.json'
+import { loadOrders, addOrder, dispatchOrderToCarrier, type Order } from '../../../mock-data/orderStore'
 import allShops from '../../../mock-data/shops.json'
 import allServices from '../../../mock-data/services.json'
 import allPricing from '../../../mock-data/pricing.json'
+import { agenciesList, clientHubs247 } from '../../super-admin/agencyStore'
 
 // ── Design tokens ────────────────────────────────────────────
 const C_ACTION         = '#FF5200'
@@ -37,7 +39,344 @@ function calcTierFee(amount: number, tiers: FeeTier[]): number {
 const CURRENT_AGENCY_ID = 'AGN001'
 const agencyShops = allShops.filter(s => s.agencyId === CURRENT_AGENCY_ID)
 const agencyShopIds = new Set(agencyShops.map(s => s.id))
-const agencyOrders = allOrders.filter(o => agencyShopIds.has(o.shopId))
+
+// ── Xuất đơn hàng (giống hệt pattern đã có ở Shops.tsx) ───────
+// Khác với bản ở Shops.tsx (đọc orders.json tĩnh), bản này đọc từ orderStore.ts
+// (kho dữ liệu live) để không bỏ sót đơn tạo mới trong phiên.
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: 'Đơn nháp',
+  pickup: 'Chờ bàn giao',
+  in_transit: 'Đang giao',
+  returning: 'Đang hoàn hàng',
+  redelivery: 'Chờ xác nhận giao lại',
+  delivered: 'Hoàn tất',
+  cancelled: 'Đơn huỷ',
+  failed: 'Đơn huỷ',
+  lost: 'Thất lạc',
+  damaged: 'Hư hỏng',
+}
+
+const STATUS_GROUPS: { key: string; label: string; match: string[] }[] = [
+  { key: 'pending',      label: 'Đơn nháp',              match: ['pending'] },
+  { key: 'pickup',       label: 'Chờ bàn giao',          match: ['pickup'] },
+  { key: 'in_transit',   label: 'Đang giao',             match: ['in_transit'] },
+  { key: 'returning',    label: 'Đang hoàn hàng',        match: ['returning'] },
+  { key: 'redelivery',   label: 'Chờ xác nhận giao lại', match: ['redelivery'] },
+  { key: 'delivered',    label: 'Hoàn tất',              match: ['delivered'] },
+  { key: 'cancelled',    label: 'Đơn huỷ',               match: ['cancelled', 'failed'] },
+  { key: 'lost_damaged', label: 'Thất lạc - hư hỏng',    match: ['lost', 'damaged'] },
+]
+
+const EXPORT_CARRIER_LABEL: Record<string, string> = { GHN: 'Giao hàng nhanh', '247EXPRESS': '247Express' }
+
+const EXPORT_HEADERS = [
+  'Mã shop', 'Ngày tạo', 'Mã đơn CDN', 'Loại đơn', 'Mã đơn vận chuyển',
+  'Trạng thái', 'Đơn vị vận chuyển', 'Khách hàng', 'Số điện thoại', 'Địa chỉ giao hàng',
+  'Sản phẩm', 'Khối lượng (kg)', 'Tiền thu hộ COD (đ)', 'Phí ship (giá bán shop, đ)', 'Trả ship',
+]
+
+// Sản phẩm mẫu — demo, không phải sản phẩm thật của đơn (cùng hạn chế đã ghi nhận ở Shops.tsx)
+const EXPORT_SAMPLE_PRODUCTS = [
+  'Giày Thể Thao Nam - SL: 2',
+  'Áo Thun Cotton Nam - Oversize - SL: 2, Bình Giữ Nhiệt Cao Cấp - SL: 1',
+  'Áo Thun Trơn Cổ Tròn Thoáng Khí - SL: 10',
+  'Quần Jean Nam Slim Fit - SL: 1, Áo Polo Cổ Bẻ - SL: 2',
+]
+function sampleProductFor(orderId: string) {
+  let hash = 0
+  for (let i = 0; i < orderId.length; i++) hash = (hash * 31 + orderId.charCodeAt(i)) >>> 0
+  return EXPORT_SAMPLE_PRODUCTS[hash % EXPORT_SAMPLE_PRODUCTS.length]
+}
+
+function buildExportRows(orders: Order[]) {
+  return orders.map((o) => {
+    const feeType = parseInt(o.id.replace(/\D/g, '')) % 2 === 0 ? 'Shop trả' : 'Khách trả'
+    const [dd, mm, yyyy] = [o.createdAt.slice(8, 10), o.createdAt.slice(5, 7), o.createdAt.slice(0, 4)]
+    return [
+      o.shopId,
+      `${dd}/${mm}/${yyyy}`,
+      o.id,
+      o.sendKind === 'letter' ? 'Thư' : 'Hàng hoá',
+      o.trackingCode,
+      ORDER_STATUS_LABELS[o.status] ?? o.status,
+      o.carrierCode ? (EXPORT_CARRIER_LABEL[o.carrierCode] ?? o.carrierCode) : '—',
+      o.receiverName,
+      o.receiverPhone,
+      o.receiverAddress,
+      sampleProductFor(o.id),
+      +(o.weight / 1000).toFixed(2),
+      o.cod,
+      o.fee,
+      feeType,
+    ]
+  })
+}
+
+const DATE_PRESETS: { key: string; label: string }[] = [
+  { key: 'custom',     label: 'Tùy chỉnh' },
+  { key: 'this_week',  label: 'Tuần này' },
+  { key: 'last_week',  label: 'Tuần trước' },
+  { key: 'this_month', label: 'Tháng này' },
+  { key: 'last_month', label: 'Tháng trước' },
+  { key: '30d',        label: '30 ngày trước' },
+  { key: '90d',        label: '90 ngày trước' },
+]
+
+function fmtDateInput(d: Date) {
+  return d.toISOString().slice(0, 10)
+}
+
+function computePresetRange(preset: string, today: Date): [string, string] | null {
+  const base = new Date(today)
+  base.setHours(0, 0, 0, 0)
+  if (preset === 'custom') return null
+  if (preset === 'this_week' || preset === 'last_week') {
+    const day = base.getDay()
+    const diffToMonday = day === 0 ? -6 : 1 - day
+    const monday = new Date(base)
+    monday.setDate(base.getDate() + diffToMonday + (preset === 'last_week' ? -7 : 0))
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    return [fmtDateInput(monday), fmtDateInput(sunday)]
+  }
+  if (preset === 'this_month' || preset === 'last_month') {
+    const monthOffset = preset === 'last_month' ? -1 : 0
+    const first = new Date(base.getFullYear(), base.getMonth() + monthOffset, 1)
+    const last = new Date(base.getFullYear(), base.getMonth() + monthOffset + 1, 0)
+    return [fmtDateInput(first), fmtDateInput(last)]
+  }
+  if (preset === '30d') {
+    const from = new Date(base)
+    from.setDate(base.getDate() - 29)
+    return [fmtDateInput(from), fmtDateInput(base)]
+  }
+  if (preset === '90d') {
+    const from = new Date(base)
+    from.setDate(base.getDate() - 89)
+    return [fmtDateInput(from), fmtDateInput(base)]
+  }
+  return null
+}
+
+function RadioDot({ checked }: { checked: boolean }) {
+  return (
+    <div style={{
+      width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+      border: `1.5px solid ${checked ? C_ACTION : C_BORDER}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {checked && <div style={{ width: 10, height: 10, borderRadius: '50%', background: C_ACTION }} />}
+    </div>
+  )
+}
+
+function downloadXlsx(filename: string, headers: string[], rows: (string | number)[][]) {
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+  ws['!cols'] = headers.map((h) => ({ wch: Math.max(12, h.length + 2) }))
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Xuất đơn hàng')
+  XLSX.writeFile(wb, filename)
+}
+
+// ── Import đơn hàng — cùng carrier (Hàng hoá/Thư) quyết định luồng, cùng nút
+// đặt cạnh "Xuất đơn hàng" ────────────────────────────────────────────────
+const IMPORT_HEADERS = [
+  'Mã shop', 'Loại đơn', 'Khách hàng', 'Số điện thoại', 'Địa chỉ giao hàng',
+  'Sản phẩm', 'Khối lượng (kg)', 'Tiền thu hộ COD (đ)', 'Phí ship (giá bán shop, đ)', 'Trả ship',
+]
+
+type ImportRow = {
+  rowIndex: number
+  raw: Record<string, string>
+  errors: string[]
+}
+
+function parseImportSheet(file: File): Promise<ImportRow[]> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Không đọc được file'))
+    reader.onload = () => {
+      try {
+        const wb = XLSX.read(reader.result, { type: 'array' })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        const grid = XLSX.utils.sheet_to_json(ws, { header: 1 }) as string[][]
+        const dataRows = grid.slice(1).filter(r => r.some(c => String(c ?? '').trim() !== ''))
+        const shopIds = new Set(agencyShops.map(s => s.id))
+
+        const parsed: ImportRow[] = dataRows.map((r, i) => {
+          const get = (col: number) => String(r[col] ?? '').trim()
+          const raw = {
+            shopId: get(0), sendKindLabel: get(1), receiverName: get(2), receiverPhone: get(3),
+            receiverAddress: get(4), product: get(5), weight: get(6), cod: get(7), fee: get(8), feeType: get(9),
+          }
+          const errors: string[] = []
+          if (!raw.shopId) errors.push('Thiếu Mã shop')
+          else if (!shopIds.has(raw.shopId)) errors.push(`Không tìm thấy shop "${raw.shopId}"`)
+          if (!['Hàng hoá', 'Thư'].includes(raw.sendKindLabel)) errors.push('Loại đơn phải là "Hàng hoá" hoặc "Thư"')
+          if (!raw.receiverName) errors.push('Thiếu Khách hàng')
+          if (!raw.receiverPhone) errors.push('Thiếu Số điện thoại')
+          if (!raw.receiverAddress) errors.push('Thiếu Địa chỉ giao hàng')
+          if (!raw.weight || isNaN(Number(raw.weight)) || Number(raw.weight) <= 0) errors.push('Khối lượng phải là số dương')
+          if (raw.cod && isNaN(Number(raw.cod))) errors.push('COD phải là số')
+          if (!raw.fee || isNaN(Number(raw.fee)) || Number(raw.fee) < 0) errors.push('Phí ship phải là số không âm')
+          return { rowIndex: i + 2, raw, errors }
+        })
+        resolve(parsed)
+      } catch {
+        reject(new Error('File không đúng định dạng — vui lòng dùng đúng template'))
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  })
+}
+
+function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClose: () => void; onImported: () => void }) {
+  const [rows, setRows] = useState<ImportRow[] | null>(null)
+  const [fileName, setFileName] = useState('')
+  const [parseError, setParseError] = useState('')
+  const [importing, setImporting] = useState(false)
+
+  if (!open) return null
+
+  const handleClose = () => { setRows(null); setFileName(''); setParseError(''); onClose() }
+
+  const handleFile = async (file: File) => {
+    setFileName(file.name)
+    setParseError('')
+    setRows(null)
+    try {
+      const parsed = await parseImportSheet(file)
+      setRows(parsed)
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : 'Không đọc được file')
+    }
+  }
+
+  const validRows = (rows ?? []).filter(r => r.errors.length === 0)
+  const invalidRows = (rows ?? []).filter(r => r.errors.length > 0)
+
+  const handleConfirm = () => {
+    setImporting(true)
+    const now = new Date()
+    const createdAt = fmtDateInput(now)
+    validRows.forEach((r, i) => {
+      const sendKind: 'goods' | 'letter' = r.raw.sendKindLabel === 'Thư' ? 'letter' : 'goods'
+      const shop = agencyShops.find(s => s.id === r.raw.shopId)
+      const isGoods = sendKind === 'goods'
+      addOrder({
+        id: `ORD_IMPORT_${now.getTime()}_${i}`,
+        shopId: r.raw.shopId,
+        trackingCode: isGoods ? `GHN_IMP${now.getTime()}${i}` : `SHOP_IMP${now.getTime()}${i}`,
+        senderName: shop?.ownerName ?? shop?.name ?? '',
+        senderPhone: shop?.phone ?? '',
+        receiverName: r.raw.receiverName,
+        receiverPhone: r.raw.receiverPhone,
+        receiverAddress: r.raw.receiverAddress,
+        weight: Math.round(Number(r.raw.weight) * 1000),
+        cod: Number(r.raw.cod) || 0,
+        fee: Number(r.raw.fee) || 0,
+        status: 'pending',
+        createdAt,
+        actionHistory: [],
+        sendKind,
+        dispatchStatus: isGoods ? 'dispatched' : 'pending_agency',
+        carrierCode: isGoods ? 'GHN' : null,
+        dispatchedAt: isGoods ? now.toISOString() : null,
+        dispatchedBy: isGoods ? 'Agency Admin (import)' : null,
+      })
+    })
+    setImporting(false)
+    onImported()
+    handleClose()
+  }
+
+  const cardStyle: React.CSSProperties = { border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '12px 14px' }
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose() }}
+    >
+      <div style={{ width: 720, maxHeight: '90vh', background: '#fff', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>Import đơn hàng</span>
+          <CloseOutlined style={{ fontSize: 16, color: C_TEXT_SECONDARY, cursor: 'pointer' }} onClick={handleClose} />
+        </div>
+
+        <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>
+            File cần đúng thứ tự cột: <strong>{IMPORT_HEADERS.join(' · ')}</strong>. "Loại đơn" chỉ nhận "Hàng hoá" hoặc "Thư" — đơn "Thư" sẽ vào tab "Chờ xử lý" chờ đại lý gửi qua 247Express, đơn "Hàng hoá" tự động dispatch qua GHN ngay.
+          </div>
+
+          <label style={{ display: 'block', cursor: 'pointer' }}>
+            <input
+              type="file" accept=".xlsx,.xls"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+              style={{ display: 'none' }}
+            />
+            <div style={{
+              border: `2px dashed ${fileName ? C_ACTION : C_BORDER}`, borderRadius: 8, padding: '20px 16px',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              background: fileName ? '#FFF4ED' : '#FAFAFA',
+            }}>
+              <DownloadOutlined style={{ fontSize: 24, color: fileName ? C_ACTION : C_TEXT_SECONDARY, transform: 'rotate(180deg)' }} />
+              {fileName ? (
+                <span style={{ fontSize: 13, fontWeight: 600, color: C_ACTION }}>{fileName}</span>
+              ) : (
+                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Bấm để chọn file Excel (.xlsx)</span>
+              )}
+            </div>
+          </label>
+
+          {parseError && (
+            <div style={{ ...cardStyle, background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', fontSize: 13 }}>{parseError}</div>
+          )}
+
+          {rows && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ ...cardStyle, flex: 1, background: '#F0FDF4', borderColor: '#BBF7D0' }}>
+                  <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Hợp lệ</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#16A34A' }}>{validRows.length}</div>
+                </div>
+                <div style={{ ...cardStyle, flex: 1, background: invalidRows.length ? '#FEF2F2' : undefined, borderColor: invalidRows.length ? '#FECACA' : undefined }}>
+                  <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Lỗi</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: invalidRows.length ? '#DC2626' : C_TEXT_PRIMARY }}>{invalidRows.length}</div>
+                </div>
+              </div>
+
+              {invalidRows.length > 0 && (
+                <div style={{ maxHeight: 200, overflowY: 'auto', border: `1px solid ${C_BORDER}`, borderRadius: 8 }}>
+                  {invalidRows.map(r => (
+                    <div key={r.rowIndex} style={{ padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 13 }}>
+                      <span style={{ fontWeight: 600, color: '#DC2626' }}>Dòng {r.rowIndex}:</span>{' '}
+                      <span style={{ color: C_TEXT_SECONDARY }}>{r.errors.join('; ')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: '16px 20px', borderTop: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+          <button
+            onClick={handleConfirm}
+            disabled={!rows || validRows.length === 0 || importing}
+            style={{
+              width: '100%', padding: '12px', border: 'none', borderRadius: 8,
+              cursor: (!rows || validRows.length === 0 || importing) ? 'not-allowed' : 'pointer',
+              fontSize: 15, fontWeight: 700, color: '#fff',
+              background: (!rows || validRows.length === 0 || importing) ? '#9CA3AF' : C_ACTION,
+            }}
+          >
+            {rows ? `Import ${validRows.length} đơn hợp lệ` : 'Chọn file để tiếp tục'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ── Drawer icon helpers ──────────────────────────────────────
 const IC = '#6B7280'
@@ -101,7 +440,9 @@ const SAMPLE_PRODUCTS = [
   ['Quần Jean Nam Slim Fit - SL: 1', 'Áo Polo Cổ Bẻ - SL: 2'],
 ]
 const orderProducts: Record<string, string[]> = {}
-agencyOrders.forEach((o, i) => { orderProducts[o.id] = SAMPLE_PRODUCTS[i % SAMPLE_PRODUCTS.length] })
+loadOrders().filter(o => agencyShopIds.has(o.shopId)).forEach((o, i) => {
+  orderProducts[o.id] = SAMPLE_PRODUCTS[i % SAMPLE_PRODUCTS.length]
+})
 
 // ── Checkbox ─────────────────────────────────────────────────
 function Checkbox({ checked, onChange }: { checked: boolean; onChange?: () => void }) {
@@ -701,19 +1042,28 @@ function THead({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: 
         <Checkbox checked={allChecked} onChange={onToggleAll} />
       </div>
       {fixedCell('Mã đơn hàng', 140)}
+      {fixedCell('Loại đơn', 100)}
       {flexCell('Shop',            200)}
       {flexCell('Khách hàng',      260)}
       {flexCell('Sản phẩm',        220)}
       {flexCell('Khối lượng (kg)', 120, 'right')}
       {flexCell('COD (đ)',         120, 'right')}
-      {flexCell('Phí ship (đ)',    120, 'right')}
+      {/* Phí ship — LUÔN là giá bán cho shop, không phải giá vốn NVC thật (chưa có trong hệ thống) */}
+      <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+        <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, textAlign: 'right', lineHeight: '20px' }}>Phí ship (đ)</span>
+        <InfoCircleOutlined
+          style={{ fontSize: 12, color: C_TEXT_SECONDARY, cursor: 'help', flexShrink: 0 }}
+          title="Đây là giá bán cho shop (đã gồm chênh lệch đại lý) — không phải giá vốn thực tế NVC tính cho đại lý. Giá vốn chỉ có sau khi đối soát với NVC."
+        />
+      </div>
       {flexCell('GTB - TT (đ)',    120, 'right')}
       {flexCell('Người tạo',       180)}
+      {fixedCell('Thao tác', 160)}
     </div>
   )
 }
 
-// ── Order types with history ──────────────────────────────────
+// ── Local type aliases (Order is imported from orderStore) ────
 type GHNLogEntry = {
   status: string
   status_name: string
@@ -728,13 +1078,6 @@ type GHNLogEntry = {
   regulation_msg: string
 }
 type ActionHistoryItem = { date: string; time: string; operator: string; action: string; oldContent: string; newContent: string }
-type Order = typeof allOrders[number] & {
-  log?: GHNLogEntry[]
-  num_deliver?: number
-  num_pick?: number
-  num_return?: number
-  actionHistory?: ActionHistoryItem[]
-}
 
 // ── OrderDetailDrawer ─────────────────────────────────────────
 function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open: boolean; onClose: () => void }) {
@@ -1099,7 +1442,7 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
                     <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px' }}>Dịch vụ</span>
                     <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>2 shop 1 nặng 1 nhẹ</span>
                   </div>
-                  <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px', flexShrink: 0 }}>Phí ship:</span>
+                  <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px', flexShrink: 0 }}>Phí ship (giá bán shop):</span>
                   <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', flexShrink: 0, whiteSpace: 'nowrap' }}>
                     {order.fee.toLocaleString('vi-VN')}đ
                   </span>
@@ -1132,7 +1475,7 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
             <div style={{ ...card, flexShrink: 0, gap: 8, padding: 8 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#F9FAFB', borderRadius: 6, padding: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng phí vận chuyển</span>
+                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng phí vận chuyển (giá bán shop)</span>
                   <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
                     {order.fee.toLocaleString('vi-VN')}đ
                   </span>
@@ -1283,9 +1626,9 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
 
 // ── Table row ─────────────────────────────────────────────────
 function TRow({
-  order, checked, onToggle, shopName, onSelect,
+  order, checked, onToggle, shopName, onSelect, onDispatch247,
 }: {
-  order: Order; checked: boolean; onToggle: () => void; shopName: string; onSelect: () => void
+  order: Order; checked: boolean; onToggle: () => void; shopName: string; onSelect: () => void; onDispatch247?: () => void
 }) {
   const [hover, setHover] = useState(false)
   const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
@@ -1314,6 +1657,16 @@ function TRow({
           style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', whiteSpace: 'nowrap', cursor: 'pointer' }}
         >
           {order.trackingCode}
+        </span>
+      </div>
+      {/* Loại đơn — Hàng hoá (GHN) hay Thư, bưu phẩm (247Express) */}
+      <div style={{ width: 100, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '6px 8px' }}>
+        <span style={{
+          fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, whiteSpace: 'nowrap',
+          background: order.sendKind === 'letter' ? '#EDE9FE' : '#F3F4F6',
+          color: order.sendKind === 'letter' ? '#7C3AED' : '#4B5563',
+        }}>
+          {order.sendKind === 'letter' ? 'Thư' : 'Hàng hoá'}
         </span>
       </div>
       {/* Shop */}
@@ -1362,13 +1715,24 @@ function TRow({
         <span style={{ fontSize: 14, color: C_TEXT_BODY, lineHeight: '22px' }}>{order.cod.toLocaleString()}</span>
       </div>
       {/* Người tạo */}
-      <div style={{ flex: '1 0 0', minWidth: 180, padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ flex: '1 0 0', minWidth: 180, padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
         <span style={{ fontSize: 14, color: C_TEXT_BODY, lineHeight: '22px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {order.senderName}
         </span>
         <span style={{ fontSize: 14, color: C_TEXT_BODY, lineHeight: '22px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           Tạo lúc {order.createdAt}
         </span>
+      </div>
+      {/* Thao tác */}
+      <div style={{ width: 160, flexShrink: 0, padding: '6px 8px', display: 'flex', alignItems: 'center' }}>
+        {onDispatch247 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDispatch247() }}
+            style={{ padding: '4px 10px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#1D4ED8', whiteSpace: 'nowrap', lineHeight: '18px' }}
+          >
+            Gửi qua 247Express
+          </button>
+        )}
       </div>
     </div>
   )
@@ -1452,8 +1816,176 @@ function Pagination({ page, total, pageSize, onPageChange, onPageSizeChange }: {
   )
 }
 
+// ── Export orders modal — cùng pattern với Shops.tsx, đọc từ orderStore live ──
+function ExportOrdersModal({ open, onClose, orders }: { open: boolean; onClose: () => void; orders: Order[] }) {
+  const today = new Date()
+  const [preset, setPreset] = useState('this_week')
+  const [[dateFrom, dateTo], setDateRange] = useState<[string, string]>(
+    () => computePresetRange('this_week', today) ?? [fmtDateInput(today), fmtDateInput(today)]
+  )
+  const carrierOptions = [
+    { key: 'GHN', label: 'GHN' },
+    { key: '247EXPRESS', label: '247Express' },
+  ]
+  const [carrierKeys, setCarrierKeys] = useState<Set<string>>(new Set(carrierOptions.map(c => c.key)))
+  const [statusKeys, setStatusKeys] = useState<Set<string>>(new Set(STATUS_GROUPS.map(g => g.key)))
+  const [shopIds, setShopIds] = useState<Set<string>>(new Set(agencyShops.map(s => s.id)))
+
+  if (!open) return null
+
+  const selectPreset = (key: string) => {
+    setPreset(key)
+    const range = computePresetRange(key, today)
+    if (range) setDateRange(range)
+  }
+
+  const toggleAllIn = (all: string[], current: Set<string>, setter: (s: Set<string>) => void) => {
+    setter(current.size === all.length ? new Set() : new Set(all))
+  }
+  const toggleOneIn = (current: Set<string>, value: string, setter: (s: Set<string>) => void) => {
+    const next = new Set(current)
+    next.has(value) ? next.delete(value) : next.add(value)
+    setter(next)
+  }
+
+  const allCarrierKeys = carrierOptions.map(c => c.key)
+  const allStatusKeys = STATUS_GROUPS.map(g => g.key)
+  const allShopIds = agencyShops.map(s => s.id)
+
+  const handleDownload = () => {
+    const selectedRawStatuses = new Set(STATUS_GROUPS.filter(g => statusKeys.has(g.key)).flatMap(g => g.match))
+    const filtered = orders.filter(o => {
+      if (!shopIds.has(o.shopId)) return false
+      if (dateFrom && o.createdAt < dateFrom) return false
+      if (dateTo && o.createdAt > dateTo) return false
+      if (!selectedRawStatuses.has(o.status)) return false
+      if (o.carrierCode && !carrierKeys.has(o.carrierCode)) return false
+      return true
+    })
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+    downloadXlsx(`don-hang-${dateFrom}_${dateTo}_${timestamp}.xlsx`, EXPORT_HEADERS, buildExportRows(filtered))
+    onClose()
+  }
+
+  const sectionLabelStyle = { fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, marginBottom: 12 }
+  const optionRowStyle = { display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }
+  const optionLabelStyle = { fontSize: 14, color: C_TEXT_PRIMARY }
+  const dateInputStyle = {
+    flex: 1, border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '10px 12px',
+    fontSize: 14, color: C_TEXT_PRIMARY, outline: 'none',
+  }
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{ width: 560, maxHeight: '90vh', background: '#fff', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>Xuất đơn hàng</span>
+          <CloseOutlined style={{ fontSize: 16, color: C_TEXT_SECONDARY, cursor: 'pointer' }} onClick={onClose} />
+        </div>
+
+        <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div>
+            <div style={sectionLabelStyle}>Thời gian tạo đơn hàng</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <input type="date" value={dateFrom} onChange={(e) => { setDateRange([e.target.value, dateTo]); setPreset('custom') }} style={dateInputStyle} />
+              <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>đến</span>
+              <input type="date" value={dateTo} onChange={(e) => { setDateRange([dateFrom, e.target.value]); setPreset('custom') }} style={dateInputStyle} />
+            </div>
+            <div style={{ display: 'flex', gap: 32 }}>
+              {[0, 1].map(col => (
+                <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
+                  {DATE_PRESETS.filter((_, i) => i % 2 === col).map(p => (
+                    <div key={p.key} style={optionRowStyle} onClick={() => selectPreset(p.key)}>
+                      <RadioDot checked={preset === p.key} />
+                      <span style={optionLabelStyle}>{p.label}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={sectionLabelStyle}>Nhà vận chuyển</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={optionRowStyle} onClick={() => toggleAllIn(allCarrierKeys, carrierKeys, setCarrierKeys)}>
+                <Checkbox checked={carrierKeys.size === allCarrierKeys.length} />
+                <span style={optionLabelStyle}>Tất cả</span>
+              </div>
+              {carrierOptions.map(c => (
+                <div key={c.key} style={optionRowStyle} onClick={() => toggleOneIn(carrierKeys, c.key, setCarrierKeys)}>
+                  <Checkbox checked={carrierKeys.has(c.key)} />
+                  <span style={optionLabelStyle}>{c.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={sectionLabelStyle}>Trạng thái đơn hàng</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={optionRowStyle} onClick={() => toggleAllIn(allStatusKeys, statusKeys, setStatusKeys)}>
+                <Checkbox checked={statusKeys.size === allStatusKeys.length} />
+                <span style={optionLabelStyle}>Tất cả</span>
+              </div>
+              <div style={{ display: 'flex', gap: 32 }}>
+                {[0, 1].map(col => (
+                  <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                    {STATUS_GROUPS.filter((_, i) => i % 2 === col).map(g => (
+                      <div key={g.key} style={optionRowStyle} onClick={() => toggleOneIn(statusKeys, g.key, setStatusKeys)}>
+                        <Checkbox checked={statusKeys.has(g.key)} />
+                        <span style={optionLabelStyle}>{g.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style={sectionLabelStyle}>Shop</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={optionRowStyle} onClick={() => toggleAllIn(allShopIds, shopIds, setShopIds)}>
+                <Checkbox checked={shopIds.size === allShopIds.length} />
+                <span style={optionLabelStyle}>Tất cả ({agencyShops.length})</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 180, overflowY: 'auto' }}>
+                {agencyShops.map(s => (
+                  <div key={s.id} style={optionRowStyle} onClick={() => toggleOneIn(shopIds, s.id, setShopIds)}>
+                    <Checkbox checked={shopIds.has(s.id)} />
+                    <span style={optionLabelStyle}>{s.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '16px 20px', borderTop: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+          <button
+            onClick={handleDownload}
+            style={{
+              width: '100%', padding: '12px', background: C_ACTION, border: 'none', borderRadius: 8,
+              cursor: 'pointer', fontSize: 15, fontWeight: 700, color: '#fff',
+            }}
+          >
+            Tải xuống
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────
 export default function AgencyOrders() {
+  const [orders, setOrders]           = useState<Order[]>(() => loadOrders().filter(o => agencyShopIds.has(o.shopId)))
   const [activeTab, setActiveTab]     = useState('draft')
   const [search, setSearch]           = useState('')
   const [shopFilter, setShopFilter]   = useState('all')
@@ -1461,20 +1993,35 @@ export default function AgencyOrders() {
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(50)
   const [drawerOpen, setDrawerOpen]   = useState(false)
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
   const [detailOpen, setDetailOpen]   = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [dispatchModal, setDispatchModal] = useState<Order | null>(null)
+  // Hub xuất phát phải được đại lý xác nhận ngay lúc gửi — Service không còn gắn cứng 1 hub
+  // nữa (xem ServiceDetail.tsx), nên hub chỉ quyết định ở bước dispatch này.
+  const [dispatchHubId, setDispatchHubId] = useState<string>('')
+  const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
+  const agencyHubs = (agency?.clientHubIds ?? []).map(id => clientHubs247.find(h => h.id === id)).filter((h): h is NonNullable<typeof h> => !!h)
 
-  const ordersByTab: Record<string, typeof agencyOrders> = {
-    draft:         agencyOrders.filter(o => o.status === 'pending'),
-    pickup:        agencyOrders.filter(o => o.status === 'pickup'),
-    in_transit:    agencyOrders.filter(o => o.status === 'in_transit'),
-    returning:     agencyOrders.filter(o => o.status === 'returning'),
-    redelivery:    agencyOrders.filter(o => o.status === 'redelivery'),
-    completed:     agencyOrders.filter(o => o.status === 'delivered'),
-    cancelled:     agencyOrders.filter(o => o.status === 'cancelled' || o.status === 'failed'),
-    lost_damaged:  agencyOrders.filter(o => o.status === 'lost' || o.status === 'damaged'),
+  function refreshOrders() {
+    setOrders(loadOrders().filter(o => agencyShopIds.has(o.shopId)))
   }
-  const tabOrders = ordersByTab[activeTab] ?? agencyOrders
+
+  const isPending247 = (o: Order) => o.sendKind === 'letter' && o.dispatchStatus === 'pending_agency'
+
+  const ordersByTab: Record<string, Order[]> = {
+    pending_247:   orders.filter(isPending247),
+    draft:         orders.filter(o => o.status === 'pending' && !isPending247(o)),
+    pickup:        orders.filter(o => o.status === 'pickup'),
+    in_transit:    orders.filter(o => o.status === 'in_transit'),
+    returning:     orders.filter(o => o.status === 'returning'),
+    redelivery:    orders.filter(o => o.status === 'redelivery'),
+    completed:     orders.filter(o => o.status === 'delivered'),
+    cancelled:     orders.filter(o => o.status === 'cancelled' || o.status === 'failed'),
+    lost_damaged:  orders.filter(o => o.status === 'lost' || o.status === 'damaged'),
+  }
+  const tabOrders = ordersByTab[activeTab] ?? orders
 
   const shopFiltered = shopFilter === 'all' ? tabOrders : tabOrders.filter(o => o.shopId === shopFilter)
 
@@ -1500,6 +2047,7 @@ export default function AgencyOrders() {
   }
 
   const TABS = [
+    { key: 'pending_247',  label: 'Chờ xử lý',                     count: ordersByTab.pending_247.length,  countColor: '#F59E0B' },
     { key: 'draft',        label: 'Đơn nháp',                     count: ordersByTab.draft.length,        countColor: '#F59E0B' },
     { key: 'pickup',       label: 'Chờ bàn giao',                 count: ordersByTab.pickup.length,       countColor: '#3B82F6' },
     { key: 'in_transit',   label: 'Đã bàn giao - Đang giao',      count: ordersByTab.in_transit.length,   countColor: '#3B82F6' },
@@ -1526,6 +2074,26 @@ export default function AgencyOrders() {
               Tất cả đơn hàng từ các shop thuộc đại lý
             </p>
           </div>
+          <button
+            onClick={() => setExportModalOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+              background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            <DownloadOutlined style={{ color: C_TEXT_PRIMARY, fontSize: 16 }} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Xuất đơn hàng</span>
+          </button>
+          <button
+            onClick={() => setImportModalOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+              background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            <DownloadOutlined style={{ color: C_TEXT_PRIMARY, fontSize: 16, transform: 'rotate(180deg)' }} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Import đơn hàng</span>
+          </button>
           <button
             onClick={() => setDrawerOpen(true)}
             style={{
@@ -1614,11 +2182,12 @@ export default function AgencyOrders() {
               {paginated.map(order => (
                 <TRow
                   key={order.id}
-                  order={order as Order}
+                  order={order}
                   checked={selected.has(order.id)}
                   onToggle={() => toggleOne(order.id)}
                   shopName={shopMap[order.shopId] ?? order.shopId}
-                  onSelect={() => { setSelectedOrder(order as Order); setDetailOpen(true) }}
+                  onSelect={() => { setSelectedOrder(order); setDetailOpen(true) }}
+                  onDispatch247={activeTab === 'pending_247' ? () => { setDispatchHubId(''); setDispatchModal(order) } : undefined}
                 />
               ))}
               {paginated.length === 0 && (
@@ -1643,9 +2212,100 @@ export default function AgencyOrders() {
       </div>
 
       {/* Create order drawer */}
-      <CreateOrderDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <CreateOrderDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); refreshOrders() }} />
+      {/* Export orders modal */}
+      <ExportOrdersModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} orders={orders} />
+      <ImportOrdersModal open={importModalOpen} onClose={() => setImportModalOpen(false)} onImported={refreshOrders} />
       {/* Order Detail Drawer */}
       <OrderDetailDrawer order={selectedOrder} open={detailOpen} onClose={() => setDetailOpen(false)} />
+
+      {/* Dispatch 247Express confirm modal */}
+      {dispatchModal && (
+        <>
+          <div
+            onClick={() => setDispatchModal(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 300 }}
+          />
+          <div style={{
+            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+            background: '#fff', borderRadius: 8, padding: 24, zIndex: 301,
+            width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            display: 'flex', flexDirection: 'column', gap: 16,
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', lineHeight: '24px' }}>
+              Xác nhận gửi qua 247Express
+            </div>
+            <div style={{ fontSize: 14, color: '#374151', lineHeight: '22px' }}>
+              Đơn <span style={{ fontWeight: 700, color: '#3B82F6' }}>{dispatchModal.trackingCode}</span> sẽ được đẩy sang 247Express để giao hàng. Thao tác này không thể hoàn tác.
+            </div>
+
+            {/* Bắt buộc xác nhận hub xuất phát trước khi gửi được — dịch vụ không còn gắn
+                cứng 1 hub nữa nên phải chọn ở đây */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
+                Chọn hub xuất phát <span style={{ color: '#EF4444' }}>*</span>
+              </span>
+              {agencyHubs.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#9CA3AF', padding: '8px 0' }}>
+                  Đại lý chưa được cấp hub 247Express nào — liên hệ Super Admin.
+                </div>
+              ) : (
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: 8, overflow: 'hidden' }}>
+                  {agencyHubs.map((hub, i) => {
+                    const isSelected = dispatchHubId === hub.id
+                    return (
+                      <div key={hub.id}>
+                        <div
+                          onClick={() => setDispatchHubId(hub.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', cursor: 'pointer',
+                            background: isSelected ? '#FFF9F7' : '#fff',
+                            borderLeft: isSelected ? '3px solid #FF5200' : '3px solid transparent',
+                          }}
+                        >
+                          <div style={{
+                            width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                            border: isSelected ? '5px solid #FF5200' : '1.5px solid #D1D5DB',
+                          }} />
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{hub.name}</span>
+                            <span style={{ fontSize: 12, color: '#6B7280' }}>{hub.location}</span>
+                          </div>
+                        </div>
+                        {i < agencyHubs.length - 1 && <div style={{ height: 1, background: '#F5F5F5' }} />}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setDispatchModal(null)}
+                style={{ padding: '8px 20px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#374151' }}
+              >
+                Huỷ
+              </button>
+              <button
+                disabled={!dispatchHubId}
+                onClick={() => {
+                  if (!dispatchHubId) return
+                  dispatchOrderToCarrier(dispatchModal.id, '247EXPRESS', 'Agency Admin', dispatchHubId)
+                  setDispatchModal(null)
+                  refreshOrders()
+                }}
+                style={{
+                  padding: '8px 20px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#fff',
+                  background: dispatchHubId ? '#1D4ED8' : '#9CA3AF', cursor: dispatchHubId ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Xác nhận gửi
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </ConfigProvider>
   )
 }

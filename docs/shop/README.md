@@ -15,6 +15,7 @@ _Chưa có stories_
 | ID | Story | Status |
 |----|-------|--------|
 | WS-ORDER-1 | [Cài đặt đơn hàng mặc định](orders/cai-dat-don-hang-mac-dinh.md) | draft |
+| SHOP-ORDER-5 | [Danh sách đơn hàng: Thêm phân loại hàng](orders/danh-sach-don-hang-them-phan-loai-hang.md) | draft |
 
 ## Đối soát
 

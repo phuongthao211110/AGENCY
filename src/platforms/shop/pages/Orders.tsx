@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react'
 import { ConfigProvider } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
-import allOrders from '../../../mock-data/orders.json'
 import allShops from '../../../mock-data/shops.json'
+import { loadOrders, addOrder, cancelOrder, type Order } from '../../../mock-data/orderStore'
 import allPricing from '../../../mock-data/pricing.json'
-import letterPricingTable from '../../../mock-data/pricing-letter-247.json'
-import roadFreightPricingTable from '../../../mock-data/pricing-roadfreight-247.json'
 import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
 import { clientHubs247 } from '../../super-admin/agencyStore'
 
@@ -115,12 +113,7 @@ function IcReceipt() {
 function IcChevronDown({ size = 20 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
 }
-function IcChevronRight({ size = 20 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-}
-function IcSearch() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-}
+
 function IcTruck() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>
 }
@@ -171,27 +164,6 @@ function CheckboxBlue({ checked, onChange }: { checked: boolean; onChange: () =>
   )
 }
 
-// ── 1 dòng dịch vụ gia tăng (DVGT) đơn giản: tick chọn + phí tự tính, không sửa số.
-// disabledReason (nếu có) thay thế note bằng lý do không đủ điều kiện (ví dụ sai khoảng cân nặng)
-// và chặn tick — dùng cho các DVGT có điều kiện theo hợp đồng (ví dụ "chỉ áp dụng TL ≤ 2kg").
-// Popup DVGT chỉ hiển thị tên dịch vụ — không hiển thị giá tiền (kể cả trong mô tả/note gốc,
-// vì các note đó có chứa số tiền theo hợp đồng, VD "5.000đ/vận đơn"). disabledReason vẫn hiển thị
-// vì đó là điều kiện áp dụng (không phải giá tiền), giúp người dùng hiểu vì sao không tick được.
-function VasCheckboxRow({ checked, onChange, label, disabledReason, extra }: {
-  checked: boolean; onChange: () => void; label: string; disabledReason?: string; extra?: React.ReactNode
-}) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, minHeight: 32, padding: '6px 0', opacity: disabledReason ? 0.5 : 1 }}>
-      <div style={{ paddingTop: 2 }}><CheckboxBlue checked={checked && !disabledReason} onChange={disabledReason ? () => {} : onChange} /></div>
-      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap', paddingTop: 1 }}>{label}</span>
-      {disabledReason && (
-        <span style={{ flex: 1, fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px', paddingTop: 3 }}>{disabledReason}</span>
-      )}
-      {!disabledReason && <span style={{ flex: 1 }} />}
-      {extra}
-    </div>
-  )
-}
 
 // ── Toggle ───────────────────────────────────────────────────
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
@@ -438,144 +410,6 @@ function LinkText({ children }: { children: React.ReactNode }) {
   return <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{children}</span>
 }
 
-// ── 247Express "Thư" (letter) pricing model — mirrors Hợp đồng 1231/2026/HĐDV-247, dịch vụ
-// Chuyển phát nhanh. Zone/khoảng cách thật giữa các tỉnh không có trong data demo (chỉ có
-// PROVINCE_REGION theo miền) nên "Đến 300km"/"Trên 300km" được suy ra từ cùng-miền/khác-miền,
-// và mốc "Đến 100KM" của bảng dịch vụ gia tăng nhanh không bao giờ được chọn tới — đây là
-// giới hạn đã biết của dữ liệu demo, không phải thiếu sót khi đọc hợp đồng.
-const LETTER_HUB_PROVINCE = 'TP.HCM'
-const LETTER_TABLE = letterPricingTable as any
-
-function isSameUnorderedPair(a: string, b: string, pair: [string, string]): boolean {
-  return (a === pair[0] && b === pair[1]) || (a === pair[1] && b === pair[0])
-}
-function resolveLetterMainZone(from: string, to: string): number {
-  if (from === to) return from === LETTER_HUB_PROVINCE ? 0 : 1
-  if (isSameUnorderedPair(from, to, ['TP.HCM', 'Hà Nội'])) return 5
-  if (isSameUnorderedPair(from, to, ['TP.HCM', 'Đà Nẵng']) || isSameUnorderedPair(from, to, ['Đà Nẵng', 'Hà Nội'])) return 4
-  return PROVINCE_REGION[from] === PROVINCE_REGION[to] ? 2 : 3
-}
-function letterMainFee(zoneIdx: number, weightGram: number): number {
-  const brackets: number[] = LETTER_TABLE.weightBracketsGram
-  if (weightGram <= brackets[brackets.length - 1]) {
-    const rowIdx = brackets.findIndex(b => weightGram <= b)
-    return LETTER_TABLE.prices[rowIdx === -1 ? brackets.length - 1 : rowIdx][zoneIdx]
-  }
-  let fee = LETTER_TABLE.prices[brackets.length - 1][zoneIdx]
-  let currentWeight = brackets[brackets.length - 1]
-  const steps = Math.ceil((weightGram - currentWeight) / 500)
-  for (let i = 0; i < steps; i++) {
-    currentWeight += 500
-    const rate = currentWeight <= 10000
-      ? LETTER_TABLE.overweightPer500g.from2to10kg[zoneIdx]
-      : LETTER_TABLE.overweightPer500g.over10kg[zoneIdx]
-    fee += rate
-  }
-  return fee
-}
-function letterKhaiGiaFee(goodsValue: number): number {
-  const { percent, minFee } = LETTER_TABLE.surcharges.insuranceFlat
-  return Math.max(parseInt(minFee, 10), Math.round(goodsValue * percent / 100))
-}
-function letterDongKiemFee(units: number): number {
-  return Math.max(20000, units * 1000)
-}
-function letterDongLanhFee(weightGram: number): number {
-  return Math.round((weightGram / 1000) * 15000)
-}
-function letterBaoPhatFee(): number {
-  return parseInt(LETTER_TABLE.surcharges.baoPhat.fee, 10)
-}
-function letterChupHinhFee(photoCount: number): number {
-  const { feePerPhoto, minFee, maxPhotos } = LETTER_TABLE.surcharges.chupHinh
-  const count = Math.min(photoCount, maxPhotos)
-  return Math.max(parseInt(minFee, 10), count * parseInt(feePerPhoto, 10))
-}
-function letterPhatHangSieuThiFee(units: number): number {
-  const { baseFee, feePerUnit } = LETTER_TABLE.surcharges.phatHangSieuThi
-  return parseInt(baseFee, 10) + units * parseInt(feePerUnit, 10)
-}
-function letterPhiAnNinhFee(weightGram: number): number {
-  const { feePerKg, minFee } = LETTER_TABLE.surcharges.phiAnNinh
-  return Math.max(parseInt(minFee, 10), Math.round((weightGram / 1000) * parseInt(feePerKg, 10)))
-}
-function letterHangVunFee(weightGram: number): number {
-  const { feePerKg, minFee } = LETTER_TABLE.surcharges.hangVun
-  return Math.max(parseInt(minFee, 10), Math.round((weightGram / 1000) * parseInt(feePerKg, 10)))
-}
-function letterSmsFee(messageCount: number): number {
-  return messageCount * parseInt(LETTER_TABLE.surcharges.sms.feePerMessage, 10)
-}
-function letterFloorFee(weightGram: number, key: 'giaoHangLenTang' | 'nhanHangLenTang'): number {
-  return Math.round((weightGram / 1000) * parseInt(LETTER_TABLE.surcharges[key].feePerKg, 10))
-}
-function letterHangExpressFee(weightGram: number): number {
-  return Math.round((weightGram / 1000) * parseInt(LETTER_TABLE.surcharges.hangExpress.feePerKg, 10))
-}
-function letterHoSoThauFee(weightGram: number): number {
-  const { baseFee, perKgOver2kg } = LETTER_TABLE.surcharges.hoSoThau
-  const extraKg = Math.max(0, Math.ceil((weightGram - 2000) / 1000))
-  return parseInt(baseFee, 10) + extraKg * parseInt(perKgOver2kg, 10)
-}
-function letterFlatFee(key: 'layIdCaNhan' | 'nguoiNhanThanhToan' | 'ngoaiGioHanhChinh' | 'phatHangTanTay' | 'phatUuTien' | 'thongTinDayDu' | 'thuKyKhachHang'): number {
-  return parseInt(LETTER_TABLE.surcharges[key].fee, 10)
-}
-
-// ── 247Express "Chuyển phát đường bộ" — dịch vụ thứ 2 bên cạnh Chuyển phát nhanh, dùng
-// cùng hợp đồng 1231/2026/HĐDV-247. Cước chính tính theo kg (không theo gram như Thư), 5 vùng
-// khác với 6 vùng của Chuyển phát nhanh (không có tuyến HCM-ĐN/HN riêng). Các DVGT dùng chung
-// số tiền giống Chuyển phát nhanh (Báo phát, Chụp hình, Khai giá, Đồng kiểm, Lấy ID cá nhân...)
-// nên tái dùng thẳng các hàm letterXFee() ở trên — chỉ thêm hàm riêng cho phần khác biệt
-// (cước chính theo kg, Hàng quá khổ, xe nâng, phí đóng gói). Phụ phí ngoại thành/nhiên liệu
-// của dịch vụ này CHƯA có số liệu hợp đồng (để 0 trong JSON) — chờ bổ sung khi có ảnh đầy đủ.
-const ROAD_TABLE = roadFreightPricingTable as any
-
-function resolveRoadZone(from: string, to: string): number {
-  if (from === to) return from === LETTER_HUB_PROVINCE ? 0 : 1
-  const regionA = PROVINCE_REGION[from]
-  const regionB = PROVINCE_REGION[to]
-  if (regionA === regionB) return 2
-  const isBacNam = (regionA === 'bac' && regionB === 'nam') || (regionA === 'nam' && regionB === 'bac')
-  return isBacNam ? 4 : 3
-}
-function roadFreightTierRate(zoneIdx: number, weightKg: number): number {
-  const tiers: { uptoKg: number | null; rates: number[] }[] = ROAD_TABLE.perKgTiers
-  const tier = tiers.find(t => t.uptoKg === null || weightKg <= t.uptoKg) ?? tiers[tiers.length - 1]
-  return tier.rates[zoneIdx]
-}
-function roadFreightMainFee(zoneIdx: number, weightKg: number): number {
-  const base = ROAD_TABLE.baseFeeUpTo5kg[zoneIdx]
-  if (weightKg <= 5) return base
-  const w = Math.ceil(weightKg)
-  const tiers: { uptoKg: number | null; rates: number[] }[] = ROAD_TABLE.perKgTiers
-  let fee = base
-  let prevBoundary = 5
-  for (const tier of tiers) {
-    const tierTop = tier.uptoKg === null ? w : Math.min(w, tier.uptoKg)
-    if (tierTop > prevBoundary) {
-      fee += (tierTop - prevBoundary) * tier.rates[zoneIdx]
-      prevBoundary = tierTop
-    }
-    if (tier.uptoKg !== null && w <= tier.uptoKg) break
-  }
-  return fee
-}
-function roadFreightHangQuaKhoFee(zoneIdx: number, weightKg: number): number {
-  const rate = roadFreightTierRate(zoneIdx, weightKg)
-  if (weightKg < 15) return Math.round((15 - weightKg) * rate)
-  return Math.round(weightKg * (ROAD_TABLE.surcharges.hangQuaKhoPercent / 100) * rate)
-}
-function roadFreightXeNangFee(lanCount: number): number {
-  return lanCount * parseInt(ROAD_TABLE.surcharges.xeNang.feePerLan, 10)
-}
-function roadFreightDongGoiFee(materialId: string, weightKg: number): number {
-  const material = ROAD_TABLE.dongGoi.find((m: any) => m.id === materialId)
-  if (!material) return 0
-  if (material.feePerKien) return parseInt(material.feePerKien, 10)
-  const extraKg = Math.max(0, Math.ceil((weightKg - 1) / 5))
-  return parseInt(material.upTo1kg, 10) + extraKg * parseInt(material.per5kg, 10)
-}
-
 // ── CreateOrderDrawer ────────────────────────────────────────
 function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   // ── State ──
@@ -602,15 +436,14 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const [collectOnFailAmt, setCollectOnFailAmt] = useState(0)
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
-  const shopConnectionId = (currentShop as any).connectionId as string | undefined
   const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
   const weightGram = Number(convertedWeight) * 1000
   const fromProvince = parseProvince(currentShop.address)
 
-  // Dịch vụ hiển thị cho shop = dịch vụ đại lý đang bật (Mặc định) và có gán Shop ID này —
-  // carrier không hiển thị ra đây, đúng nguyên tắc shop không biết nhà vận chuyển nào xử lý đơn.
+  // Dịch vụ hiển thị cho shop = chỉ dịch vụ GHN đang bật (AC8 — CreateOrderDrawer chỉ nhận GHN;
+  // 247Express chỉ qua CreateLetterDrawer vì sendKind: 'letter' / dispatchStatus: 'pending_agency').
   const availableServices = servicesList.filter(
-    s => s.enabled && !!shopConnectionId && s.shopConnectionIds.includes(shopConnectionId)
+    s => s.enabled && s.carrier === 'GHN'
   )
   // Nhiều carrier có thể cùng cung cấp 1 dịch vụ trùng tên (VD "Giao nhanh" ở cả GHN và
   // 247Express) — gộp lại theo tên để shop chỉ thấy 1 lựa chọn duy nhất, hệ thống tự chọn
@@ -657,6 +490,34 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const totalCollect     = feePayer === 'sender'
     ? cod + (shipCollect > 0 ? shipCollect : 0)
     : cod + feeShipping
+
+  // ── Persist order to store on submit ───────────────────────
+  function handleCreate() {
+    const now = new Date()
+    const newOrder: Order = {
+      id: `ORD_GHN_${Date.now()}`,
+      shopId: 'SHP001',
+      trackingCode: `GHN_SHOP_${Date.now()}`,
+      senderName: currentShop.ownerName ?? currentShop.name,
+      senderPhone: (currentShop as any).phone ?? '',
+      receiverName: rcvName,
+      receiverPhone: rcvPhone,
+      receiverAddress: `${rcvStreet}, ${rcvProvince}`,
+      weight: weightGram,
+      cod,
+      fee: totalShipping,
+      status: 'pickup',
+      createdAt: now.toISOString().split('T')[0],
+      actionHistory: [],
+      sendKind: 'goods',
+      dispatchStatus: 'dispatched',
+      carrierCode: 'GHN',
+      dispatchedAt: now.toISOString(),
+      dispatchedBy: null,
+    }
+    addOrder(newOrder)
+    onClose()
+  }
 
   return (
     <>
@@ -1093,7 +954,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   Lưu nháp
                 </button>
                 <button
-                  onClick={onClose}
+                  onClick={handleCreate}
                   style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
                 >
                   Tạo đơn
@@ -1117,6 +978,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 // (bảng "Sản phẩm" có nút "+ Thêm sản phẩm", khác với ghost-row trang trí không chức năng của
 // CreateOrderDrawer gốc).
 function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // ── State — 4 surcharge categories from shared ShopPricingSurcharges model (AC8b) ──
   const [rcvName, setRcvName]           = useState('Nguyễn Văn An')
   const [rcvPhone, setRcvPhone]         = useState('0909888999')
   const [rcvStreet, setRcvStreet]       = useState('123 Thành Thái')
@@ -1131,45 +993,13 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
   const [letterContent, setLetterContent] = useState('')
   const [viewGoodsPolicy, setViewGoodsPolicy] = useState<'none' | 'view_no_try'>('none')
   const [viewGoodsPickerOpen, setViewGoodsPickerOpen] = useState(false)
-  const [declareValue, setDeclareValue] = useState(false)
-  const [ngoaiThanh, setNgoaiThanh]     = useState(false)
-  const [dongKiem, setDongKiem]         = useState(false)
-  const [dongKiemUnits, setDongKiemUnits] = useState(1)
-  const [dongLanh, setDongLanh]         = useState(false)
-  const [baoPhat, setBaoPhat]           = useState(false)
-  const [chupHinh, setChupHinh]         = useState(false)
-  const [chupHinhCount, setChupHinhCount] = useState(1)
-  const [layIdCaNhan, setLayIdCaNhan]   = useState(false)
-  const [nguoiNhanThanhToan, setNguoiNhanThanhToan] = useState(false)
-  const [ngoaiGioHanhChinh, setNgoaiGioHanhChinh]   = useState(false)
-  const [phatHangSieuThi, setPhatHangSieuThi]       = useState(false)
-  const [phatHangSieuThiUnits, setPhatHangSieuThiUnits] = useState(1)
-  const [phatHangTanTay, setPhatHangTanTay] = useState(false)
-  const [phatUuTien, setPhatUuTien]     = useState(false)
-  const [phiAnNinh, setPhiAnNinh]       = useState(false)
-  const [thongTinDayDu, setThongTinDayDu] = useState(false)
-  const [thuKyKhachHang, setThuKyKhachHang] = useState(false)
-  const [smsOn, setSmsOn]               = useState(false)
-  const [smsCount, setSmsCount]         = useState(1)
-  const [giaoHangLenTang, setGiaoHangLenTang] = useState(false)
-  const [nhanHangLenTang, setNhanHangLenTang] = useState(false)
-  const [hangExpress, setHangExpress]   = useState(false)
-  const [hangVun, setHangVun]           = useState(false)
-  const [hoSoThau, setHoSoThau]         = useState(false)
-  const [letterService, setLetterService] = useState<'nhanh' | 'duongbo'>('nhanh')
-  const [xeNang, setXeNang]             = useState(false)
-  const [xeNangCount, setXeNangCount]   = useState(1)
-  const [hangQuaKho, setHangQuaKho]     = useState(false)
-  const [dongGoiMaterial, setDongGoiMaterial] = useState<string>('none')
-  const [vasModalOpen, setVasModalOpen] = useState(false)
-  const [vasSearch, setVasSearch]       = useState('')
+  // 4 standard surcharges matching ShopPricingSurcharges shape
+  const [declareValue, setDeclareValue]   = useState(false)
+  const [partialDeliver, setPartialDeliver] = useState(false)
+  const [collectOnFail, setCollectOnFail]   = useState(false)
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
-  // 247Express bắt buộc lấy hàng tại 1 địa điểm gửi hàng (ClientHubID) cố định — mỗi dịch
-  // vụ 247Express (ServiceDetail.tsx, mục "Chọn địa điểm gửi hàng") chỉ gắn ĐÚNG 1 hub, nên
-  // lấy thẳng hub của dịch vụ 247Express đang bật đầu tiên của đại lý, không cần suy đoán
-  // qua tỉnh của shop nữa — luôn chính xác vì hub đã được đại lý gán cố định cho dịch vụ.
-  // Shop không cần biết/thấy hub này (UI vẫn hiển thị địa chỉ shop bình thường).
+  // 247Express: lấy hàng tại hub cố định của dịch vụ đại lý (không phải địa chỉ shop)
   const primary247Service = servicesList.find(
     s => s.agencyId === currentShop.agencyId && s.carrier === '247Express' && s.enabled && (s.hubIds?.length ?? 0) > 0
   )
@@ -1191,130 +1021,56 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
   const now = new Date()
   const createdAt = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} - ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`
 
-  // ── Fee calculations (theo đúng công thức hợp đồng) ──
-  // API tạo đơn CustomerAPICreateOrder không có field nào để client gửi số tiền phụ phí —
-  // client chỉ gửi InformFee (giá trị khai) + ExtraServices (mã dịch vụ, không kèm amount);
-  // 247Express tự tính phí và trả lại trong response. Vì vậy toàn bộ các dòng phụ phí dưới đây
-  // là SỐ TỰ TÍNH, không cho shop tự ghi đè (không có khái niệm "custom amount" khớp với API).
-  const isNhanh = letterService === 'nhanh'
-  const isDuongBo = letterService === 'duongbo'
-  const activeTable = isNhanh ? LETTER_TABLE : ROAD_TABLE
-  const weightKg = weightGram / 1000
+  // ── Fee engine — same shopFeeFromPriceTable() mechanism as CreateOrderDrawer (AC8b) ──
+  // Find cheapest available 247Express service for this weight/route
+  const available247Services = servicesList.filter(
+    s => s.carrier === '247Express' && s.enabled && s.agencyId === currentShop.agencyId
+  )
+  const selectedService247 = available247Services.length > 0
+    ? available247Services.reduce((min, s) =>
+        shopFeeFromPriceTable(s, weightGram, fromProvince, rcvProvince) <
+        shopFeeFromPriceTable(min, weightGram, fromProvince, rcvProvince) ? s : min
+      )
+    : undefined
+  const priceTable247 = selectedService247?.priceTableId
+    ? (allPricing as any[]).find(p => p.id === selectedService247.priceTableId)
+    : null
+  const surcharges247 = (priceTable247?.surcharges ?? {}) as ShopPricingSurcharges
 
-  const mainZoneIdx = resolveLetterMainZone(fromProvince, rcvProvince)
-  const roadZoneIdx = resolveRoadZone(fromProvince, rcvProvince)
-  const feeMain = isNhanh ? letterMainFee(mainZoneIdx, weightGram) : roadFreightMainFee(roadZoneIdx, weightKg)
+  const feeShipping    = selectedService247 ? shopFeeFromPriceTable(selectedService247, weightGram, fromProvince, rcvProvince) : 0
+  const feeInsurance   = declareValue && goodsValue > 0 ? shopCalcTierFee(goodsValue, surcharges247.insurance ?? []) : 0
+  const feePartial     = partialDeliver ? parseInt(surcharges247.partialDelivery?.value ?? '0', 10) : 0
+  const feeDeliveryFail = collectOnFail ? parseInt(surcharges247.deliveryFailFee?.value ?? '0', 10) : 0
+  const feeCod         = otherCollectValue > 0 ? shopCalcTierFee(otherCollectValue, surcharges247.codFee ?? []) : 0
+  const totalShipping  = feeShipping + feeInsurance + feePartial + feeDeliveryFail + feeCod
 
-  const feeNgoaiThanh = ngoaiThanh ? Math.round(feeMain * activeTable.surcharges.ngoaiThanhPercent / 100) : 0
-
-  const feeKhaiGia = declareValue && goodsValue > 0 ? letterKhaiGiaFee(goodsValue) : 0
-
-  const feeDongKiem = dongKiem ? letterDongKiemFee(dongKiemUnits) : 0
-
-  const feeDongLanh = dongLanh && isNhanh ? letterDongLanhFee(weightGram) : 0
-
-  const feeBaoPhat = baoPhat ? letterBaoPhatFee() : 0
-
-  const feeChupHinh = chupHinh ? letterChupHinhFee(chupHinhCount) : 0
-  const feeLayIdCaNhan = layIdCaNhan ? letterFlatFee('layIdCaNhan') : 0
-  const feeNguoiNhanThanhToan = nguoiNhanThanhToan ? letterFlatFee('nguoiNhanThanhToan') : 0
-  const feeNgoaiGioHanhChinh = ngoaiGioHanhChinh ? letterFlatFee('ngoaiGioHanhChinh') : 0
-  const feePhatHangSieuThi = phatHangSieuThi ? letterPhatHangSieuThiFee(phatHangSieuThiUnits) : 0
-  const feePhatHangTanTay = phatHangTanTay ? letterFlatFee('phatHangTanTay') : 0
-  const phatUuTienEligible = weightGram <= LETTER_TABLE.surcharges.phatUuTien.maxWeightGram
-  const feePhatUuTien = phatUuTien && phatUuTienEligible && isNhanh ? letterFlatFee('phatUuTien') : 0
-  const feePhiAnNinh = phiAnNinh && isNhanh ? letterPhiAnNinhFee(weightGram) : 0
-  const feeThongTinDayDu = thongTinDayDu ? letterFlatFee('thongTinDayDu') : 0
-  const feeThuKyKhachHang = thuKyKhachHang ? letterFlatFee('thuKyKhachHang') : 0
-  const feeSms = smsOn ? letterSmsFee(smsCount) : 0
-  const floorEligible = weightGram >= LETTER_TABLE.surcharges.giaoHangLenTang.minWeightGram
-  const feeGiaoHangLenTang = giaoHangLenTang && floorEligible ? letterFloorFee(weightGram, 'giaoHangLenTang') : 0
-  const feeNhanHangLenTang = nhanHangLenTang && floorEligible ? letterFloorFee(weightGram, 'nhanHangLenTang') : 0
-  const hangExpressEligible = weightGram > LETTER_TABLE.surcharges.hangExpress.minWeightGram
-  const feeHangExpress = hangExpress && hangExpressEligible && !hoSoThau && isNhanh ? letterHangExpressFee(weightGram) : 0
-  const feeHangVun = hangVun && isNhanh ? letterHangVunFee(weightGram) : 0
-  const feeHoSoThau = hoSoThau && isNhanh ? letterHoSoThauFee(weightGram) : 0
-
-  const feeHangQuaKho = hangQuaKho && isDuongBo ? roadFreightHangQuaKhoFee(roadZoneIdx, weightKg) : 0
-  const feeXeNang = xeNang && isDuongBo ? roadFreightXeNangFee(xeNangCount) : 0
-  const feeDongGoi = isDuongBo && dongGoiMaterial !== 'none' ? roadFreightDongGoiFee(dongGoiMaterial, weightKg) : 0
-
-  const totalShipping = feeMain + feeNgoaiThanh + feeKhaiGia + feeDongKiem + feeDongLanh
-    + feeBaoPhat + feeChupHinh + feeLayIdCaNhan + feeNguoiNhanThanhToan + feeNgoaiGioHanhChinh + feePhatHangSieuThi
-    + feePhatHangTanTay + feePhatUuTien + feePhiAnNinh + feeThongTinDayDu + feeThuKyKhachHang + feeSms
-    + feeGiaoHangLenTang + feeNhanHangLenTang + feeHangExpress + feeHangVun + feeHoSoThau
-    + feeHangQuaKho + feeXeNang + feeDongGoi
-  // Hợp đồng 247Express (pricing-letter-247.json / pricing-roadfreight-247.json) chưa có mục
-  // thuế/VAT — dùng mức VAT phổ biến hiện hành (8%) trên tổng cước + DVGT, chỉ mang tính demo.
-  const feeVat = Math.round(totalShipping * 0.08)
-  const grandTotal = totalShipping + feeVat
-
-  // ── Dịch vụ gia tăng (DVGT) — gộp về 1 modal tìm-kiếm-được vì hợp đồng có rất nhiều dịch vụ
-  // (24+ mục), thay vì list dài cố định trong card "Dịch vụ" như trước. Mỗi item vẫn giữ đúng
-  // state/công thức phí cũ — modal chỉ đổi lớp hiển thị + cách chọn.
-  const vasItems: { key: string; label: string; note?: string; checked: boolean; toggle: () => void; disabledReason?: string; fee: number; extra?: React.ReactNode }[] = [
-    { key: 'declareValue', label: 'Khai giá trị hàng', note: '0,75% giá trị khai, tối thiểu 20.000đ', checked: declareValue, toggle: () => setDeclareValue(v => !v), fee: feeKhaiGia },
-    { key: 'ngoaiThanh', label: 'Địa chỉ ngoại thành', note: '+20% cước', checked: ngoaiThanh, toggle: () => setNgoaiThanh(v => !v), fee: feeNgoaiThanh },
-    {
-      key: 'dongKiem', label: 'Đồng kiểm vận đơn', checked: dongKiem, toggle: () => setDongKiem(v => !v), fee: feeDongKiem,
-      extra: dongKiem ? <NumericWithUnit value={dongKiemUnits} onChange={setDongKiemUnits} unit="đơn vị" width={140} /> : undefined,
-    },
-    ...(isNhanh ? [{ key: 'dongLanh', label: 'Hàng đông lạnh', note: '15.000đ/kg, không tính phí Express nếu có', checked: dongLanh, toggle: () => setDongLanh(v => !v), fee: feeDongLanh }] : []),
-    { key: 'baoPhat', label: 'Báo phát', note: '5.000đ/vận đơn, miễn phí nếu thất lạc', checked: baoPhat, toggle: () => setBaoPhat(v => !v), fee: feeBaoPhat },
-    {
-      key: 'chupHinh', label: 'Chụp hình', note: '2.000đ/hình, tối thiểu 5.000đ, tối đa 10 hình', checked: chupHinh, toggle: () => setChupHinh(v => !v), fee: feeChupHinh,
-      extra: chupHinh ? <NumericWithUnit value={chupHinhCount} onChange={(v) => setChupHinhCount(Math.min(10, Math.max(1, v)))} unit="hình" width={140} /> : undefined,
-    },
-    {
-      key: 'phatHangSieuThi', label: 'Phát hàng siêu thị', note: '100.000đ + 1.000đ/đơn vị kiểm đếm', checked: phatHangSieuThi, toggle: () => setPhatHangSieuThi(v => !v), fee: feePhatHangSieuThi,
-      extra: phatHangSieuThi ? <NumericWithUnit value={phatHangSieuThiUnits} onChange={setPhatHangSieuThiUnits} unit="đơn vị" width={140} /> : undefined,
-    },
-    {
-      key: 'sms', label: 'Dịch vụ tin nhắn SMS', note: '1.000đ/tin, tối đa 160 ký tự/tin', checked: smsOn, toggle: () => setSmsOn(v => !v), fee: feeSms,
-      extra: smsOn ? <NumericWithUnit value={smsCount} onChange={setSmsCount} unit="tin" width={140} /> : undefined,
-    },
-    { key: 'layIdCaNhan', label: 'Lấy ID cá nhân', note: '10.000đ/vận đơn, miễn phí nếu thất lạc', checked: layIdCaNhan, toggle: () => setLayIdCaNhan(v => !v), fee: feeLayIdCaNhan },
-    { key: 'nguoiNhanThanhToan', label: 'Người nhận thanh toán', note: '20.000đ/vận đơn', checked: nguoiNhanThanhToan, toggle: () => setNguoiNhanThanhToan(v => !v), fee: feeNguoiNhanThanhToan },
-    { key: 'ngoaiGioHanhChinh', label: 'Ngoài giờ hành chánh', note: '50.000đ/vận đơn, miễn phí nếu thất lạc', checked: ngoaiGioHanhChinh, toggle: () => setNgoaiGioHanhChinh(v => !v), fee: feeNgoaiGioHanhChinh },
-    { key: 'phatHangTanTay', label: 'Phát hàng tận tay', note: '10.000đ/vận đơn, miễn phí nếu thất lạc', checked: phatHangTanTay, toggle: () => setPhatHangTanTay(v => !v), fee: feePhatHangTanTay },
-    { key: 'thongTinDayDu', label: 'Thông tin đầy đủ', note: '5.000đ/vận đơn, miễn phí nếu thất lạc', checked: thongTinDayDu, toggle: () => setThongTinDayDu(v => !v), fee: feeThongTinDayDu },
-    { key: 'thuKyKhachHang', label: 'Thư ký khách hàng', note: '50.000đ/vận đơn, miễn phí nếu thất lạc', checked: thuKyKhachHang, toggle: () => setThuKyKhachHang(v => !v), fee: feeThuKyKhachHang },
-    {
-      key: 'giaoHangLenTang', label: 'Giao hàng lên/xuống tầng (đầu nhận)', note: '250đ/kg, chỉ áp dụng đơn ≥ 50kg', checked: giaoHangLenTang, toggle: () => setGiaoHangLenTang(v => !v), fee: feeGiaoHangLenTang,
-      disabledReason: floorEligible ? undefined : 'Chỉ áp dụng đơn hàng có trọng lượng từ 50kg trở lên',
-    },
-    {
-      key: 'nhanHangLenTang', label: 'Nhận hàng lên/xuống tầng (đầu gửi)', note: '250đ/kg, chỉ áp dụng đơn ≥ 50kg', checked: nhanHangLenTang, toggle: () => setNhanHangLenTang(v => !v), fee: feeNhanHangLenTang,
-      disabledReason: floorEligible ? undefined : 'Chỉ áp dụng đơn hàng có trọng lượng từ 50kg trở lên',
-    },
-    ...(isNhanh ? [
-      {
-        key: 'phatUuTien', label: 'Phát ưu tiên', note: '30.000đ/vận đơn, chỉ áp dụng TL ≤ 2kg', checked: phatUuTien, toggle: () => setPhatUuTien(v => !v), fee: feePhatUuTien,
-        disabledReason: phatUuTienEligible ? undefined : 'Chỉ áp dụng vận đơn có TL ≤ 2kg — cân nặng hiện tại vượt mức',
-      },
-      { key: 'phiAnNinh', label: 'Phí an ninh', note: '12.000đ/kg, tối thiểu 200.000đ/vận đơn', checked: phiAnNinh, toggle: () => setPhiAnNinh(v => !v), fee: feePhiAnNinh },
-      {
-        key: 'hangExpress', label: 'Hàng Express', note: '10.000đ/kg, áp dụng cho vận đơn > 2kg', checked: hangExpress, toggle: () => setHangExpress(v => !v), fee: feeHangExpress,
-        disabledReason: !hangExpressEligible ? 'Chỉ áp dụng vận đơn > 2kg' : hoSoThau ? 'Không tính phí Express khi đã chọn Hồ sơ thầu' : undefined,
-      },
-      { key: 'hangVun', label: 'Hàng VUN', note: '12.000đ/kg, tối thiểu 200.000đ/vận đơn', checked: hangVun, toggle: () => setHangVun(v => !v), fee: feeHangVun },
-      { key: 'hoSoThau', label: 'Hồ sơ thầu', note: '200.000đ + 15.000đ/kg trên 2kg — không tính phí Phát hẹn giờ/trong ngày, Express', checked: hoSoThau, toggle: () => setHoSoThau(v => !v), fee: feeHoSoThau },
-    ] : []),
-    ...(isDuongBo ? [
-      { key: 'hangQuaKho', label: 'Hàng quá khổ', note: '10%, tính theo nấc cước + công thức TL so với 15kg', checked: hangQuaKho, toggle: () => setHangQuaKho(v => !v), fee: feeHangQuaKho },
-      {
-        key: 'xeNang', label: 'Phụ phí thuê xe nâng', note: '625.000đ/lần phát sinh', checked: xeNang, toggle: () => setXeNang(v => !v), fee: feeXeNang,
-        extra: xeNang ? <NumericWithUnit value={xeNangCount} onChange={setXeNangCount} unit="lần" width={140} /> : undefined,
-      },
-      ...ROAD_TABLE.dongGoi.map((m: any) => ({
-        key: `dongGoi_${m.id}`, label: m.label, checked: dongGoiMaterial === m.id,
-        toggle: () => setDongGoiMaterial(v => v === m.id ? 'none' : m.id),
-        fee: dongGoiMaterial === m.id ? feeDongGoi : 0,
-      })),
-    ] : []),
-  ]
-  const vasFiltered = vasItems.filter(i => i.label.toLowerCase().includes(vasSearch.trim().toLowerCase()))
-  const vasSelected = vasItems.filter(i => i.checked)
+  // ── Submit — sendKind/dispatchStatus/carrierCode KHÔNG THAY ĐỔI (per PRD §4.5) ──
+  function handleCreate() {
+    const now = new Date()
+    const newOrder: Order = {
+      id: `ORD_${Date.now()}`,
+      shopId: 'SHP001',
+      trackingCode: `SHOP_${Date.now()}`,
+      senderName: currentShop.ownerName ?? currentShop.name,
+      senderPhone: (currentShop as any).phone ?? '',
+      receiverName: rcvName,
+      receiverPhone: rcvPhone,
+      receiverAddress: `${rcvStreet}, ${rcvProvince}`,
+      weight: weightGram,
+      cod: otherCollectValue,
+      fee: totalShipping,
+      status: 'pending',
+      createdAt: now.toISOString().split('T')[0],
+      actionHistory: [],
+      sendKind: 'letter',
+      dispatchStatus: 'pending_agency',
+      carrierCode: null,
+      dispatchedAt: null,
+      dispatchedBy: null,
+    }
+    addOrder(newOrder)
+    onClose()
+  }
 
   return (
     <>
@@ -1352,8 +1108,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ width: 110, flexShrink: 0, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Địa chỉ KH</span>
-                  {/* Hiển thị địa chỉ shop như đơn GHN bình thường — không lộ việc điểm lấy
-                      hàng thực tế là kho/hub của 247Express (senderHub tính ngầm ở trên) */}
+                  {/* Hiển thị địa chỉ shop như đơn GHN — điểm lấy hàng thực tế (hub 247Express) tính ngầm ở trên */}
                   <div style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px' }}>
                     <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{currentShop.ownerName} - {currentShop.phone}</div>
                     <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{currentShop.address}</div>
@@ -1384,10 +1139,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
               </div>
             </div>
 
-            {/* ── Sản phẩm card — thư/tài liệu không có khái niệm tên hàng/giá bán như đơn
-                hàng GHN, chỉ cần khối lượng + kích thước để tính phí theo hợp đồng. Tab
-                "Hàng hoá" disabled vì drawer này chỉ tạo được vận đơn Tài liệu — gửi hàng hoá
-                dùng "Tạo đơn hàng" (CreateOrderDrawer). ── */}
+            {/* ── Sản phẩm card — thư/tài liệu chỉ cần khối lượng + kích thước để tính phí. ── */}
             <div style={{ ...drawerCard, flex: 1 }}>
               <CardHeader icon={<IcCube />} label="Sản phẩm" right={
                 <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 6, padding: 2, flexShrink: 0 }}>
@@ -1431,12 +1183,9 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
 
           {/* ════ RIGHT COLUMN ════ */}
           <div style={{ width: 400, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
-
-            {/* Toàn bộ 3 card dưới đây cuộn CÙNG NHAU trong 1 vùng — tránh trường hợp 1 card bị
-                giới hạn chiều cao khiến nội dung cuối (checkbox phụ phí, ghi chú) bị khuất mà
-                không có dấu hiệu cuộn rõ ràng. Action card (Lưu nháp/Tạo đơn) đứng ngoài, cố định. */}
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
 
+            {/* ── Thông tin thư ── */}
             <div style={{ ...drawerCard, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, flexShrink: 0 }}>
                 <IcClipboard />
@@ -1465,31 +1214,18 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
 
                 <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
 
-                {/* DVGT — hợp đồng có 24+ dịch vụ gia tăng nên gộp vào 1 modal tìm-kiếm-được
-                    thay vì list dài trong card "Dịch vụ", đưa lên Thông tin thư cho dễ thấy. */}
-                <div style={{ padding: 8 }}>
-                  <div
-                    onClick={() => setVasModalOpen(true)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', minHeight: 32 }}
-                  >
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>DVGT</span>
-                    {vasSelected.length === 0 ? (
-                      <span style={{ flex: 1, fontSize: 14, color: '#9CA3AF', lineHeight: '20px' }}>Chọn dịch vụ gia tăng</span>
-                    ) : (
-                      <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {vasSelected.map(item => (
-                          <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F3F4F6', borderRadius: 6, padding: '4px 8px' }}>
-                            <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '16px' }}>{item.label}</span>
-                            <span
-                              onClick={(e) => { e.stopPropagation(); item.toggle() }}
-                              style={{ cursor: 'pointer', color: '#9CA3AF', fontSize: 14, lineHeight: '16px' }}
-                            >×</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ flexShrink: 0, display: 'flex' }}><IcChevronRight /></div>
-                  </div>
+                {/* 3 standard surcharge checkboxes — replaces old VAS modal (AC8b) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: '4px 8px' }}>
+                  {[
+                    { checked: declareValue,   toggle: () => setDeclareValue(v => !v),   label: 'Khai giá (bảo hiểm hàng hoá)' },
+                    { checked: partialDeliver, toggle: () => setPartialDeliver(v => !v), label: 'Cho giao một phần' },
+                    { checked: collectOnFail,  toggle: () => setCollectOnFail(v => !v),  label: 'Thu phí khi giao thất bại' },
+                  ].map(({ checked, toggle, label }) => (
+                    <div key={label} onClick={toggle} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', cursor: 'pointer', userSelect: 'none' as const }}>
+                      <CheckboxBlue checked={checked} onChange={toggle} />
+                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
@@ -1563,7 +1299,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
               </div>
             </div>
 
-            {/* ── Dịch vụ card ── */}
+            {/* ── Dịch vụ card — single 247Express service display, no radio picker ── */}
             <div style={{ ...drawerCard, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
                 <IcTruck />
@@ -1571,48 +1307,26 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
-                {([
-                  ['nhanh', 'Chuyển phát nhanh (Thư, tài liệu)'],
-                  ['duongbo', 'Chuyển phát đường bộ'],
-                ] as const).map(([key, label]) => (
-                  <div
-                    key={key}
-                    onClick={() => setLetterService(key)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
-                      border: `1px solid ${letterService === key ? '#111827' : C_BORDER}`,
-                    }}
-                  >
-                    <div style={{
-                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      border: `2px solid ${letterService === key ? '#111827' : C_BORDER}`,
-                      background: letterService === key ? '#111827' : '#fff',
-                    }}>
-                      {letterService === key && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
-                    </div>
+                {selectedService247 ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#FAFAFA' }}>
                     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px' }}>Dịch vụ</span>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label} — 247Express</span>
+                      {/* Không hiển thị carrier ("247Express") ở đây — shop không được biết NVC nào xử lý đơn */}
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{selectedService247.name}</span>
                     </div>
-                    <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px', flexShrink: 0 }}>Phí ship:</span>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                      {(letterService === key ? feeMain : (key === 'nhanh' ? letterMainFee(mainZoneIdx, weightGram) : roadFreightMainFee(roadZoneIdx, weightKg))).toLocaleString('vi-VN')}đ
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+                      <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px' }}>Phí ship</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{feeShipping.toLocaleString('vi-VN')}đ</span>
+                    </div>
                   </div>
-                ))}
-                {isDuongBo && (
-                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>
-                    Thời gian giao dự kiến: {ROAD_TABLE.deliveryTimeDays[roadZoneIdx]} ngày
+                ) : (
+                  <span style={{ fontSize: 14, color: '#9CA3AF', lineHeight: '20px', padding: '4px 0' }}>
+                    Không có dịch vụ khả dụng
                   </span>
                 )}
-
               </div>
             </div>
 
-            {/* ── Phụ phí card — liệt kê từng DVGT đã chọn + thuế, tương tự bố cục "Phụ phí"
-                tham khảo. Chỉ hiện dòng cho dịch vụ đang được chọn (24+ DVGT nên không liệt kê
-                hết, tránh danh sách toàn 0đ). Nằm trong vùng cuộn chung với Thông tin thư/Phí
-                vận chuyển ở trên — chỉ Action card đứng ngoài, cố định. ── */}
+            {/* ── Phụ phí card — 4 standard surcharge lines (AC8b) ── */}
             <div style={drawerCard}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
                 <IcReceipt />
@@ -1620,18 +1334,33 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
-                {vasSelected.length === 0 ? (
-                  <span style={{ fontSize: 14, color: '#9CA3AF', lineHeight: '20px' }}>Chưa chọn dịch vụ gia tăng nào</span>
-                ) : vasSelected.map(item => (
-                  <div key={item.key} style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{item.label}</span>
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{item.fee.toLocaleString('vi-VN')}đ</span>
+                {feeInsurance > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Khai giá (bảo hiểm)</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{feeInsurance.toLocaleString('vi-VN')}đ</span>
                   </div>
-                ))}
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Thuế VAT (8%)</span>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{feeVat.toLocaleString('vi-VN')}đ</span>
-                </div>
+                )}
+                {feePartial > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Giao một phần</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{feePartial.toLocaleString('vi-VN')}đ</span>
+                  </div>
+                )}
+                {feeDeliveryFail > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Phí giao thất bại</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{feeDeliveryFail.toLocaleString('vi-VN')}đ</span>
+                  </div>
+                )}
+                {feeCod > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Phí COD</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{feeCod.toLocaleString('vi-VN')}đ</span>
+                  </div>
+                )}
+                {feeInsurance === 0 && feePartial === 0 && feeDeliveryFail === 0 && feeCod === 0 && (
+                  <span style={{ fontSize: 14, color: '#9CA3AF', lineHeight: '20px' }}>Không có phụ phí</span>
+                )}
               </div>
             </div>
 
@@ -1643,7 +1372,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng phí vận chuyển</span>
                   <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
-                    {grandTotal.toLocaleString('vi-VN')}đ
+                    {totalShipping.toLocaleString('vi-VN')}đ
                   </span>
                 </div>
               </div>
@@ -1654,7 +1383,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
                   Lưu nháp
                 </button>
                 <button
-                  onClick={onClose}
+                  onClick={handleCreate}
                   style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
                 >
                   Tạo đơn
@@ -1664,68 +1393,12 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
           </div>
         </div>
       </div>
-
-      {vasModalOpen && (
-        <>
-          <div onClick={() => setVasModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300 }} />
-          <div style={{
-            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            width: 600, maxHeight: '80vh', background: '#fff', borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 301, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', padding: '20px 48px 12px' }}>
-              <span style={{ fontSize: 20, fontWeight: 700, color: C_ACTION, lineHeight: '28px' }}>Dịch vụ gia tăng</span>
-              <button onClick={() => setVasModalOpen(false)} style={{ position: 'absolute', right: 16, top: 16, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-                <IcX />
-              </button>
-            </div>
-            <div style={{ padding: '0 16px 12px' }}>
-              <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <IcSearch />
-                <input
-                  value={vasSearch} onChange={(e) => setVasSearch(e.target.value)}
-                  placeholder="Tìm kiếm"
-                  style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
-                />
-              </div>
-            </div>
-            <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
-            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 16px' }}>
-              {vasFiltered.length === 0 ? (
-                <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy dịch vụ phù hợp</div>
-              ) : vasFiltered.map(item => (
-                <VasCheckboxRow
-                  key={item.key} checked={item.checked} onChange={item.toggle} label={item.label}
-                  disabledReason={item.disabledReason} extra={item.extra}
-                />
-              ))}
-            </div>
-            <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: 16, flexShrink: 0 }}>
-              <button
-                onClick={() => setVasModalOpen(false)}
-                style={{ padding: '8px 20px', borderRadius: 6, border: `1px solid ${C_ACTION}`, background: '#fff', color: C_ACTION, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-              >
-                Huỷ
-              </button>
-              <button
-                onClick={() => setVasModalOpen(false)}
-                style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: C_ACTION, color: '#fff', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-              >
-                Chọn
-              </button>
-            </div>
-          </div>
-        </>
-      )}
     </>
   )
 }
 
 // ── Data ─────────────────────────────────────────────────────
-const myOrders = allOrders.filter((o) => o.shopId === 'SHP001')
-
-// Derive fake product lists per order
+// Seed product lists for demo (module-level, one-time init)
 const SAMPLE_PRODUCTS = [
   ['Giày Thể Thao Nam - SL: 2'],
   ['Áo Thun Cotton Nam - Oversize - Màu Ngẫu Nhiên - SL: 2', 'Bình Giữ Nhiệt Cao Cấp - SL: 1'],
@@ -1733,7 +1406,7 @@ const SAMPLE_PRODUCTS = [
   ['Quần Jean Nam Slim Fit - SL: 1', 'Áo Polo Cổ Bẻ - SL: 2'],
 ]
 const orderProducts: Record<string, string[]> = {}
-myOrders.forEach((o, i) => {
+loadOrders().filter(o => o.shopId === 'SHP001').forEach((o, i) => {
   orderProducts[o.id] = SAMPLE_PRODUCTS[i % SAMPLE_PRODUCTS.length]
 })
 
@@ -1775,7 +1448,7 @@ function THead({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: 
       <div style={{ width: 32, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px', background: C_BG_HEADER }}>
         <Checkbox checked={allChecked} onChange={onToggleAll} />
       </div>
-      {fixedCell('Mã đơn hàng', 140)}
+      {fixedCell('Mã đơn hàng', 180)}
       {flexCell('Khách hàng',      300)}
       {flexCell('Sản phẩm',        300)}
       {flexCell('Khối lượng (kg)', 120, 'right')}
@@ -1787,7 +1460,8 @@ function THead({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: 
   )
 }
 
-// ── Order types with history ──────────────────────────────────
+// ── Local type aliases ────────────────────────────────────────
+// Order is imported from orderStore; it already includes log, actionHistory, etc.
 type GHNLogEntry = {
   status: string
   status_name: string
@@ -1802,13 +1476,6 @@ type GHNLogEntry = {
   regulation_msg: string
 }
 type ActionHistoryItem = { date: string; time: string; operator: string; action: string; oldContent: string; newContent: string }
-type Order = typeof myOrders[0] & {
-  log?: GHNLogEntry[]
-  num_deliver?: number
-  num_pick?: number
-  num_return?: number
-  actionHistory?: ActionHistoryItem[]
-}
 
 function isReturnEligible(order: Order): boolean {
   const lastAction = order.log?.[0]?.action
@@ -2429,7 +2096,7 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
 }
 
 // ── Table row ─────────────────────────────────────────────────
-function TRow({ order, checked, onToggle, onSelect, onReturn }: { order: Order; checked: boolean; onToggle: () => void; onSelect: () => void; onReturn?: () => void }) {
+function TRow({ order, checked, onToggle, onSelect, onReturn, onCancel }: { order: Order; checked: boolean; onToggle: () => void; onSelect: () => void; onReturn?: () => void; onCancel?: () => void }) {
   const [hover, setHover] = useState(false)
   const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
   const weightKg = (order.weight / 1000).toFixed(1)
@@ -2450,13 +2117,20 @@ function TRow({ order, checked, onToggle, onSelect, onReturn }: { order: Order; 
         <div style={{ width: 32, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
           <Checkbox checked={checked} onChange={onToggle} />
         </div>
-        {/* Mã đơn hàng */}
-        <div style={{ width: 140, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '6px 8px' }}>
+        {/* Mã đơn hàng — kèm tag Loại đơn (Hàng hoá/Thư) ngay cạnh mã, không tách cột riêng */}
+        <div style={{ width: 180, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px' }}>
           <span
             onClick={(e) => { e.stopPropagation(); onSelect() }}
             style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', whiteSpace: 'nowrap', cursor: 'pointer' }}
           >
             {order.trackingCode}
+          </span>
+          <span style={{
+            fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, whiteSpace: 'nowrap', flexShrink: 0,
+            background: order.sendKind === 'letter' ? '#EDE9FE' : '#F3F4F6',
+            color: order.sendKind === 'letter' ? '#7C3AED' : '#4B5563',
+          }}>
+            {order.sendKind === 'letter' ? 'Thư' : 'Hàng hoá'}
           </span>
         </div>
         {/* Khách hàng */}
@@ -2514,6 +2188,14 @@ function TRow({ order, checked, onToggle, onSelect, onReturn }: { order: Order; 
               style={{ marginTop: 4, padding: '2px 8px', background: '#FFF4ED', border: `1px solid #FECBA1`, borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C_ACTION, whiteSpace: 'nowrap', alignSelf: 'flex-start', lineHeight: '18px' }}
             >
               Hoàn hàng
+            </button>
+          )}
+          {onCancel && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onCancel() }}
+              style={{ marginTop: 4, padding: '2px 8px', background: '#FEE2E2', border: `1px solid #FECACA`, borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#DC2626', whiteSpace: 'nowrap', alignSelf: 'flex-start', lineHeight: '18px' }}
+            >
+              Huỷ đơn
             </button>
           )}
         </div>
@@ -2618,6 +2300,17 @@ export default function ShopOrders() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  // Live orders from store — refresh after drawer creates or cancels
+  const [orders, setOrders] = useState<Order[]>(() => loadOrders().filter(o => o.shopId === 'SHP001'))
+
+  function refreshOrders() {
+    setOrders(loadOrders().filter(o => o.shopId === 'SHP001'))
+  }
+
+  function handleCancelOrder(orderId: string) {
+    const updated = cancelOrder(orderId)
+    setOrders(updated.filter(o => o.shopId === 'SHP001'))
+  }
 
   useEffect(() => {
     if (!createMenuOpen) return
@@ -2628,15 +2321,19 @@ export default function ShopOrders() {
     return () => document.removeEventListener('mousedown', handler)
   }, [createMenuOpen])
 
-  const ordersByTab: Record<string, typeof myOrders> = {
-    draft:         myOrders.filter((o) => o.status === 'pending'),
-    pickup:        myOrders.filter((o) => o.status === 'pickup'),
-    in_transit:    myOrders.filter((o) => o.status === 'in_transit'),
-    returning:     myOrders.filter((o) => o.status === 'returning'),
-    redelivery:    myOrders.filter((o) => o.status === 'redelivery'),
-    completed:     myOrders.filter((o) => o.status === 'delivered'),
-    cancelled:     myOrders.filter((o) => o.status === 'cancelled' || o.status === 'failed'),
-    lost_damaged:  myOrders.filter((o) => o.status === 'lost' || o.status === 'damaged'),
+  // "pending_carrier" = letter orders awaiting agency dispatch — NOT in "Đơn nháp" (draft)
+  const isPendingCarrier = (o: Order) => o.sendKind === 'letter' && o.dispatchStatus === 'pending_agency'
+
+  const ordersByTab: Record<string, Order[]> = {
+    pending_carrier: orders.filter(isPendingCarrier),
+    draft:           orders.filter(o => o.status === 'pending' && !isPendingCarrier(o)),
+    pickup:          orders.filter(o => o.status === 'pickup'),
+    in_transit:      orders.filter(o => o.status === 'in_transit'),
+    returning:       orders.filter(o => o.status === 'returning'),
+    redelivery:      orders.filter(o => o.status === 'redelivery'),
+    completed:       orders.filter(o => o.status === 'delivered'),
+    cancelled:       orders.filter(o => o.status === 'cancelled' || o.status === 'failed'),
+    lost_damaged:    orders.filter(o => o.status === 'lost' || o.status === 'damaged'),
   }
   const tabOrders = ordersByTab[activeTab] ?? []
 
@@ -2661,14 +2358,16 @@ export default function ShopOrders() {
   }
 
   const TABS = [
-    { key: 'draft',        label: 'Đơn nháp',                        count: ordersByTab.draft.length,        countColor: '#F59E0B' },
-    { key: 'pickup',       label: 'Chờ bàn giao',                    count: ordersByTab.pickup.length,       countColor: '#3B82F6' },
-    { key: 'in_transit',   label: 'Đã bàn giao - Đang giao',         count: ordersByTab.in_transit.length,   countColor: '#3B82F6' },
-    { key: 'returning',    label: 'Đã bàn giao - Đang hoàn hàng',    count: ordersByTab.returning.length,    countColor: '#F59E0B' },
-    { key: 'redelivery',   label: 'Chờ xác nhận giao lại',           count: ordersByTab.redelivery.length,   countColor: '#F59E0B' },
-    { key: 'completed',    label: 'Hoàn tất',                        count: ordersByTab.completed.length,    countColor: '#10B981' },
-    { key: 'cancelled',    label: 'Đơn huỷ',                         count: ordersByTab.cancelled.length,    countColor: '#EF4444' },
-    { key: 'lost_damaged', label: 'Hàng thất lạc - hư hỏng',        count: ordersByTab.lost_damaged.length, countColor: '#EF4444' },
+    // "Chờ xử lý" = letter orders pending agency dispatch — no carrier name shown
+    { key: 'pending_carrier', label: 'Chờ xử lý',                        count: ordersByTab.pending_carrier.length, countColor: '#F59E0B' },
+    { key: 'draft',           label: 'Đơn nháp',                          count: ordersByTab.draft.length,           countColor: '#F59E0B' },
+    { key: 'pickup',          label: 'Chờ bàn giao',                      count: ordersByTab.pickup.length,          countColor: '#3B82F6' },
+    { key: 'in_transit',      label: 'Đã bàn giao - Đang giao',           count: ordersByTab.in_transit.length,      countColor: '#3B82F6' },
+    { key: 'returning',       label: 'Đã bàn giao - Đang hoàn hàng',      count: ordersByTab.returning.length,       countColor: '#F59E0B' },
+    { key: 'redelivery',      label: 'Chờ xác nhận giao lại',             count: ordersByTab.redelivery.length,      countColor: '#F59E0B' },
+    { key: 'completed',       label: 'Hoàn tất',                          count: ordersByTab.completed.length,       countColor: '#10B981' },
+    { key: 'cancelled',       label: 'Đơn huỷ',                           count: ordersByTab.cancelled.length,       countColor: '#EF4444' },
+    { key: 'lost_damaged',    label: 'Hàng thất lạc - hư hỏng',          count: ordersByTab.lost_damaged.length,    countColor: '#EF4444' },
   ]
 
   return (
@@ -2789,6 +2488,7 @@ export default function ShopOrders() {
                 onToggle={() => toggleOne(order.id)}
                 onSelect={() => { setSelectedOrder(order as Order); setDetailOpen(true) }}
                 onReturn={() => { setSelectedOrder(order as Order); setDetailOpen(true) }}
+                onCancel={activeTab === 'pending_carrier' ? () => handleCancelOrder(order.id) : undefined}
               />
             ))}
             {paginated.length === 0 && (
@@ -2813,8 +2513,8 @@ export default function ShopOrders() {
       </div>
 
       {/* Create Order Drawer */}
-      <CreateOrderDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <CreateLetterDrawer open={letterDrawerOpen} onClose={() => setLetterDrawerOpen(false)} />
+      <CreateOrderDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); refreshOrders() }} />
+      <CreateLetterDrawer open={letterDrawerOpen} onClose={() => { setLetterDrawerOpen(false); refreshOrders() }} />
       <OrderSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       {/* Order Detail Drawer */}
       <OrderDetailDrawer order={selectedOrder} open={detailOpen} onClose={() => setDetailOpen(false)} />

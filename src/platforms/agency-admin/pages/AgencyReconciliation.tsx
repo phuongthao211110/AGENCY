@@ -15,6 +15,7 @@ import {
 import { agencyAdminTheme } from '../../../theme/platforms'
 import carrierSessionsData from '../../../mock-data/carrier-reconciliation.json'
 import allItemsData from '../../../mock-data/carrier-reconciliation-items.json'
+import ordersData from '../../../mock-data/orders.json'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CarrierSession = {
@@ -180,6 +181,16 @@ function Checkbox({ checked, disabled, onChange }: {
   )
 }
 
+// Đơn GHN (orderCode) trong file đối soát về nguyên tắc phải tra ngược đơn hàng
+// đại lý để biết thuộc shop nào. Ưu tiên tra orders.json (trackingCode/id) —
+// nếu không tìm thấy (VD: đơn đối soát chưa có trong orders.json ở prototype
+// này) thì dùng shopId tĩnh có sẵn trên item làm phương án dự phòng.
+function resolveShopId(item: { orderCode: string; shopId: string }): string {
+  const order = (ordersData as Array<{ id: string; trackingCode?: string; shopId: string }>)
+    .find(o => o.trackingCode === item.orderCode || o.id === item.orderCode)
+  return order?.shopId ?? item.shopId
+}
+
 // ─── Derive shop sessions từ confirmed NVC sessions ───────────────────────────
 function deriveShopSessions(
   sessions: CarrierSession[],
@@ -193,7 +204,8 @@ function deriveShopSessions(
   const groups = new Map<string, { items: ItemRecord[]; session: CarrierSession }>()
   items.forEach(item => {
     if (!confirmedNVCIds.has(item.sessionId)) return
-    const key = `${item.sessionId}::${item.shopId}`
+    const shopId = resolveShopId(item)
+    const key = `${item.sessionId}::${shopId}`
     if (!groups.has(key)) {
       const session = sessions.find(s => s.id === item.sessionId)!
       groups.set(key, { items: [], session })

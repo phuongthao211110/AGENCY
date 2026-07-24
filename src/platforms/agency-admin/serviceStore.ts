@@ -23,6 +23,9 @@ export type AgencyService = {
   // dùng shopConnectionIds vì 247 không kết nối theo shop).
   shopConnectionIds: string[]
   hubIds?: string[]
+  // Phân loại đơn dịch vụ này xử lý — Hàng hoá (CreateOrderDrawer) hay Thư/bưu phẩm
+  // (CreateLetterDrawer). Optional vì dữ liệu cũ (services.json) chưa có field này.
+  sendKind?: 'goods' | 'letter'
 }
 
 // Mutable list — starts with JSON data, new services pushed here at runtime

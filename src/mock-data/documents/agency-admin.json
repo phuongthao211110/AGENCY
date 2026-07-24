@@ -1,7 +1,7 @@
 {
   "platform": "agency-admin",
   "currentVersion": "1.1.0",
-  "lastUpdated": "2026-07-05",
+  "lastUpdated": "2026-07-23",
   "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
@@ -226,7 +226,401 @@
     {
       "key": "orders",
       "title": "Quản lý đơn hàng",
-      "stories": []
+      "stories": [
+        {
+          "id": "AGA-ORDER-1",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Xác nhận gửi 247Express: Bắt buộc chọn hub xuất phát",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), khi xác nhận gửi 1 đơn thư sang 247Express, tôi muốn bắt buộc phải chọn hub xuất phát trước khi gửi được, để hệ thống biết chắc chắn đơn này xuất phát từ hub nào (vì dịch vụ không còn gắn cứng 1 hub từ trước như trước đây).",
+          "userFlow": [
+            "Agency Admin vào \"Đơn hàng\" → tab \"Chờ xử lý\" → bấm \"Gửi qua 247Express\" ở 1 đơn",
+            "Modal \"Xác nhận gửi qua 247Express\" hiện ra, kèm danh sách hub đại lý được cấp (radio chọn 1)",
+            "Nút \"Xác nhận gửi\" ở trạng thái disabled (xám) cho tới khi chọn 1 hub",
+            "Chọn 1 hub → nút \"Xác nhận gửi\" bật lên (xanh dương), bấm để hoàn tất dispatch"
+          ],
+          "systemFlow": [
+            "Modal dispatch thêm state dispatchHubId, reset về '' mỗi lần mở modal cho 1 đơn mới",
+            "Danh sách hub lấy từ agenciesList.find(a => a.id === CURRENT_AGENCY_ID).clientHubIds map sang clientHubs247",
+            "Nút \"Xác nhận gửi\" có disabled={!dispatchHubId} — không click được nếu chưa chọn hub",
+            "Bấm \"Xác nhận gửi\" → gọi dispatchOrderToCarrier(order.id, '247EXPRESS', 'Agency Admin', dispatchHubId) — tham số dispatchHubId mới, lưu vào field dispatchHubId trên Order"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Modal dispatch hiển thị danh sách hub dạng radio button (tên hub + địa chỉ), lấy đúng theo hub đại lý hiện tại được cấp.",
+            "AC2: Nếu đại lý chưa được cấp hub nào → hiển thị \"Đại lý chưa được cấp hub 247Express nào — liên hệ Super Admin\", không có hub nào để chọn.",
+            "AC3: Nút \"Xác nhận gửi\" disabled khi chưa chọn hub nào.",
+            "AC4: Chọn 1 hub → nút bật, dispatch thành công lưu đúng dispatchHubId đã chọn.",
+            "AC5: Đóng modal rồi mở lại → hub đã chọn trước đó KHÔNG được giữ lại (reset)."
+          ],
+          "notes": [
+            "Hệ quả trực tiếp của việc bỏ gắn cứng hub vào Dịch vụ (ServiceDetail.tsx) — hub giờ chỉ quyết định duy nhất tại bước dispatch này.",
+            "dispatchHubId là field mới trên Order, optional, chỉ dùng khi carrierCode === '247EXPRESS'."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-2",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách: Đổi tên tab \"Chờ gửi 247Express\" thành \"Chờ xử lý\"",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn tên tab hiển thị trạng thái đơn chờ xử lý giống với tên tab bên Web Shop, để không bị lẫn lộn khi trao đổi với shop về cùng 1 đơn đang ở trạng thái nào.",
+          "userFlow": [
+            "Agency Admin vào \"Đơn hàng\"",
+            "Tab trước đây tên \"Chờ gửi 247Express\" nay đổi thành \"Chờ xử lý\" — cùng tên với tab bên Web Shop cho đúng đơn đó",
+            "Nội dung/điều kiện lọc của tab không đổi — vẫn là các đơn thư đang pending_agency"
+          ],
+          "systemFlow": [
+            "AgencyOrders.tsx → mảng TABS: đổi label của tab có key: 'pending_247' từ 'Chờ gửi 247Express' sang 'Chờ xử lý'",
+            "key giữ nguyên 'pending_247' — không đổi logic lọc (isPending247), chỉ đổi chữ hiển thị"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab đầu tiên trong danh sách \"Đơn hàng\" hiển thị chữ \"Chờ xử lý\", không còn \"Chờ gửi 247Express\".",
+            "AC2: Số đếm và nội dung lọc của tab không đổi — vẫn đúng các đơn thư sendKind === 'letter' && dispatchStatus === 'pending_agency'.",
+            "AC3: Tên tab khớp với tên tab \"Chờ xử lý\" đang có sẵn bên Web Shop cho cùng nhóm đơn."
+          ],
+          "notes": [
+            "Thuần tuý đổi label hiển thị, không đổi key/logic/data — rủi ro thấp."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-3",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách: Thêm phân loại hàng hoá",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn thấy được đơn nào là Hàng hoá, đơn nào là Thư/bưu phẩm ngay trong danh sách \"Đơn hàng\", để phân biệt nhanh loại đơn khi xử lý số lượng lớn từ nhiều shop.",
+          "userFlow": [
+            "Agency Admin vào \"Đơn hàng\"",
+            "Cột \"Loại đơn\" (tách riêng, nằm giữa \"Mã đơn hàng\" và \"Shop\") hiển thị tag: Hàng hoá hoặc Thư",
+            "Áp dụng cho mọi tab trạng thái (Chờ xử lý, Đơn nháp, Chờ bàn giao...)"
+          ],
+          "systemFlow": [
+            "AgencyOrders.tsx → THead thêm cột 'Loại đơn' (100px, cố định), TRow thêm cell tương ứng đọc order.sendKind",
+            "Style tag: sendKind === 'letter' → \"Thư\" (nền #EDE9FE, chữ #7C3AED); ngược lại → \"Hàng hoá\" (nền #F3F4F6, chữ #4B5563)",
+            "Khác với danh sách đơn hàng Web Shop (tag gộp chung vào ô \"Mã đơn hàng\") — bên Agency Admin đây là cột riêng vì danh sách có nhiều cột khác hơn"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Danh sách \"Đơn hàng\" có cột header \"Loại đơn\" riêng biệt, không gộp vào cột nào khác.",
+            "AC2: sendKind = 'letter' → tag \"Thư\" (tím). sendKind = 'goods' (hoặc không có giá trị) → tag \"Hàng hoá\" (xám).",
+            "AC3: Cột hiển thị đúng ở toàn bộ tab trạng thái, không chỉ riêng \"Chờ xử lý\".",
+            "AC4: Không ảnh hưởng vị trí/nội dung các cột khác (Shop, Khách hàng, Sản phẩm, Khối lượng, COD, Phí ship, GTB - TT, Người tạo, Thao tác)."
+          ],
+          "notes": [
+            "Cùng khái niệm sendKind đã áp dụng ở Thiết lập NVC (AGA-CARRIER-12/13/14) và danh sách đơn hàng Web Shop (SHOP-ORDER-5) — 3 nơi dùng chung 1 field, chỉ khác cách trình bày tuỳ bối cảnh màn hình."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-4",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách: Tách \"Thao tác\" thành cột riêng",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn nút hành động (VD: \"Gửi qua 247Express\") nằm ở cột riêng cố định, không lẫn trong cột \"Người tạo\", để dễ nhận biết và thao tác nhanh trên từng dòng đơn.",
+          "userFlow": [
+            "Agency Admin vào \"Đơn hàng\" → tab \"Chờ xử lý\"",
+            "Nút \"Gửi qua 247Express\" nằm ở cột \"Thao tác\" cuối bảng, tách biệt hoàn toàn khỏi cột \"Người tạo\"",
+            "Cột \"Người tạo\" chỉ còn tên người tạo + thời gian tạo, không còn nút hành động nào bên trong"
+          ],
+          "systemFlow": [
+            "AgencyOrders.tsx → THead thêm cột 'Thao tác' (160px, cố định) sau cột \"Người tạo\"",
+            "TRow: chuyển nút \"Gửi qua 247Express\" (điều kiện onDispatch247) ra khỏi cell \"Người tạo\", đặt vào cell \"Thao tác\" mới",
+            "Không đổi điều kiện hiển thị nút (onDispatch247 chỉ truyền khi activeTab === 'pending_247') — chỉ đổi vị trí render"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bảng \"Đơn hàng\" có cột header \"Thao tác\" riêng, nằm sau cột \"Người tạo\".",
+            "AC2: Cột \"Người tạo\" chỉ còn 2 dòng: tên người tạo, \"Tạo lúc {ngày}\" — không còn nút nào bên trong.",
+            "AC3: Nút \"Gửi qua 247Express\" chỉ hiện ở cột \"Thao tác\" khi đơn đang ở tab \"Chờ xử lý\" — không đổi điều kiện hiển thị so với trước.",
+            "AC4: Bấm nút vẫn mở đúng modal \"Xác nhận gửi qua 247Express\" như cũ, không đổi hành vi."
+          ],
+          "notes": [
+            "Thuần tuý thay đổi vị trí hiển thị (tách cột), không đổi logic dispatch/điều kiện hiển thị nút."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-5",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách & Chi tiết: Làm rõ nhãn giá ship là giá bán cho shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn nhãn hiển thị số tiền phí ship trên đơn hàng ghi rõ đây là giá bán cho shop, để không nhầm lẫn với giá vốn thật nhà vận chuyển (NVC) tính cho đại lý (2 con số khác nhau, hệ thống hiện chỉ có giá bán).",
+          "userFlow": [
+            "Agency Admin vào \"Đơn hàng\" → danh sách, di chuột vào icon ⓘ cạnh header \"Phí ship (đ)\" → thấy chú thích rõ đây là giá bán cho shop, không phải giá vốn",
+            "Mở chi tiết 1 đơn → nhãn \"Phí ship:\" đổi thành \"Phí ship (giá bán shop):\", \"Tổng phí vận chuyển\" đổi thành \"Tổng phí vận chuyển (giá bán shop)\""
+          ],
+          "systemFlow": [
+            "AgencyOrders.tsx → header cột \"Phí ship (đ)\" (THead) thêm icon InfoCircleOutlined, title giải thích đây là giá bán cho shop, không phải giá vốn thực tế NVC",
+            "Drawer chi tiết đơn (OrderDetailDrawer): 2 label đổi chữ — \"Phí ship:\" → \"Phí ship (giá bán shop):\"; \"Tổng phí vận chuyển\" → \"Tổng phí vận chuyển (giá bán shop)\"",
+            "Không đổi giá trị hiển thị (order.fee) — chỉ đổi nhãn/chú thích"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Header \"Phí ship (đ)\" trong danh sách có icon ⓘ, hover hiện đúng nội dung giải thích đây là giá bán cho shop.",
+            "AC2: Drawer chi tiết đơn hiển thị đúng 2 label mới: \"Phí ship (giá bán shop):\" và \"Tổng phí vận chuyển (giá bán shop)\".",
+            "AC3: Giá trị số hiển thị (order.fee) không đổi ở bất kỳ đâu — chỉ đổi chữ nhãn."
+          ],
+          "notes": [
+            "Xuất phát từ việc làm rõ: hệ thống hiện không có giá vốn thật từ NVC (chưa tích hợp API thật, chưa có luồng đối soát 247Express) — nên mọi nơi hiển thị phí ship trên đơn đều đang là giá bán cho shop.",
+            "Nếu sau này có API thật hoặc luồng đối soát 247Express, cần thêm 1 số/nhãn riêng cho \"giá vốn\" bên cạnh, không thay thế label này."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-6",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách: Xem đơn hàng theo trạng thái",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem đơn hàng của tất cả shop thuộc đại lý mình, phân theo từng trạng thái vận chuyển, để theo dõi tiến độ xử lý đơn mà không cần hỏi lại từng shop.",
+          "userFlow": [
+            "Agency Admin vào menu \"Đơn hàng\"",
+            "Thấy dải tab trạng thái: Đơn nháp, Chờ bàn giao, Đã bàn giao - Đang giao, Đã bàn giao - Đang hoàn hàng, Chờ xác nhận giao lại, Hoàn tất, Đơn huỷ, Hàng thất lạc - hư hỏng",
+            "Mỗi tab có số đếm badge màu, bấm vào tab để xem đúng danh sách đơn ở trạng thái đó",
+            "Chuyển tab thì bộ chọn (checkbox) đang tick bị xoá, về trang 1"
+          ],
+          "systemFlow": [
+            "AgencyOrders.tsx load orders = loadOrders() lọc theo shopId thuộc các shop của đại lý (agencyShopIds)",
+            "ordersByTab tính sẵn danh sách theo từng key tab: draft (status==='pending', trừ đơn đang pending_247), pickup, in_transit, returning, redelivery, completed (status==='delivered'), cancelled ('cancelled' hoặc 'failed'), lost_damaged ('lost' hoặc 'damaged')",
+            "Bấm tab → setActiveTab, setPage(1), setSelected(new Set())"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Danh sách hiển thị đủ 8 tab trạng thái (ngoài \"Chờ xử lý\"), mỗi tab có badge số đếm đúng theo dữ liệu hiện có.",
+            "AC2: Bấm 1 tab → chỉ hiện đúng đơn thuộc trạng thái đó, thuộc các shop của đại lý đang đăng nhập.",
+            "AC3: Tab mặc định khi vào trang là \"Đơn nháp\".",
+            "AC4: Chuyển tab → reset về trang 1, bỏ chọn mọi đơn đã tick trước đó."
+          ],
+          "notes": [
+            "Đơn \"Đơn nháp\" là đơn status === 'pending' nhưng KHÔNG phải đơn thư đang chờ xử lý (loại trừ qua isPending247) — 2 khái niệm tách biệt dù cùng status gốc pending."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-7",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách: Tìm kiếm và lọc theo Shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn tìm nhanh 1 đơn theo mã đơn/tên khách hàng, hoặc chỉ xem đơn của 1 shop cụ thể, để không phải dò qua toàn bộ danh sách khi có nhiều shop và nhiều đơn.",
+          "userFlow": [
+            "Gõ vào ô \"Tìm theo mã đơn hoặc tên khách hàng\" → danh sách lọc ngay theo nội dung gõ",
+            "Chọn 1 shop cụ thể ở dropdown \"Tất cả shop (N)\" → chỉ còn đơn của shop đó",
+            "Có thể dùng đồng thời cả 2 (lọc shop trước, rồi tìm kiếm trong kết quả đó)"
+          ],
+          "systemFlow": [
+            "Ô tìm kiếm: state search, lọc case-insensitive theo trackingCode HOẶC receiverName chứa chuỗi gõ vào (áp dụng SAU khi đã lọc theo tab + shop)",
+            "Dropdown shop: state shopFilter, mặc định \"Tất cả shop\"; chọn 1 shop → lọc o.shopId === shopFilter",
+            "Cả 2 filter đều reset page về 1 khi thay đổi, nhưng KHÔNG xoá các đơn đang được tick chọn"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Gõ vào ô tìm kiếm → danh sách chỉ còn đơn có mã đơn hoặc tên khách hàng chứa đúng chuỗi đã gõ.",
+            "AC2: Dropdown shop liệt kê đúng các shop thuộc đại lý, mặc định chọn \"Tất cả shop\".",
+            "AC3: Lọc theo shop rồi tìm kiếm → kết quả là giao của cả 2 điều kiện.",
+            "AC4: Đổi bộ lọc → về trang 1, nhưng các đơn đã tick chọn trước đó vẫn giữ nguyên."
+          ],
+          "notes": [
+            "Khác với đổi TAB (xoá hết lựa chọn) — đổi filter tìm kiếm/shop KHÔNG xoá lựa chọn."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-8",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách: Chọn nhiều đơn hàng",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn tick chọn nhiều đơn cùng lúc trong danh sách, để chuẩn bị cho các thao tác hàng loạt sau này.",
+          "userFlow": [
+            "Tick checkbox từng dòng đơn, hoặc tick checkbox ở header để chọn tất cả đơn đang hiển thị trên trang hiện tại",
+            "Khi có ít nhất 1 đơn được chọn, thanh \"Đã chọn N đơn\" hiện ra phía trên bảng",
+            "Bấm \"Bỏ chọn\" trên thanh đó để xoá hết lựa chọn"
+          ],
+          "systemFlow": [
+            "selected: Set<string> lưu id các đơn đã tick",
+            "Checkbox header allChecked chỉ tính đúng theo paginated (đơn của TRANG HIỆN TẠI)",
+            "Lựa chọn giữ nguyên khi đổi trang, đổi filter tìm kiếm/shop — chỉ bị xoá khi đổi TAB",
+            "\"Bỏ chọn\" → setSelected(new Set())"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tick checkbox 1 dòng → dòng đó được đánh dấu chọn.",
+            "AC2: Tick checkbox header → chọn tất cả đơn đang hiển thị trên trang hiện tại (không phải toàn bộ danh sách đã lọc).",
+            "AC3: Có ≥1 đơn được chọn → thanh \"Đã chọn N đơn\" hiện ra, đúng số lượng.",
+            "AC4: Bấm \"Bỏ chọn\" → xoá hết lựa chọn, thanh biến mất.",
+            "AC5: Chuyển sang trang khác trong cùng tab/filter → lựa chọn ở trang cũ vẫn được giữ."
+          ],
+          "notes": [
+            "GAP: thanh \"Đã chọn N đơn\" hiện chỉ hiển thị số lượng, chưa có nút thao tác hàng loạt nào (gửi/huỷ/xuất Excel hàng loạt) — cần xác nhận với BA trước khi bổ sung."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-9",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách: Phân trang",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem danh sách đơn hàng theo từng trang, có thể đổi số dòng mỗi trang và nhảy nhanh tới trang bất kỳ, để duyệt qua danh sách lớn thuận tiện.",
+          "userFlow": [
+            "Cuối bảng có bộ điều khiển phân trang: chọn số dòng mỗi trang (50/100), các nút số trang, nút về trang đầu/cuối, ô \"Đi đến trang số\"",
+            "Bấm số trang hoặc gõ số vào ô \"Đi đến trang số\" rồi Enter → nhảy đúng trang đó"
+          ],
+          "systemFlow": [
+            "Pagination component: \"Hiển thị\" chỉ có 2 lựa chọn 50/100, bấm là đảo giá trị (không phải dropdown nhiều lựa chọn)",
+            "Danh sách số trang: hiện đủ nếu tổng số trang ≤ 7, ngược lại hiện 3 trang đầu + dấu \"...\" + 3 trang cuối",
+            "Ô \"Đi đến trang số\": nhận Enter, chỉ nhảy nếu giá trị nhập là số nguyên hợp lệ trong khoảng [1, tổng số trang]"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Mặc định hiển thị 50 dòng/trang.",
+            "AC2: Bấm chọn \"100\" → hiển thị 100 dòng/trang, tính lại tổng số trang.",
+            "AC3: Tổng số trang ≤ 7 → hiện đủ số nút trang. Nhiều hơn 7 → hiện 3 trang đầu, dấu \"...\", 3 trang cuối.",
+            "AC4: Gõ số hợp lệ vào ô \"Đi đến trang số\" rồi Enter → nhảy đúng trang đó.",
+            "AC5: Nút về trang đầu/trang cuối luôn nhảy đúng trang 1 / trang cuối cùng."
+          ],
+          "notes": [
+            "Không có tuỳ chọn số dòng/trang nào khác ngoài 50 và 100."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-10",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Chi tiết: Xem thông tin đơn hàng",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn bấm vào 1 đơn để xem đầy đủ thông tin bên gửi/nhận, sản phẩm, phí vận chuyển và phụ phí, để kiểm tra chi tiết đơn khi cần đối chiếu với shop hoặc khách hàng.",
+          "userFlow": [
+            "Bấm vào mã đơn hàng (hoặc bấm vào dòng đơn) → drawer chi tiết trượt ra từ phải",
+            "Tab \"Thông tin đơn\" (mặc định) hiển thị lần lượt: Bên gửi, Bên nhận, Sản phẩm, Thông tin đơn hàng, Phí vận chuyển, Phụ phí, và khối tổng tiền ở cuối",
+            "Đóng drawer (nút X) để quay lại danh sách"
+          ],
+          "systemFlow": [
+            "OrderDetailDrawer mở khi selectedOrder được set, activeTab reset về 'info' mỗi lần đổi đơn",
+            "Card Bên gửi: tên/SĐT/địa chỉ chủ shop (fallback về order.senderName/senderPhone nếu không tìm thấy shop)",
+            "Card Bên nhận: order.receiverName/receiverPhone/receiverAddress",
+            "Card Sản phẩm: khối lượng thật (order.weight), kích thước hiển thị cố định 10x10x10cm",
+            "Card Thông tin đơn hàng: order.createdAt, order.cod, trạng thái lấy từ order.log[0].status_name (fallback order.status)",
+            "Card Phí vận chuyển: order.fee (đã đổi nhãn \"giá bán shop\" ở story riêng)",
+            "Card Phụ phí: 4 dòng phụ phí cố định",
+            "Khối tổng cuối: Tổng phí vận chuyển + Tổng thu khách hàng (order.cod)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm vào mã đơn hoặc dòng đơn bất kỳ → drawer chi tiết mở đúng đơn đã bấm.",
+            "AC2: Card Bên gửi/Bên nhận hiển thị đúng thông tin của đơn đang xem.",
+            "AC3: Card Thông tin đơn hàng hiển thị đúng ngày tạo, COD, trạng thái mới nhất của đơn.",
+            "AC4: Đóng drawer → quay lại đúng vị trí danh sách trước đó (tab/trang/filter không đổi).",
+            "AC5: Mở đơn khác trong khi drawer đang mở → nội dung cập nhật đúng theo đơn mới, tab con quay về \"Thông tin đơn\"."
+          ],
+          "notes": [
+            "GAP đã biết: một số nội dung trong drawer đang hiển thị cố định/mẫu, không phản ánh đúng dữ liệu thật của từng đơn — card Sản phẩm luôn hiện 1 dòng sản phẩm giả, card Phí vận chuyển luôn hiện tên dịch vụ cố định \"2 shop 1 nặng 1 nhẹ\", card Phụ phí luôn hiện 4 dòng \"0đ\", các dòng \"Giảm giá\"/\"Thu ship khách hàng\"/\"Giá trị hàng\" luôn \"0 đ\", các link Ghi chú/Thanh toán/Nguồn tạo không có chức năng — cần xác nhận với BA có cần làm động không."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-11",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Chi tiết: Xem lịch sử trạng thái và lịch sử thao tác",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem toàn bộ lịch sử thay đổi trạng thái vận chuyển và lịch sử thao tác chỉnh sửa của 1 đơn, để tra soát khi có khiếu nại hoặc cần biết đơn đã qua những bước nào.",
+          "userFlow": [
+            "Trong drawer chi tiết đơn, bấm tab \"Lịch sử trạng thái\" → xem thống kê Số lần lấy/giao/hoàn + danh sách lịch sử theo ngày",
+            "Bấm tab \"Lịch sử thao tác\" → xem bảng ai đã sửa gì, từ giá trị cũ sang giá trị mới, theo từng ngày"
+          ],
+          "systemFlow": [
+            "Tab \"Lịch sử trạng thái\": 3 counter từ order.num_pick/num_deliver/num_return; order.log[] nhóm theo ngày (mới nhất lên trước), mỗi dòng hiện trạng thái, hành động, tag \"BKK\" nếu is_force_majeure, ghi chú, kho hàng, giờ. Dòng log mới nhất tô nền nổi bật",
+            "Tab \"Lịch sử thao tác\": order.actionHistory[] nhóm theo ngày, mỗi dòng hiện giờ/người thực hiện/hành động/giá trị cũ/giá trị mới"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Lịch sử trạng thái\" hiện đúng 3 số liệu Số lần lấy/giao/hoàn theo đơn đang xem.",
+            "AC2: Danh sách lịch sử trạng thái nhóm đúng theo ngày, sắp xếp ngày mới nhất lên đầu; dòng mới nhất được tô nền nổi bật.",
+            "AC3: Đơn không có log → hiện \"Chưa có lịch sử trạng thái\", không lỗi.",
+            "AC4: Tab \"Lịch sử thao tác\" hiện đúng bảng thời gian/người thực hiện/hành động/giá trị cũ → mới, nhóm theo ngày.",
+            "AC5: Đơn không có actionHistory → hiện \"Chưa có lịch sử thao tác\", không lỗi."
+          ],
+          "notes": [
+            "2 tab này thuần hiển thị dữ liệu có sẵn — không có thao tác chỉnh sửa nào ở đây."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-12",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Chi tiết: Huỷ đơn / Cập nhật đơn — CHƯA HOẠT ĐỘNG (gap)",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn huỷ 1 đơn hoặc cập nhật thông tin đơn ngay từ drawer chi tiết, để xử lý các trường hợp shop nhập sai hoặc cần huỷ đơn mà không phải thao tác bên Web Shop.",
+          "userFlow": [
+            "Ở drawer chi tiết đơn, tab \"Thông tin đơn\", cuối trang có 2 nút: \"Huỷ đơn\" và \"Cập nhật\"",
+            "Bấm \"Huỷ đơn\" → (dự kiến) hỏi xác nhận, huỷ đơn, chuyển trạng thái sang \"Đơn huỷ\"",
+            "Bấm \"Cập nhật\" → (dự kiến) cho sửa các trường của đơn rồi lưu lại"
+          ],
+          "systemFlow": [
+            "Cả 2 nút hiện KHÔNG có onClick handler nào — bấm vào không có phản ứng gì. Đây là spec mô tả hành vi mong muốn."
+          ],
+          "acceptanceCriteria": [
+            "AC1 — GAP, chưa hoạt động: Nút \"Huỷ đơn\" hiện tại bấm vào không có phản ứng gì.",
+            "AC2 — GAP, chưa hoạt động: Nút \"Cập nhật\" hiện tại bấm vào không có phản ứng gì.",
+            "AC3 (dự kiến): Bấm \"Huỷ đơn\" → modal xác nhận → xác nhận thì đổi order.status sang 'cancelled', đơn chuyển sang tab \"Đơn huỷ\".",
+            "AC4 (dự kiến): Bấm \"Cập nhật\" → cho sửa các trường phù hợp → lưu thành công cập nhật lại đơn trong orderStore."
+          ],
+          "notes": [
+            "GAP quan trọng: đây là 1 trong số các nút \"trang trí\" chưa nối logic trong AgencyOrders.tsx — cần story riêng để implement khi có yêu cầu cụ thể (đơn nào được phép huỷ?).",
+            "Việc huỷ đơn bên Web Shop (nếu có) có thể đã hoạt động riêng — cần kiểm tra Orders.tsx (Web Shop) trước khi giả định 2 nơi dùng chung 1 luồng huỷ."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-13",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Tạo đơn hàng thay shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn tự tạo 1 đơn hàng hoá thay cho shop (chọn shop, nhập thông tin người nhận, sản phẩm, dịch vụ vận chuyển), để hỗ trợ shop khi cần nhập đơn hộ.",
+          "userFlow": [
+            "Bấm \"Tạo đơn hàng\" ở trang \"Đơn hàng\" → drawer tạo đơn mở ra",
+            "Chọn Shop tạo đơn ở đầu drawer — chọn shop nào thì dịch vụ mặc định của shop đó tự chọn theo",
+            "Điền thông tin người nhận, thông tin sản phẩm (tên, SL, giá, khối lượng, kích thước)",
+            "Điền thông tin đơn hàng (COD, giảm giá, khai giá trị hàng...), chọn ai trả phí ship, chọn dịch vụ vận chuyển",
+            "Xem phụ phí tự tính theo lựa chọn, xem tổng phí vận chuyển + tổng thu khách hàng",
+            "Bấm \"Tạo đơn\" hoặc \"Lưu nháp\""
+          ],
+          "systemFlow": [
+            "Chọn Shop → selectedShopId đổi, tự set selectedServiceId về dịch vụ đầu tiên có cấu hình bảng giá của shop đó",
+            "Sản phẩm: tính \"Khối lượng quy đổi\" = max(cân nặng nhập, D×R×C/5000)",
+            "Chọn dịch vụ → phụ phí tính live theo bảng giá dịch vụ đó: phí bảo hiểm, phí giao 1 phần, phí giao thất bại thu tiền, phí thu hộ",
+            "Toggle \"Khách trả ship\" → tự reset \"Thu ship khách hàng\" về 0",
+            "Tổng phí vận chuyển = phí ship + tổng phụ phí đang active; Tổng thu khách hàng tính khác nhau tuỳ ai trả ship"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Chọn Shop khác → dịch vụ mặc định tự đổi theo đúng shop vừa chọn.",
+            "AC2: Nhập khối lượng/kích thước → \"Khối lượng quy đổi\" tự tính đúng công thức.",
+            "AC3: Tick \"Khai giá trị hàng\" và nhập giá trị hàng → phí bảo hiểm tự tính hiện ra theo đúng bậc giá trị.",
+            "AC4: Chọn \"Khách trả ship\" → ô \"Thu ship khách hàng\" tự về 0 và bị khoá.",
+            "AC5: Tổng phí vận chuyển và Tổng thu khách hàng hiển thị đúng theo công thức, cập nhật ngay khi đổi input liên quan.",
+            "AC6: Shop chưa cấu hình dịch vụ nào → hiện \"Shop chưa cấu hình dịch vụ\", không cho chọn dịch vụ."
+          ],
+          "notes": [
+            "GAP quan trọng: nút \"Tạo đơn\" hiện chỉ đóng drawer, KHÔNG thực sự tạo/lưu đơn hàng mới vào orderStore — đơn nhập vào sẽ mất khi đóng drawer. Nút \"Lưu nháp\" không có onClick nào cả.",
+            "Đây là gap nghiêm trọng nhất trong toàn bộ trang \"Đơn hàng\" — cần ưu tiên implement thật (persist đơn mới vào orderStore.ts, dùng chung addOrder() đã có sẵn cho luồng Web Shop).",
+            "Nhiều phần trong drawer mang tính trang trí/tĩnh (Chọn ca lấy hàng, các link Ghi chú/Thanh toán/Nguồn tạo, dropdown phường/xã cố định) — không có chức năng thật."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-14",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Import đơn hàng từ Excel",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn import nhiều đơn hàng cùng lúc từ file Excel, để nhập hộ shop số lượng lớn đơn thay vì tạo từng đơn một qua drawer \"Tạo đơn hàng\".",
+          "userFlow": [
+            "Ở trang \"Đơn hàng\", bấm nút \"Import đơn hàng\" (đặt cạnh nút \"Xuất đơn hàng\", cùng style viền xám nền trắng)",
+            "Modal \"Import đơn hàng\" mở ra, hiện rõ đúng thứ tự 10 cột cần có trong file",
+            "Bấm vùng upload, chọn file .xlsx/.xls",
+            "Hệ thống đọc và validate từng dòng ngay lập tức, hiện preview: số dòng \"Hợp lệ\" / \"Lỗi\", kèm danh sách lý do lỗi theo từng dòng",
+            "Bấm \"Import N đơn hợp lệ\" → các dòng hợp lệ được tạo thành đơn hàng thật, dòng lỗi bị bỏ qua",
+            "Đóng modal, danh sách đơn hàng refresh — đơn \"Hàng hoá\" xuất hiện ở tab tương ứng theo trạng thái GHN, đơn \"Thư\" xuất hiện ở tab \"Chờ xử lý\""
+          ],
+          "systemFlow": [
+            "Cột bắt buộc theo đúng thứ tự: Mã shop, Loại đơn, Khách hàng, Số điện thoại, Địa chỉ giao hàng, Sản phẩm, Khối lượng (kg), Tiền thu hộ COD (đ), Phí ship (giá bán shop, đ), Trả ship",
+            "Parse thật bằng XLSX.read() trên nội dung file upload (không phải progress bar giả) — đọc sheet đầu tiên qua sheet_to_json({ header: 1 })",
+            "Validate từng dòng: Mã shop phải khớp 1 shop thuộc đại lý hiện tại; Loại đơn chỉ nhận \"Hàng hoá\" hoặc \"Thư\"; các trường bắt buộc không rỗng; Khối lượng phải là số dương; Phí ship phải là số không âm",
+            "Dòng hợp lệ → build Order object: \"Hàng hoá\" → dispatchStatus 'dispatched', carrierCode 'GHN' (giống luồng shop tự tạo đơn hàng hoá); \"Thư\" → dispatchStatus 'pending_agency', carrierCode null (chờ đại lý gửi 247Express, giống CreateLetterDrawer)",
+            "senderName/senderPhone lấy từ ownerName/phone của shop tương ứng trong shops.json",
+            "Mỗi dòng hợp lệ gọi addOrder() (dùng chung cơ chế orderStore.ts) → refreshOrders() load lại danh sách"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Nút \"Import đơn hàng\" hiển thị cùng hàng với \"Xuất đơn hàng\", cùng style, icon xoay 180° để phân biệt chiều import/export.",
+            "AC2: Chưa chọn file → nút xác nhận hiện \"Chọn file để tiếp tục\" và bị khoá.",
+            "AC3: Chọn file đúng định dạng → hiện đúng số dòng \"Hợp lệ\"/\"Lỗi\", danh sách lỗi liệt kê rõ số dòng + lý do cụ thể.",
+            "AC4: Chọn file sai định dạng → hiện thông báo lỗi đỏ \"File không đúng định dạng — vui lòng dùng đúng template\", không crash.",
+            "AC5: Dòng có Mã shop không thuộc đại lý hiện tại → bị coi là lỗi, không được import.",
+            "AC6: Bấm \"Import N đơn hợp lệ\" → chỉ N dòng hợp lệ được tạo thành đơn thật trong orderStore, dòng lỗi bị bỏ qua hoàn toàn.",
+            "AC7: Đơn \"Thư\" import xong xuất hiện ngay ở tab \"Chờ xử lý\"; đơn \"Hàng hoá\" xuất hiện ở tab \"Đơn nháp\"/trạng thái tương ứng — không lẫn lộn.",
+            "AC8: Sau khi import, danh sách đơn hàng tự refresh mà không cần tải lại trang."
+          ],
+          "notes": [
+            "Cùng nguyên tắc \"làm thật\" như tính năng Xuất đơn hàng — không dùng progress bar giả lập như modal upload file đối soát GHN, mà parse nội dung file thật bằng thư viện xlsx đã có sẵn.",
+            "Import không có cột \"NVC\" tường minh — carrier được suy ra từ Loại đơn, giống cách Service/Bảng giá đã hợp nhất luồng GHN/247Express.",
+            "Đây là 1 trong 2 cách tạo đơn hộ shop (cách kia là drawer \"Tạo đơn hàng\" — hiện có gap chưa persist, xem AGA-ORDER-13); import dùng chung addOrder() nên không bị gap đó."
+          ]
+        }
+      ]
     },
     {
       "key": "reconciliation",
@@ -293,6 +687,47 @@
             "AC6: Khi tải lên, hệ thống hiển thị tiến trình dạng % (progress bar); Agency Admin có thể bấm \"Dừng tải\" để huỷ giữa chừng.",
             "AC7: Sau khi tải lên hoàn tất, phiên mới được tạo với: mã phiên dạng GHN{số thứ tự}, ngày thanh toán = ngày hiện tại, trạng thái \"Chờ xác nhận\", và xuất hiện đầu danh sách phiên.",
             "AC8: Phiên ở trạng thái \"Chờ xác nhận\" chưa bị khoá — vẫn có thể chỉnh sửa/xoá, khác với phiên đã \"Đã xác nhận\" (đã khoá dữ liệu)."
+          ]
+        },
+        {
+          "id": "AGA-RECON-3",
+          "jiraKey": "",
+          "title": "[AGA] Đối soát: Xác nhận phiên GHN — tự động tách phiên shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xác nhận một phiên đối soát GHN đang \"Chờ xác nhận\" để khoá dữ liệu phiên lại và hệ thống tự động tách ra thành các phiên đối soát riêng cho từng shop có đơn trong phiên đó, chuẩn bị cho việc thanh toán COD với từng shop.",
+          "notes": [
+            "GAP quan trọng: Doc cũ phien-shop.md mô tả sẵn luồng \"Xác nhận phiên shop\" bằng checkbox + thanh bulk action — luồng này CHƯA tồn tại trong code. AgencyReconciliation.tsx có `const [confirmedShopIds] = useState<Set<string>>(new Set())` — chỉ đọc, không có setter, nên ShopSession.status không bao giờ chuyển 'confirmed'. Cần story riêng để implement: thêm setter, thêm UI xác nhận (từng phiên/hàng loạt) ở cả TabShop và AgencyReconciliationShopDetail.tsx.",
+            "Sai lệch khác trong phien-shop.md: doc ghi mã phiên shop dạng SHOP-{mã GHN}-{mã shop} nhưng code sinh mã dạng COD_SHOP_{ngày}{số thứ tự}_{shopId}. Doc cũng liệt kê cột \"Số lệch\" trong bảng phiên shop nhưng cột này hiện không render ở TabShop dù totalMismatch đã tính sẵn.",
+            "Câu chuyện này bổ sung phần \"chưa viết\" mà AGA-RECON-1 đã ghi chú: việc tự động sinh phiên shop xảy ra ở bước xác nhận phiên — xem story \"Xác nhận phiên đối soát GHN\" (chưa viết).",
+            "[ĐÃ FIX] Dữ liệu mock khớp orders.json: carrier-reconciliation-items.json được viết lại (148 → 32 dòng, khớp 100% orderCode/trackingCode với orders.json) nên resolveShopId() giờ đi qua nhánh match thật, không còn luôn fallback về shopId tĩnh. Giữ 3 dòng MISMATCH có chủ đích để vẫn demo được Số lệch/Đơn lệch trên UI. carrier-reconciliation.json cũng được cập nhật lại totalOrders/totalCOD/totalFee/totalMismatch/totalReconcile/netReceived cho khớp số item mới.",
+            "[ĐÃ FIX] 3/4 phiên thiếu item: 247_001, 247_002, 247_003 (agencyId AGN001, hiện trên trang) giờ đã có ItemRecord — tab Phiên shop tăng lên 18 phiên shop (đã xác nhận qua UAT trình duyệt). GHN005 cũng được thêm item, nhưng vẫn không hiện trên trang vì trang lọc cứng agencyId === 'AGN001' mà GHN005 thuộc AGN002 — hành vi từ trước, không phải gap mới.",
+            "Ràng buộc còn tồn đọng (chưa fix, chấp nhận có chủ đích): chỉ 9/32 đơn trong orders.json thực sự thuộc shop của AGN001 (SHP001, SHP002) — các item còn lại tham chiếu shop thuộc agency khác, lặp lại bất nhất agency đã có từ data cũ. Giữ nguyên để không làm nghèo dữ liệu demo."
+          ],
+          "userFlow": [
+            "Agency Admin vào \"Đối soát & Chuyển khoản\" → tab \"Phiên NVC\" → mở 1 phiên đang \"Chờ xác nhận\"",
+            "Ở trang chi tiết phiên, bấm nút \"Xác nhận phiên\" (chỉ hiện khi phiên đang \"Chờ xác nhận\")",
+            "Modal \"Xác nhận phiên GHN\" hiện ra, hỏi xác nhận phiên kèm cảnh báo tự động tạo phiên shop + khoá dữ liệu",
+            "Agency Admin bấm \"Xác nhận phiên\" → quay lại danh sách, phiên chuyển \"Đã xác nhận\"",
+            "Agency Admin chuyển sang tab \"Phiên shop\" → thấy phiên shop mới xuất hiện cho mỗi shop có đơn trong phiên GHN vừa xác nhận, trạng thái mặc định \"Chờ xác nhận\""
+          ],
+          "systemFlow": [
+            "Bấm Xác nhận phiên → CarrierSession.status chuyển 'pending' sang 'confirmed'",
+            "Tách phiên shop KHÔNG phải bước ghi dữ liệu riêng — là kết quả tính runtime (deriveShopSessions()), chạy lại mỗi lần tab Phiên shop render: lọc CarrierSession confirmed, xác định shop của mỗi ItemRecord bằng resolveShopId(item) (tra orderCode trong orders.json theo trackingCode/id để lấy shopId thật, fallback về shopId tĩnh trên item nếu không tìm thấy đơn tương ứng), gom theo (sessionId, shopId đã resolve), mỗi nhóm tạo 1 ShopSession mã COD_SHOP_{ngày}{số thứ tự}_{shopId}",
+            "Tính: totalOrders = số đơn; totalCOD = tổng ghnCOD; feeShop = tổng systemFee; feeGHN = tổng ghnFee; profit = feeShop - feeGHN; totalMismatch = số đơn status !== MATCH",
+            "Vì tính runtime, phiên shop tự động biến mất nếu phiên GHN gốc bị xoá",
+            "AgencyReconciliationShopDetail.tsx lọc đơn bằng cùng resolveShopId(item) === session.shopId để nhất quán với deriveShopSessions()"
+          ],
+          "crossPlatformImpact": [
+            "Web Shop — trang Đối soát: Sau khi Agency Admin xác nhận phiên GHN, shop thấy ngay phiên đối soát của mình xuất hiện (cùng cơ chế tính runtime), trạng thái \"Chờ thanh toán\"."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Nút \"Xác nhận phiên\" chỉ hiển thị khi phiên đang \"Chờ xác nhận\"; phiên \"Đã xác nhận\" không còn nút này (và không còn nút \"Xoá phiên\").",
+            "AC2: Bấm \"Xác nhận phiên\" → modal hiện đúng mã phiên và cảnh báo tự động tách phiên shop + khoá dữ liệu. Bấm \"Huỷ\" đóng modal, không đổi trạng thái.",
+            "AC3: Xác nhận thành công → phiên chuyển \"Đã xác nhận\" ngay trong danh sách phiên NVC.",
+            "AC4: Tab \"Phiên shop\" chỉ có dữ liệu khi có ít nhất 1 phiên GHN \"Đã xác nhận\"; nếu chưa có, hiển thị trạng thái rỗng.",
+            "AC5: Sau khi xác nhận 1 phiên GHN, tab \"Phiên shop\" hiển thị đúng 1 phiên shop cho mỗi shop có đơn trong phiên đó — không thiếu, không trùng shop.",
+            "AC6: Mỗi phiên shop hiển thị đúng: Mã phiên shop, Tên shop, mã Phiên GHN nguồn, khoảng thời gian, Số đơn, Tổng COD, Tổng phí DV (shop), Tổng phí DV (GHN), Lợi nhuận đại lý, Trạng thái.",
+            "AC7 (GAP, chưa hoạt động): Trạng thái phiên shop hiện luôn luôn là \"Chờ xác nhận\" — chưa có hành động \"Xác nhận chuyển khoản\" nào được nối logic."
           ]
         }
       ]
@@ -654,6 +1089,105 @@
             "AC4: Cả 2 tab đều hiển thị ghi chú rõ ràng: \"Chưa có dữ liệu phụ phí cho dịch vụ này\" — không hiển thị toggle \"Phụ phí\" và không tái sử dụng dữ liệu phụ phí của dịch vụ Chuyển phát nhanh.",
             "AC5: Mỗi zone card có toggle \"Vượt cân\" — khi bật, hiển thị form cấu hình cước vượt cân theo cú pháp \"Tăng X đồng trên mỗi Y gram\".",
             "AC6: Dữ liệu của tab Chuyển phát nhanh tiết kiệm và tab Chuyển phát đường bộ lưu độc lập với nhau và với tab Chuyển phát nhanh."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-12",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Tạo mới dịch vụ: Thêm phân loại hàng",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn phân loại rõ mỗi dịch vụ đang xử lý Hàng hoá hay Thư, bưu phẩm ngay khi tạo mới, để biết dịch vụ này áp dụng cho loại đơn nào mà không cần suy đoán qua nhà vận chuyển hay bảng giá đã chọn.",
+          "userFlow": [
+            "Agency Admin vào \"Thiết lập NVC\" → tab \"Dịch vụ\" → bấm Tạo dịch vụ mới",
+            "Ở card \"Thông tin cơ bản\", ngay dưới Tên dịch vụ/Mô tả, thấy mục Loại đơn với 2 lựa chọn: Hàng hoá / Thư, bưu phẩm",
+            "Khi chọn bảng giá bán cho shop ở card \"Cấu hình\", hệ thống tự động gợi ý Loại đơn tương ứng (bảng giá GHN → Hàng hoá, bảng giá 247Express → Thư, bưu phẩm)",
+            "Agency Admin có thể bấm đổi lại lựa chọn Loại đơn theo ý muốn, không bị khoá theo gợi ý",
+            "Bấm \"Tạo dịch vụ\" → Loại đơn được lưu cùng dịch vụ, hiển thị lại đúng khi xem chi tiết dịch vụ vừa tạo"
+          ],
+          "systemFlow": [
+            "ServiceForm (state form tạo/sửa dịch vụ trong ServiceDetail.tsx) có thêm field sendKind: 'goods' | 'letter', mặc định 'goods' khi tạo mới",
+            "Khi <select> bảng giá đổi giá trị, onChange tra nvc của bảng giá vừa chọn trong pricing.json và set lại sendKind tương ứng ('247Express' → 'letter', còn lại → 'goods') — chỉ áp dụng lúc tạo mới (isNewService), không tự đổi khi sửa dịch vụ đã có",
+            "Radio button \"Hàng hoá\"/\"Thư, bưu phẩm\" đọc/ghi trực tiếp editForm.sendKind — bấm vào radio nào thì setEditForm cập nhật ngay, ghi đè lên giá trị tự động gợi ý",
+            "Lúc submit, handleSave() truyền sendKind: editForm.sendKind vào addService()/updateService() — lưu vào AgencyService.sendKind (field mới, optional để tương thích dữ liệu cũ)",
+            "Chế độ xem chi tiết dịch vụ hiển thị LabelValue \"Loại đơn\": sendKind === 'letter' ? 'Thư, bưu phẩm' : 'Hàng hoá'",
+            "Dữ liệu dịch vụ cũ (sendKind undefined) suy ra hiển thị theo carrier hiện có: GHN → Hàng hoá, 247Express → Thư, bưu phẩm"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Card \"Thông tin cơ bản\" ở cả 2 chế độ (tạo mới, sửa dịch vụ) hiển thị mục \"Loại đơn\" với đúng 2 radio button: \"Hàng hoá\" và \"Thư, bưu phẩm\" (chọn được đúng 1 trong 2, không phải checkbox).",
+            "AC2: Mặc định khi vào trang tạo dịch vụ mới, radio \"Hàng hoá\" đang được chọn.",
+            "AC3: Chọn 1 bảng giá có nvc = '247Express' ở card \"Cấu hình\" → radio tự chuyển sang \"Thư, bưu phẩm\". Chọn lại bảng giá nvc = 'GHN' → radio tự chuyển về \"Hàng hoá\".",
+            "AC4: Agency Admin bấm trực tiếp vào radio (bất kỳ lúc nào) → radio đó được chọn ngay, không bị ghi đè lại bởi lựa chọn bảng giá trước đó.",
+            "AC5: Tạo dịch vụ thành công → vào lại trang chi tiết, mục \"Loại đơn\" hiển thị đúng giá trị đã chọn lúc tạo (không phải giá trị mặc định/gợi ý ban đầu nếu đã đổi tay).",
+            "AC6: Sửa 1 dịch vụ đã có sẵn — Loại đơn hiển thị và sửa được độc lập, KHÔNG tự đổi theo khi đổi bảng giá đang gắn cho dịch vụ đó.",
+            "AC7: Dịch vụ cũ tạo trước tính năng này (chưa có sendKind trong data) — khi xem chi tiết vẫn hiển thị đúng \"Loại đơn\" suy theo carrier hiện có, không hiển thị trống/lỗi."
+          ],
+          "notes": [
+            "Đây là bước bổ sung sau khi luồng tạo Dịch vụ/Bảng giá GHN-247Express được gộp thành 1 luồng duy nhất (không còn hỏi carrier qua picker trước khi vào form) — \"Loại đơn\" là cách hiển thị tường minh cho Agency Admin biết dịch vụ dùng cho việc gì, độc lập với việc chọn Shop ID/bảng giá bên dưới.",
+            "Field sendKind trên Order (orderStore.ts) đã tồn tại từ trước (dùng phân biệt CreateOrderDrawer/CreateLetterDrawer ở Web Shop) — field cùng tên trên AgencyService là khái niệm tương tự nhưng độc lập, không có ràng buộc đồng bộ 2 chiều nào giữa Service và Order ở phạm vi task này.",
+            "Chưa có yêu cầu hiển thị \"Loại đơn\" ở danh sách Dịch vụ (AgencyServices.tsx) — phạm vi task này chỉ áp dụng cho trang tạo mới/chi tiết dịch vụ (ServiceDetail.tsx)."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-13",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Chi tiết dịch vụ: Thêm phân loại hàng hoá",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem và sửa được Loại đơn (Hàng hoá / Thư, bưu phẩm) ngay ở trang chi tiết dịch vụ (không chỉ lúc tạo mới), để biết và điều chỉnh dịch vụ đang áp dụng cho loại đơn nào bất cứ lúc nào cần, không phải xoá tạo lại dịch vụ.",
+          "userFlow": [
+            "Agency Admin vào \"Thiết lập NVC\" → tab \"Dịch vụ\" → mở 1 dịch vụ đã có sẵn",
+            "Ở chế độ xem (chưa bấm Chỉnh sửa), thấy field \"Loại đơn\" hiển thị đúng giá trị hiện tại của dịch vụ: Hàng hoá hoặc Thư, bưu phẩm",
+            "Bấm \"Chỉnh sửa\" → field \"Loại đơn\" chuyển thành 2 radio button chọn được, y hệt cách hiển thị ở màn tạo dịch vụ mới",
+            "Agency Admin bấm đổi radio nếu muốn phân loại lại dịch vụ",
+            "Bấm \"Lưu\" → Loại đơn mới được ghi lại, quay về chế độ xem hiển thị đúng giá trị vừa đổi"
+          ],
+          "systemFlow": [
+            "Ở chế độ xem, ServiceDetail.tsx hiển thị LabelValue \"Loại đơn\": serviceData.sendKind === 'letter' ? 'Thư, bưu phẩm' : 'Hàng hoá' — dịch vụ cũ chưa có field sendKind suy ra theo carrier hiện có (GHN → Hàng hoá, 247Express → Thư, bưu phẩm)",
+            "Ở chế độ sửa, cùng 1 cặp radio button \"Hàng hoá\"/\"Thư, bưu phẩm\" y hệt màn tạo mới — đọc/ghi trực tiếp editForm.sendKind qua setEditForm",
+            "Bấm \"Lưu\" → updateService(id, { ..., sendKind: editForm.sendKind }) ghi giá trị mới vào AgencyService.sendKind, sau đó setServiceData(editForm) cập nhật lại view mode",
+            "Khác với lúc tạo mới (sendKind tự gợi ý lại theo bảng giá vừa chọn) — ở chi tiết dịch vụ đã có sẵn, đổi bảng giá đang gắn cho dịch vụ KHÔNG tự đổi Loại đơn; chỉ đổi khi Agency Admin bấm trực tiếp vào radio"
+          ],
+          "acceptanceCriteria": [
+            "AC1 — Hiển thị đúng ở chế độ xem: Field \"Loại đơn\" xuất hiện trong card \"Thông tin cơ bản\", ngay dưới \"Mô tả\" và trên \"Shop\"/\"Kết nối Shop ID\". Đây là text tĩnh (LabelValue), không phải nút/pill bấm được. Giá trị hiển thị đúng 1 trong 2: \"Hàng hoá\" (sendKind === 'goods') hoặc \"Thư, bưu phẩm\" (sendKind === 'letter') — không hiển thị giá trị khác, không để trống.",
+            "AC2 — Chuyển sang radio button khi bấm \"Chỉnh sửa\": Bấm nút \"Chỉnh sửa\" → field \"Loại đơn\" đổi từ text tĩnh sang 2 radio button đặt cạnh nhau: \"Hàng hoá\" và \"Thư, bưu phẩm\". Radio đang chọn là vòng tròn viền cam đậm #FF5200 (viền dày 5px, có quầng sáng rgba(255,82,0,0.12)), label chữ đậm màu đen; radio chưa chọn là vòng tròn viền xám mỏng #D1D5DB, label chữ thường màu xám. Bấm sang radio khác → đổi lựa chọn ngay, chỉ chọn được đúng 1 trong 2. Layout/kiểu radio giống hệt màn \"Dịch vụ mới\".",
+            "AC3 — Lưu đúng giá trị mới: Bấm \"Lưu\" → gọi updateService(id, { sendKind: <giá trị radio đang chọn> }). Trang về chế độ xem, hiển thị đúng giá trị vừa chọn — không hiện giá trị cũ, không cần tải lại trang. Giá trị mới giữ nguyên khi rời trang rồi mở lại (đã ghi vào servicesList, không phải state tạm).",
+            "AC4 — Đổi bảng giá không ảnh hưởng Loại đơn (khác lúc tạo mới): Đang sửa 1 dịch vụ đã có sẵn, đổi dropdown \"Bảng giá (Mặc định)\"/\"Bảng giá bán cho shop (Mặc định)\" sang bảng giá khác → radio \"Loại đơn\" GIỮ NGUYÊN lựa chọn trước đó, không tự nhảy — khác hành vi màn tạo mới (tự set lại theo nvc bảng giá vừa chọn).",
+            "AC5 — Dữ liệu cũ không có sendKind: Dịch vụ có sẵn trong services.json chưa từng có field sendKind (undefined). Chế độ xem vẫn hiển thị đúng: carrier GHN → \"Hàng hoá\"; carrier 247Express → \"Thư, bưu phẩm\". Không hiện \"undefined\", không để trống, không lỗi console.",
+            "AC6 — Huỷ không giữ thay đổi tạm: Đang sửa, đã đổi radio (chưa Lưu) → bấm \"Huỷ\". Trang về chế độ xem, hiển thị đúng giá trị đã lưu trước đó (giá trị trước khi bấm Chỉnh sửa), KHÔNG giữ lựa chọn radio vừa đổi tạm. Mở lại \"Chỉnh sửa\" lần sau → radio được chọn lại đúng giá trị gốc."
+          ],
+          "notes": [
+            "Đây là phần bổ sung cho AGA-CARRIER-12 (chỉ mô tả luồng lúc tạo mới dịch vụ) — task này ghi nhận đúng phạm vi chi tiết/sửa dịch vụ đã có sẵn.",
+            "Về code: \"Loại đơn\" ở 2 chế độ (xem: LabelValue, sửa: radio button) đã được implement cùng lúc với AGA-CARRIER-12 (chung 1 lần sửa ServiceDetail.tsx) — task này không phải code mới, mà là tách story đúng theo phạm vi màn hình để dễ theo dõi/duyệt riêng.",
+            "Không liên quan đến việc bỏ Hub khỏi Chi tiết dịch vụ (đó là 1 thay đổi khác, không thuộc phạm vi \"phân loại hàng\").",
+            "[Cập nhật] UI chọn Loại đơn ban đầu làm dạng pill (nền màu khi active) — đã đổi sang radio button (vòng tròn chọn kiểu radio, style tái dùng từ HubIdTable cũ), áp dụng đồng thời cho cả màn tạo mới (AGA-CARRIER-12) và chi tiết/sửa dịch vụ (story này) vì dùng chung 1 khối JSX."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-14",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Danh sách dịch vụ: Thêm phân loại hàng hoá",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn thấy được Loại đơn (Hàng hoá / Thư, bưu phẩm) của từng dịch vụ ngay tại danh sách \"Dịch vụ\", để nhanh chóng phân biệt dịch vụ nào dùng cho loại đơn gì mà không cần mở chi tiết từng dịch vụ.",
+          "userFlow": [
+            "Agency Admin vào \"Thiết lập NVC\" → tab \"Dịch vụ\"",
+            "Ở mỗi dòng dịch vụ trong danh sách, cạnh tên dịch vụ hiện thêm 1 tag \"Loại đơn\": Hàng hoá hoặc Thư, bưu phẩm",
+            "Agency Admin nhìn danh sách là biết ngay dịch vụ nào xử lý loại đơn gì, không cần bấm vào từng dịch vụ để xem chi tiết"
+          ],
+          "systemFlow": [
+            "AgencyServices.tsx → component ServiceRow (cột \"Dịch vụ đại lý\") thêm 1 tag ngay cạnh svc.name, đọc svc.sendKind",
+            "Dữ liệu dịch vụ cũ chưa có field sendKind (undefined) — suy ra hiển thị theo carrier hiện có: GHN → Hàng hoá, 247Express → Thư, bưu phẩm (cùng quy tắc fallback đã dùng ở ServiceDetail.tsx/ShopCreate.tsx/ShopDetail.tsx)",
+            "Style tag tái sử dụng đúng pattern SendKindTag đã làm ở ShopCreate.tsx/ShopDetail.tsx: \"Thư\" nền tím nhạt #F5F3FF, chữ/viền tím #7C3AED/#DDD6FE; \"Hàng hoá\" nền xám #F3F4F6, chữ/viền xám #4B5563/#E5E7EB",
+            "Không thêm cột header mới — tag đặt trong cột \"Dịch vụ đại lý\" hiện có, giữ nguyên các cột khác: \"Gói kết nối\", \"Shop\", \"Bật/Tắt\""
+          ],
+          "acceptanceCriteria": [
+            "AC1 — Tag hiển thị đúng vị trí và giá trị: Mỗi dòng trong danh sách \"Dịch vụ\" hiện tag \"Loại đơn\" ngay cạnh tên dịch vụ. Giá trị đúng 1 trong 2: \"Hàng hoá\" (sendKind === 'goods', tag xám) hoặc \"Thư, bưu phẩm\" (sendKind === 'letter', tag tím) — không có giá trị khác.",
+            "AC2 — Dữ liệu cũ không lỗi: Dịch vụ chưa từng có sendKind vẫn hiển thị đúng tag, suy theo carrier hiện có. Không hiện \"undefined\", không để trống, không lỗi console.",
+            "AC3 — Không ảnh hưởng nội dung khác trong danh sách: Cột \"Gói kết nối\", \"Shop\", \"Bật/Tắt\" giữ nguyên hành vi/vị trí. Thêm tag không làm lệch layout giữa các dòng.",
+            "AC4 — Tìm kiếm không đổi hành vi: Ô \"Tìm kiếm\" vẫn lọc theo tên/mã dịch vụ như cũ, không lọc/gợi ý theo \"Loại đơn\"."
+          ],
+          "notes": [
+            "Đây là phần còn thiếu đã được ghi chú trước trong AGA-CARRIER-12: \"Chưa có yêu cầu hiển thị 'Loại đơn' ở danh sách Dịch vụ (AgencyServices.tsx) — phạm vi task đó chỉ áp dụng cho trang tạo mới/chi tiết dịch vụ.\" Task này bổ sung đúng phần còn thiếu đó.",
+            "Từng có badge carrier (GHN/247Express) ở vị trí tương tự trong danh sách này trước đây, đã bị bỏ theo yêu cầu \"bỏ nhãn carrier ở màn hình dịch vụ\" — tag \"Loại đơn\" ở đây thay thế thông tin phân loại đó, không phải khôi phục lại carrier badge.",
+            "[Cập nhật] Đã implement. Thêm SendKindTag (tag tĩnh, không phải radio) ngay trong ServiceRow (AgencyServices.tsx), cạnh svc.name — đúng như spec ban đầu, dùng chung style với SendKindTag ở ShopCreate.tsx/ShopDetail.tsx. Không thêm cột header mới, không đổi các cột \"Gói kết nối\"/\"Shop\"/\"Bật/Tắt\". Đã verify qua trình duyệt: tag hiển thị đúng cho cả dịch vụ đã có sendKind lẫn dữ liệu cũ suy theo carrier."
           ]
         }
       ]

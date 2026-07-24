@@ -564,31 +564,23 @@ function TabConnect({ carrier, showModal, setShowModal }: {
   )
 }
 
-// ─── Tab: Bảng giá — 247Express ──────────────────────────────────────────────
-function TabPricing247() {
+// ─── Tab: Bảng giá — hợp nhất GHN + 247Express (theo AC2b / PRD §6.5) ─────────
+// Bảng giá của cả 2 carrier gộp chung 1 danh sách, mỗi row có carrier badge.
+// Không còn banner cảnh báo "chưa kết nối" (bỏ theo Q3).
+// Nút "Tạo bảng giá" duy nhất — chọn carrier ở bước đầu trước khi điều hướng.
+function TabPricingMerged() {
   const navigate = useNavigate()
   const [hovered, setHovered] = useState<string | null>(null)
   const [search, setSearch]   = useState('')
 
-  const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
-  const isActivated = (agency?.clientHubIds ?? []).length > 0
-
+  // Both GHN and 247Express price tables in one list
   const filtered = (allPriceTables as any[]).filter(
-    (pt) => pt.nvc === '247Express' &&
+    (pt) => (pt.nvc === 'GHN' || pt.nvc === '247Express') &&
       (pt.name.toLowerCase().includes(search.toLowerCase()) || (pt.description ?? '').toLowerCase().includes(search.toLowerCase()))
   )
 
   return (
     <>
-      {!isActivated && (
-        <div style={{ margin: '8px 16px 0', padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
-          <span style={{ fontSize: 13, color: '#92400E' }}>
-            247Express chưa được kích hoạt. Liên hệ Super Admin để được phân địa điểm gửi hàng trước khi tạo bảng giá.
-          </span>
-        </div>
-      )}
-
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
@@ -600,10 +592,11 @@ function TabPricing247() {
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm kiếm"
               style={{ border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', width: 200 }} />
           </div>
+
+          {/* "Tạo bảng giá" — vào thẳng form, chọn carrier ngay trong trang thay vì hỏi trước qua dropdown */}
           <button
-            disabled={!isActivated}
-            onClick={() => isActivated && navigate('/agency-admin/carrier-setup/pricing/create-247')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: isActivated ? C_ACTION : '#D1D5DB', border: 'none', borderRadius: 6, cursor: isActivated ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
+            onClick={() => navigate('/agency-admin/carrier-setup/pricing/create')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}>
             <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
             <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo bảng giá</span>
           </button>
@@ -614,119 +607,10 @@ function TabPricing247() {
       <div style={{ padding: '0 16px' }}>
         <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
           {[
-            { label: 'Tên bảng giá', flex: '2 0 0',    minWidth: 200 },
-            { label: 'Ngày tạo',     flex: '1 0 0',     minWidth: 110 },
-            { label: 'Mô tả',        flex: '3 0 0',     minWidth: 180 },
+            { label: 'Tên bảng giá', flex: '2 0 0', minWidth: 200 },
+            { label: 'Ngày tạo',     flex: '1 0 0', minWidth: 110 },
+            { label: 'Mô tả',        flex: '3 0 0', minWidth: 180 },
           ].map((col, i) => (
-            <div key={i} style={{ flex: col.flex, minWidth: col.minWidth, padding: '6px 8px' }}>
-              <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>{col.label}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ height: 1, background: C_BORDER }} />
-
-        {filtered.length === 0 ? (
-          <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Chưa có bảng giá nào</div>
-        ) : filtered.map((pt: any) => (
-          <React.Fragment key={pt.id}>
-            <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}` }}
-              onMouseEnter={() => setHovered(pt.id)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div
-                  onClick={() => navigate(`/agency-admin/carrier-setup/pricing/${pt.id}`)}
-                  style={{ fontSize: 14, fontWeight: 700, color: C_LINK, cursor: 'pointer' }}
-                >{pt.name}</div>
-                {pt.isDefault && (
-                  <span style={{ display: 'inline-block', fontSize: 11, padding: '1px 6px', borderRadius: 8, background: '#EDE9FE', color: '#7C3AED', border: '1px solid #DDD6FE', alignSelf: 'flex-start' }}>Mặc định</span>
-                )}
-              </div>
-              <div style={{ flex: '1 0 0', minWidth: 110, padding: '6px 8px' }}>
-                <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>
-                  {pt.createdAt ? pt.createdAt.split('-').reverse().join('/') : '—'}
-                </span>
-              </div>
-              <div style={{ flex: '3 0 0', minWidth: 180, padding: '6px 8px', overflow: 'hidden' }}>
-                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {pt.description || ''}
-                </span>
-              </div>
-            </div>
-          </React.Fragment>
-        ))}
-      </div>
-    </>
-  )
-}
-
-// ─── Tab: Bảng giá (GHN) ─────────────────────────────────────────────────────
-function TabPricing({ carrier }: { carrier: CarrierKey }) {
-  if (carrier === '247Express') return <TabPricing247 />
-
-  const navigate = useNavigate()
-  const [hovered, setHovered] = useState<string | null>(null)
-  const [search, setSearch]   = useState('')
-
-  const hasActiveShops = shopConnections.some(
-    s => s.agencyId === CURRENT_AGENCY_ID && s.carrier === carrier && s.status === 'active'
-  )
-
-  const filtered = (allPriceTables as any[]).filter(
-    (pt) => pt.nvc === carrier &&
-      (pt.name.toLowerCase().includes(search.toLowerCase()) || (pt.description ?? '').toLowerCase().includes(search.toLowerCase()))
-  )
-
-  const cols = [
-    { label: 'Tên bảng giá', flex: '2 0 0', minWidth: 200 },
-    { label: 'Ngày tạo',     flex: '1 0 0', minWidth: 110 },
-    { label: 'Mô tả',        flex: '3 0 0', minWidth: 180 },
-  ]
-
-  return (
-    <>
-      {!hasActiveShops && (
-        <div style={{ margin: '8px 16px 0', padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
-          <span style={{ fontSize: 13, color: '#92400E' }}>
-            Chưa có Shop ID {carrier} nào được duyệt. Vui lòng{' '}
-            <span
-              onClick={() => navigate('/agency-admin/carrier-setup/connect')}
-              style={{ fontWeight: 600, color: '#D97706', cursor: 'pointer', textDecoration: 'underline' }}
-            >
-              kết nối Shop ID
-            </span>
-            {' '}trước khi tạo bảng giá.
-          </span>
-        </div>
-      )}
-
-      {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY }}>
-          Danh sách bảng giá ({filtered.length})
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6 }}>
-            <SearchOutlined style={{ color: C_TEXT_SECONDARY, fontSize: 16, flexShrink: 0 }} />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm kiếm"
-              style={{ border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px', width: 200 }} />
-          </div>
-          <button
-            disabled={!hasActiveShops}
-            onClick={() => hasActiveShops && navigate('/agency-admin/carrier-setup/pricing/create')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: hasActiveShops ? C_ACTION : '#D1D5DB', border: 'none', borderRadius: 6, cursor: hasActiveShops ? 'pointer' : 'not-allowed', flexShrink: 0 }}>
-            <PlusOutlined style={{ color: '#fff', fontSize: 14 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo bảng giá</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div style={{ padding: '0 16px' }}>
-        <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-          {cols.map((col, i) => (
             <div key={i} style={{ display: 'flex', flex: col.flex, alignItems: 'center', minWidth: col.minWidth, padding: '6px 8px' }}>
               <span style={{ fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>{col.label}</span>
             </div>
@@ -736,32 +620,36 @@ function TabPricing({ carrier }: { carrier: CarrierKey }) {
 
         {filtered.length === 0 ? (
           <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
-        ) : filtered.map((pt: any) => (
-          <React.Fragment key={pt.id}>
-            <div
-              style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}` }}
-              onMouseEnter={() => setHovered(pt.id)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px' }}>
-                <div
-                  onClick={() => navigate(`/agency-admin/carrier-setup/pricing/${pt.id}`)}
-                  style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', cursor: 'pointer' }}
-                >{pt.name}</div>
+        ) : filtered.map((pt: any) => {
+          return (
+            <React.Fragment key={pt.id}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', background: hovered === pt.id ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}` }}
+                onMouseEnter={() => setHovered(pt.id)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                <div style={{ flex: '2 0 0', minWidth: 200, padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      onClick={() => navigate(`/agency-admin/carrier-setup/pricing/${pt.id}`)}
+                      style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', cursor: 'pointer' }}
+                    >{pt.name}</span>
+                  </div>
+                </div>
+                <div style={{ flex: '1 0 0', minWidth: 110, padding: '6px 8px' }}>
+                  <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>
+                    {pt.createdAt ? pt.createdAt.split('-').reverse().join('/') : '—'}
+                  </span>
+                </div>
+                <div style={{ flex: '3 0 0', minWidth: 180, padding: '6px 8px', overflow: 'hidden' }}>
+                  <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {pt.description || ''}
+                  </span>
+                </div>
               </div>
-              <div style={{ flex: '1 0 0', minWidth: 110, padding: '6px 8px' }}>
-                <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>
-                  {pt.createdAt ? pt.createdAt.split('-').reverse().join('/') : '—'}
-                </span>
-              </div>
-              <div style={{ flex: '3 0 0', minWidth: 180, padding: '6px 8px', overflow: 'hidden' }}>
-                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {pt.description || ''}
-                </span>
-              </div>
-            </div>
-          </React.Fragment>
-        ))}
+            </React.Fragment>
+          )
+        })}
       </div>
     </>
   )
@@ -948,16 +836,10 @@ export default function CarrierSetup() {
           </>
         )}
         {activeTab === 'services' && (
-          <>
-            <CarrierSelector selectedCarrier={selectedCarrier} onSelect={setSelectedCarrier} allowedCarriers={allowedCarriers} onRequestCarrier={setRequestModalCarrier} />
-            <AgencyServices carrier={selectedCarrier} />
-          </>
+          <AgencyServices />
         )}
         {activeTab === 'pricing' && (
-          <>
-            <CarrierSelector selectedCarrier={selectedCarrier} onSelect={setSelectedCarrier} allowedCarriers={allowedCarriers} onRequestCarrier={setRequestModalCarrier} />
-            <TabPricing carrier={selectedCarrier} />
-          </>
+          <TabPricingMerged />
         )}
       </div>
     </div>

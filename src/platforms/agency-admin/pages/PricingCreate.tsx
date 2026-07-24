@@ -1142,6 +1142,8 @@ function ZoneGuideModal({ onClose }: { onClose: () => void }) {
 
 export default function PricingCreate() {
   const navigate = useNavigate()
+  // Bảng giá GHN và 247Express dùng chung 1 form/1 công thức tính giá hoàn toàn giống nhau
+  // (route theo tuyến + khối lượng) — không còn khái niệm carrier riêng ở bước tạo bảng giá.
   const [name, setName] = useState('')
   const [desc, setDesc] = useState('')
   const [showZoneGuide, setShowZoneGuide] = useState(false)
@@ -1221,9 +1223,11 @@ export default function PricingCreate() {
         >
           <ArrowLeftOutlined style={{ fontSize: 20, color: C_TEXT_PRIMARY }} />
         </button>
-        <span style={{ flex: 1, fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>
-          Tạo bảng giá mới
-        </span>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>
+            Tạo bảng giá
+          </span>
+        </div>
       </div>
 
       {/* ── Form sections ─────────────────────────────────────── */}

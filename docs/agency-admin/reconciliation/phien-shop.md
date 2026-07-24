@@ -28,9 +28,12 @@ Tab Phiên shop chỉ có dữ liệu khi đã có ít nhất một **phiên GHN
 Mỗi khi đại lý xác nhận một phiên GHN, hệ thống tự động:
 
 1. Lấy tất cả đơn hàng trong phiên GHN
-2. Group theo từng shop
-3. Tạo một phiên shop cho mỗi nhóm `(phiên GHN × shop)`
-4. Mã phiên shop: `SHOP-{mã GHN}-{mã shop}` — ví dụ `SHOP-GHN003-SHP001`
+2. Với mỗi đơn, xác định shop bằng `resolveShopId()`: tra `orderCode` trong `orders.json` (khớp `trackingCode` hoặc `id`) để lấy `shopId` thật của đơn hàng đại lý; nếu không tìm thấy đơn tương ứng, dùng `shopId` tĩnh có sẵn trên dòng đối soát làm phương án dự phòng
+3. Group theo từng shop (đã resolve ở bước trên)
+4. Tạo một phiên shop cho mỗi nhóm `(phiên GHN × shop)`
+5. Mã phiên shop: `COD_SHOP_{ngày thanh toán}{số thứ tự 4 chữ số}_{mã shop}` — ví dụ `COD_SHOP_202403150001_SHP001`
+
+> Ghi chú: dữ liệu mock (`carrier-reconciliation-items.json`) đã được viết lại để `orderCode` khớp 100% với `orders.json`, nên bước 2 giờ đi qua nhánh match thật (không còn luôn fallback). Xem chi tiết tại [xac-nhan-phien-tach-phien-shop.md](./xac-nhan-phien-tach-phien-shop.md).
 
 ### Thông tin hiển thị
 
@@ -39,13 +42,15 @@ Mỗi khi đại lý xác nhận một phiên GHN, hệ thống tự động:
 | Mã phiên shop | ID định danh phiên, liên kết với phiên GHN và shop |
 | Tên shop | Tên shop |
 | Phiên GHN | Mã phiên GHN nguồn |
+| Thời gian | Khoảng thời gian của phiên GHN nguồn |
 | Số đơn | Số đơn của shop trong phiên GHN |
 | Tổng COD | Tổng COD GHN đã nhận cho các đơn của shop này |
 | Phí shop | Phí ship theo bảng giá đại lý (shop được báo) |
 | Phí GHN | Phí ship thực GHN thu |
-| Lợi nhuận ĐL | `Phí shop − Phí GHN` (màu cam nếu dương, đỏ nếu âm) |
-| Số lệch | Số đơn COD hoặc phí không khớp |
+| Lợi nhuận ĐL | `Phí shop − Phí GHN` (màu xanh nếu dương, đỏ nếu âm) |
 | Trạng thái | **Chờ xác nhận** / **Đã xác nhận** |
+
+> Hệ thống có tính sẵn "Số lệch" (số đơn COD/phí không khớp) cho mỗi phiên shop nhưng **hiện chưa hiển thị** thành cột riêng trong bảng — cần bổ sung hoặc xác nhận với BA đây có phải cố ý ẩn không.
 
 ### Lọc
 
@@ -56,16 +61,18 @@ Mỗi khi đại lý xác nhận một phiên GHN, hệ thống tự động:
 
 3 thẻ số liệu: **Tổng phiên shop** · **Đã xác nhận** · **Chờ xác nhận**
 
-### Xác nhận phiên shop
+### Xác nhận phiên shop — CHƯA HOẠT ĐỘNG (gap)
 
-Xác nhận nghĩa là đại lý đã thanh toán COD cho shop.
+> ⚠️ Trạng thái phiên shop hiện **luôn luôn** là "Chờ xác nhận" — chưa có hành động xác nhận nào được nối logic trong code (không có checkbox, không có thanh bulk action, không có nút xác nhận ở trang chi tiết phiên shop). Phần dưới đây mô tả hành vi **mong muốn**, dùng làm spec cho story implement sau — xem chi tiết gap tại [xac-nhan-phien-tach-phien-shop.md](./xac-nhan-phien-tach-phien-shop.md).
 
-**Xác nhận từng phiên:**
+Xác nhận (khi được implement) sẽ có nghĩa là đại lý đã thanh toán COD cho shop.
+
+**Xác nhận từng phiên (dự kiến):**
 - Tick checkbox vào phiên muốn xác nhận
 - Thanh bulk action hiện ra
 - Nhấn **Xác nhận phiên đã chọn**
 
-**Xác nhận nhiều phiên cùng lúc:**
+**Xác nhận nhiều phiên cùng lúc (dự kiến):**
 - Tick checkbox ở header để chọn tất cả phiên **Chờ xác nhận** đang hiển thị
 - Nhấn **Xác nhận phiên đã chọn**
 
@@ -143,5 +150,5 @@ Nhấn **Xem** ở cột cuối → mở modal chi tiết:
 [Agency Admin] Phiên shop tạo ra (Chờ xác nhận)
 [Web Shop]     Phiên xuất hiện trong trang Đối soát (Chờ thanh toán)
         ↓
-[Agency Admin] Xác nhận phiên shop → Đã xác nhận
+[Agency Admin] Xác nhận phiên shop → Đã xác nhận   (⚠️ chưa implement — xem gap ở trên)
 ```
