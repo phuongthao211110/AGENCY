@@ -7,7 +7,7 @@ figma:
 status: draft
 ---
 
-# [AGENCY] Đơn hàng - Danh sách: Chọn nhiều đơn hàng
+# [AGENCY] Đơn hàng: Chọn nhiều đơn hàng
 
 ## User Story
 

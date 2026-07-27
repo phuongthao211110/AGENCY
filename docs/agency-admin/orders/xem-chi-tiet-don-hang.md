@@ -7,7 +7,7 @@ figma:
 status: draft
 ---
 
-# [AGENCY] Đơn hàng - Chi tiết: Xem thông tin đơn hàng
+# [AGENCY] Đơn hàng: Chi tiết đơn hàng
 
 ## User Story
 

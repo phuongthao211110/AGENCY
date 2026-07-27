@@ -1,7 +1,7 @@
 {
   "platform": "agency-admin",
   "currentVersion": "1.1.0",
-  "lastUpdated": "2026-07-23",
+  "lastUpdated": "2026-07-24",
   "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
@@ -361,7 +361,7 @@
         {
           "id": "AGA-ORDER-6",
           "jiraKey": "",
-          "title": "[AGENCY] Đơn hàng - Danh sách: Xem đơn hàng theo trạng thái",
+          "title": "[AGENCY] Đơn hàng: Xem đơn hàng theo trạng thái (8 tab)",
           "status": "draft",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn xem đơn hàng của tất cả shop thuộc đại lý mình, phân theo từng trạng thái vận chuyển, để theo dõi tiến độ xử lý đơn mà không cần hỏi lại từng shop.",
           "userFlow": [
@@ -388,7 +388,7 @@
         {
           "id": "AGA-ORDER-7",
           "jiraKey": "",
-          "title": "[AGENCY] Đơn hàng - Danh sách: Tìm kiếm và lọc theo Shop",
+          "title": "[AGENCY] Đơn hàng: Tìm kiếm và lọc theo shop",
           "status": "draft",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn tìm nhanh 1 đơn theo mã đơn/tên khách hàng, hoặc chỉ xem đơn của 1 shop cụ thể, để không phải dò qua toàn bộ danh sách khi có nhiều shop và nhiều đơn.",
           "userFlow": [
@@ -414,7 +414,7 @@
         {
           "id": "AGA-ORDER-8",
           "jiraKey": "",
-          "title": "[AGENCY] Đơn hàng - Danh sách: Chọn nhiều đơn hàng",
+          "title": "[AGENCY] Đơn hàng: Chọn nhiều đơn hàng",
           "status": "draft",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn tick chọn nhiều đơn cùng lúc trong danh sách, để chuẩn bị cho các thao tác hàng loạt sau này.",
           "userFlow": [
@@ -468,7 +468,7 @@
         {
           "id": "AGA-ORDER-10",
           "jiraKey": "",
-          "title": "[AGENCY] Đơn hàng - Chi tiết: Xem thông tin đơn hàng",
+          "title": "[AGENCY] Đơn hàng: Chi tiết đơn hàng",
           "status": "draft",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn bấm vào 1 đơn để xem đầy đủ thông tin bên gửi/nhận, sản phẩm, phí vận chuyển và phụ phí, để kiểm tra chi tiết đơn khi cần đối chiếu với shop hoặc khách hàng.",
           "userFlow": [

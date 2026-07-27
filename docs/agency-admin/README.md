@@ -34,11 +34,11 @@
 | [AGENCY] Đơn hàng - Danh sách: Thêm phân loại hàng hoá | [danh-sach-them-phan-loai-hang-hoa.md](./orders/danh-sach-them-phan-loai-hang-hoa.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Danh sách: Tách "Thao tác" thành cột riêng | [tach-cot-thao-tac.md](./orders/tach-cot-thao-tac.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Danh sách & Chi tiết: Làm rõ nhãn giá ship là giá bán cho shop | [lam-ro-nhan-gia-ship.md](./orders/lam-ro-nhan-gia-ship.md) | — | [Draft] |
-| [AGENCY] Đơn hàng - Danh sách: Xem đơn hàng theo trạng thái | [xem-danh-sach-theo-trang-thai.md](./orders/xem-danh-sach-theo-trang-thai.md) | — | [Draft] |
-| [AGENCY] Đơn hàng - Danh sách: Tìm kiếm và lọc theo Shop | [tim-kiem-loc-theo-shop.md](./orders/tim-kiem-loc-theo-shop.md) | — | [Draft] |
-| [AGENCY] Đơn hàng - Danh sách: Chọn nhiều đơn hàng | [chon-nhieu-don-hang.md](./orders/chon-nhieu-don-hang.md) | — | [Draft] |
+| [AGENCY] Đơn hàng: Xem đơn hàng theo trạng thái (8 tab) | [xem-danh-sach-theo-trang-thai.md](./orders/xem-danh-sach-theo-trang-thai.md) | — | [Draft] |
+| [AGENCY] Đơn hàng: Tìm kiếm và lọc theo shop | [tim-kiem-loc-theo-shop.md](./orders/tim-kiem-loc-theo-shop.md) | — | [Draft] |
+| [AGENCY] Đơn hàng: Chọn nhiều đơn hàng | [chon-nhieu-don-hang.md](./orders/chon-nhieu-don-hang.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Danh sách: Phân trang | [phan-trang-danh-sach.md](./orders/phan-trang-danh-sach.md) | — | [Draft] |
-| [AGENCY] Đơn hàng - Chi tiết: Xem thông tin đơn hàng | [xem-chi-tiet-don-hang.md](./orders/xem-chi-tiet-don-hang.md) | — | [Draft] |
+| [AGENCY] Đơn hàng: Chi tiết đơn hàng | [xem-chi-tiet-don-hang.md](./orders/xem-chi-tiet-don-hang.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Chi tiết: Xem lịch sử trạng thái và lịch sử thao tác | [lich-su-trang-thai-thao-tac.md](./orders/lich-su-trang-thai-thao-tac.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Chi tiết: Huỷ đơn / Cập nhật đơn — CHƯA HOẠT ĐỘNG (gap) | [huy-cap-nhat-don-hang.md](./orders/huy-cap-nhat-don-hang.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Tạo đơn hàng thay shop | [tao-don-hang-thay-shop.md](./orders/tao-don-hang-thay-shop.md) | — | [Draft] |

@@ -7,7 +7,7 @@ figma:
 status: draft
 ---
 
-# [AGENCY] Đơn hàng - Danh sách: Tìm kiếm và lọc theo Shop
+# [AGENCY] Đơn hàng: Tìm kiếm và lọc theo shop
 
 ## User Story
 
