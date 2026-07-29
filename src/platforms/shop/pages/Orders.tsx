@@ -984,19 +984,11 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
   const [rcvStreet, setRcvStreet]       = useState('123 Thành Thái')
   const [rcvProvince, setRcvProvince]   = useState(() => parseProvince(allShops.find(s => s.id === 'SHP001')!.address))
   const [weight, setWeight]             = useState(0.2)
-  const [dimD, setDimD]                 = useState(10)
-  const [dimR, setDimR]                 = useState(10)
-  const [dimC, setDimC]                 = useState(10)
-  const [otherCollectValue, setOtherCollectValue] = useState(0)
   const [goodsValue, setGoodsValue]     = useState(0)
   const [shopCode, setShopCode]         = useState('')
   const [letterContent, setLetterContent] = useState('')
   const [viewGoodsPolicy, setViewGoodsPolicy] = useState<'none' | 'view_no_try'>('none')
   const [viewGoodsPickerOpen, setViewGoodsPickerOpen] = useState(false)
-  // 4 standard surcharges matching ShopPricingSurcharges shape
-  const [declareValue, setDeclareValue]   = useState(false)
-  const [partialDeliver, setPartialDeliver] = useState(false)
-  const [collectOnFail, setCollectOnFail]   = useState(false)
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
   // 247Express: lấy hàng tại hub cố định của dịch vụ đại lý (không phải địa chỉ shop)
@@ -1014,8 +1006,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
     return () => document.removeEventListener('mousedown', handler)
   }, [viewGoodsPickerOpen])
 
-  const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
-  const weightGram = Number(convertedWeight) * 1000
+  const weightGram = weight * 1000
   const fromProvince = selectedHub ? hubProvinceLabel(selectedHub.provinceName) : parseProvince(currentShop.address)
 
   const now = new Date()
@@ -1032,16 +1023,11 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
         shopFeeFromPriceTable(min, weightGram, fromProvince, rcvProvince) ? s : min
       )
     : undefined
-  const priceTable247 = selectedService247?.priceTableId
-    ? (allPricing as any[]).find(p => p.id === selectedService247.priceTableId)
-    : null
-  const surcharges247 = (priceTable247?.surcharges ?? {}) as ShopPricingSurcharges
-
   const feeShipping    = selectedService247 ? shopFeeFromPriceTable(selectedService247, weightGram, fromProvince, rcvProvince) : 0
-  const feeInsurance   = declareValue && goodsValue > 0 ? shopCalcTierFee(goodsValue, surcharges247.insurance ?? []) : 0
-  const feePartial     = partialDeliver ? parseInt(surcharges247.partialDelivery?.value ?? '0', 10) : 0
-  const feeDeliveryFail = collectOnFail ? parseInt(surcharges247.deliveryFailFee?.value ?? '0', 10) : 0
-  const feeCod         = otherCollectValue > 0 ? shopCalcTierFee(otherCollectValue, surcharges247.codFee ?? []) : 0
+  const feeInsurance   = 0
+  const feePartial     = 0
+  const feeDeliveryFail = 0
+  const feeCod         = 0
   const totalShipping  = feeShipping + feeInsurance + feePartial + feeDeliveryFail + feeCod
 
   // ── Submit — sendKind/dispatchStatus/carrierCode KHÔNG THAY ĐỔI (per PRD §4.5) ──
@@ -1057,7 +1043,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
       receiverPhone: rcvPhone,
       receiverAddress: `${rcvStreet}, ${rcvProvince}`,
       weight: weightGram,
-      cod: otherCollectValue,
+      cod: 0,
       fee: totalShipping,
       status: 'pending',
       createdAt: now.toISOString().split('T')[0],
@@ -1091,7 +1077,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
         transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', flexShrink: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Tạo thư, tài liệu</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Gửi thư, tài liệu</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
             <IcX />
           </button>
@@ -1139,43 +1125,56 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
               </div>
             </div>
 
-            {/* ── Sản phẩm card — thư/tài liệu chỉ cần khối lượng + kích thước để tính phí. ── */}
+            {/* ── Sản phẩm card — thư/tài liệu chỉ cần khối lượng để tính phí. ── */}
             <div style={{ ...drawerCard, flex: 1 }}>
-              <CardHeader icon={<IcCube />} label="Sản phẩm" right={
-                <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 6, padding: 2, flexShrink: 0 }}>
-                  <div style={{ padding: '4px 12px', borderRadius: 4, background: '#111827', color: '#fff', fontSize: 13, fontWeight: 600, lineHeight: '18px' }}>
-                    Tài liệu
+              <CardHeader icon={<IcCube />} label="Sản phẩm" />
+
+              <div style={{ padding: 8 }}>
+                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', background: '#F3F4F6' }}>
+                    <div style={{ flex: 1, minWidth: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Tên sản phẩm</span>
+                    </div>
+                    <div style={{ width: 56, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>SL: 1</span>
+                    </div>
+                    <div style={{ width: 104, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>Giá bán</span>
+                    </div>
+                    <div style={{ width: 96, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>KL / KT</span>
+                    </div>
                   </div>
-                  <div style={{ padding: '4px 12px', borderRadius: 4, color: '#9CA3AF', fontSize: 13, fontWeight: 600, lineHeight: '18px', cursor: 'not-allowed' }}>
-                    Hàng hoá
+                  <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                    <div style={{ flex: 1, minWidth: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Thư, tài liệu</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 56, flexShrink: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>1</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 104, flexShrink: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 96, flexShrink: 0, padding: 6, display: 'flex', flexDirection: 'column', justifyContent: 'center', fontSize: 12, color: C_TEXT_PRIMARY, lineHeight: '16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <span>{weight.toFixed(2)}kg</span>
+                      <span>10x10x10cm</span>
+                    </div>
                   </div>
                 </div>
-              } />
+              </div>
+
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Khối lượng</span>
                   <NumericWithUnit value={weight} onChange={setWeight} unit="kg" flex1 />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Kích thước</span>
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 2 }}>
-                    {([['D', dimD, setDimD], ['R', dimR, setDimR], ['C', dimC, setDimC]] as const).map(([lbl, val, set]) => (
-                      <div key={lbl} style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
-                        <span style={{ flexShrink: 0, fontSize: 14, color: '#9CA3AF', lineHeight: '20px', whiteSpace: 'nowrap' }}>{lbl}:</span>
-                        <input
-                          value={val} onChange={(e) => (set as (v: number) => void)(parseFloat(e.target.value) || 0)} type="number"
-                          style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', padding: '0 8px' }}
-                        />
-                        <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>cm</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ paddingLeft: 84, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khối lượng quy đổi: {convertedWeight}kg</span>
                 </div>
               </div>
             </div>
@@ -1189,7 +1188,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
             <div style={{ ...drawerCard, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, flexShrink: 0 }}>
                 <IcClipboard />
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Thông tin thư</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Thông tin thư, tài liệu</span>
                 <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px', whiteSpace: 'nowrap' }}>Tạo lúc {createdAt}</span>
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
@@ -1204,42 +1203,20 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
                       />
                     </div>
                   </InfoRow>
-                  <InfoRow label="Giá trị hàng hoá">
+                  <InfoRow label="Giá trị hàng">
                     <NumericWithUnit value={goodsValue} onChange={setGoodsValue} unit="đ" />
                   </InfoRow>
-                  <InfoRow label="Giá trị thu khác">
-                    <NumericWithUnit value={otherCollectValue} onChange={setOtherCollectValue} unit="đ" />
-                  </InfoRow>
-                </div>
-
-                <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
-
-                {/* 3 standard surcharge checkboxes — replaces old VAS modal (AC8b) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: '4px 8px' }}>
-                  {[
-                    { checked: declareValue,   toggle: () => setDeclareValue(v => !v),   label: 'Khai giá (bảo hiểm hàng hoá)' },
-                    { checked: partialDeliver, toggle: () => setPartialDeliver(v => !v), label: 'Cho giao một phần' },
-                    { checked: collectOnFail,  toggle: () => setCollectOnFail(v => !v),  label: 'Thu phí khi giao thất bại' },
-                  ].map(({ checked, toggle, label }) => (
-                    <div key={label} onClick={toggle} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', cursor: 'pointer', userSelect: 'none' as const }}>
-                      <CheckboxBlue checked={checked} onChange={toggle} />
-                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label}</span>
-                    </div>
-                  ))}
                 </div>
 
                 <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0' }}>
-                    <span style={{ color: C_TEXT_PRIMARY }}>
-                      Nội dung <span style={{ color: '#EF4444' }}>*</span>
-                    </span>
-                    <div style={{ background: '#F9FAFB', borderRadius: 6, border: `1px solid ${letterContent ? C_BORDER : '#FCA5A5'}`, padding: '6px 12px' }}>
+                    <span style={{ color: C_TEXT_PRIMARY }}>Nội dung thư, tài liệu</span>
+                    <div style={{ background: '#F9FAFB', borderRadius: 6, border: `1px solid ${C_BORDER}`, padding: '6px 12px' }}>
                       <textarea
                         value={letterContent} onChange={(e) => setLetterContent(e.target.value)}
-                        placeholder="Nhập nội dung thư, tài liệu (bắt buộc)"
-                        required
+                        placeholder="Nội dung thư, tài liệu"
                         style={{ width: '100%', minHeight: 60, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }}
                       />
                     </div>
@@ -1303,7 +1280,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
             <div style={{ ...drawerCard, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
                 <IcTruck />
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Dịch vụ</span>
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
@@ -1719,7 +1696,7 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
                   <div style={{ display: 'flex', alignItems: 'stretch' }}>
                     <div style={{ flex: 1, minWidth: 0, padding: 6 }}>
                       <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Sản phẩm</span>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{order.sendKind === 'letter' ? 'Thư, tài liệu' : 'Sản phẩm'}</span>
                       </div>
                     </div>
                     <div style={{ width: 56, flexShrink: 0, padding: 6 }}>
@@ -1734,7 +1711,7 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
                     </div>
                     <div style={{ width: 96, flexShrink: 0, padding: 6, display: 'flex', flexDirection: 'column', justifyContent: 'center', fontSize: 12, color: C_TEXT_PRIMARY, lineHeight: '16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <span>{(order.weight / 1000).toFixed(1)}kg</span>
-                      <span>10x10x10cm</span>
+                      {order.sendKind !== 'letter' && <span>10x10x10cm</span>}
                     </div>
                   </div>
                 </div>
@@ -1742,7 +1719,8 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
 
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
 
-              {/* Weight & dimensions (read-only) */}
+              {/* Weight & dimensions (read-only) — Kích thước/quy đổi chỉ áp dụng cho Hàng hoá,
+                  đơn Thư chỉ cần Khối lượng (khớp CreateLetterDrawer) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Khối lượng</span>
@@ -1753,23 +1731,27 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Kích thước</span>
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 2 }}>
-                    {(['D', 'R', 'C'] as const).map((lbl) => (
-                      <div key={lbl} style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, height: 32 }}>
-                        <span style={{ flexShrink: 0, fontSize: 14, color: '#9CA3AF', lineHeight: '20px', whiteSpace: 'nowrap' }}>{lbl}:</span>
-                        <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', textAlign: 'right', padding: '0 8px' }}>10</span>
-                        <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>cm</span>
-                        </div>
+                {order.sendKind !== 'letter' && (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Kích thước</span>
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 2 }}>
+                        {(['D', 'R', 'C'] as const).map((lbl) => (
+                          <div key={lbl} style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 8, height: 32 }}>
+                            <span style={{ flexShrink: 0, fontSize: 14, color: '#9CA3AF', lineHeight: '20px', whiteSpace: 'nowrap' }}>{lbl}:</span>
+                            <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', textAlign: 'right', padding: '0 8px' }}>10</span>
+                            <div style={{ background: '#F3F4F6', width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>cm</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ paddingLeft: 84, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khối lượng quy đổi: {(order.weight / 1000).toFixed(1)}kg</span>
-                </div>
+                    </div>
+                    <div style={{ paddingLeft: 84, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khối lượng quy đổi: {(order.weight / 1000).toFixed(1)}kg</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1781,7 +1763,7 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
             <div style={{ ...card, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, flexShrink: 0 }}>
                 <IcClipboard />
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Thông tin đơn hàng</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{order.sendKind === 'letter' ? 'Thông tin thư, tài liệu' : 'Thông tin đơn hàng'}</span>
                 <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px', whiteSpace: 'nowrap' }}>Tạo lúc {order.createdAt}</span>
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
@@ -1830,16 +1812,18 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
             <div style={{ ...card, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
                 <IcTruck />
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
-                {/* Static "Shop trả ship" toggle */}
-                <div style={{ display: 'flex', gap: 1, flexShrink: 0, background: '#F3F4F6', borderRadius: 6, padding: 2 }}>
-                  <div style={{ padding: '3px 8px', borderRadius: 5, fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap', background: '#fff', color: C_TEXT_PRIMARY, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
-                    Shop trả ship
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{order.sendKind === 'letter' ? 'Dịch vụ' : 'Phí vận chuyển'}</span>
+                {/* Static "Shop trả ship" toggle — chỉ áp dụng cho Hàng hoá, khớp CreateLetterDrawer không có toggle này */}
+                {order.sendKind !== 'letter' && (
+                  <div style={{ display: 'flex', gap: 1, flexShrink: 0, background: '#F3F4F6', borderRadius: 6, padding: 2 }}>
+                    <div style={{ padding: '3px 8px', borderRadius: 5, fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap', background: '#fff', color: C_TEXT_PRIMARY, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}>
+                      Shop trả ship
+                    </div>
+                    <div style={{ padding: '3px 8px', borderRadius: 5, fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap', background: 'transparent', color: C_TEXT_SECONDARY }}>
+                      Khách trả ship
+                    </div>
                   </div>
-                  <div style={{ padding: '3px 8px', borderRadius: 5, fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap', background: 'transparent', color: C_TEXT_SECONDARY }}>
-                    Khách trả ship
-                  </div>
-                </div>
+                )}
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
@@ -1905,6 +1889,14 @@ function OrderDetailDrawer({ order, open, onClose }: { order: Order | null; open
                   </span>
                 </div>
               </div>
+
+              {order.sendKind === 'letter' && order.dispatchStatus === 'pending_agency' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 6, padding: 10 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1D4ED8' }}>Đơn thư đã gửi tới đại lý</span>
+                  <span style={{ fontSize: 12, color: '#1D4ED8' }}>Đang chờ đại lý chọn hub và gửi qua nhà vận chuyển — bạn sẽ thấy trạng thái cập nhật ở đây khi đại lý xử lý xong.</span>
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
                   style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}

@@ -16,6 +16,7 @@ _Chưa có stories_
 |----|-------|--------|
 | WS-ORDER-1 | [Cài đặt đơn hàng mặc định](orders/cai-dat-don-hang-mac-dinh.md) | draft |
 | SHOP-ORDER-5 | [Danh sách đơn hàng: Thêm phân loại hàng](orders/danh-sach-don-hang-them-phan-loai-hang.md) | draft |
+| SHOP-ORDER-6 | [Chi tiết: Banner trạng thái đơn thư đang chờ đại lý](orders/chi-tiet-don-thu-trang-thai-cho-dai-ly.md) | draft |
 
 ## Đối soát
 

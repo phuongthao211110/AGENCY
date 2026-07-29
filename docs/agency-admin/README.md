@@ -40,7 +40,7 @@
 | [AGENCY] Đơn hàng - Danh sách: Phân trang | [phan-trang-danh-sach.md](./orders/phan-trang-danh-sach.md) | — | [Draft] |
 | [AGENCY] Đơn hàng: Chi tiết đơn hàng | [xem-chi-tiet-don-hang.md](./orders/xem-chi-tiet-don-hang.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Chi tiết: Xem lịch sử trạng thái và lịch sử thao tác | [lich-su-trang-thai-thao-tac.md](./orders/lich-su-trang-thai-thao-tac.md) | — | [Draft] |
-| [AGENCY] Đơn hàng - Chi tiết: Huỷ đơn / Cập nhật đơn — CHƯA HOẠT ĐỘNG (gap) | [huy-cap-nhat-don-hang.md](./orders/huy-cap-nhat-don-hang.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Chi tiết: Cập nhật thông tin đơn (Huỷ đơn vẫn là gap) | [huy-cap-nhat-don-hang.md](./orders/huy-cap-nhat-don-hang.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Tạo đơn hàng thay shop | [tao-don-hang-thay-shop.md](./orders/tao-don-hang-thay-shop.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Import đơn hàng từ Excel | [import-don-hang.md](./orders/import-don-hang.md) | — | [Draft] |
 

@@ -130,3 +130,13 @@ export function cancelOrder(orderId: string): Order[] {
   }
   return orders
 }
+
+export function updateOrder(orderId: string, patch: Partial<Order>): Order[] {
+  const orders = loadOrders()
+  const idx = orders.findIndex(o => o.id === orderId)
+  if (idx !== -1) {
+    orders[idx] = { ...orders[idx], ...patch }
+    saveOrders(orders)
+  }
+  return orders
+}

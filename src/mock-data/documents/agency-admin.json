@@ -234,27 +234,34 @@
           "status": "draft",
           "userStory": "Là Agency Admin (Đại lý), khi xác nhận gửi 1 đơn thư sang 247Express, tôi muốn bắt buộc phải chọn hub xuất phát trước khi gửi được, để hệ thống biết chắc chắn đơn này xuất phát từ hub nào (vì dịch vụ không còn gắn cứng 1 hub từ trước như trước đây).",
           "userFlow": [
-            "Agency Admin vào \"Đơn hàng\" → tab \"Chờ xử lý\" → bấm \"Gửi qua 247Express\" ở 1 đơn",
-            "Modal \"Xác nhận gửi qua 247Express\" hiện ra, kèm danh sách hub đại lý được cấp (radio chọn 1)",
-            "Nút \"Xác nhận gửi\" ở trạng thái disabled (xám) cho tới khi chọn 1 hub",
-            "Chọn 1 hub → nút \"Xác nhận gửi\" bật lên (xanh dương), bấm để hoàn tất dispatch"
+            "Có 2 điểm vào giống nhau, dùng chung 1 modal xác nhận:",
+            "Từ danh sách: vào \"Đơn hàng\" → tab \"Chờ xử lý\" → bấm \"Gửi qua 247Express\" ở cột \"Thao tác\"",
+            "Từ chi tiết đơn: bấm mã đơn mở drawer chi tiết → nếu đơn đang chờ xử lý, thấy banner xanh + nút \"Chọn hub & Gửi qua 247Express\" cạnh khối tổng tiền → bấm nút này",
+            "Cả 2 cách đều mở modal \"Xác nhận gửi qua 247Express\", kèm danh sách hub đại lý được cấp (radio chọn 1)",
+            "Nút \"Xác nhận gửi\" disabled (xám) cho tới khi chọn 1 hub",
+            "Chọn 1 hub → nút bật lên (xanh dương), bấm để hoàn tất dispatch — nếu mở từ drawer chi tiết, drawer tự đóng sau khi dispatch thành công"
           ],
           "systemFlow": [
             "Modal dispatch thêm state dispatchHubId, reset về '' mỗi lần mở modal cho 1 đơn mới",
             "Danh sách hub lấy từ agenciesList.find(a => a.id === CURRENT_AGENCY_ID).clientHubIds map sang clientHubs247",
             "Nút \"Xác nhận gửi\" có disabled={!dispatchHubId} — không click được nếu chưa chọn hub",
-            "Bấm \"Xác nhận gửi\" → gọi dispatchOrderToCarrier(order.id, '247EXPRESS', 'Agency Admin', dispatchHubId) — tham số dispatchHubId mới, lưu vào field dispatchHubId trên Order"
+            "Bấm \"Xác nhận gửi\" → gọi dispatchOrderToCarrier(order.id, '247EXPRESS', 'Agency Admin', dispatchHubId)",
+            "OrderDetailDrawer nhận prop onDispatch247?: () => void — chỉ truyền khi đơn thoả isPending247(order); bấm nút trong drawer gọi cùng setDispatchModal(order) như ở danh sách, tái dùng nguyên modal/state",
+            "Sau khi dispatch thành công, nếu đơn đang xem trong drawer chính là đơn vừa dispatch → tự đóng drawer (setDetailOpen(false))"
           ],
           "acceptanceCriteria": [
-            "AC1: Modal dispatch hiển thị danh sách hub dạng radio button (tên hub + địa chỉ), lấy đúng theo hub đại lý hiện tại được cấp.",
-            "AC2: Nếu đại lý chưa được cấp hub nào → hiển thị \"Đại lý chưa được cấp hub 247Express nào — liên hệ Super Admin\", không có hub nào để chọn.",
+            "AC1: Modal dispatch hiển thị danh sách hub dạng radio button, lấy đúng theo hub đại lý hiện tại được cấp — giống hệt dù mở từ danh sách hay từ chi tiết đơn.",
+            "AC2: Nếu đại lý chưa được cấp hub nào → hiển thị thông báo, không có hub nào để chọn.",
             "AC3: Nút \"Xác nhận gửi\" disabled khi chưa chọn hub nào.",
             "AC4: Chọn 1 hub → nút bật, dispatch thành công lưu đúng dispatchHubId đã chọn.",
-            "AC5: Đóng modal rồi mở lại → hub đã chọn trước đó KHÔNG được giữ lại (reset)."
+            "AC5: Đóng modal rồi mở lại → hub đã chọn trước đó KHÔNG được giữ lại (reset).",
+            "AC6: Trong drawer chi tiết đơn, nút \"Chọn hub & Gửi qua 247Express\" chỉ hiển thị khi đơn đang ở trạng thái \"Chờ xử lý\" (sendKind === 'letter' và dispatchStatus === 'pending_agency').",
+            "AC7: Dispatch thành công từ drawer chi tiết → drawer tự đóng, đơn biến mất khỏi tab \"Chờ xử lý\" và xuất hiện đúng ở tab \"Chờ bàn giao\"."
           ],
           "notes": [
             "Hệ quả trực tiếp của việc bỏ gắn cứng hub vào Dịch vụ (ServiceDetail.tsx) — hub giờ chỉ quyết định duy nhất tại bước dispatch này.",
-            "dispatchHubId là field mới trên Order, optional, chỉ dùng khi carrierCode === '247EXPRESS'."
+            "dispatchHubId là field mới trên Order, optional, chỉ dùng khi carrierCode === '247EXPRESS'.",
+            "Modal xác nhận + chọn hub là 1 component dùng chung cho cả 2 điểm vào (danh sách và chi tiết đơn) — không có 2 bản logic riêng biệt, tránh lệch hành vi giữa 2 nơi."
           ]
         },
         {
@@ -525,26 +532,35 @@
         {
           "id": "AGA-ORDER-12",
           "jiraKey": "",
-          "title": "[AGENCY] Đơn hàng - Chi tiết: Huỷ đơn / Cập nhật đơn — CHƯA HOẠT ĐỘNG (gap)",
+          "title": "[AGENCY] Đơn hàng - Chi tiết: Cập nhật thông tin đơn (Huỷ đơn vẫn là gap)",
           "status": "draft",
-          "userStory": "Là Agency Admin (Đại lý), tôi muốn huỷ 1 đơn hoặc cập nhật thông tin đơn ngay từ drawer chi tiết, để xử lý các trường hợp shop nhập sai hoặc cần huỷ đơn mà không phải thao tác bên Web Shop.",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn sửa thông tin đơn ngay từ drawer chi tiết (tương tự quyền chỉnh sửa mà shop có khi tạo đơn), để xử lý các trường hợp shop nhập sai hoặc đại lý cần điều chỉnh đơn mà không phải thao tác bên Web Shop.",
           "userFlow": [
-            "Ở drawer chi tiết đơn, tab \"Thông tin đơn\", cuối trang có 2 nút: \"Huỷ đơn\" và \"Cập nhật\"",
-            "Bấm \"Huỷ đơn\" → (dự kiến) hỏi xác nhận, huỷ đơn, chuyển trạng thái sang \"Đơn huỷ\"",
-            "Bấm \"Cập nhật\" → (dự kiến) cho sửa các trường của đơn rồi lưu lại"
+            "Ở drawer chi tiết đơn, tab \"Thông tin đơn\", bấm nút \"Cập nhật\" ở cuối trang",
+            "Các trường sửa được chuyển thành input/dropdown viền xanh: Bên nhận (tên, SĐT, địa chỉ), Khối lượng, COD, Trạng thái, Đơn vị vận chuyển, Phí ship (giá bán shop)",
+            "Card tổng tiền (Tổng phí vận chuyển/Tổng thu khách hàng) cập nhật live theo giá trị đang sửa",
+            "Bấm \"Lưu thay đổi\" → lưu vào orderStore, đóng chế độ sửa, quay về hiển thị bình thường với dữ liệu mới",
+            "Bấm \"Huỷ\" (thay cho \"Cập nhật\" trong lúc sửa) → bỏ hết thay đổi đang nhập, quay về hiển thị dữ liệu cũ, không lưu gì"
           ],
           "systemFlow": [
-            "Cả 2 nút hiện KHÔNG có onClick handler nào — bấm vào không có phản ứng gì. Đây là spec mô tả hành vi mong muốn."
+            "OrderDetailDrawer thêm state editMode (boolean) và draft (bản nháp field đang sửa, khởi tạo từ order khi bấm \"Cập nhật\")",
+            "Field sửa ánh xạ đúng field thật của Order: receiverName/receiverPhone/receiverAddress, weight (nhập theo kg, lưu nhân 1000 ra gram), cod, fee, status, carrierCode",
+            "Bấm \"Lưu thay đổi\" → gọi updateOrder(order.id, patch) (hàm mới trong orderStore.ts) → callback onUpdated() ở component cha: refresh cả orders (list) và selectedOrder (tránh drawer hiển thị dữ liệu stale)",
+            "Bấm \"Huỷ\" lúc đang sửa → setEditMode(false); setDraft(null) — không gọi updateOrder, dữ liệu gốc giữ nguyên",
+            "Đổi đơn khác trong khi đang mở drawer → tự thoát editMode, xoá draft (tránh lẫn dữ liệu giữa 2 đơn)"
           ],
           "acceptanceCriteria": [
-            "AC1 — GAP, chưa hoạt động: Nút \"Huỷ đơn\" hiện tại bấm vào không có phản ứng gì.",
-            "AC2 — GAP, chưa hoạt động: Nút \"Cập nhật\" hiện tại bấm vào không có phản ứng gì.",
-            "AC3 (dự kiến): Bấm \"Huỷ đơn\" → modal xác nhận → xác nhận thì đổi order.status sang 'cancelled', đơn chuyển sang tab \"Đơn huỷ\".",
-            "AC4 (dự kiến): Bấm \"Cập nhật\" → cho sửa các trường phù hợp → lưu thành công cập nhật lại đơn trong orderStore."
+            "AC1: Bấm \"Cập nhật\" → các field liệt kê ở User Flow bước 2 chuyển thành ô nhập được (viền xanh #3B82F6), có 1 dòng cảnh báo nhỏ \"Đang sửa thông tin đơn...\".",
+            "AC2: Sửa xong bấm \"Lưu thay đổi\" → dữ liệu lưu đúng vào orderStore, drawer hiển thị lại đúng giá trị mới, danh sách đơn ngoài drawer cũng cập nhật theo (VD: đổi Trạng thái sang \"Hoàn tất\" → đơn chuyển đúng sang tab \"Hoàn tất\").",
+            "AC3: Bấm \"Huỷ\" khi đang sửa (chưa lưu) → mọi thay đổi đã nhập bị bỏ, hiển thị lại đúng dữ liệu cũ, không có gì được lưu vào orderStore.",
+            "AC4: Đổi Trạng thái/Đơn vị vận chuyển là 2 dropdown chọn từ danh sách cố định — không phải input tự do.",
+            "AC5 — GAP, vẫn CHƯA hoạt động: Nút \"Huỷ đơn\" (khác với \"Huỷ\" lúc đang sửa) hiện tại vẫn không có onClick handler."
           ],
           "notes": [
-            "GAP quan trọng: đây là 1 trong số các nút \"trang trí\" chưa nối logic trong AgencyOrders.tsx — cần story riêng để implement khi có yêu cầu cụ thể (đơn nào được phép huỷ?).",
-            "Việc huỷ đơn bên Web Shop (nếu có) có thể đã hoạt động riêng — cần kiểm tra Orders.tsx (Web Shop) trước khi giả định 2 nơi dùng chung 1 luồng huỷ."
+            "Phạm vi field sửa được giới hạn đúng các field thật sự tồn tại trên Order — KHÔNG thêm sửa được cho card \"Sản phẩm\"/\"Phụ phí\" vì các card này vẫn hiển thị dữ liệu tĩnh/demo, không có field tương ứng để lưu (xem AGA-ORDER-10).",
+            "Dòng \"Trạng thái\" ưu tiên hiển thị log[0]?.status_name nếu đơn có log — với đơn có log sẵn, sau khi sửa Trạng thái, dòng này vẫn hiện label cũ theo log (hành vi hiển thị đã có từ trước, không phải lỗi mới). Tác dụng thật thể hiện rõ nhất qua việc đơn chuyển đúng tab.",
+            "Chỉ implement cho Agency Admin theo đúng yêu cầu — Web Shop's nút \"Cập nhật\" vẫn giữ GAP như trước.",
+            "Đây là tiền đề cho việc đại lý tự tạo/sửa đơn hoàn chỉnh hơn trong tương lai."
           ]
         },
         {
@@ -590,17 +606,18 @@
           "userStory": "Là Agency Admin (Đại lý), tôi muốn import nhiều đơn hàng cùng lúc từ file Excel, để nhập hộ shop số lượng lớn đơn thay vì tạo từng đơn một qua drawer \"Tạo đơn hàng\".",
           "userFlow": [
             "Ở trang \"Đơn hàng\", bấm nút \"Import đơn hàng\" (đặt cạnh nút \"Xuất đơn hàng\", cùng style viền xám nền trắng)",
-            "Modal \"Import đơn hàng\" mở ra, hiện rõ đúng thứ tự 10 cột cần có trong file",
-            "Bấm vùng upload, chọn file .xlsx/.xls",
+            "Modal \"Import đơn hàng\" mở ra, đầu modal có banner \"Bạn chưa có file mẫu import đơn hàng?\" kèm nút \"Tải xuống file mẫu\" — bấm để tải file .xlsx mẫu có sẵn 2 dòng ví dụ (1 Hàng hoá + 1 Thư) và 1 sheet \"Danh sách Shop\" (mã shop ↔ tên shop) để tra cứu khi điền",
+            "Bấm vùng upload (khung nét đứt xanh, icon tải lên, chữ \"Chọn file từ máy tính. Chọn file\"), chọn file .xlsx/.xls/.xlsm",
             "Hệ thống đọc và validate từng dòng ngay lập tức, hiện preview: số dòng \"Hợp lệ\" / \"Lỗi\", kèm danh sách lý do lỗi theo từng dòng",
             "Bấm \"Import N đơn hợp lệ\" → các dòng hợp lệ được tạo thành đơn hàng thật, dòng lỗi bị bỏ qua",
             "Đóng modal, danh sách đơn hàng refresh — đơn \"Hàng hoá\" xuất hiện ở tab tương ứng theo trạng thái GHN, đơn \"Thư\" xuất hiện ở tab \"Chờ xử lý\""
           ],
           "systemFlow": [
             "Cột bắt buộc theo đúng thứ tự: Mã shop, Loại đơn, Khách hàng, Số điện thoại, Địa chỉ giao hàng, Sản phẩm, Khối lượng (kg), Tiền thu hộ COD (đ), Phí ship (giá bán shop, đ), Trả ship",
+            "Nút \"Tải xuống file mẫu\" (downloadImportTemplate()) sinh workbook 2 sheet: sheet \"Import đơn hàng\" (header + 2 dòng mẫu) và sheet \"Danh sách Shop\" (toàn bộ agencyShops — mã + tên) để agency tra mã shop ngay trong file mẫu, không cần rời modal",
             "Parse thật bằng XLSX.read() trên nội dung file upload (không phải progress bar giả) — đọc sheet đầu tiên qua sheet_to_json({ header: 1 })",
             "Validate từng dòng: Mã shop phải khớp 1 shop thuộc đại lý hiện tại; Loại đơn chỉ nhận \"Hàng hoá\" hoặc \"Thư\"; các trường bắt buộc không rỗng; Khối lượng phải là số dương; Phí ship phải là số không âm",
-            "Dòng hợp lệ → build Order object: \"Hàng hoá\" → dispatchStatus 'dispatched', carrierCode 'GHN' (giống luồng shop tự tạo đơn hàng hoá); \"Thư\" → dispatchStatus 'pending_agency', carrierCode null (chờ đại lý gửi 247Express, giống CreateLetterDrawer)",
+            "Dòng hợp lệ → build Order object: \"Hàng hoá\" → dispatchStatus 'dispatched', carrierCode 'GHN'; \"Thư\" → dispatchStatus 'pending_agency', carrierCode null",
             "senderName/senderPhone lấy từ ownerName/phone của shop tương ứng trong shops.json",
             "Mỗi dòng hợp lệ gọi addOrder() (dùng chung cơ chế orderStore.ts) → refreshOrders() load lại danh sách"
           ],
@@ -612,12 +629,14 @@
             "AC5: Dòng có Mã shop không thuộc đại lý hiện tại → bị coi là lỗi, không được import.",
             "AC6: Bấm \"Import N đơn hợp lệ\" → chỉ N dòng hợp lệ được tạo thành đơn thật trong orderStore, dòng lỗi bị bỏ qua hoàn toàn.",
             "AC7: Đơn \"Thư\" import xong xuất hiện ngay ở tab \"Chờ xử lý\"; đơn \"Hàng hoá\" xuất hiện ở tab \"Đơn nháp\"/trạng thái tương ứng — không lẫn lộn.",
-            "AC8: Sau khi import, danh sách đơn hàng tự refresh mà không cần tải lại trang."
+            "AC8: Sau khi import, danh sách đơn hàng tự refresh mà không cần tải lại trang.",
+            "AC9: Bấm \"Tải xuống file mẫu\" → tải về file .xlsx gồm đúng 10 cột theo thứ tự chuẩn, có sẵn 2 dòng ví dụ (1 \"Hàng hoá\", 1 \"Thư\") và 1 sheet \"Danh sách Shop\" liệt kê đúng mã + tên các shop thuộc đại lý đang đăng nhập."
           ],
           "notes": [
             "Cùng nguyên tắc \"làm thật\" như tính năng Xuất đơn hàng — không dùng progress bar giả lập như modal upload file đối soát GHN, mà parse nội dung file thật bằng thư viện xlsx đã có sẵn.",
             "Import không có cột \"NVC\" tường minh — carrier được suy ra từ Loại đơn, giống cách Service/Bảng giá đã hợp nhất luồng GHN/247Express.",
-            "Đây là 1 trong 2 cách tạo đơn hộ shop (cách kia là drawer \"Tạo đơn hàng\" — hiện có gap chưa persist, xem AGA-ORDER-13); import dùng chung addOrder() nên không bị gap đó."
+            "Đây là 1 trong 2 cách tạo đơn hộ shop (cách kia là drawer \"Tạo đơn hàng\" — hiện có gap chưa persist, xem AGA-ORDER-13); import dùng chung addOrder() nên không bị gap đó.",
+            "Sheet \"Danh sách Shop\" trong file mẫu giải quyết trực tiếp vấn đề agency không biết \"Mã shop\" (ID nội bộ, VD SHP001) của shop nào — trước đây phải tự qua trang \"Shop\" để tra, giờ có sẵn ngay trong file mẫu."
           ]
         }
       ]
