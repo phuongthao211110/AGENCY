@@ -8,7 +8,9 @@
 
 ## Login / Logout
 
-_Chưa có stories_
+| ID | Story | Status |
+|----|-------|--------|
+| WS-LOGIN-1 | [Đăng ký shop mới (self-service)](login-logout/dang-ky-shop-moi.md) | draft |
 
 ## Đơn hàng
 
@@ -17,6 +19,11 @@ _Chưa có stories_
 | WS-ORDER-1 | [Cài đặt đơn hàng mặc định](orders/cai-dat-don-hang-mac-dinh.md) | draft |
 | SHOP-ORDER-5 | [Danh sách đơn hàng: Thêm phân loại hàng](orders/danh-sach-don-hang-them-phan-loai-hang.md) | draft |
 | SHOP-ORDER-6 | [Chi tiết: Banner trạng thái đơn thư đang chờ đại lý](orders/chi-tiet-don-thu-trang-thai-cho-dai-ly.md) | draft |
+| SHOP-ORDER-7 | [Chi tiết: Huỷ đơn và Cập nhật thông tin đơn](orders/chi-tiet-huy-cap-nhat-don-hang.md) | draft |
+| SHOP-ORDER-8 | [Xem trạng thái đơn Thư hoàn hàng, chưa về hay đã về tay](orders/xem-trang-thai-don-thu-hoan-hang.md) | draft |
+| SHOP-ORDER-9 | [Chi tiết đơn hàng — nút hành động theo trạng thái](orders/chi-tiet-don-nut-theo-trang-thai.md) | draft |
+| SHOP-ORDER-10 | [Chi tiết: Xác nhận yêu cầu hoàn hàng](orders/xac-nhan-hoan-hang-tu-shop.md) | draft |
+| SHOP-ORDER-11 | [Danh sách đơn hàng: Chờ xử lý](orders/danh-sach-tab-cho-xu-ly.md) | draft |
 
 ## Đối soát
 

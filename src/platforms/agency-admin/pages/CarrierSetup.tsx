@@ -13,6 +13,7 @@ import allPriceTables from '../../../mock-data/pricing.json'
 import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, type ClientHub247 } from '../../super-admin/agencyStore'
 import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import AgencyServices from './AgencyServices'
+import { isValidVNPhone, PHONE_INVALID_MESSAGE } from '../../../mock-data/phoneValidation'
 
 const CURRENT_AGENCY_ID = 'AGN001'
 
@@ -104,9 +105,12 @@ function AddShopModal({ carrier, onClose, onRequestSent }: { carrier: CarrierKey
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>SĐT tài khoản {carrier}</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={`SĐT tài khoản ${carrier}`} style={inputStyle}
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={`SĐT tài khoản ${carrier}`} style={{ ...inputStyle, borderColor: phone && !isValidVNPhone(phone) ? '#EF4444' : C_BORDER }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
+                onBlur={(e) => (e.currentTarget.style.borderColor = phone && !isValidVNPhone(phone) ? '#EF4444' : C_BORDER)} />
+              {phone && !isValidVNPhone(phone) && (
+                <span style={{ fontSize: 12, color: '#EF4444' }}>{PHONE_INVALID_MESSAGE}</span>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label style={{ fontSize: 14, color: C_TEXT_LABEL }}>ID cửa hàng {carrier}</label>
@@ -115,7 +119,10 @@ function AddShopModal({ carrier, onClose, onRequestSent }: { carrier: CarrierKey
                 onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-              <button onClick={handleConnect} style={{ padding: '9px 20px', background: C_ACTION, border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              <button
+                disabled={!isValidVNPhone(phone)}
+                onClick={handleConnect}
+                style={{ padding: '9px 20px', background: isValidVNPhone(phone) ? C_ACTION : '#D1D5DB', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 600, cursor: isValidVNPhone(phone) ? 'pointer' : 'not-allowed' }}>
                 Kết nối
               </button>
             </div>
@@ -211,7 +218,7 @@ function RequestHubModal({ onClose, onSubmit }: {
   const [note, setNote] = useState('')
 
   const districts = VIETNAM_PROVINCES.find(p => p.name === provinceName)?.districts ?? []
-  const canSubmit = address.trim() && districtName && wardName.trim() && contactName.trim() && contactPhone.trim()
+  const canSubmit = address.trim() && districtName && wardName.trim() && contactName.trim() && isValidVNPhone(contactPhone)
 
   const handleProvinceChange = (value: string) => {
     setProvinceName(value)
@@ -269,7 +276,11 @@ function RequestHubModal({ onClose, onSubmit }: {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={labelStyle}>Số điện thoại liên hệ <span style={{ color: '#EF4444' }}>*</span></label>
-              <input value={contactPhone} onChange={e => setContactPhone(e.target.value.replace(/\D/g, ''))} placeholder="VD: 0981000001" style={fieldStyle} />
+              <input value={contactPhone} onChange={e => setContactPhone(e.target.value.replace(/\D/g, ''))} placeholder="VD: 0981000001"
+                style={{ ...fieldStyle, borderColor: contactPhone && !isValidVNPhone(contactPhone) ? '#EF4444' : C_BORDER }} />
+              {contactPhone && !isValidVNPhone(contactPhone) && (
+                <span style={{ fontSize: 12, color: '#EF4444' }}>{PHONE_INVALID_MESSAGE}</span>
+              )}
             </div>
           </div>
 

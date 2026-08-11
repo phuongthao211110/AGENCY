@@ -12,7 +12,7 @@ import {
   BarChartOutlined,
   SwapRightOutlined,
 } from '@ant-design/icons'
-import allShops from '../../../mock-data/shops.json'
+import { loadShops } from '../../../mock-data/shopStore'
 import allServices from '../../../mock-data/services.json'
 import allPriceTables from '../../../mock-data/pricing.json'
 import allBankAccounts from '../../../mock-data/bank-accounts.json'
@@ -247,7 +247,7 @@ export default function ShopDetail() {
   const [activeTab, setActiveTab] = useState<TabKey>('info')
   const [editHistory] = useState<EditHistoryItem[]>(SHOP_HISTORY)
 
-  const shop = allShops.find((s) => s.id === id)
+  const shop = loadShops().find((s) => s.id === id)
 
   const copyText = (text: string) => {
     navigator.clipboard.writeText(text).catch(() => {})

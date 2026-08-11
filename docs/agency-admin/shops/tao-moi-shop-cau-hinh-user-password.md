@@ -37,3 +37,15 @@ Là Agency Admin (Đại lý), tôi muốn cấu hình tài khoản đăng nhậ
 **AC10:** Khi dữ liệu không hợp lệ: Hiển thị lỗi tại từng field, không cho submit.
 
 **AC11:** Sau khi tạo thành công, tài khoản shop có thể sử dụng để đăng nhập Web shop (AGENCY-78) và App shop (AGENCY-79).
+
+## Notes
+
+**⚠️ Trạng thái thật khác với "✅" đã đánh dấu trước đây trong README — cùng tình trạng với [AGA-SHOP-3](./tao-moi-shop-thong-tin-co-ban.md):** section hiển thị đủ UI nhưng nút "Tạo mới" không lưu gì, không validate gì.
+
+**Đã fix một phần** (theo yêu cầu trực tiếp "validate required + nối persist thật"):
+- ✅ AC1 (hiển thị section), AC7 (ẩn/hiện password, copy — đã có từ trước), AC8 (lưu username/password mapping với `agencyId` qua `addShop()`), AC9 (tenant isolation), AC10 (hiện lỗi từng field, không cho submit) — đã implement.
+- ✅ AC5 gần đúng: username trùng bị chặn + hiện lỗi (đối chiếu `loadShops()` — unique **toàn hệ thống**, rộng hơn cả yêu cầu spec), nhưng message text khác spec ("Tên đăng nhập đã được sử dụng, vui lòng chọn tên khác" thay vì "Tên đăng nhập đã tồn tại").
+- ❌ **Chưa làm AC2/AC3** — username KHÔNG tự động ghép `shop_id + "-" + input`, Agency Admin nhập tự do toàn bộ chuỗi, không có phần prefix bị khoá.
+- ❌ **Chưa làm AC4 (một phần)** — chỉ check không-để-trống, **chưa check** ký tự đặc biệt (spec yêu cầu chỉ `a-z, 0-9`).
+- ❌ **Chưa làm AC6** — Password chỉ check không-để-trống, **chưa check** độ dài ≥8 hay yêu cầu hoa/thường/số/ký tự đặc biệt.
+- **AC11 chưa verify được** — `Login.tsx` (Web Shop) hiện chỉ là stub `navigate('/shop/orders')`, không thật sự đối chiếu username/password nào cả, nên không thể xác nhận tài khoản vừa tạo "đăng nhập được" theo đúng nghĩa.

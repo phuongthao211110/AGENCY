@@ -50,8 +50,11 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
   returning: 'Đang hoàn hàng',
   redelivery: 'Chờ xác nhận giao lại',
   delivered: 'Hoàn tất',
+  // 'failed' = giao hàng không thành công → hoàn hàng thành công — theo mapping GHN thật
+  // (AGA-RECON-4) đây là 1 nhánh KẾT THÚC/hoàn tất (giống "Giao hàng thành công"), không phải
+  // huỷ đơn — nên nhãn và nhóm tab khác với 'cancelled'.
+  failed: 'Đã hoàn hàng',
   cancelled: 'Đơn huỷ',
-  failed: 'Đơn huỷ',
   lost: 'Thất lạc',
   damaged: 'Hư hỏng',
 }
@@ -62,10 +65,41 @@ const STATUS_GROUPS: { key: string; label: string; match: string[] }[] = [
   { key: 'in_transit',   label: 'Đang giao',             match: ['in_transit'] },
   { key: 'returning',    label: 'Đang hoàn hàng',        match: ['returning'] },
   { key: 'redelivery',   label: 'Chờ xác nhận giao lại', match: ['redelivery'] },
-  { key: 'delivered',    label: 'Hoàn tất',              match: ['delivered'] },
-  { key: 'cancelled',    label: 'Đơn huỷ',               match: ['cancelled', 'failed'] },
+  { key: 'delivered',    label: 'Hoàn tất',              match: ['delivered', 'failed'] },
+  { key: 'cancelled',    label: 'Đơn huỷ',               match: ['cancelled'] },
   { key: 'lost_damaged', label: 'Thất lạc - hư hỏng',    match: ['lost', 'damaged'] },
 ]
+
+// Đơn Thư đại lý gửi hộ qua 247Express, khi hoàn hàng thì hàng vật lý về đại lý trước — đại lý
+// phải giao lại cho shop (khác đơn GHN Hàng hoá, shop tự gửi nên hoàn hàng về thẳng shop luôn).
+// Dùng để hiện badge + action "Xác nhận đã giao hoàn cho shop" ở bảng và chi tiết đơn.
+function isLetterReturnCase(o: Order): boolean {
+  return o.sendKind === 'letter' && o.dispatchStatus === 'dispatched'
+    && (o.status === 'returning' || o.status === 'cancelled' || o.status === 'failed')
+}
+
+// Trạng thái hiển thị ngay dưới mã đơn trong bảng — mỗi dòng tự hiện trạng thái, không chỉ
+// dựa vào tab đang xem. Nhãn "Chờ lấy hàng" theo đúng cách gọi thật của GHN cho status 'pickup'
+// (khác "Chờ bàn giao" ở tên tab — cùng 1 status, chỉ khác góc nhìn diễn đạt).
+const ROW_STATUS_STYLE: Record<string, { label: string; color: string }> = {
+  pending:    { label: 'Đơn nháp',              color: '#6B7280' },
+  pickup:     { label: 'Chờ lấy hàng',          color: '#10B981' },
+  in_transit: { label: 'Đang giao',             color: '#3B82F6' },
+  returning:  { label: 'Đang hoàn hàng',        color: '#F59E0B' },
+  redelivery: { label: 'Chờ xác nhận giao lại', color: '#F59E0B' },
+  delivered:  { label: 'Giao thành công',       color: '#10B981' },
+  cancelled:  { label: 'Đã huỷ',                color: '#EF4444' },
+  failed:     { label: 'Đã hoàn hàng',          color: '#10B981' },
+  lost:       { label: 'Thất lạc',              color: '#EF4444' },
+  damaged:    { label: 'Hư hỏng',               color: '#EF4444' },
+}
+
+function rowStatus(order: Order): { label: string; color: string } {
+  if (order.sendKind === 'letter' && order.dispatchStatus === 'pending_agency') {
+    return { label: 'Chờ xử lý', color: '#F59E0B' }
+  }
+  return ROW_STATUS_STYLE[order.status] ?? { label: order.status, color: '#6B7280' }
+}
 
 const EXPORT_CARRIER_LABEL: Record<string, string> = { GHN: 'Giao hàng nhanh', '247EXPRESS': '247Express' }
 
@@ -178,21 +212,37 @@ function downloadXlsx(filename: string, headers: string[], rows: (string | numbe
   XLSX.writeFile(wb, filename)
 }
 
-// ── Import đơn hàng — cùng carrier (Hàng hoá/Thư) quyết định luồng, cùng nút
-// đặt cạnh "Xuất đơn hàng" ────────────────────────────────────────────────
-const IMPORT_HEADERS = [
-  'Mã shop', 'Loại đơn', 'Khách hàng', 'Số điện thoại', 'Địa chỉ giao hàng',
+// ── Import đơn hàng — tách riêng 2 luồng Hàng hoá/Thư (khác cột bắt buộc: Thư
+// không có COD, "Sản phẩm" đổi thành "Nội dung thư"), chọn loại trước khi
+// thấy khu vực tải template/upload — vẫn 1 nút "Import đơn hàng", 1 modal ────
+type ImportKind = 'goods' | 'letter'
+
+const IMPORT_HEADERS_GOODS = [
+  'Mã shop', 'Khách hàng', 'Số điện thoại', 'Địa chỉ giao hàng',
   'Sản phẩm', 'Khối lượng (kg)', 'Tiền thu hộ COD (đ)', 'Phí ship (giá bán shop, đ)', 'Trả ship',
 ]
-
-const IMPORT_SAMPLE_ROWS: (string | number)[][] = [
-  [agencyShops[0]?.id ?? '', 'Hàng hoá', 'Nguyễn Văn A', '0912345678', '12 Láng Hạ, Đống Đa, Hà Nội', 'Áo thun nam', 0.5, 200000, 25000, 'Shop trả'],
-  [agencyShops[0]?.id ?? '', 'Thư', 'Trần Thị B', '0923456789', '45 Bà Triệu, Hoàn Kiếm, Hà Nội', 'Hợp đồng', 0.2, 0, 15000, 'Khách trả'],
+const IMPORT_HEADERS_LETTER = [
+  'Mã shop', 'Khách hàng', 'Số điện thoại', 'Địa chỉ giao hàng',
+  'Nội dung thư', 'Khối lượng (kg)', 'Phí ship (giá bán shop, đ)', 'Trả ship',
 ]
 
-function downloadImportTemplate() {
-  const wsImport = XLSX.utils.aoa_to_sheet([IMPORT_HEADERS, ...IMPORT_SAMPLE_ROWS])
-  wsImport['!cols'] = IMPORT_HEADERS.map((h) => ({ wch: Math.max(14, h.length + 2) }))
+function importHeaders(kind: ImportKind) { return kind === 'goods' ? IMPORT_HEADERS_GOODS : IMPORT_HEADERS_LETTER }
+
+const IMPORT_SAMPLE_ROWS_GOODS: (string | number)[][] = [
+  [agencyShops[0]?.id ?? '', 'Nguyễn Văn A', '0912345678', '12 Láng Hạ, Đống Đa, Hà Nội', 'Áo thun nam', 0.5, 200000, 25000, 'Shop trả'],
+  [agencyShops[0]?.id ?? '', 'Nguyễn Văn C', '0934567890', '78 Kim Mã, Ba Đình, Hà Nội', 'Giày thể thao', 0.8, 350000, 28000, 'Khách trả'],
+]
+const IMPORT_SAMPLE_ROWS_LETTER: (string | number)[][] = [
+  [agencyShops[0]?.id ?? '', 'Trần Thị B', '0923456789', '45 Bà Triệu, Hoàn Kiếm, Hà Nội', 'Hợp đồng', 0.2, 15000, 'Khách trả'],
+  [agencyShops[0]?.id ?? '', 'Lê Văn D', '0945678901', '9 Nguyễn Trãi, Thanh Xuân, Hà Nội', 'Chứng từ', 0.1, 15000, 'Shop trả'],
+]
+
+function importSampleRows(kind: ImportKind) { return kind === 'goods' ? IMPORT_SAMPLE_ROWS_GOODS : IMPORT_SAMPLE_ROWS_LETTER }
+
+function downloadImportTemplate(kind: ImportKind) {
+  const headers = importHeaders(kind)
+  const wsImport = XLSX.utils.aoa_to_sheet([headers, ...importSampleRows(kind)])
+  wsImport['!cols'] = headers.map((h) => ({ wch: Math.max(14, h.length + 2) }))
 
   const wsShops = XLSX.utils.aoa_to_sheet([
     ['Mã shop', 'Tên shop'],
@@ -201,9 +251,9 @@ function downloadImportTemplate() {
   wsShops['!cols'] = [{ wch: 12 }, { wch: 32 }]
 
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, wsImport, 'Import đơn hàng')
+  XLSX.utils.book_append_sheet(wb, wsImport, kind === 'goods' ? 'Import đơn hàng hoá' : 'Import đơn thư')
   XLSX.utils.book_append_sheet(wb, wsShops, 'Danh sách Shop')
-  XLSX.writeFile(wb, 'mau-import-don-hang.xlsx')
+  XLSX.writeFile(wb, kind === 'goods' ? 'mau-import-don-hang-hoa.xlsx' : 'mau-import-don-thu.xlsx')
 }
 
 type ImportRow = {
@@ -212,7 +262,7 @@ type ImportRow = {
   errors: string[]
 }
 
-function parseImportSheet(file: File): Promise<ImportRow[]> {
+function parseImportSheet(file: File, kind: ImportKind): Promise<ImportRow[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onerror = () => reject(new Error('Không đọc được file'))
@@ -226,19 +276,21 @@ function parseImportSheet(file: File): Promise<ImportRow[]> {
 
         const parsed: ImportRow[] = dataRows.map((r, i) => {
           const get = (col: number) => String(r[col] ?? '').trim()
-          const raw = {
-            shopId: get(0), sendKindLabel: get(1), receiverName: get(2), receiverPhone: get(3),
-            receiverAddress: get(4), product: get(5), weight: get(6), cod: get(7), fee: get(8), feeType: get(9),
-          }
+          // Cột "Tiền thu hộ COD" chỉ có ở template Hàng hoá — đơn Thư không có COD, các cột
+          // sau đó lùi lại 1 vị trí so với template Hàng hoá.
+          const raw = kind === 'goods'
+            ? { shopId: get(0), receiverName: get(1), receiverPhone: get(2), receiverAddress: get(3),
+                product: get(4), weight: get(5), cod: get(6), fee: get(7), feeType: get(8) }
+            : { shopId: get(0), receiverName: get(1), receiverPhone: get(2), receiverAddress: get(3),
+                product: get(4), weight: get(5), cod: '0', fee: get(6), feeType: get(7) }
           const errors: string[] = []
           if (!raw.shopId) errors.push('Thiếu Mã shop')
           else if (!shopIds.has(raw.shopId)) errors.push(`Không tìm thấy shop "${raw.shopId}"`)
-          if (!['Hàng hoá', 'Thư'].includes(raw.sendKindLabel)) errors.push('Loại đơn phải là "Hàng hoá" hoặc "Thư"')
           if (!raw.receiverName) errors.push('Thiếu Khách hàng')
           if (!raw.receiverPhone) errors.push('Thiếu Số điện thoại')
           if (!raw.receiverAddress) errors.push('Thiếu Địa chỉ giao hàng')
           if (!raw.weight || isNaN(Number(raw.weight)) || Number(raw.weight) <= 0) errors.push('Khối lượng phải là số dương')
-          if (raw.cod && isNaN(Number(raw.cod))) errors.push('COD phải là số')
+          if (kind === 'goods' && raw.cod && isNaN(Number(raw.cod))) errors.push('COD phải là số')
           if (!raw.fee || isNaN(Number(raw.fee)) || Number(raw.fee) < 0) errors.push('Phí ship phải là số không âm')
           return { rowIndex: i + 2, raw, errors }
         })
@@ -252,6 +304,9 @@ function parseImportSheet(file: File): Promise<ImportRow[]> {
 }
 
 function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClose: () => void; onImported: () => void }) {
+  // Chọn loại đơn TRƯỚC — mỗi loại có template/cột bắt buộc riêng (Thư không có COD,
+  // "Sản phẩm" đổi "Nội dung thư") — null nghĩa là chưa chọn, đang ở màn chọn loại.
+  const [kind, setKind] = useState<ImportKind | null>(null)
   const [rows, setRows] = useState<ImportRow[] | null>(null)
   const [fileName, setFileName] = useState('')
   const [parseError, setParseError] = useState('')
@@ -259,14 +314,16 @@ function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClo
 
   if (!open) return null
 
-  const handleClose = () => { setRows(null); setFileName(''); setParseError(''); onClose() }
+  const handleClose = () => { setKind(null); setRows(null); setFileName(''); setParseError(''); onClose() }
+  const backToChooseKind = () => { setKind(null); setRows(null); setFileName(''); setParseError('') }
 
   const handleFile = async (file: File) => {
+    if (!kind) return
     setFileName(file.name)
     setParseError('')
     setRows(null)
     try {
-      const parsed = await parseImportSheet(file)
+      const parsed = await parseImportSheet(file, kind)
       setRows(parsed)
     } catch (e) {
       setParseError(e instanceof Error ? e.message : 'Không đọc được file')
@@ -277,13 +334,14 @@ function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClo
   const invalidRows = (rows ?? []).filter(r => r.errors.length > 0)
 
   const handleConfirm = () => {
+    if (!kind) return
     setImporting(true)
     const now = new Date()
     const createdAt = fmtDateInput(now)
+    const isGoods = kind === 'goods'
     validRows.forEach((r, i) => {
-      const sendKind: 'goods' | 'letter' = r.raw.sendKindLabel === 'Thư' ? 'letter' : 'goods'
+      const sendKind: 'goods' | 'letter' = kind
       const shop = agencyShops.find(s => s.id === r.raw.shopId)
-      const isGoods = sendKind === 'goods'
       addOrder({
         id: `ORD_IMPORT_${now.getTime()}_${i}`,
         shopId: r.raw.shopId,
@@ -320,11 +378,45 @@ function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClo
     >
       <div style={{ width: 720, maxHeight: '90vh', background: '#fff', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
-          <span style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>Import đơn hàng</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>
+            Import đơn hàng{kind && <span style={{ color: C_TEXT_SECONDARY }}> — {kind === 'goods' ? 'Hàng hoá' : 'Thư'}</span>}
+          </span>
           <CloseOutlined style={{ fontSize: 16, color: C_TEXT_SECONDARY, cursor: 'pointer' }} onClick={handleClose} />
         </div>
 
+        {!kind ? (
+          <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Chọn loại đơn muốn import — mỗi loại có file mẫu và cột bắt buộc riêng.</div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div
+                onClick={() => setKind('goods')}
+                style={{ flex: 1, border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6 }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = C_ACTION)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = C_BORDER)}
+              >
+                <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Hàng hoá</span>
+                <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Có COD, sản phẩm — gửi thẳng qua GHN ngay sau khi import.</span>
+              </div>
+              <div
+                onClick={() => setKind('letter')}
+                style={{ flex: 1, border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 6 }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = C_ACTION)}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = C_BORDER)}
+              >
+                <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Thư, tài liệu</span>
+                <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Không COD — vào tab "Chờ xử lý", chờ đại lý chọn hub gửi qua 247Express.</span>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div
+            onClick={backToChooseKind}
+            style={{ fontSize: 13, color: C_LINK, cursor: 'pointer', fontWeight: 600, alignSelf: 'flex-start' }}
+          >
+            ← Đổi loại đơn
+          </div>
+
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
             padding: '12px 14px', borderRadius: 8, background: '#F9FAFB', border: `1px solid ${C_BORDER}`,
@@ -332,12 +424,12 @@ function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClo
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <FileExcelOutlined style={{ fontSize: 20, color: '#16A34A', marginTop: 2, flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>Bạn chưa có file mẫu import đơn hàng?</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>Bạn chưa có file mẫu import đơn {kind === 'goods' ? 'hàng hoá' : 'thư'}?</div>
                 <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>Sử dụng file mẫu để nhập thông tin đơn hàng loạt nhanh, dễ dàng và đúng định dạng — kèm sẵn danh sách mã shop để tra cứu.</div>
               </div>
             </div>
             <button
-              onClick={downloadImportTemplate}
+              onClick={() => downloadImportTemplate(kind)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', flexShrink: 0,
                 background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap',
@@ -372,7 +464,8 @@ function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClo
           </label>
 
           <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
-            Thứ tự cột: <strong>{IMPORT_HEADERS.join(' · ')}</strong>. "Loại đơn" chỉ nhận "Hàng hoá" hoặc "Thư" — đơn "Thư" sẽ vào tab "Chờ xử lý" chờ đại lý gửi qua 247Express, đơn "Hàng hoá" tự động dispatch qua GHN ngay.
+            Thứ tự cột: <strong>{importHeaders(kind).join(' · ')}</strong>.{' '}
+            {kind === 'goods' ? 'Đơn sẽ tự động dispatch qua GHN ngay sau khi import.' : 'Đơn sẽ vào tab "Chờ xử lý", chờ đại lý chọn hub gửi qua 247Express.'}
           </div>
 
           {parseError && (
@@ -405,7 +498,9 @@ function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClo
             </div>
           )}
         </div>
+        )}
 
+        {kind && (
         <div style={{ padding: '16px 20px', borderTop: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
           <button
             onClick={handleConfirm}
@@ -420,6 +515,7 @@ function ImportOrdersModal({ open, onClose, onImported }: { open: boolean; onClo
             {rows ? `Import ${validRows.length} đơn hợp lệ` : 'Chọn file để tiếp tục'}
           </button>
         </div>
+        )}
       </div>
     </div>
   )
@@ -1071,6 +1167,418 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   )
 }
 
+// ── Fee helpers cho đơn Thư (247Express) — trùng cơ chế đã dùng ở CreateLetterDrawer
+// bên Web Shop (Orders.tsx), copy lại vì 2 file không share function ──────────────
+const LETTER_PROVINCES = [
+  'Hà Nội', 'TP.HCM', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ',
+  'Bình Dương', 'Đồng Nai', 'Bà Rịa - Vũng Tàu', 'Quảng Ninh', 'Nghệ An',
+]
+
+const LETTER_PROVINCE_REGION: Record<string, 'bac' | 'trung' | 'nam'> = {
+  'Hà Nội': 'bac', 'Hải Phòng': 'bac', 'Quảng Ninh': 'bac',
+  'Đà Nẵng': 'trung', 'Nghệ An': 'trung',
+  'TP.HCM': 'nam', 'Bình Dương': 'nam', 'Đồng Nai': 'nam', 'Bà Rịa - Vũng Tàu': 'nam', 'Cần Thơ': 'nam',
+}
+
+function letterParseProvince(address: string): string {
+  const parts = address.split(',')
+  return parts[parts.length - 1].trim()
+}
+
+function letterResolveZoneIndex(priceTable: any, fromProvince: string, toProvince: string): number {
+  const zones: any[] = priceTable.zones ?? []
+  const isRouteBased = zones.length > 0 && 'from' in zones[0]
+  if (isRouteBased) {
+    let idx = zones.findIndex((z: any) => z.from === fromProvince && z.to === toProvince)
+    if (idx === -1) idx = zones.findIndex((z: any) => z.from === fromProvince && z.to === 'Khác')
+    return idx === -1 ? 0 : idx
+  }
+  if (fromProvince === toProvince) return 0
+  return LETTER_PROVINCE_REGION[fromProvince] === LETTER_PROVINCE_REGION[toProvince] ? 1 : 2
+}
+
+function letterFeeFromPriceTable(service: any, weightGram: number, fromProvince: string, toProvince: string): number {
+  const priceTable = service.priceTableId ? (allPricing as any[]).find(p => p.id === service.priceTableId) : null
+  if (!priceTable) return 0
+  const weights: { max: number }[] = priceTable.weights ?? []
+  const weightIndex = weights.findIndex(w => weightGram <= w.max)
+  const row = priceTable.prices?.[weightIndex === -1 ? weights.length - 1 : weightIndex]
+  const zoneIndex = letterResolveZoneIndex(priceTable, fromProvince, toProvince)
+  return row?.[zoneIndex] ?? row?.[0] ?? 0
+}
+
+function IcReceipt() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+}
+
+function LetterFieldInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
+      <input
+        value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px' }}
+      />
+    </div>
+  )
+}
+
+function LetterFieldSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+      <select
+        value={value} onChange={(e) => onChange(e.target.value)}
+        style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', border: 'none', outline: 'none', background: 'transparent', appearance: 'none', cursor: 'pointer' }}
+      >
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <div style={{ pointerEvents: 'none' }}><IcChevronDown size={20} /></div>
+    </div>
+  )
+}
+
+function LetterLinkText({ children }: { children: React.ReactNode }) {
+  return <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{children}</span>
+}
+
+// ── CreateLetterDrawer (Agency — tạo đơn thư thay shop) ───────
+function CreateLetterDrawerAgency({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [selectedShopId, setSelectedShopId] = useState(agencyShops[0]?.id ?? '')
+  const [rcvName, setRcvName]     = useState('Nguyễn Văn An')
+  const [rcvPhone, setRcvPhone]   = useState('0909888999')
+  const [rcvStreet, setRcvStreet] = useState('123 Thành Thái')
+  const [rcvProvince, setRcvProvince] = useState(() => letterParseProvince(agencyShops[0]?.address ?? 'Hà Nội'))
+  const [weight, setWeight]       = useState(0.2)
+  const [goodsValue, setGoodsValue] = useState(0)
+  const [shopCode, setShopCode]   = useState('')
+  const [letterContent, setLetterContent] = useState('')
+
+  const selectedShop = agencyShops.find(s => s.id === selectedShopId) ?? agencyShops[0]
+  const weightGram = weight * 1000
+  const fromProvince = letterParseProvince((selectedShop as any)?.address ?? 'Hà Nội')
+
+  const now = new Date()
+  const createdAt = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} - ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`
+
+  const available247Services = (allServices as any[]).filter(
+    s => s.carrier === '247Express' && s.enabled && s.agencyId === CURRENT_AGENCY_ID
+  )
+  const selectedService247 = available247Services.length > 0
+    ? available247Services.reduce((min, s) =>
+        letterFeeFromPriceTable(s, weightGram, fromProvince, rcvProvince) <
+        letterFeeFromPriceTable(min, weightGram, fromProvince, rcvProvince) ? s : min
+      )
+    : undefined
+  const feeShipping = selectedService247 ? letterFeeFromPriceTable(selectedService247, weightGram, fromProvince, rcvProvince) : 0
+  const totalShipping = feeShipping
+
+  function handleCreate() {
+    if (!selectedShop) return
+    const now = new Date()
+    addOrder({
+      id: `ORD_${now.getTime()}`,
+      shopId: selectedShop.id,
+      trackingCode: `SHOP_${now.getTime()}`,
+      senderName: (selectedShop as any).ownerName ?? selectedShop.name,
+      senderPhone: (selectedShop as any).phone ?? '',
+      receiverName: rcvName,
+      receiverPhone: rcvPhone,
+      receiverAddress: `${rcvStreet}, ${rcvProvince}`,
+      weight: weightGram,
+      cod: 0,
+      fee: totalShipping,
+      status: 'pending',
+      createdAt: now.toISOString().split('T')[0],
+      actionHistory: [],
+      sendKind: 'letter',
+      dispatchStatus: 'pending_agency',
+      carrierCode: null,
+      dispatchedAt: null,
+      dispatchedBy: null,
+    })
+    onClose()
+  }
+
+  const card: React.CSSProperties = {
+    background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+    display: 'flex', flexDirection: 'column', width: '100%',
+  }
+
+  function CardHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
+    return (
+      <>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+          {icon}
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{label}</span>
+        </div>
+        <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 200,
+          opacity: open ? 1 : 0, pointerEvents: open ? 'auto' : 'none',
+          transition: 'opacity 0.25s',
+        }}
+      />
+      <div style={{
+        position: 'fixed', top: 0, right: 0,
+        width: 980, height: '100vh',
+        background: '#fff', boxShadow: '0 0 20px rgba(0,0,0,0.2)',
+        zIndex: 201, display: 'flex', flexDirection: 'column',
+        transform: open ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', flexShrink: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Gửi thư, tài liệu</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+            <IcX />
+          </button>
+        </div>
+        <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+        <div style={{ flex: 1, display: 'flex', gap: 6, padding: 6, background: '#F3F4F6', overflow: 'hidden', alignItems: 'flex-start' }}>
+
+          {/* ═══ LEFT COLUMN ═══ */}
+          <div style={{ flex: 1, minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
+
+            {/* ── Chọn shop card ── */}
+            <div style={card}>
+              <CardHeader icon={<IcStore />} label="Shop tạo đơn" />
+              <div style={{ padding: 8 }}>
+                <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <select
+                    value={selectedShopId}
+                    onChange={e => {
+                      setSelectedShopId(e.target.value)
+                      const newShop = agencyShops.find(s => s.id === e.target.value)
+                      setRcvProvince(letterParseProvince((newShop as any)?.address ?? 'Hà Nội'))
+                    }}
+                    style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', cursor: 'pointer', lineHeight: '20px' }}
+                  >
+                    {agencyShops.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} — {(s as any).ownerName}</option>
+                    ))}
+                  </select>
+                  <IcChevronDown size={18} />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Bên gửi card ── */}
+            <div style={card}>
+              <CardHeader icon={<IcStore />} label="Bên gửi" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ width: 110, flexShrink: 0, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Địa chỉ KH</span>
+                  <div style={{ flex: 1, minWidth: 0, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px' }}>
+                    <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{(selectedShop as any)?.ownerName} - {(selectedShop as any)?.phone}</div>
+                    <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{(selectedShop as any)?.address}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Bên nhận card ── */}
+            <div style={card}>
+              <CardHeader icon={<IcUser />} label="Bên nhận" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <div style={{ flex: 1, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px' }}>
+                    <input
+                      value={rcvName} onChange={(e) => setRcvName(e.target.value)}
+                      style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 200, background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      value={rcvPhone} onChange={(e) => setRcvPhone(e.target.value)}
+                      style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent', lineHeight: '20px' }}
+                    />
+                  </div>
+                </div>
+                <LetterFieldInput value={rcvStreet} onChange={setRcvStreet} placeholder="Số nhà, tên đường" />
+                <LetterFieldSelect value={rcvProvince} onChange={setRcvProvince} options={LETTER_PROVINCES} />
+              </div>
+            </div>
+
+            {/* ── Sản phẩm card ── */}
+            <div style={{ ...card, flex: 1 }}>
+              <CardHeader icon={<IcCube />} label="Sản phẩm" />
+              <div style={{ padding: 8 }}>
+                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', background: '#F3F4F6' }}>
+                    <div style={{ flex: 1, minWidth: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Tên sản phẩm</span>
+                    </div>
+                    <div style={{ width: 56, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>SL: 1</span>
+                    </div>
+                    <div style={{ width: 104, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>Giá bán</span>
+                    </div>
+                    <div style={{ width: 96, flexShrink: 0, padding: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px', display: 'block', textAlign: 'right' }}>KL / KT</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                    <div style={{ flex: 1, minWidth: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Thư, tài liệu</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 56, flexShrink: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>1</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 104, flexShrink: 0, padding: 6 }}>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, height: 32, padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 96, flexShrink: 0, padding: 6, display: 'flex', flexDirection: 'column', justifyContent: 'center', fontSize: 12, color: C_TEXT_PRIMARY, lineHeight: '16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <span>{weight.toFixed(2)}kg</span>
+                      <span>10x10x10cm</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', width: 72, flexShrink: 0 }}>Khối lượng</span>
+                  <NumericWithUnit value={weight} onChange={setWeight} unit="kg" flex1 />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ═══ RIGHT COLUMN ═══ */}
+          <div style={{ width: 400, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+
+              {/* ── Thông tin thư ── */}
+              <div style={{ ...card, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, flexShrink: 0 }}>
+                  <IcClipboard />
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Thông tin thư, tài liệu</span>
+                  <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px', whiteSpace: 'nowrap' }}>Tạo lúc {createdAt}</span>
+                </div>
+                <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+                <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                    <InfoRow label="Mã đơn shop">
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, padding: '6px 12px', width: 180, flexShrink: 0 }}>
+                        <input
+                          value={shopCode} onChange={(e) => setShopCode(e.target.value)}
+                          placeholder="Mã đơn shop"
+                          style={{ width: '100%', border: 'none', outline: 'none', fontSize: 14, color: '#9CA3AF', background: 'transparent', lineHeight: '20px' }}
+                        />
+                      </div>
+                    </InfoRow>
+                    <InfoRow label="Giá trị hàng">
+                      <NumericWithUnit value={goodsValue} onChange={setGoodsValue} unit="đ" />
+                    </InfoRow>
+                  </div>
+                  <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY }}>Nội dung thư, tài liệu</span>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, border: `1px solid ${C_BORDER}`, padding: '6px 12px' }}>
+                        <textarea
+                          value={letterContent} onChange={(e) => setLetterContent(e.target.value)}
+                          placeholder="Nội dung thư, tài liệu"
+                          style={{ width: '100%', minHeight: 60, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Ghi chú thu khác</span>
+                      <LetterLinkText>Thêm ghi chú</LetterLinkText>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Nguồn tạo</span>
+                      <LetterLinkText>Facebook</LetterLinkText>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Dịch vụ card ── */}
+              <div style={{ ...card, flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+                  <IcTruck />
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Dịch vụ</span>
+                </div>
+                <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                  {selectedService247 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#FAFAFA' }}>
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{selectedService247.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+                        <span style={{ fontSize: 12, color: '#4B5563', lineHeight: '16px' }}>Phí ship</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{feeShipping.toLocaleString('vi-VN')}đ</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 14, color: '#9CA3AF', lineHeight: '20px', padding: '4px 0' }}>
+                      Không có dịch vụ khả dụng
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Phụ phí card ── */}
+              <div style={card}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8 }}>
+                  <IcReceipt />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phụ phí</span>
+                </div>
+                <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+                  <span style={{ fontSize: 14, color: '#9CA3AF', lineHeight: '20px' }}>Không có phụ phí</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Action card ── */}
+            <div style={{ ...card, flexShrink: 0, gap: 8, padding: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#F9FAFB', borderRadius: 6, padding: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Tổng phí vận chuyển</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+                    {totalShipping.toLocaleString('vi-VN')}đ
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                >
+                  Lưu nháp
+                </button>
+                <button
+                  onClick={handleCreate}
+                  style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
+                >
+                  Tạo đơn
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Table header ─────────────────────────────────────────────
 function THead({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: () => void }) {
   const fixedCell = (label: string, width: number, align: 'left' | 'right' = 'left') => (
@@ -1090,7 +1598,7 @@ function THead({ allChecked, onToggleAll }: { allChecked: boolean; onToggleAll: 
       </div>
       {fixedCell('Mã đơn hàng', 140)}
       {fixedCell('Loại đơn', 100)}
-      {flexCell('Shop',            200)}
+      {flexCell('Shop',            220)}
       {flexCell('Khách hàng',      260)}
       {flexCell('Sản phẩm',        220)}
       {flexCell('Khối lượng (kg)', 120, 'right')}
@@ -1231,6 +1739,12 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
     })
     setEditMode(false)
     setDraft(null)
+    onUpdated?.()
+  }
+
+  function confirmReturnHandover() {
+    if (!order) return
+    updateOrder(order.id, { returnHandoverAt: new Date().toISOString() })
     onUpdated?.()
   }
 
@@ -1701,38 +2215,67 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 6 }}>
-                {editMode ? (
-                  <>
-                    <button
-                      onClick={cancelEdit}
-                      style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
-                    >
-                      Huỷ
-                    </button>
-                    <button
-                      onClick={saveEdit}
-                      style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
-                    >
-                      Lưu thay đổi
-                    </button>
-                  </>
+              {/* Đơn Thư hoàn hàng — hàng vật lý về đại lý trước (đại lý là người trực tiếp gửi
+                  qua 247Express), KHÔNG tự về thẳng shop như đơn GHN Hàng hoá. Trạng thái đơn
+                  ("Đơn huỷ"/"Đang hoàn hàng") không đồng nghĩa hàng đã về tay shop — cần đại lý
+                  xác nhận thêm bước giao hoàn vật lý này. */}
+              {!editMode && order && isLetterReturnCase(order) && (
+                order.returnHandoverAt ? (
+                  <div style={{ fontSize: 13, color: '#065F46', background: '#D1FAE5', border: '1px solid #A7F3D0', borderRadius: 6, padding: 10 }}>
+                    Đại lý đã giao hoàn hàng cho shop lúc {new Date(order.returnHandoverAt).toLocaleString('vi-VN')}.
+                  </div>
                 ) : (
-                  <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 6, padding: 10 }}>
+                    <span style={{ fontSize: 13, color: '#B45309' }}>
+                      Đơn thư đã chuyển hoàn — hàng đang ở đại lý, <strong>chưa về tay shop</strong>. Đại lý cần trực tiếp giao lại hàng cho shop rồi bấm xác nhận.
+                    </span>
                     <button
-                      style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                      onClick={confirmReturnHandover}
+                      style={{ padding: '8px 12px', background: '#B45309', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
                     >
-                      Huỷ đơn
+                      Xác nhận đã giao hoàn cho shop
                     </button>
-                    <button
-                      onClick={startEdit}
-                      style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
-                    >
-                      Cập nhật
-                    </button>
-                  </>
-                )}
-              </div>
+                  </div>
+                )
+              )}
+
+              {/* Đơn Thư đã dispatch và đang trong luồng hoàn hàng — "Huỷ đơn"/"Cập nhật" không
+                  còn hợp lý về nghiệp vụ (hàng đã ra khỏi đại lý, đang hoàn hoặc đã hoàn xong),
+                  nên bỏ hẳn 2 nút này cho case isLetterReturnCase, chỉ giữ nút xác nhận giao hoàn. */}
+              {!isLetterReturnCase(order) && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {editMode ? (
+                    <>
+                      <button
+                        onClick={cancelEdit}
+                        style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                      >
+                        Huỷ
+                      </button>
+                      <button
+                        onClick={saveEdit}
+                        style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
+                      >
+                        Lưu thay đổi
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                      >
+                        Huỷ đơn
+                      </button>
+                      <button
+                        onClick={startEdit}
+                        style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
+                      >
+                        Cập nhật
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>}
@@ -1860,9 +2403,9 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
 
 // ── Table row ─────────────────────────────────────────────────
 function TRow({
-  order, checked, onToggle, shopName, onSelect, onDispatch247,
+  order, checked, onToggle, shopName, shopAddress, onSelect, onDispatch247,
 }: {
-  order: Order; checked: boolean; onToggle: () => void; shopName: string; onSelect: () => void; onDispatch247?: () => void
+  order: Order; checked: boolean; onToggle: () => void; shopName: string; shopAddress?: string; onSelect: () => void; onDispatch247?: () => void
 }) {
   const [hover, setHover] = useState(false)
   const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
@@ -1884,13 +2427,17 @@ function TRow({
       <div style={{ width: 32, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
         <Checkbox checked={checked} onChange={onToggle} />
       </div>
-      {/* Mã đơn hàng */}
-      <div style={{ width: 140, flexShrink: 0, display: 'flex', alignItems: 'center', padding: '6px 8px' }}>
+      {/* Mã đơn hàng — kèm trạng thái ngay dưới mã, khớp UI thật (mỗi dòng tự hiện trạng thái,
+          không chỉ dựa vào tab đang xem) */}
+      <div style={{ width: 140, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2, padding: '6px 8px', justifyContent: 'center' }}>
         <span
           onClick={(e) => { e.stopPropagation(); onSelect() }}
           style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', whiteSpace: 'nowrap', cursor: 'pointer' }}
         >
           {order.trackingCode}
+        </span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: rowStatus(order).color, lineHeight: '18px', whiteSpace: 'nowrap' }}>
+          {rowStatus(order).label}
         </span>
       </div>
       {/* Loại đơn — Hàng hoá (GHN) hay Thư, bưu phẩm (247Express) */}
@@ -1903,11 +2450,27 @@ function TRow({
           {order.sendKind === 'letter' ? 'Thư' : 'Hàng hoá'}
         </span>
       </div>
-      {/* Shop */}
-      <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px', display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontSize: 14, color: C_TEXT_BODY, lineHeight: '22px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {/* Shop — kèm địa chỉ gửi (địa chỉ shop) để phân biệt điểm lấy hàng khi nhiều shop trùng tên */}
+      <div style={{ flex: '1 0 0', minWidth: 200, padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2, justifyContent: 'center' }}>
+        <span style={{ fontSize: 14, color: C_TEXT_BODY, lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {shopName}
         </span>
+        {shopAddress && (
+          <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {shopAddress}
+          </span>
+        )}
+        {/* Đơn Thư hoàn hàng — hàng đang ở đại lý, PHẢI phân biệt rõ với "đã về tay shop" để
+            shop không hiểu lầm khi thấy order.status là "Đơn huỷ"/"Đang hoàn hàng". */}
+        {isLetterReturnCase(order) && (
+          <span style={{
+            fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 8, whiteSpace: 'nowrap', alignSelf: 'flex-start',
+            background: order.returnHandoverAt ? '#D1FAE5' : '#FEF3C7',
+            color: order.returnHandoverAt ? '#065F46' : '#B45309',
+          }}>
+            {order.returnHandoverAt ? 'Đã giao hoàn cho shop' : 'Hàng hoàn đang ở đại lý'}
+          </span>
+        )}
       </div>
       {/* Khách hàng */}
       <div style={{ flex: '1 0 0', minWidth: 260, padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2, justifyContent: 'center' }}>
@@ -2227,11 +2790,18 @@ export default function AgencyOrders() {
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(50)
   const [drawerOpen, setDrawerOpen]   = useState(false)
+  const [letterDrawerOpen, setLetterDrawerOpen] = useState(false)
+  const [createMenuOpen, setCreateMenuOpen] = useState(false)
   const [exportModalOpen, setExportModalOpen] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [detailOpen, setDetailOpen]   = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [dispatchModal, setDispatchModal] = useState<Order | null>(null)
+  // Luôn là 1 mảng — 1 đơn (quick action từng dòng / chi tiết đơn) truyền vào mảng 1 phần tử,
+  // nhiều đơn (thanh "Đã chọn N đơn") truyền cả mảng — dùng chung 1 modal, không tách riêng.
+  const [dispatchModal, setDispatchModal] = useState<Order[] | null>(null)
+  // Số đơn đã chọn nhưng KHÔNG hợp lệ để gửi 247 (đơn Hàng hoá, hoặc Thư đã dispatch) — chỉ có
+  // giá trị > 0 khi mở modal từ thanh chọn hàng loạt, dùng để cảnh báo rõ trong modal.
+  const [dispatchExcludedCount, setDispatchExcludedCount] = useState(0)
   // Hub xuất phát phải được đại lý xác nhận ngay lúc gửi — Service không còn gắn cứng 1 hub
   // nữa (xem ServiceDetail.tsx), nên hub chỉ quyết định ở bước dispatch này.
   const [dispatchHubId, setDispatchHubId] = useState<string>('')
@@ -2242,6 +2812,15 @@ export default function AgencyOrders() {
     setOrders(loadOrders().filter(o => agencyShopIds.has(o.shopId)))
   }
 
+  useEffect(() => {
+    if (!createMenuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-create-order-menu]')) setCreateMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [createMenuOpen])
+
   const isPending247 = (o: Order) => o.sendKind === 'letter' && o.dispatchStatus === 'pending_agency'
 
   const ordersByTab: Record<string, Order[]> = {
@@ -2251,8 +2830,11 @@ export default function AgencyOrders() {
     in_transit:    orders.filter(o => o.status === 'in_transit'),
     returning:     orders.filter(o => o.status === 'returning'),
     redelivery:    orders.filter(o => o.status === 'redelivery'),
-    completed:     orders.filter(o => o.status === 'delivered'),
-    cancelled:     orders.filter(o => o.status === 'cancelled' || o.status === 'failed'),
+    // 'failed' = giao hàng không thành công → hoàn hàng thành công — theo mapping GHN thật
+    // (AGA-RECON-4), đây là 1 nhánh KẾT THÚC/hoàn tất, không phải huỷ đơn — chỉ 'cancelled'
+    // (đại lý/shop chủ động huỷ) mới thuộc tab "Đơn huỷ".
+    completed:     orders.filter(o => o.status === 'delivered' || o.status === 'failed'),
+    cancelled:     orders.filter(o => o.status === 'cancelled'),
     lost_damaged:  orders.filter(o => o.status === 'lost' || o.status === 'damaged'),
   }
   const tabOrders = ordersByTab[activeTab] ?? orders
@@ -2281,8 +2863,8 @@ export default function AgencyOrders() {
   }
 
   const TABS = [
-    { key: 'pending_247',  label: 'Chờ xử lý',                     count: ordersByTab.pending_247.length,  countColor: '#F59E0B' },
     { key: 'draft',        label: 'Đơn nháp',                     count: ordersByTab.draft.length,        countColor: '#F59E0B' },
+    { key: 'pending_247',  label: 'Chờ xử lý',                     count: ordersByTab.pending_247.length,  countColor: '#F59E0B' },
     { key: 'pickup',       label: 'Chờ bàn giao',                 count: ordersByTab.pickup.length,       countColor: '#3B82F6' },
     { key: 'in_transit',   label: 'Đã bàn giao - Đang giao',      count: ordersByTab.in_transit.length,   countColor: '#3B82F6' },
     { key: 'returning',    label: 'Đã bàn giao - Đang hoàn hàng', count: ordersByTab.returning.length,    countColor: '#F59E0B' },
@@ -2293,6 +2875,7 @@ export default function AgencyOrders() {
   ]
 
   const shopMap = Object.fromEntries(agencyShops.map(s => [s.id, s.name]))
+  const shopAddressMap = Object.fromEntries(agencyShops.map(s => [s.id, (s as any).address as string | undefined]))
 
   return (
     <ConfigProvider theme={agencyAdminTheme}>
@@ -2328,16 +2911,41 @@ export default function AgencyOrders() {
             <DownloadOutlined style={{ color: C_TEXT_PRIMARY, fontSize: 16, transform: 'rotate(180deg)' }} />
             <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Import đơn hàng</span>
           </button>
-          <button
-            onClick={() => setDrawerOpen(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-              background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0,
-            }}
-          >
-            <PlusOutlined style={{ color: '#fff', fontSize: 16 }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo đơn hàng</span>
-          </button>
+          <div style={{ position: 'relative', flexShrink: 0 }} data-create-order-menu>
+            <button
+              onClick={() => setCreateMenuOpen(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer',
+              }}
+            >
+              <PlusOutlined style={{ color: '#fff', fontSize: 16 }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>Tạo đơn hàng</span>
+              <IcChevronDown size={16} />
+            </button>
+            {createMenuOpen && (
+              <div style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 220,
+                background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden',
+              }}>
+                {[
+                  { label: 'Tạo đơn hàng', onClick: () => setDrawerOpen(true) },
+                  { label: 'Tạo thư, tài liệu', onClick: () => setLetterDrawerOpen(true) },
+                ].map(item => (
+                  <div
+                    key={item.label}
+                    onClick={() => { item.onClick(); setCreateMenuOpen(false) }}
+                    style={{ padding: '8px 12px', fontSize: 14, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}
@@ -2393,19 +3001,35 @@ export default function AgencyOrders() {
           </select>
         </div>
 
-        {/* Selected bar */}
-        {selected.size > 0 && (
+        {/* Selected bar — "Gửi qua 247Express" gửi hàng loạt tất cả đơn hợp lệ (Thư, chưa
+            dispatch) trong lựa chọn cùng 1 hub, thay vì phải mở từng đơn gửi lần lượt. Đơn không
+            hợp lệ (Hàng hoá, hoặc Thư đã dispatch) bị loại khỏi batch, cảnh báo rõ trong modal. */}
+        {selected.size > 0 && (() => {
+          const selectedOrders = orders.filter(o => selected.has(o.id))
+          const eligible = selectedOrders.filter(isPending247)
+          return (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 12, padding: '6px 16px',
             background: '#EFF6FF', borderBottom: `1px solid #BFDBFE`, flexShrink: 0,
           }}>
             <span style={{ fontSize: 13, color: C_LINK, fontWeight: 600 }}>Đã chọn {selected.size} đơn</span>
+            {eligible.length > 0 && (
+              <button
+                onClick={() => {
+                  setDispatchHubId('')
+                  setDispatchExcludedCount(selectedOrders.length - eligible.length)
+                  setDispatchModal(eligible)
+                }}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: C_ACTION, fontWeight: 600 }}
+              >Gửi qua 247Express ({eligible.length})</button>
+            )}
             <button
               onClick={() => setSelected(new Set())}
               style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: C_TEXT_SECONDARY }}
             >Bỏ chọn</button>
           </div>
-        )}
+          )
+        })()}
 
         {/* Table */}
         <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
@@ -2420,8 +3044,9 @@ export default function AgencyOrders() {
                   checked={selected.has(order.id)}
                   onToggle={() => toggleOne(order.id)}
                   shopName={shopMap[order.shopId] ?? order.shopId}
+                  shopAddress={shopAddressMap[order.shopId]}
                   onSelect={() => { setSelectedOrder(order); setDetailOpen(true) }}
-                  onDispatch247={activeTab === 'pending_247' ? () => { setDispatchHubId(''); setDispatchModal(order) } : undefined}
+                  onDispatch247={activeTab === 'pending_247' ? () => { setDispatchHubId(''); setDispatchExcludedCount(0); setDispatchModal([order]) } : undefined}
                 />
               ))}
               {paginated.length === 0 && (
@@ -2447,6 +3072,7 @@ export default function AgencyOrders() {
 
       {/* Create order drawer */}
       <CreateOrderDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); refreshOrders() }} />
+      <CreateLetterDrawerAgency open={letterDrawerOpen} onClose={() => { setLetterDrawerOpen(false); refreshOrders() }} />
       {/* Export orders modal */}
       <ExportOrdersModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} orders={orders} />
       <ImportOrdersModal open={importModalOpen} onClose={() => setImportModalOpen(false)} onImported={refreshOrders} />
@@ -2455,7 +3081,7 @@ export default function AgencyOrders() {
         order={selectedOrder}
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
-        onDispatch247={selectedOrder && isPending247(selectedOrder) ? () => { setDispatchHubId(''); setDispatchModal(selectedOrder) } : undefined}
+        onDispatch247={selectedOrder && isPending247(selectedOrder) ? () => { setDispatchHubId(''); setDispatchExcludedCount(0); setDispatchModal([selectedOrder]) } : undefined}
         onUpdated={() => {
           const fresh = loadOrders().find(o => o.id === selectedOrder?.id)
           if (fresh) setSelectedOrder(fresh)
@@ -2477,11 +3103,22 @@ export default function AgencyOrders() {
             display: 'flex', flexDirection: 'column', gap: 16,
           }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', lineHeight: '24px' }}>
-              Xác nhận gửi qua 247Express
+              {dispatchModal.length === 1 ? 'Xác nhận gửi qua 247Express' : `Đẩy ${dispatchModal.length} đơn qua 247Express`}
             </div>
-            <div style={{ fontSize: 14, color: '#374151', lineHeight: '22px' }}>
-              Đơn <span style={{ fontWeight: 700, color: '#3B82F6' }}>{dispatchModal.trackingCode}</span> sẽ được đẩy sang 247Express để giao hàng. Thao tác này không thể hoàn tác.
-            </div>
+            {dispatchModal.length === 1 ? (
+              <div style={{ fontSize: 14, color: '#374151', lineHeight: '22px' }}>
+                Đơn <span style={{ fontWeight: 700, color: '#3B82F6' }}>{dispatchModal[0].trackingCode}</span> sẽ được đẩy sang 247Express để giao hàng. Thao tác này không thể hoàn tác.
+              </div>
+            ) : (
+              <div style={{ fontSize: 14, color: '#374151', lineHeight: '22px' }}>
+                <span style={{ fontWeight: 700, color: '#3B82F6' }}>{dispatchModal.length} đơn</span> hợp lệ sẽ được đẩy sang 247Express cùng 1 hub xuất phát. Thao tác này không thể hoàn tác.
+              </div>
+            )}
+            {dispatchExcludedCount > 0 && (
+              <div style={{ fontSize: 13, color: '#B45309', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 6, padding: '8px 10px' }}>
+                {dispatchExcludedCount} đơn đã chọn không hợp lệ (đơn Hàng hoá, hoặc đơn Thư đã gửi rồi) sẽ bị bỏ qua, không nằm trong lần gửi này.
+              </div>
+            )}
 
             {/* Bắt buộc xác nhận hub xuất phát trước khi gửi được — dịch vụ không còn gắn
                 cứng 1 hub nữa nên phải chọn ở đây */}
@@ -2535,8 +3172,9 @@ export default function AgencyOrders() {
                 disabled={!dispatchHubId}
                 onClick={() => {
                   if (!dispatchHubId) return
-                  dispatchOrderToCarrier(dispatchModal.id, '247EXPRESS', 'Agency Admin', dispatchHubId)
-                  if (selectedOrder?.id === dispatchModal.id) setDetailOpen(false)
+                  dispatchModal.forEach(o => dispatchOrderToCarrier(o.id, '247EXPRESS', 'Agency Admin', dispatchHubId))
+                  if (selectedOrder && dispatchModal.some(o => o.id === selectedOrder.id)) setDetailOpen(false)
+                  setSelected(new Set())
                   setDispatchModal(null)
                   refreshOrders()
                 }}
@@ -2545,7 +3183,7 @@ export default function AgencyOrders() {
                   background: dispatchHubId ? '#1D4ED8' : '#9CA3AF', cursor: dispatchHubId ? 'pointer' : 'not-allowed',
                 }}
               >
-                Xác nhận gửi
+                {dispatchModal.length === 1 ? 'Xác nhận gửi' : `Xác nhận gửi ${dispatchModal.length} đơn`}
               </button>
             </div>
           </div>

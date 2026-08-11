@@ -11,6 +11,11 @@ import {
 } from '@ant-design/icons'
 import allServices from '../../../mock-data/services.json'
 import allPriceTables from '../../../mock-data/pricing.json'
+import { isValidVNPhone, PHONE_INVALID_MESSAGE } from '../../../mock-data/phoneValidation'
+import { addShop, loadShops } from '../../../mock-data/shopStore'
+
+const CURRENT_AGENCY_ID = 'AGN001'
+const REQUIRED_MESSAGE = 'Không được để trống'
 
 const C_ACTION         = '#FF5200'
 const C_TEXT_PRIMARY   = '#111827'
@@ -56,17 +61,17 @@ type FormState = {
 }
 
 function InputField({
-  label, placeholder, value, onChange, disabled = false,
+  label, placeholder, value, onChange, disabled = false, error,
 }: {
   label: string; placeholder: string; value: string
-  onChange?: (v: string) => void; disabled?: boolean
+  onChange?: (v: string) => void; disabled?: boolean; error?: string
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
       <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>{label}</span>
       <div style={{
         background: disabled ? C_BG_DISABLED : '#fff',
-        border: `1px solid ${C_BORDER}`, borderRadius: 6,
+        border: `1px solid ${error ? '#EF4444' : C_BORDER}`, borderRadius: 6,
         padding: '6px 12px', display: 'flex', alignItems: 'center',
       }}>
         <input
@@ -80,6 +85,7 @@ function InputField({
           }}
         />
       </div>
+      {error && <span style={{ fontSize: 12, color: '#EF4444' }}>{error}</span>}
     </div>
   )
 }
@@ -91,9 +97,42 @@ export default function ShopCreate() {
   const [form, setForm] = useState<FormState>({
     tenShop: '', hoTen: '', sdt: '', soNha: '', tinhThanh: '', username: '', password: '',
   })
+  const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const set = (key: keyof FormState) => (v: string) => setForm(f => ({ ...f, [key]: v }))
   const copy = (text: string) => navigator.clipboard.writeText(text).catch(() => {})
+
+  const phoneInvalid = !!form.sdt && !isValidVNPhone(form.sdt)
+  const usernameTaken = !!form.username.trim() && loadShops().some(s => s.username === form.username.trim())
+  const requiredMissing = !form.tenShop.trim() || !form.hoTen.trim() || !form.sdt.trim()
+    || !form.soNha.trim() || !form.username.trim() || !form.password.trim()
+  const canCreate = !requiredMissing && !phoneInvalid && !usernameTaken
+
+  const errFor = (value: string) => (submitAttempted && !value.trim() ? REQUIRED_MESSAGE : undefined)
+  const usernameError = errFor(form.username)
+    ?? (usernameTaken ? 'Tên đăng nhập đã được sử dụng, vui lòng chọn tên khác' : undefined)
+
+  const handleCreate = () => {
+    setSubmitAttempted(true)
+    if (!canCreate) return
+    addShop({
+      id: maShop,
+      agencyId: CURRENT_AGENCY_ID,
+      name: form.tenShop.trim(),
+      ownerName: form.hoTen.trim(),
+      phone: form.sdt.trim(),
+      address: [form.soNha.trim(), form.tinhThanh].filter(Boolean).join(', '),
+      status: 'active',
+      username: form.username.trim(),
+      createdAt: new Date().toISOString().slice(0, 10),
+      totalOrders: 0,
+      codSchedule: '',
+      configuredServices: visibleServiceIds
+        .filter(id => servicePriceTables[id])
+        .map(id => ({ serviceId: id, demoFee: 0 })),
+    })
+    navigate('/agency-admin/shops')
+  }
 
   // serviceId → priceTableId (null = chưa chọn)
   const defaultServiceIds = allServices.filter((s) => (s as any).isDefault).map((s) => s.id)
@@ -193,10 +232,11 @@ export default function ShopCreate() {
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>Tên shop</span>
-              <div style={inputBoxStyle}>
+              <div style={{ ...inputBoxStyle, border: `1px solid ${errFor(form.tenShop) ? '#EF4444' : C_BORDER}` }}>
                 <input value={form.tenShop} onChange={e => set('tenShop')(e.target.value)}
                   placeholder="Tên shop" style={inputStyle} />
               </div>
+              {errFor(form.tenShop) && <span style={{ fontSize: 12, color: '#EF4444' }}>{errFor(form.tenShop)}</span>}
             </div>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>Mã shop</span>
@@ -207,17 +247,19 @@ export default function ShopCreate() {
           </div>
 
           <InputField label="Họ tên chủ shop" placeholder="Họ tên chủ shop"
-            value={form.hoTen} onChange={set('hoTen')} />
+            value={form.hoTen} onChange={set('hoTen')} error={errFor(form.hoTen)} />
           <InputField label="Số điện thoại" placeholder="Số điện thoại"
-            value={form.sdt} onChange={set('sdt')} />
+            value={form.sdt} onChange={set('sdt')}
+            error={errFor(form.sdt) ?? (phoneInvalid ? PHONE_INVALID_MESSAGE : undefined)} />
 
           {/* Địa chỉ */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>Địa chỉ</span>
-            <div style={inputBoxStyle}>
+            <div style={{ ...inputBoxStyle, border: `1px solid ${errFor(form.soNha) ? '#EF4444' : C_BORDER}` }}>
               <input value={form.soNha} onChange={e => set('soNha')(e.target.value)}
                 placeholder="Số nhà, tên đường" style={inputStyle} />
             </div>
+            {errFor(form.soNha) && <span style={{ fontSize: 12, color: '#EF4444' }}>{errFor(form.soNha)}</span>}
             <div style={{ ...inputBoxStyle, gap: 8, cursor: 'pointer' }}>
               <span style={{
                 flex: 1, fontSize: 14, lineHeight: '20px',
@@ -241,7 +283,7 @@ export default function ShopCreate() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>Tên đăng nhập của shop</span>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <div style={{ ...inputBoxStyle, flex: 1 }}>
+              <div style={{ ...inputBoxStyle, flex: 1, border: `1px solid ${usernameError ? '#EF4444' : C_BORDER}` }}>
                 <input value={form.username} onChange={e => set('username')(e.target.value)}
                   placeholder="Tên đăng nhập của shop" style={inputStyle} />
               </div>
@@ -252,13 +294,14 @@ export default function ShopCreate() {
                 </span>
               </button>
             </div>
+            {usernameError && <span style={{ fontSize: 12, color: '#EF4444' }}>{usernameError}</span>}
           </div>
 
           {/* Mật khẩu */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>Mật khẩu của shop</span>
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <div style={{ ...inputBoxStyle, flex: 1, gap: 8 }}>
+              <div style={{ ...inputBoxStyle, flex: 1, gap: 8, border: `1px solid ${errFor(form.password) ? '#EF4444' : C_BORDER}` }}>
                 <input
                   type={showPwd ? 'text' : 'password'}
                   value={form.password}
@@ -283,6 +326,7 @@ export default function ShopCreate() {
                 </span>
               </button>
             </div>
+            {errFor(form.password) && <span style={{ fontSize: 12, color: '#EF4444' }}>{errFor(form.password)}</span>}
           </div>
         </div>
 
@@ -424,12 +468,17 @@ export default function ShopCreate() {
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, padding: 16 }}>
+          {submitAttempted && !canCreate && (
+            <span style={{ fontSize: 12, color: '#EF4444' }}>
+              {requiredMissing ? 'Vui lòng điền đủ thông tin bắt buộc' : phoneInvalid ? PHONE_INVALID_MESSAGE : usernameError}
+            </span>
+          )}
           <button
-            onClick={() => navigate('/agency-admin/shops')}
+            onClick={handleCreate}
             style={{
               display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center',
-              background: C_ACTION, border: 'none', borderRadius: 6,
+              background: (submitAttempted && !canCreate) ? '#D1D5DB' : C_ACTION, border: 'none', borderRadius: 6,
               padding: '8px 12px', cursor: 'pointer',
             }}
           >

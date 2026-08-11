@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
-import allItemsData from '../../../mock-data/carrier-reconciliation-items.json'
+import { getReconciliationItems } from '../../../mock-data/reconciliationLedger'
 import allSessions from '../../../mock-data/carrier-reconciliation.json'
 import ordersData from '../../../mock-data/orders.json'
 
@@ -48,32 +48,8 @@ type ShopSession = {
   periodEnd?: string
 }
 
-type ItemRecord = {
-  id: string
-  sessionId: string
-  orderCode: string
-  shopId: string
-  shopName: string
-  ghnCOD: number
-  systemCOD: number
-  ghnFee: number
-  systemFee: number
-  status: 'MATCH' | 'MISMATCH' | 'NOT_FOUND'
-  customerOrderCode: string
-  ghnStatus: string
-  deliveryFee: number
-  redeliveryFee: number
-  insuranceFee: number
-  returnFee: number
-  failedDeliveryCOD: number
-  failedDeliveryCollect: number
-  codFee: number
-  partialDeliveryFee: number
-  prepaid: number
-  discount: number
-  serviceFee: number
-  totalReconcileItem: number
-}
+// ItemRecord import từ reconciliationLedger.ts — status ở đó đã tính lại theo ledger cộng dồn
+// xuyên phiên (xem AGA-RECON-4), không phải field tĩnh đọc thẳng từ JSON.
 
 const SUCCESS_STATUSES = ['Giao hàng thành công', 'Hoàn hàng thành công']
 
@@ -134,7 +110,7 @@ export default function AgencyReconciliationShopDetail() {
 
   const nvcSession = (allSessions as any[]).find(s => s.id === session.nvcSessionId)
 
-  const items = (allItemsData as ItemRecord[]).filter(
+  const items = getReconciliationItems().filter(
     it => it.sessionId === session.nvcSessionId && resolveShopId(it) === session.shopId
   )
 
@@ -142,6 +118,11 @@ export default function AgencyReconciliationShopDetail() {
 
   const totalCOD = items.filter(it => SUCCESS_STATUSES.includes(it.ghnStatus)).reduce((s, i) => s + i.systemCOD, 0)
   const totalFee = items.reduce((s, i) => s + i.systemFee, 0)
+  // Lợi nhuận ĐL = phí DV thu của shop − phí DV thật trả NVC — cùng công thức deriveShopSessions()
+  // ở AgencyReconciliation.tsx (feeShop - feeGHN), tính lại từ items thay vì dùng session.profit
+  // snapshot để luôn khớp với dữ liệu items đang hiển thị trên trang này.
+  const totalGHNFee = items.reduce((s, i) => s + i.ghnFee, 0)
+  const profit = totalFee - totalGHNFee
 
   const ghnStatusColor = (status: string) => {
     const SUCCESS = ['Giao hàng thành công', 'Hoàn hàng thành công']
@@ -217,8 +198,18 @@ export default function AgencyReconciliationShopDetail() {
             <div style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(totalCOD)}</div>
           </div>
           <div style={cardStyle}>
-            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Tổng phí DV</div>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Tổng phí DV (shop)</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(totalFee)}</div>
+          </div>
+          <div style={cardStyle}>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Tổng phí DV (GHN)</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(totalGHNFee)}</div>
+          </div>
+          <div style={cardStyle}>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Lợi nhuận ĐL</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: profit > 0 ? '#16A34A' : profit < 0 ? '#DC2626' : C_TEXT_SECONDARY }}>
+              {profit > 0 ? '+' : ''}{fmt(profit)}
+            </div>
           </div>
           <div style={cardStyle}>
             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Nhận về</div>

@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { addAgency } from '../agencyStore'
+import { isValidVNPhone, PHONE_INVALID_MESSAGE } from '../../../mock-data/phoneValidation'
 
 // ── Design tokens ────────────────────────────────────────────
 const C_TEXT_PRIMARY  = '#111827'
@@ -56,17 +57,18 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 function TextInput({
-  value, onChange, placeholder, disabled,
+  value, onChange, placeholder, disabled, error,
 }: {
   value: string
   onChange?: (v: string) => void
   placeholder?: string
   disabled?: boolean
+  error?: string
 }) {
   return (
     <div style={{
       background: disabled ? C_BG_DISABLED : '#fff',
-      border: `1px solid ${C_BORDER}`, borderRadius: 6,
+      border: `1px solid ${error ? '#EF4444' : C_BORDER}`, borderRadius: 6,
       padding: '6px 12px', display: 'flex', alignItems: 'center',
     }}>
       <input
@@ -87,14 +89,15 @@ function TextInput({
 }
 
 function InputField({
-  label, value, onChange, placeholder, disabled,
+  label, value, onChange, placeholder, disabled, error,
 }: {
-  label: string; value: string; onChange?: (v: string) => void; placeholder?: string; disabled?: boolean
+  label: string; value: string; onChange?: (v: string) => void; placeholder?: string; disabled?: boolean; error?: string
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
       <FieldLabel>{label}</FieldLabel>
-      <TextInput value={value} onChange={onChange} placeholder={placeholder} disabled={disabled} />
+      <TextInput value={value} onChange={onChange} placeholder={placeholder} disabled={disabled} error={error} />
+      {error && <span style={{ fontSize: 12, color: '#EF4444' }}>{error}</span>}
     </div>
   )
 }
@@ -338,6 +341,7 @@ export default function AgencyCreate() {
                 value={sdt}
                 onChange={setSdt}
                 placeholder="Số điện thoại"
+                error={sdt && !isValidVNPhone(sdt) ? PHONE_INVALID_MESSAGE : undefined}
               />
 
               {/* Địa chỉ — 2 sub-inputs */}
@@ -410,11 +414,12 @@ export default function AgencyCreate() {
             {/* Action row */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 16 }}>
               <button
-                onClick={handleCreate}
+                disabled={!!sdt && !isValidVNPhone(sdt)}
+                onClick={() => { if (!sdt || isValidVNPhone(sdt)) handleCreate() }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
-                  background: C_ACTION, border: 'none', borderRadius: 6,
-                  padding: '8px 12px', cursor: 'pointer',
+                  background: (!!sdt && !isValidVNPhone(sdt)) ? '#D1D5DB' : C_ACTION, border: 'none', borderRadius: 6,
+                  padding: '8px 12px', cursor: (!!sdt && !isValidVNPhone(sdt)) ? 'not-allowed' : 'pointer',
                 }}
               >
                 <PlusOutlined style={{ color: '#fff', fontSize: 16 }} />

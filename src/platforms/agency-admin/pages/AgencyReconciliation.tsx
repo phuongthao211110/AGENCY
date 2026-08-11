@@ -11,11 +11,13 @@ import {
   UploadOutlined,
   CloseOutlined,
   DeleteOutlined,
+  WarningOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import carrierSessionsData from '../../../mock-data/carrier-reconciliation.json'
-import allItemsData from '../../../mock-data/carrier-reconciliation-items.json'
+import { getReconciliationItems } from '../../../mock-data/reconciliationLedger'
 import ordersData from '../../../mock-data/orders.json'
+import allShopsData from '../../../mock-data/shops.json'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CarrierSession = {
@@ -85,7 +87,7 @@ const C_ACTION         = '#FF5200'
 const C_BG_HEADER      = '#F3F4F6'
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
-type TabKey = 'carrier' | 'shop' | 'transfer' | 'forecast' | 'split'
+type TabKey = 'carrier' | 'shop' | 'transfer' | 'forecast' | 'split' | 'overdue'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'carrier',  label: 'Phiên NVC',     icon: <FileTextOutlined /> },
@@ -93,7 +95,13 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'transfer', label: 'Chuyển khoản', icon: <BankOutlined /> },
   { key: 'forecast', label: 'Dự trù',       icon: <BarChartOutlined /> },
   { key: 'split',    label: 'Tách phiên',   icon: <ScissorOutlined /> },
+  { key: 'overdue',  label: 'Quá hạn đối soát', icon: <WarningOutlined /> },
 ]
+
+// Số ngày tối đa cho phép trễ giữa lúc đơn "Giao hàng thành công" trên hệ thống và lúc
+// GHN thật sự đưa đơn đó vào 1 file đối soát nào — vượt ngưỡng này mới coi là bất thường
+// thật sự cần cảnh báo (khớp GHN chu kỳ thanh toán ~15 ngày, cho dư 1 kỳ để tránh báo giả)
+const OVERDUE_THRESHOLD_DAYS = 30
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n: number) => n.toLocaleString('vi-VN') + ' ₫'
@@ -805,7 +813,7 @@ function TabShop({
 
   const shopSessions = deriveShopSessions(
     sessions,
-    allItemsData as ItemRecord[],
+    getReconciliationItems(),
     confirmedShopIds
   )
 
@@ -1025,6 +1033,130 @@ function ShopSessionRow({ session: s }: { session: ShopSession }) {
   )
 }
 
+// ─── Tab: Quá hạn đối soát ─────────────────────────────────────────────────────
+// So sánh CÓ Ý NGHĨA giữa tracking hệ thống và dữ liệu đối soát GHN: không so trạng thái
+// tức thời (luôn lệch vì GHN báo theo kỳ), mà so CÓ NGƯỠNG THỜI GIAN — chỉ coi là bất
+// thường khi đơn đã giao xong quá lâu mà chưa từng thấy trong bất kỳ file đối soát nào.
+type OverdueOrder = {
+  orderId: string
+  trackingCode: string
+  shopId: string
+  shopName: string
+  deliveredAt: string
+  daysOverdue: number
+}
+
+function computeOverdueOrders(): OverdueOrder[] {
+  const agencyShopIds = new Set(
+    (allShopsData as Array<{ id: string; agencyId: string; name: string }>)
+      .filter(s => s.agencyId === 'AGN001')
+      .map(s => s.id)
+  )
+  const shopNameOf = (id: string) =>
+    (allShopsData as Array<{ id: string; name: string }>).find(s => s.id === id)?.name ?? id
+
+  const reconciledCodes = new Set(getReconciliationItems().map(i => i.orderCode))
+
+  const now = new Date()
+
+  return (ordersData as Array<{
+    id: string; trackingCode: string; shopId: string; status: string
+    log?: Array<{ status: string; updated_date: string }>
+  }>)
+    .filter(o => agencyShopIds.has(o.shopId) && o.status === 'delivered')
+    .filter(o => !reconciledCodes.has(o.trackingCode))
+    .map(o => {
+      const deliveredLog = o.log?.find(l => l.status === 'delivered')
+      const deliveredAt = deliveredLog?.updated_date ?? ''
+      const daysOverdue = deliveredAt
+        ? Math.floor((now.getTime() - new Date(deliveredAt).getTime()) / (1000 * 60 * 60 * 24))
+        : 0
+      return {
+        orderId: o.id,
+        trackingCode: o.trackingCode,
+        shopId: o.shopId,
+        shopName: shopNameOf(o.shopId),
+        deliveredAt,
+        daysOverdue,
+      }
+    })
+    .filter(o => o.daysOverdue > OVERDUE_THRESHOLD_DAYS)
+    .sort((a, b) => b.daysOverdue - a.daysOverdue)
+}
+
+function TabOverdue() {
+  const navigate = useNavigate()
+  const overdueOrders = computeOverdueOrders()
+
+  const cardStyle: React.CSSProperties = {
+    flex: 1, padding: '14px 16px', border: `1px solid ${C_BORDER}`,
+    borderRadius: 8, background: '#fff',
+  }
+
+  if (overdueOrders.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px', color: C_TEXT_SECONDARY }}>
+        <WarningOutlined style={{ fontSize: 48, marginBottom: 12, opacity: 0.3 }} />
+        <div style={{ fontSize: 14, fontWeight: 500 }}>Không có đơn nào quá hạn đối soát</div>
+        <div style={{ fontSize: 12, marginTop: 4 }}>
+          Tất cả đơn đã giao thành công quá {OVERDUE_THRESHOLD_DAYS} ngày đều đã có trong ít nhất 1 file đối soát GHN
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ flex: '1 0 0', display: 'flex', flexDirection: 'column', padding: '0 16px', overflow: 'hidden' }}>
+      <div style={{ padding: '12px 0', flexShrink: 0 }}>
+        <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginBottom: 12 }}>
+          Đơn đã "Giao hàng thành công" trên hệ thống quá {OVERDUE_THRESHOLD_DAYS} ngày nhưng{' '}
+          <strong style={{ color: C_TEXT_PRIMARY }}>chưa từng xuất hiện</strong> trong bất kỳ file đối soát GHN nào đã upload —
+          không phải do độ trễ báo cáo bình thường (GHN báo theo kỳ ~15 ngày), mà là dấu hiệu GHN có thể đã bỏ sót đơn.
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={cardStyle}>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Số đơn quá hạn</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#DC2626' }}>{overdueOrders.length}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ flex: '1 0 0', overflow: 'hidden' }}>
+        <div style={{ height: '100%', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
+            <TCell width={160} isHeader>Mã đơn GHN</TCell>
+            <TCell flex='1 0 0' minWidth={180} isHeader>Shop</TCell>
+            <TCell width={140} isHeader>Ngày giao thành công</TCell>
+            <TCell width={140} align='right' isHeader>Số ngày quá hạn</TCell>
+            <TCell width={140} align='center' isHeader>Thao tác</TCell>
+          </div>
+          <div style={{ height: 1, background: C_BORDER }} />
+          {overdueOrders.map(o => (
+            <div key={o.orderId} style={{ display: 'flex', alignItems: 'stretch' }}>
+              <TCell width={160}>
+                <span style={{ color: C_LINK, fontWeight: 600 }}>{o.trackingCode}</span>
+              </TCell>
+              <TCell flex='1 0 0' minWidth={180}>{o.shopName}</TCell>
+              <TCell width={140}>{o.deliveredAt ? fmtDate(o.deliveredAt) : '—'}</TCell>
+              <TCell width={140} align='right'>
+                <span style={{ color: '#DC2626', fontWeight: 700 }}>{o.daysOverdue} ngày</span>
+              </TCell>
+              <TCell width={140} align='center'>
+                <span
+                  onClick={() => navigate('/agency-admin/orders')}
+                  style={{ color: C_LINK, cursor: 'pointer', fontSize: 13 }}
+                >
+                  Xem đơn hàng
+                </span>
+              </TCell>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Tab: Placeholder (đang phát triển) ───────────────────────────────────────
 function TabComingSoon() {
   return (
@@ -1045,7 +1177,14 @@ export default function AgencyReconciliation() {
     let s = (carrierSessionsData as CarrierSession[]).filter(s => s.agencyId === 'AGN001')
     if (navState?.deletedId)   s = s.filter(x => x.id !== navState.deletedId)
     if (navState?.confirmedId) s = s.map(x => x.id === navState.confirmedId ? { ...x, status: 'confirmed' as const } : x)
-    return s
+    // "Số đơn"/"Số lệch" ở danh sách phải khớp đúng với chi tiết phiên — tính live từ ledger
+    // items (reconciliationLedger.ts), không dùng field tĩnh totalOrders/totalMismatch có sẵn
+    // trong mock (2 nguồn này từng lệch nhau, xem AGA-RECON-4).
+    const ledgerItems = getReconciliationItems()
+    return s.map(session => {
+      const items = ledgerItems.filter(i => i.sessionId === session.id)
+      return { ...session, totalOrders: items.length, totalMismatch: items.filter(i => i.status !== 'MATCH').length }
+    })
   })
 
   const [confirmedShopIds] = useState<Set<string>>(new Set())
@@ -1124,6 +1263,7 @@ export default function AgencyReconciliation() {
           {activeTab === 'transfer' && <TabComingSoon />}
           {activeTab === 'forecast' && <TabComingSoon />}
           {activeTab === 'split'    && <TabComingSoon />}
+          {activeTab === 'overdue' && <TabOverdue />}
         </div>
       </div>
     </ConfigProvider>

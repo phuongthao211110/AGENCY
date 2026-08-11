@@ -58,18 +58,27 @@ export interface Order {
   // Hub 247Express xuất phát — xác nhận lúc dispatch (Service không còn gắn cứng hub nữa),
   // null cho tới khi dispatch, không áp dụng với carrier GHN
   dispatchHubId?: string | null
+  // Đơn Thư (sendKind: 'letter') do đại lý gửi hộ qua 247Express — khi hoàn hàng, hàng vật lý
+  // về tay ĐẠI LÝ trước (không về thẳng shop như đơn GHN Hàng hoá tự gửi). Field này đánh dấu
+  // thời điểm đại lý xác nhận đã giao lại hàng hoàn cho shop — null nghĩa là hàng đang ở đại lý,
+  // CHƯA về tay shop, dù order.status đã là 'returning'/'cancelled'/'failed'.
+  returnHandoverAt?: string | null
 }
 
 const STORAGE_KEY = 'ghn_orders_v1'
 
 function migrateOrder(o: typeof baseOrders[number]): Order {
+  // Giữ nguyên sendKind/dispatchStatus/carrierCode nếu seed data đã khai báo sẵn (đơn Thư/
+  // 247Express) — chỉ áp mặc định "Hàng hoá qua GHN, đã dispatch" cho các đơn cũ chưa có field
+  // này (toàn bộ seed gốc trước khi có luồng 247Express).
+  const raw = o as any
   return {
     ...(o as unknown as Order),
-    sendKind: 'goods',
-    dispatchStatus: 'dispatched',
-    carrierCode: 'GHN',
-    dispatchedAt: (o as any).createdAt ?? null,
-    dispatchedBy: null,
+    sendKind: raw.sendKind ?? 'goods',
+    dispatchStatus: raw.dispatchStatus ?? 'dispatched',
+    carrierCode: raw.carrierCode ?? 'GHN',
+    dispatchedAt: raw.dispatchedAt ?? raw.createdAt ?? null,
+    dispatchedBy: raw.dispatchedBy ?? null,
   }
 }
 
@@ -77,7 +86,21 @@ export function loadOrders(): Order[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
-      return JSON.parse(raw) as Order[]
+      const stored = JSON.parse(raw) as Order[]
+      // Backfill: đơn mới thêm vào orders.json sau khi browser đã có localStorage cũ (VD:
+      // ORD034 cho luồng hoàn hàng đơn Thư) không tự xuất hiện vì localStorage không rỗng nên
+      // không reseed lại từ đầu. Bù thêm các đơn base còn thiếu theo id, KHÔNG đụng gì tới đơn
+      // đã có (giữ nguyên mọi thay đổi/đơn tạo mới của người dùng trong session).
+      const storedIds = new Set(stored.map(o => o.id))
+      const missing = (baseOrders as unknown[])
+        .map(o => migrateOrder(o as typeof baseOrders[number]))
+        .filter(o => !storedIds.has(o.id))
+      if (missing.length > 0) {
+        const merged = [...stored, ...missing]
+        saveOrders(merged)
+        return merged
+      }
+      return stored
     }
   } catch {
     /* fall through to reseed */

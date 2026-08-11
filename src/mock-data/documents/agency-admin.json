@@ -1,7 +1,7 @@
 {
   "platform": "agency-admin",
   "currentVersion": "1.1.0",
-  "lastUpdated": "2026-07-24",
+  "lastUpdated": "2026-08-07",
   "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
@@ -90,7 +90,10 @@
           "jiraKey": "AGENCY-45",
           "title": "[AGA] Shop - Tạo mới shop: Thông tin cơ bản",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn nhập thông tin cơ bản của shop để tạo mới shop thuộc đại lý của mình, giúp các shop có thể sử dụng hệ thống để lên đơn.",
-          "notes": [],
+          "notes": [
+            "⚠️ Trạng thái thật khác với \"✅\" đã đánh dấu trước đây — story này đã được đánh dấu xong nhưng code thực tế là 1 UI stub hoàn toàn: nút \"Tạo mới\" trước đây chỉ navigate, không lưu gì, không validate gì.",
+            "Đã fix một phần (theo yêu cầu trực tiếp \"validate required + nối persist thật\"): AC2/AC6/AC7/AC10 đã implement; AC5 một phần (SĐT validate đúng định dạng, Tên shop/Địa chỉ chưa check giới hạn 255 ký tự); AC9 CHƯA làm (SĐT trùng trong agency không bị chặn, chỉ mới check trùng username); AC3 sai lệch (mã shop sinh theo SHOP+6 ký tự ngẫu nhiên, không phải 3 chữ hoa+3 số như spec)."
+          ],
           "userFlow": [
             "Agency Admin truy cập màn \"Quản lý shop\"",
             "Agency Admin click \"Tạo shop mới\"",
@@ -110,14 +113,18 @@
             "AC7: Hệ thống đảm bảo tenant isolation: Agency Admin chỉ tạo được shop thuộc đại lý của mình.",
             "AC9: Trường hợp nhập SĐT bị trùng trong cùng agency: Hệ thống hiển thị lỗi số điện thoại đã tồn tại trong đại lý, không cho phép tạo shop.",
             "AC10: Trường hợp dữ liệu không hợp lệ: Hiển thị message lỗi tại từng field, không cho submit."
-          ]
+          ],
+          "status": "partial"
         },
         {
           "id": "AGA-SHOP-4",
           "jiraKey": "AGENCY-46",
           "title": "[AGA] Shop - Tạo mới shop: Cấu hình User/Password cho chủ shop đăng nhập Web/App shop",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn cấu hình tài khoản đăng nhập (username/password) cho shop để chủ shop có thể đăng nhập vào hệ thống Web/App và sử dụng dịch vụ.",
-          "notes": [],
+          "notes": [
+            "⚠️ Trạng thái thật khác với \"✅\" đã đánh dấu trước đây — cùng tình trạng với AGA-SHOP-3: UI hiển thị đủ nhưng không lưu/validate gì trước khi fix.",
+            "Đã fix một phần: AC1/AC7/AC8/AC9/AC10 đã implement; AC5 gần đúng (unique toàn hệ thống, message text khác); AC2/AC3 CHƯA làm (username không tự ghép shop_id prefix); AC4 một phần (chưa check ký tự đặc biệt); AC6 CHƯA làm (chưa check độ dài/độ phức tạp password); AC11 chưa verify được (Login.tsx vẫn là stub không check credential thật)."
+          ],
           "userFlow": [],
           "acceptanceCriteria": [
             "AC1: Hệ thống hiển thị section cấu hình tài khoản đăng nhập trong màn hình tạo shop.",
@@ -131,7 +138,8 @@
             "AC9: Đảm bảo tenant isolation: Shop chỉ đăng nhập được vào hệ thống thuộc agency_id của mình.",
             "AC10: Khi dữ liệu không hợp lệ: Hiển thị lỗi tại từng field, không cho submit.",
             "AC11: Sau khi tạo thành công, tài khoản shop có thể sử dụng để đăng nhập Web shop (AGENCY-78) và App shop (AGENCY-79)."
-          ]
+          ],
+          "status": "partial"
         },
         {
           "id": "AGA-SHOP-5",
@@ -219,6 +227,36 @@
             "AC3: URL trong banner là URL shop portal dùng chung của đại lý — không phải URL riêng per shop. Tất cả shop thuộc cùng đại lý đều đăng nhập qua một URL duy nhất.",
             "AC4: Agency Admin nhấn 'Copy' → URL được sao chép toàn bộ vào clipboard. Nút hiển thị trạng thái 'Đã copy' trong 2 giây rồi tự reset về 'Copy'.",
             "AC5: Agency Admin click vào URL trong banner → hệ thống mở trang đăng nhập shop trong tab mới."
+          ]
+        },
+        {
+          "id": "AGA-SHOP-9",
+          "jiraKey": "",
+          "title": "[AGA] Shop - Nhận diện shop tự đăng ký trong danh sách",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn thấy ngay shop vừa tự đăng ký (chọn đại lý mình) trong danh sách shop, để biết và cấu hình dịch vụ/bảng giá cho shop đó mà không cần ai báo thủ công.",
+          "userFlow": [
+            "Shop tự đăng ký ở Web Shop, chọn đúng đại lý của tôi (WS-LOGIN-1)",
+            "Vào \"Quản lý shop\" → thấy shop mới ở đầu danh sách, tab \"Đang hoạt động\", đủ SĐT/địa chỉ đã đăng ký",
+            "Click vào shop → chi tiết đúng thông tin đã đăng ký; \"Cấu hình dịch vụ\" hiện toàn bộ dịch vụ \"Dịch vụ không khả dụng\" vì chưa có configuredServices → bấm \"Chỉnh sửa\" để gắn bảng giá"
+          ],
+          "systemFlow": [
+            "shopStore.ts (mới) — store dùng chung qua localStorage (cùng cơ chế orderStore.ts): addShop(), updateShop(), loadShops() (tự backfill shop base thiếu theo id)",
+            "Shops.tsx và ShopDetail.tsx đọc từ loadShops() thay vì import tĩnh shops.json",
+            "Bug đã fix: danh sách shop từng tính ở module-level (chạy 1 lần lúc app load do App.tsx import tĩnh toàn bộ trang) — shop tự đăng ký không bao giờ xuất hiện khi điều hướng SPA (không reload), chỉ thấy sau F5. Đã chuyển thành buildShops() gọi lại mỗi lần trang render.",
+            "Nút Kích hoạt/Ngừng hoạt động: đổi từ mutate trực tiếp object JSON import sang ghi qua updateShop() — persist qua reload thật"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Shop tự đăng ký chọn đúng đại lý hiện tại → xuất hiện trong danh sách ngay sau khi đăng ký, không cần F5/mở tab mới.",
+            "AC2: Shop tự đăng ký chọn đại lý KHÁC → không xuất hiện trong danh sách của đại lý hiện tại (đúng multi-tenant isolation, không phải bug).",
+            "AC3: Click vào shop tự đăng ký → chi tiết hiện đúng tên shop, chủ shop, SĐT, địa chỉ, username đã đăng ký.",
+            "AC4: Shop tự đăng ký chưa có configuredServices → mọi dịch vụ hiện \"Dịch vụ không khả dụng\" (đúng quy tắc chung).",
+            "AC5: Kích hoạt/Ngừng hoạt động shop → trạng thái giữ đúng qua F5 (persist qua localStorage).",
+            "AC6: Modal \"Xuất đơn hàng\" liệt kê đúng và đủ shop, gồm cả shop tự đăng ký."
+          ],
+          "notes": [
+            "Đây là phần \"kết nối\" của luồng đăng ký self-service — trước khi làm, Register.tsx chỉ là UI stub, không lưu gì cả.",
+            "Root cause của lỗi \"vừa đăng ký nhưng không thấy trong danh sách\" ban đầu: không phải do chưa lưu dữ liệu, mà do trang danh sách tính dữ liệu 1 lần duy nhất ở module-level — bug kinh điển khi trộn \"hằng số tính 1 lần lúc import module\" với dữ liệu cần refresh theo mỗi lần vào trang trong 1 SPA."
           ]
         }
       ]
@@ -395,27 +433,25 @@
         {
           "id": "AGA-ORDER-7",
           "jiraKey": "",
-          "title": "[AGENCY] Đơn hàng: Tìm kiếm và lọc theo shop",
+          "title": "[AGENCY] Đơn hàng: Tìm kiếm theo mã đơn/tên khách hàng",
           "status": "draft",
-          "userStory": "Là Agency Admin (Đại lý), tôi muốn tìm nhanh 1 đơn theo mã đơn/tên khách hàng, hoặc chỉ xem đơn của 1 shop cụ thể, để không phải dò qua toàn bộ danh sách khi có nhiều shop và nhiều đơn.",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn tìm nhanh 1 đơn theo mã đơn hoặc tên khách hàng, để không phải dò qua toàn bộ danh sách khi có nhiều đơn.",
           "userFlow": [
-            "Gõ vào ô \"Tìm theo mã đơn hoặc tên khách hàng\" → danh sách lọc ngay theo nội dung gõ",
-            "Chọn 1 shop cụ thể ở dropdown \"Tất cả shop (N)\" → chỉ còn đơn của shop đó",
-            "Có thể dùng đồng thời cả 2 (lọc shop trước, rồi tìm kiếm trong kết quả đó)"
+            "Ở trang \"Đơn hàng\", gõ vào ô \"Tìm theo mã đơn hoặc tên khách hàng\" → danh sách lọc ngay theo nội dung gõ",
+            "Có thể dùng đồng thời với filter shop (AGA-ORDER-20) — tìm kiếm áp dụng SAU khi đã lọc theo tab + shop"
           ],
           "systemFlow": [
-            "Ô tìm kiếm: state search, lọc case-insensitive theo trackingCode HOẶC receiverName chứa chuỗi gõ vào (áp dụng SAU khi đã lọc theo tab + shop)",
-            "Dropdown shop: state shopFilter, mặc định \"Tất cả shop\"; chọn 1 shop → lọc o.shopId === shopFilter",
-            "Cả 2 filter đều reset page về 1 khi thay đổi, nhưng KHÔNG xoá các đơn đang được tick chọn"
+            "Ô tìm kiếm: state search, lọc case-insensitive theo trackingCode HOẶC receiverName chứa chuỗi gõ vào (áp dụng sau khi đã lọc theo tab + shopFilter)",
+            "Reset page về 1 khi gõ, nhưng KHÔNG xoá các đơn đang được tick chọn (selected)"
           ],
           "acceptanceCriteria": [
-            "AC1: Gõ vào ô tìm kiếm → danh sách chỉ còn đơn có mã đơn hoặc tên khách hàng chứa đúng chuỗi đã gõ.",
-            "AC2: Dropdown shop liệt kê đúng các shop thuộc đại lý, mặc định chọn \"Tất cả shop\".",
-            "AC3: Lọc theo shop rồi tìm kiếm → kết quả là giao của cả 2 điều kiện.",
-            "AC4: Đổi bộ lọc → về trang 1, nhưng các đơn đã tick chọn trước đó vẫn giữ nguyên."
+            "AC1: Gõ vào ô tìm kiếm → danh sách chỉ còn đơn có mã đơn hoặc tên khách hàng chứa đúng chuỗi đã gõ (không phân biệt hoa/thường).",
+            "AC2: Lọc theo shop (AGA-ORDER-20) rồi tìm kiếm → kết quả là giao của cả 2 điều kiện.",
+            "AC3: Gõ vào ô tìm kiếm → về trang 1, nhưng các đơn đã tick chọn trước đó vẫn giữ nguyên trạng thái tick."
           ],
           "notes": [
-            "Khác với đổi TAB (xoá hết lựa chọn) — đổi filter tìm kiếm/shop KHÔNG xoá lựa chọn."
+            "Tách riêng khỏi story ban đầu (từng gộp chung với dropdown filter shop) theo yêu cầu trực tiếp — xem AGA-ORDER-20 cho phần filter shop.",
+            "Đổi TAB xoá hết lựa chọn — đổi ô tìm kiếm KHÔNG xoá lựa chọn, vì đây vẫn là cùng 1 tập dữ liệu đang thao tác, chỉ thu hẹp view."
           ]
         },
         {
@@ -605,21 +641,22 @@
           "status": "draft",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn import nhiều đơn hàng cùng lúc từ file Excel, để nhập hộ shop số lượng lớn đơn thay vì tạo từng đơn một qua drawer \"Tạo đơn hàng\".",
           "userFlow": [
-            "Ở trang \"Đơn hàng\", bấm nút \"Import đơn hàng\" (đặt cạnh nút \"Xuất đơn hàng\", cùng style viền xám nền trắng)",
-            "Modal \"Import đơn hàng\" mở ra, đầu modal có banner \"Bạn chưa có file mẫu import đơn hàng?\" kèm nút \"Tải xuống file mẫu\" — bấm để tải file .xlsx mẫu có sẵn 2 dòng ví dụ (1 Hàng hoá + 1 Thư) và 1 sheet \"Danh sách Shop\" (mã shop ↔ tên shop) để tra cứu khi điền",
-            "Bấm vùng upload (khung nét đứt xanh, icon tải lên, chữ \"Chọn file từ máy tính. Chọn file\"), chọn file .xlsx/.xls/.xlsm",
-            "Hệ thống đọc và validate từng dòng ngay lập tức, hiện preview: số dòng \"Hợp lệ\" / \"Lỗi\", kèm danh sách lý do lỗi theo từng dòng",
-            "Bấm \"Import N đơn hợp lệ\" → các dòng hợp lệ được tạo thành đơn hàng thật, dòng lỗi bị bỏ qua",
-            "Đóng modal, danh sách đơn hàng refresh — đơn \"Hàng hoá\" xuất hiện ở tab tương ứng theo trạng thái GHN, đơn \"Thư\" xuất hiện ở tab \"Chờ xử lý\""
+            "Ở trang \"Đơn hàng\", bấm nút \"Import đơn hàng\" (đặt cạnh nút \"Xuất đơn hàng\")",
+            "Modal mở ra, màn đầu tiên là chọn loại đơn — 2 thẻ \"Hàng hoá\" (có COD, sản phẩm) và \"Thư, tài liệu\" (không COD, vào tab \"Chờ xử lý\") — chưa thấy khu vực upload nào ở bước này",
+            "Chọn 1 loại → chuyển sang màn upload riêng cho loại đó: tiêu đề đổi \"Import đơn hàng — Hàng hoá\"/\"— Thư\", banner/cột đổi theo đúng loại, có link \"← Đổi loại đơn\" để quay lại",
+            "Bấm vùng upload, chọn file đúng template của loại đã chọn",
+            "Hệ thống đọc và validate từng dòng, hiện preview Hợp lệ/Lỗi kèm lý do theo dòng",
+            "Bấm \"Import N đơn hợp lệ\" → các dòng hợp lệ tạo thành đơn hàng thật (cùng loại đã chọn), dòng lỗi bị bỏ qua",
+            "Đóng modal, danh sách đơn hàng refresh — đơn Hàng hoá vào tab tương ứng, đơn Thư vào tab \"Chờ xử lý\""
           ],
           "systemFlow": [
-            "Cột bắt buộc theo đúng thứ tự: Mã shop, Loại đơn, Khách hàng, Số điện thoại, Địa chỉ giao hàng, Sản phẩm, Khối lượng (kg), Tiền thu hộ COD (đ), Phí ship (giá bán shop, đ), Trả ship",
-            "Nút \"Tải xuống file mẫu\" (downloadImportTemplate()) sinh workbook 2 sheet: sheet \"Import đơn hàng\" (header + 2 dòng mẫu) và sheet \"Danh sách Shop\" (toàn bộ agencyShops — mã + tên) để agency tra mã shop ngay trong file mẫu, không cần rời modal",
-            "Parse thật bằng XLSX.read() trên nội dung file upload (không phải progress bar giả) — đọc sheet đầu tiên qua sheet_to_json({ header: 1 })",
-            "Validate từng dòng: Mã shop phải khớp 1 shop thuộc đại lý hiện tại; Loại đơn chỉ nhận \"Hàng hoá\" hoặc \"Thư\"; các trường bắt buộc không rỗng; Khối lượng phải là số dương; Phí ship phải là số không âm",
-            "Dòng hợp lệ → build Order object: \"Hàng hoá\" → dispatchStatus 'dispatched', carrierCode 'GHN'; \"Thư\" → dispatchStatus 'pending_agency', carrierCode null",
-            "senderName/senderPhone lấy từ ownerName/phone của shop tương ứng trong shops.json",
-            "Mỗi dòng hợp lệ gọi addOrder() (dùng chung cơ chế orderStore.ts) → refreshOrders() load lại danh sách"
+            "Tách 2 bộ cột riêng theo loại (không còn cột \"Loại đơn\" chung): IMPORT_HEADERS_GOODS (9 cột, có COD, \"Sản phẩm\") và IMPORT_HEADERS_LETTER (8 cột, không COD, \"Nội dung thư\")",
+            "State kind: 'goods' | 'letter' | null trong ImportOrdersModal — null = màn chọn loại; chọn xong mới hiện khu vực upload tương ứng",
+            "downloadImportTemplate(kind) sinh workbook theo đúng kind — tên file khác nhau (mau-import-don-hang-hoa.xlsx / mau-import-don-thu.xlsx)",
+            "parseImportSheet(file, kind) đọc theo đúng số cột/thứ tự của kind, không đọc cột Loại đơn nữa",
+            "Validate theo kind: COD chỉ validate khi kind==='goods'",
+            "sendKind = kind trực tiếp (không suy từ text cột nữa); kind==='letter' → cod:0 cố định, dispatchStatus:'pending_agency', carrierCode:null; kind==='goods' → dispatchStatus:'dispatched', carrierCode:'GHN'",
+            "Mỗi dòng hợp lệ gọi addOrder() → refreshOrders() load lại danh sách"
           ],
           "acceptanceCriteria": [
             "AC1: Nút \"Import đơn hàng\" hiển thị cùng hàng với \"Xuất đơn hàng\", cùng style, icon xoay 180° để phân biệt chiều import/export.",
@@ -630,13 +667,223 @@
             "AC6: Bấm \"Import N đơn hợp lệ\" → chỉ N dòng hợp lệ được tạo thành đơn thật trong orderStore, dòng lỗi bị bỏ qua hoàn toàn.",
             "AC7: Đơn \"Thư\" import xong xuất hiện ngay ở tab \"Chờ xử lý\"; đơn \"Hàng hoá\" xuất hiện ở tab \"Đơn nháp\"/trạng thái tương ứng — không lẫn lộn.",
             "AC8: Sau khi import, danh sách đơn hàng tự refresh mà không cần tải lại trang.",
-            "AC9: Bấm \"Tải xuống file mẫu\" → tải về file .xlsx gồm đúng 10 cột theo thứ tự chuẩn, có sẵn 2 dòng ví dụ (1 \"Hàng hoá\", 1 \"Thư\") và 1 sheet \"Danh sách Shop\" liệt kê đúng mã + tên các shop thuộc đại lý đang đăng nhập."
+            "AC9: Bấm \"Tải xuống file mẫu\" → tải về file .xlsx gồm đúng 10 cột theo thứ tự chuẩn, có sẵn 2 dòng ví dụ (1 \"Hàng hoá\", 1 \"Thư\") và 1 sheet \"Danh sách Shop\" liệt kê đúng mã + tên các shop thuộc đại lý đang đăng nhập.",
+            "AC10: Màn đầu tiên của modal luôn là chọn loại đơn — chưa chọn thì không thấy banner/upload/nút xác nhận nào.",
+            "AC11: Bấm \"← Đổi loại đơn\" → quay lại màn chọn loại, xoá hết file/preview đã có."
           ],
           "notes": [
             "Cùng nguyên tắc \"làm thật\" như tính năng Xuất đơn hàng — không dùng progress bar giả lập như modal upload file đối soát GHN, mà parse nội dung file thật bằng thư viện xlsx đã có sẵn.",
             "Import không có cột \"NVC\" tường minh — carrier được suy ra từ Loại đơn, giống cách Service/Bảng giá đã hợp nhất luồng GHN/247Express.",
             "Đây là 1 trong 2 cách tạo đơn hộ shop (cách kia là drawer \"Tạo đơn hàng\" — hiện có gap chưa persist, xem AGA-ORDER-13); import dùng chung addOrder() nên không bị gap đó.",
-            "Sheet \"Danh sách Shop\" trong file mẫu giải quyết trực tiếp vấn đề agency không biết \"Mã shop\" (ID nội bộ, VD SHP001) của shop nào — trước đây phải tự qua trang \"Shop\" để tra, giờ có sẵn ngay trong file mẫu."
+            "Sheet \"Danh sách Shop\" trong file mẫu giải quyết trực tiếp vấn đề agency không biết \"Mã shop\" (ID nội bộ, VD SHP001) của shop nào — trước đây phải tự qua trang \"Shop\" để tra, giờ có sẵn ngay trong file mẫu.",
+            "Tách 2 luồng theo yêu cầu trực tiếp: ban đầu 1 file/template chung có cột Loại đơn; đổi sang chọn loại TRƯỚC (vẫn 1 nút, 1 modal), mỗi loại có template/cột phù hợp hơn.",
+            "Gap có sẵn (chưa sửa): cột \"Trả ship\" được parse nhưng không dùng ở đâu — Order không có field fee-payer, UI hiện nhãn giả lập từ hash ID. Import trùng file 2 lần cũng tạo đơn trùng, không có cơ chế chặn."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-15",
+          "jiraKey": "",
+          "title": "[AGENCY][247] Đơn hàng: Tạo đơn thay shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn tạo đơn thư, tài liệu thay cho shop — không chỉ đơn hàng hoá như hiện tại — để hỗ trợ shop nhập đơn thư khi cần, giống hệt cách tôi đã tạo được đơn hàng hoá.",
+          "userFlow": [
+            "Ở trang \"Đơn hàng\", bấm nút cam \"Tạo đơn hàng\" (có mũi tên ▾) → dropdown 2 lựa chọn: \"Tạo đơn hàng\" và \"Tạo thư, tài liệu\" — giống dropdown đã có ở Web Shop",
+            "Chọn \"Tạo thư, tài liệu\" → drawer \"Gửi thư, tài liệu\" mở ra",
+            "Chọn \"Shop tạo đơn\" ở đầu drawer — đổi shop thì Bên gửi và tỉnh mặc định của Bên nhận đổi theo",
+            "Điền Bên nhận, Khối lượng — card \"Dịch vụ\" tự tính phí ship theo tuyến và khối lượng, chọn dịch vụ 247Express rẻ nhất khả dụng",
+            "Điền thêm Mã đơn shop/Giá trị hàng/Nội dung thư (không bắt buộc)",
+            "Bấm \"Tạo đơn\" → đơn tạo thật, vào tab \"Chờ xử lý\" chờ đại lý xác nhận chọn hub gửi 247Express"
+          ],
+          "systemFlow": [
+            "Thêm dropdown ở nút \"Tạo đơn hàng\" (createMenuOpen) — 2 mục: \"Tạo đơn hàng\" mở CreateOrderDrawer có sẵn, \"Tạo thư, tài liệu\" mở CreateLetterDrawerAgency mới — cùng pattern dropdown đã có ở Web Shop",
+            "CreateLetterDrawerAgency — component mới, thêm field \"Shop tạo đơn\" (selectedShopId) mà bản Web Shop không có — đổi shop reset tỉnh Bên nhận theo tỉnh shop mới",
+            "Engine tính phí copy từ CreateLetterDrawer (Web Shop): tìm dịch vụ 247Express đang bật của đại lý có phí thấp nhất theo tuyến + khối lượng qua letterFeeFromPriceTable() — không dùng configuredServices/demoFee như CreateOrderDrawer",
+            "Bấm \"Tạo đơn\" → gọi addOrder() thật: shopId shop đã chọn, senderName/senderPhone từ shop đó, cod:0, sendKind:'letter', dispatchStatus:'pending_agency', carrierCode:null"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Nút \"Tạo đơn hàng\" có mũi tên ▾, bấm ra dropdown 2 lựa chọn đúng như Web Shop.",
+            "AC2: Chọn \"Tạo thư, tài liệu\" → mở đúng drawer \"Gửi thư, tài liệu\".",
+            "AC3: Đổi \"Shop tạo đơn\" → Bên gửi hiển thị đúng shop mới, tỉnh Bên nhận reset theo tỉnh shop mới.",
+            "AC4: Đổi tỉnh Bên nhận/Khối lượng → phí ship cập nhật đúng theo tuyến/khối lượng mới (đã verify: Hà Nội → TP.HCM đổi phí 17.000đ → 22.000đ).",
+            "AC5: Không có dịch vụ 247Express khả dụng → hiện \"Không có dịch vụ khả dụng\", không crash.",
+            "AC6: Bấm \"Tạo đơn\" → đơn lưu thật vào orderStore, xuất hiện đúng ở tab \"Chờ xử lý\"."
+          ],
+          "notes": [
+            "Tái sử dụng UI đã đơn giản hoá của CreateLetterDrawer (Web Shop) — không toggle Tài liệu/Hàng hoá, không Kích thước, không checkbox phụ phí, không 2 ô giá trị.",
+            "Helper hàm tính phí (letterParseProvince, letterResolveZoneIndex, letterFeeFromPriceTable...) copy riêng vào AgencyOrders.tsx (đặt tên letter* để tránh trùng) vì 2 file không share code — đúng convention duplication của dự án.",
+            "Nút \"Lưu nháp\" chưa có onClick (giống Web Shop) — chỉ \"Tạo đơn\" hoạt động thật.",
+            "Không đổi gì ở CreateOrderDrawer (Hàng hoá) — gap \"Tạo đơn không lưu\" (AGA-ORDER-13) vẫn còn, ngoài phạm vi task này."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-16",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Xác nhận giao hoàn đơn Thư cho shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin, khi đơn Thư mà tôi gửi hộ shop bị hoàn hàng, tôi cần 1 cách rõ ràng để đánh dấu đã giao hoàn hàng vật lý lại cho shop, để tôi tự theo dõi được đơn nào đã xử lý xong, đơn nào còn cần giao lại — và để dữ liệu này lan sang đúng cho Shop biết (xem SHOP-ORDER-8).",
+          "userFlow": [
+            "Mở 1 đơn Thư đang ở tab \"Đang hoàn hàng\" hoặc \"Hoàn tất\" (đã dispatch qua 247Express, đang returning/failed) → bảng hiện badge vàng \"Hàng hoàn đang ở đại lý\" dưới tên shop",
+            "Mở chi tiết đơn → khối cảnh báo vàng nhắc đại lý cần giao lại hàng cho shop, kèm nút \"Xác nhận đã giao hoàn cho shop\"",
+            "Sau khi giao vật lý xong, bấm xác nhận → khối đổi xanh \"Đại lý đã giao hoàn hàng cho shop lúc [ngày giờ]\", badge trong bảng cũng đổi xanh",
+            "Nút \"Huỷ đơn\"/\"Cập nhật\" thông thường bị ẩn hẳn trong suốt thời gian đơn ở trạng thái này (dù đã xác nhận hay chưa) — huỷ/sửa 1 đơn đã dispatch và đang hoàn hàng không còn hợp lý về nghiệp vụ"
+          ],
+          "systemFlow": [
+            "Thêm field returnHandoverAt: string | null vào Order (orderStore.ts) — null mặc định, ghi timestamp khi đại lý xác nhận",
+            "Hàm điều kiện isLetterReturnCase(order): đúng khi sendKind==='letter' && dispatchStatus==='dispatched' && status ∈ {returning,cancelled,failed}",
+            "Nút xác nhận gọi updateOrder(orderId, { returnHandoverAt: new Date().toISOString() }) — dùng chung hàm updateOrder() đã có",
+            "returnHandoverAt ghi vào localStorage (ghn_orders_v1) dùng chung 2 platform — Shop tự đọc được ngay (xem SHOP-ORDER-8), Agency không cần gọi API/thông báo gì thêm",
+            "Nút \"Huỷ đơn\"/\"Cập nhật\" (toàn bộ hàng nút, kể cả editMode) chỉ render khi !isLetterReturnCase(order) — ẩn hẳn, không disable"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đơn Hàng hoá (GHN) không bị ảnh hưởng — không hiện badge/khối cảnh báo này.",
+            "AC2: Đơn Thư bị huỷ trước khi dispatch (dispatchStatus vẫn pending_agency) không hiện badge này.",
+            "AC3: Đơn Thư đã dispatch, đang returning/cancelled/failed, returnHandoverAt null → bảng và chi tiết đơn hiện đúng badge/khối vàng, kèm nút xác nhận.",
+            "AC4: Bấm \"Xác nhận đã giao hoàn cho shop\" → returnHandoverAt ghi nhận ngay, badge/khối đổi xanh, không cần tải lại trang.",
+            "AC5: Không đổi order.status/tab hiện có — returnHandoverAt là field cờ độc lập, không thêm tab mới.",
+            "AC6: Đơn đang isLetterReturnCase (dù returnHandoverAt null hay đã có giá trị) → không hiện nút \"Huỷ đơn\"/\"Cập nhật\". Đơn khác không bị ảnh hưởng."
+          ],
+          "notes": [
+            "Xuất phát từ câu hỏi thực tế của đại lý: \"nếu đơn hoàn hàng thành công trên agency thì đại lý phải cầm đơn đó giao cho shop thì chỗ đó sẽ xử lý thế nào\".",
+            "Chọn phương án \"cờ đơn giản\" (không thêm status/tab mới) theo đúng yêu cầu của đại lý.",
+            "isLetterReturnCase() duplicate ở cả AgencyOrders.tsx và Orders.tsx theo convention duplication của dự án.",
+            "Không có migration cho field mới — returnHandoverAt optional, các đơn cũ tự hiểu là undefined/null.",
+            "Tách riêng khỏi story ban đầu (từng gộp cả 2 platform) theo yêu cầu trực tiếp — xem SHOP-ORDER-8 cho phần Shop.",
+            "Bổ sung sau khi xem demo: ban đầu \"Huỷ đơn\"/\"Cập nhật\" vẫn hiện song song với khối cảnh báo — theo phản hồi trực tiếp, đã bỏ hẳn 2 nút này khi đơn đang ở luồng hoàn hàng.",
+            "Bug seed data phát hiện khi đại lý báo \"không thấy đơn nào được hoàn\": migrateOrder() ép cứng sendKind:'goods'/carrierCode:'GHN' cho mọi đơn trong orders.json — đã fix để giữ nguyên field nếu seed data khai báo, và thêm 1 đơn thật (ORD034, 247EX00987654, status failed) vào orders.json.",
+            "Backfill cho browser đã có localStorage cũ: loadOrders() trước đây chỉ reseed khi localStorage hoàn toàn rỗng — đã thêm bước so khớp id với orders.json và bù thêm đơn base còn thiếu (không đụng đơn đã có), không cần xoá localStorage để thấy đơn mới."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-17",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Đơn hoàn hàng thành công vào tab \"Hoàn tất\", không phải \"Đơn huỷ\"",
+          "status": "draft",
+          "userStory": "Là Agency Admin/Shop, tôi muốn đơn hoàn hàng thành công (status: 'failed') nằm ở tab \"Hoàn tất\" — đúng bản chất \"đã xử lý xong lô hàng\" — thay vì lẫn vào tab \"Đơn huỷ\" cùng với các đơn bị huỷ chủ động.",
+          "userFlow": [
+            "Trước đây: order.status === 'failed' bị gộp chung vào tab \"Đơn huỷ\" cùng order.status === 'cancelled'",
+            "Theo mapping GHN thật (AGA-RECON-4): \"Hoàn hàng thành công\" thuộc nhóm \"Kết thúc — chốt so khớp\", cùng nhóm với \"Giao hàng thành công\" — là 1 nhánh hoàn tất, không phải huỷ",
+            "Sau khi sửa: đơn 'failed' hiện ở tab \"Hoàn tất\"; tab \"Đơn huỷ\" chỉ còn đơn 'cancelled' (chủ động huỷ)"
+          ],
+          "systemFlow": [
+            "ordersByTab (AgencyOrders.tsx và Orders.tsx): completed nhận thêm status==='failed'; cancelled chỉ còn status==='cancelled'",
+            "Agency STATUS_GROUPS (filter modal Xuất đơn hàng): nhóm Hoàn tất match ['delivered','failed']; nhóm Đơn huỷ match ['cancelled']",
+            "Agency ORDER_STATUS_LABELS['failed'] đổi từ 'Đơn huỷ' → 'Đã hoàn hàng' (dùng cho nhãn xuất Excel)",
+            "Không đổi isLetterReturnCase() (AGA-ORDER-16) — vẫn match returning/cancelled/failed, chỉ đổi tab hiển thị cho case 'failed'"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đơn status 'failed' (mọi carrier/loại đơn) → hiện ở tab \"Hoàn tất\", không còn ở \"Đơn huỷ\", cả Agency Admin và Web Shop.",
+            "AC2: Đơn status 'cancelled' không đổi — vẫn ở tab \"Đơn huỷ\".",
+            "AC3: Modal Xuất đơn hàng — filter \"Hoàn tất\" xuất cả delivered và failed; filter \"Đơn huỷ\" chỉ xuất cancelled. Nhãn cột Trạng thái cho đơn failed hiện \"Đã hoàn hàng\".",
+            "AC4: Badge giao hoàn đơn Thư (AGA-ORDER-16) vẫn hiện đúng cho đơn Thư failed, chỉ khác nằm trong tab \"Hoàn tất\" thay vì \"Đơn huỷ\"."
+          ],
+          "notes": [
+            "Xuất phát từ phản hồi trực tiếp của đại lý khi xem demo AGA-ORDER-16: \"bình thường thì đã hoàn hàng hoặc hoàn hàng thành công là nằm ở tab hoàn tất\" — đối chiếu đúng với mapping GHN thật đã có ở AGA-RECON-4.",
+            "Áp dụng cho toàn bộ đơn (Hàng hoá và Thư, cả 2 platform) theo lựa chọn của đại lý, không chỉ giới hạn luồng đơn Thư của AGA-ORDER-16.",
+            "EDIT_STATUS_OPTIONS (dropdown đổi trạng thái tay) chưa có option 'failed' — gap có sẵn từ trước, ngoài phạm vi thay đổi này.",
+            "\"Trạng thái\" hiển thị trong tab chi tiết đơn đọc theo log GHN thật hoặc raw order.status, không dùng ORDER_STATUS_LABELS — gap hiển thị có sẵn từ trước, ngoài phạm vi thay đổi này."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-18",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Mapping trạng thái 247Express thật → order.status",
+          "status": "draft",
+          "userStory": "Là dev team, tôi muốn biết rõ order.status ánh xạ đúng thế nào với trạng thái thật do 247Express trả về, để không tự bịa thêm trạng thái mới ở phía Agency — order.status phải luôn là 1 phép chiếu trực tiếp (đôi khi gộp thô hơn) của status 247Express trả về.",
+          "userFlow": [
+            "DATIEPNHAN → pending (Đơn nháp/Chờ xử lý)",
+            "DALAYHANG → pickup (Chờ bàn giao)",
+            "DANGVANCHUYEN, DANGDIPHAT → in_transit (Đã bàn giao - Đang giao, gộp chung không tách thêm)",
+            "PHATTHANHCONG → delivered (Hoàn tất)",
+            "CHOXULY → redelivery (Chờ xác nhận giao lại)",
+            "CHOCHUYENHOAN (đang chuyển hoàn) → returning (Đã bàn giao - Đang hoàn hàng)",
+            "DACHUYENHOAN (đã chuyển hoàn) → failed (Hoàn tất — xem AGA-ORDER-17)",
+            "THATLAC → lost, HUY → cancelled",
+            "TICHTHU → chưa có mapping (gap, không tự tạo status mới để lấp)"
+          ],
+          "systemFlow": [
+            "Bảng mapping đối chiếu 10 status API thật của 247Express với order.status hiện có trong orderStore.ts — không thêm giá trị status mới nào",
+            "CHOCHUYENHOAN và DACHUYENHOAN là 2 giai đoạn khác nhau của cùng nhánh hoàn hàng (đang hoàn vs đã hoàn xong) — map vào 2 status riêng returning/failed đã có sẵn, không gộp không tách thêm",
+            "'khách hàng' trong mô tả CHOCHUYENHOAN/DACHUYENHOAN của 247Express nghĩa là API client tạo đơn (đại lý), không phải người nhận — khớp đúng lý do đại lý phải giao hoàn lại cho shop ở AGA-ORDER-16"
+          ],
+          "acceptanceCriteria": [
+            "AC1: order.status không có giá trị nào ngoài 10 status hiện có — không tự thêm status mới ở phía Agency chỉ để phân biệt sắc thái.",
+            "AC2: CHOCHUYENHOAN → returning và DACHUYENHOAN → failed là 2 status khác nhau, không gộp chung không tách thêm.",
+            "AC3: Badge/action giao hoàn cho shop (AGA-ORDER-16) áp dụng cho cả returning và failed vì cả 2 đều thuộc nhánh hoàn hàng — wording giống nhau giữa 2 status này không phải bug, vì 247Express cũng không cung cấp thêm chi tiết để phân biệt."
+          ],
+          "notes": [
+            "Xuất phát từ bảng mô tả status API thật 247Express do đại lý gửi (10 status), đối chiếu với state machine flowchart 247Express.",
+            "TICHTHU (tịch thu) hiện chưa có mapping — gap có sẵn, không tự tạo status mới để lấp, cần đại lý xác nhận hướng xử lý trước.",
+            "Nguyên tắc chung: order.status ở Agency phải luôn bắt nguồn từ status carrier thật trả về (247Express cho đơn Thư, GHN cho đơn Hàng hoá — xem AGA-RECON-4) — không tự phát sinh trạng thái trung gian ở tầng Agency."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-19",
+          "jiraKey": "AGENCY-656",
+          "title": "[AGENCY][247] Đơn hàng: Chọn nhiều đơn và đẩy qua 247Express",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn tick chọn nhiều đơn Thư cùng lúc ở tab \"Chờ xử lý\" và đẩy tất cả qua 247Express trong 1 lần chọn hub, để không phải mở từng đơn và chọn hub lặp lại nhiều lần khi có nhiều đơn cần gửi cùng lúc.",
+          "userFlow": [
+            "Ở tab \"Chờ xử lý\", tick chọn nhiều đơn (checkbox từng dòng hoặc checkbox đầu bảng)",
+            "Thanh \"Đã chọn N đơn\" hiện thêm nút \"Gửi qua 247Express\" bên cạnh \"Bỏ chọn\" — chỉ hiện khi có ít nhất 1 đơn hợp lệ",
+            "Bấm nút → mở modal chọn hub xuất phát (tái dùng UI modal đã có cho luồng 1 đơn), tiêu đề ghi rõ số lượng đơn sẽ gửi",
+            "Nếu có đơn không hợp lệ lẫn trong lựa chọn → modal cảnh báo số lượng bị loại + lý do, chỉ đơn hợp lệ mới gửi",
+            "Chọn hub, xác nhận → toàn bộ đơn hợp lệ gửi qua 247Express cùng hub, rời tab \"Chờ xử lý\"",
+            "Đóng modal, bỏ chọn hết, danh sách refresh"
+          ],
+          "systemFlow": [
+            "dispatchModal đổi type từ Order | null → Order[] | null — luồng 1 đơn (quick action, chi tiết đơn) truyền [order], dùng chung với luồng bulk",
+            "Thanh \"Đã chọn N đơn\": tính eligible = orders.filter(selected).filter(isPending247) — nút \"Gửi qua 247Express (N)\" chỉ hiện khi eligible.length > 0",
+            "State mới dispatchExcludedCount: number — chỉ > 0 khi mở modal từ bulk action, hiện cảnh báo vàng khi > 0",
+            "Modal tự đổi nội dung theo dispatchModal.length: ===1 giữ UI cũ, >1 đổi tiêu đề/mô tả/nút xác nhận theo N",
+            "Xác nhận: dispatchModal.forEach(o => dispatchOrderToCarrier(o.id, '247EXPRESS', 'Agency Admin', dispatchHubId))",
+            "Sau khi gửi: setSelected(new Set()), đóng modal, refreshOrders() — tự đóng chi tiết đơn nếu đơn đang mở nằm trong batch"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Chọn ≥2 đơn hợp lệ (Thư, chưa dispatch) → thanh chọn hiện nút \"Gửi qua 247Express\".",
+            "AC2: Chọn toàn đơn không hợp lệ → nút không hiện.",
+            "AC3: Bấm nút → modal hiện đúng số đơn hợp lệ sẽ gửi; có đơn không hợp lệ → hiện rõ số lượng + lý do bị loại.",
+            "AC4: Xác nhận → toàn bộ đơn hợp lệ chuyển dispatchStatus:'dispatched', carrierCode:'247EXPRESS', cùng hub — không sót, không gửi nhầm đơn không hợp lệ.",
+            "AC5: Sau xác nhận → đơn rời tab \"Chờ xử lý\", selected reset rỗng, modal đóng, danh sách refresh không cần tải lại trang.",
+            "AC6: Chọn đơn từ nhiều shop khác nhau trong 1 lần gửi → không bị chặn."
+          ],
+          "notes": [
+            "Tham chiếu Jira AGENCY-656 — không truy cập được nội dung chi tiết ticket (yêu cầu đăng nhập), viết theo mô tả trực tiếp: \"chọn nhiều đơn rồi đẩy đơn qua 247\". Cần đối chiếu lại với ticket gốc nếu có chi tiết khác.",
+            "Tái sử dụng tối đa UI/logic đã có cho luồng 1 đơn (modal chọn hub, dispatchOrderToCarrier()) — không thiết kế lại từ đầu.",
+            "Việc lọc đơn không hợp lệ khỏi batch (AC2-AC4) là điểm quan trọng nhất về an toàn dữ liệu — tránh gửi nhầm đơn Hàng hoá hoặc đơn đã dispatch thêm 1 lần nữa.",
+            "Không đổi luồng gửi từng đơn một hiện có — đã regression-check, vẫn hoạt động đúng như trước.",
+            "Đã implement và verify qua UAT: chọn nhiều đơn hợp lệ → nút hiện đúng → modal đúng số lượng + cảnh báo đơn bị loại → xác nhận → toàn bộ đơn dispatched cùng hub, selected reset, danh sách refresh."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-20",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách đơn hàng: Filter shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn chỉ xem đơn hàng của 1 shop cụ thể trong danh sách đơn hàng, để không phải dò qua đơn của toàn bộ shop khi tôi chỉ cần kiểm tra riêng 1 shop.",
+          "userFlow": [
+            "Ở trang \"Đơn hàng\", cạnh ô tìm kiếm có dropdown \"Tất cả shop (N)\"",
+            "Chọn 1 shop cụ thể → danh sách chỉ còn đơn của shop đó, ở tab đang xem",
+            "Chọn lại \"Tất cả shop\" → hiện lại đủ đơn của mọi shop trong tab đó",
+            "Có thể dùng đồng thời với ô tìm kiếm (AGA-ORDER-7) — lọc shop trước, tìm kiếm áp dụng trong kết quả đã lọc"
+          ],
+          "systemFlow": [
+            "State shopFilter (mặc định 'all') — dropdown liệt kê agencyShops, value là shopId, label là tên shop",
+            "shopFiltered = shopFilter === 'all' ? tabOrders : tabOrders.filter(o => o.shopId === shopFilter) — áp dụng ngay sau lọc theo tab, trước ô tìm kiếm",
+            "Đổi shopFilter → setPage(1), nhưng KHÔNG xoá selected",
+            "Option \"Tất cả shop\" hiện kèm tổng số shop agencyShops.length ngay trong label"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Dropdown liệt kê đúng và đủ các shop thuộc đại lý hiện tại — không lẫn shop của đại lý khác.",
+            "AC2: Mặc định chọn \"Tất cả shop (N)\", N khớp đúng tổng số shop của đại lý.",
+            "AC3: Chọn 1 shop → danh sách chỉ còn đơn có shopId khớp đúng shop đó, trong đúng tab đang xem.",
+            "AC4: Đổi shop filter → về trang 1; các đơn đã tick chọn trước đó vẫn giữ trạng thái tick.",
+            "AC5: Lọc theo shop rồi gõ ô tìm kiếm → kết quả là giao của cả 2 điều kiện.",
+            "AC6: Đổi TAB khi đang lọc theo 1 shop → filter shop vẫn giữ nguyên (không tự reset về \"Tất cả shop\")."
+          ],
+          "notes": [
+            "Tách riêng từ story ban đầu (AGA-ORDER-7, từng gộp chung với ô tìm kiếm) theo yêu cầu trực tiếp.",
+            "Thứ tự lọc cố định: Tab → Shop → Tìm kiếm — mỗi bước thu hẹp dần trên kết quả của bước trước, không phải 3 điều kiện độc lập.",
+            "Không đổi hành vi đổi TAB (vẫn xoá selected) — chỉ filter tìm kiếm/shop mới giữ nguyên lựa chọn."
           ]
         }
       ]
@@ -747,6 +994,157 @@
             "AC5: Sau khi xác nhận 1 phiên GHN, tab \"Phiên shop\" hiển thị đúng 1 phiên shop cho mỗi shop có đơn trong phiên đó — không thiếu, không trùng shop.",
             "AC6: Mỗi phiên shop hiển thị đúng: Mã phiên shop, Tên shop, mã Phiên GHN nguồn, khoảng thời gian, Số đơn, Tổng COD, Tổng phí DV (shop), Tổng phí DV (GHN), Lợi nhuận đại lý, Trạng thái.",
             "AC7 (GAP, chưa hoạt động): Trạng thái phiên shop hiện luôn luôn là \"Chờ xác nhận\" — chưa có hành động \"Xác nhận chuyển khoản\" nào được nối logic."
+          ]
+        },
+        {
+          "id": "AGA-RECON-4",
+          "jiraKey": "",
+          "title": "[AGA] Đối soát: Mapping trạng thái GHN → nhóm xử lý ledger theo đơn",
+          "status": "draft",
+          "userStory": "Là dev team, tôi muốn biết rõ mỗi trạng thái GHN trong file đối soát thật mang ý nghĩa tài chính gì (có phí không, có COD không), để xây đúng logic ledger theo orderCode — quyết định khi nào ghi nhận, khi nào bỏ qua, và khi nào chốt so khớp MATCH/MISMATCH.",
+          "userFlow": [
+            "[Bối cảnh] 1 đơn hàng GHN có thể xuất hiện ở nhiều phiên đối soát khác nhau trong vòng đời — phí tính lúc lấy hàng/trung chuyển (chưa có COD), COD trả lúc giao hàng xong (không còn phí). Không thể nhìn 1 dòng/1 file để biết đủ tổng phí + tổng COD — cần ledger cộng dồn theo orderCode.",
+            "[Trung gian — đã trừ phí] Lấy hàng thành công (49 dòng mẫu), Đang trung chuyển (6.943), Nhập kho (4.821): COD=0, có Phí giao hàng (âm) → ghi nhận phí vào ledger, đánh dấu chưa có COD.",
+            "[Kết thúc — chốt so khớp] Giao hàng thành công (8.862 dòng): COD đầy đủ, phí=0 (đã trừ ở dòng trước) → cộng COD vào ledger, nếu đã có phí từ trước → đủ dữ liệu để chấm MATCH/MISMATCH.",
+            "[Kết thúc — chốt so khớp, nhánh hoàn] Hoàn hàng thành công (16 dòng): không có COD hàng, có thể có 'Giao thất bại - thu tiền' → cộng vào ledger, chốt so khớp theo nhánh hoàn.",
+            "[Trung gian — đã trừ phí, đã sửa theo xác nhận nghiệp vụ] Giao hàng không thành công (5), Chờ xác nhận giao lại (5), Chuyển hoàn (1): mẫu dữ liệu đọc được ra phí=0, nhưng đại lý xác nhận thực tế cả 3 trạng thái này LUÔN tính phí ship — gộp chung nhóm xử lý với Lấy hàng thành công/Đang trung chuyển/Nhập kho, không bỏ qua.",
+            "Dữ liệu mapping trên đối chiếu trực tiếp với file GHN_Phien_Chuyen_Tien_02_06_2026_COD_202606020018_4872823.xlsx (20.703 dòng, quét toàn bộ)."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Ledger theo orderCode cộng dồn phí từ nhóm \"Trung gian — đã trừ phí\": Lấy hàng thành công, Đang trung chuyển, Nhập kho, Giao hàng không thành công, Chờ xác nhận giao lại, Chuyển hoàn — cả 6 trạng thái này đều tính phí ship trên thực tế.",
+            "AC2: Không giả định 1 dòng có ghnFee = 0 nghĩa là trạng thái đó \"không tính phí\" — cần đối chiếu qua nhiều lần xuất hiện của cùng orderCode/nhiều file, vì phí có thể chưa kịp post ở đúng thời điểm 1 file cụ thể được xuất.",
+            "AC3 (điều chỉnh khi implement): MATCH/MISMATCH ở item nhóm \"kết thúc\" chỉ chấm SAI khi ledger đã nhận đủ cả 2 vế và tổng KHÔNG khớp systemFee/systemCOD. Thiếu vế phí → chấm MATCH (không ép \"Đang chờ\" — status này đã bị huỷ theo yêu cầu trực tiếp, không thêm status/badge mới ngoài MATCH/MISMATCH/NOT_FOUND).",
+            "AC4: order.status (tracking hiển thị cho đại lý) không được dùng để quyết định logic ledger — chỉ dùng đúng ghnStatus của từng dòng trong file đối soát.",
+            "AC5 (mới, implement): Item nhóm \"trung gian\" tự chấm MATCH/MISMATCH ngay bằng so ghnFee với systemFee của chính dòng đó — không cần đợi vế COD."
+          ],
+          "notes": [
+            "Bảng mapping dựa trên dữ liệu thật đọc từ 1 file GHN thật ~20K dòng — không phải suy đoán. Cần xác nhận lại nếu GHN đổi format, hoặc có trạng thái khác chưa xuất hiện trong file mẫu (VD: Hàng thất lạc, Hàng hư hỏng, Đơn huỷ — có trong danh sách màu ở AgencyReconciliationDetail.tsx nhưng không có dòng mẫu thật để xác minh).",
+            "GAP hiện tại: UploadModal (AgencyReconciliation.tsx) đang giả lập hoàn toàn (progress bar Math.random()), không đọc nội dung file thật. Bảng này là cơ sở thiết kế cho lúc parse file thật sau này.",
+            "GAP liên quan: ItemRecord/carrier-reconciliation-items.json hiện gộp sẵn COD và phí trong CÙNG 1 item, CÙNG 1 phiên — không có khái niệm ledger cộng dồn xuyên phiên theo orderCode. Cần cấu trúc dữ liệu mới nếu triển khai thật.",
+            "Tham chiếu các gap trước: giá vốn GHN (không có bảng giá vốn/công thức margin an toàn), thiếu lối vào từ đơn → phiên đối soát, nhãn \"Phiên GHN\" hardcode cho cả phiên 247Express.",
+            "✅ Đã implement (không còn GAP): ledger cộng dồn theo orderCode xuyên phiên — xem src/mock-data/reconciliationLedger.ts (getReconciliationItems()). Cả 3 trang đối soát đã đổi sang đọc status từ hàm này — Số lệch ở danh sách phiên khớp đúng chi tiết phiên. Ví dụ thật: đơn GHN00923459, phí trừ ở GHN001, COD trả ở GHN002, ledger cộng đúng, chấm Đúng.",
+            "GAP còn lại: modal upload file đối soát vẫn giả lập, chưa nối \"upload file thật\" → \"sinh item mới vào ledger\"."
+          ]
+        },
+        {
+          "id": "AGA-RECON-5",
+          "jiraKey": "",
+          "title": "[AGENCY] Đối soát NVC: Improve logic đối soát phiên COD — thêm trạng thái \"Đang chờ COD\" (ĐÃ HUỶ)",
+          "status": "reverted",
+          "userStory": "Là Agency Admin (Đại lý), khi xem chi tiết phiên đối soát GHN, tôi muốn phân biệt rõ đơn nào thật sự sai lệch với đơn nào chỉ đang ở giai đoạn giữa vòng đời (đã trừ phí nhưng chưa giao/hoàn xong nên chưa có COD), để không nhầm lẫn 2 trường hợp này là cùng 1 loại vấn đề.",
+          "userFlow": [
+            "Vào chi tiết 1 \"Phiên GHN\" — các đơn đang ở trạng thái trung gian (Chờ lấy hàng, Đang trung chuyển, Đang hoàn hàng, Chờ giao lại...) hiện badge \"Đang chờ COD\" (vàng) ở cột Trạng thái, thay vì \"Đúng\" (xanh) như trước",
+            "Card \"Số lệch\" ở đầu trang không tính các đơn \"Đang chờ COD\" vào số lệch — chỉ đếm đơn thật sự Sai/Không tìm thấy",
+            "Dropdown lọc \"Trạng thái\" có thêm lựa chọn \"Đang chờ COD\" để lọc riêng nhóm này"
+          ],
+          "systemFlow": [
+            "Thêm giá trị 'PENDING' vào type ItemRecord.status (AgencyReconciliationDetail.tsx, AgencyReconciliation.tsx, AgencyReconciliationShopDetail.tsx) — trước đây chỉ có 'MATCH' | 'MISMATCH' | 'NOT_FOUND'",
+            "Thêm màu badge cho PENDING trong ITEM_STATUS map: nền #FFFBEB, chữ #B45309, label \"Đang chờ COD\"",
+            "totalMismatch (\"Số lệch\") sửa thành items.filter(i => i.status !== 'MATCH' && i.status !== 'PENDING').length — áp dụng ở cả phiên GHN và deriveShopSessions() (phiên shop)",
+            "Sửa mock data carrier-reconciliation-items.json: 15 item có ghnStatus thuộc nhóm trung gian nhưng đang gắn nhãn sai status:\"MATCH\" → đổi thành \"PENDING\". Không đổi số tiền nào, chỉ sửa nhãn trạng thái cho khớp bản chất dữ liệu."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đơn có ghnStatus thuộc nhóm trung gian (Lấy hàng thành công, Đang trung chuyển, Nhập kho, Giao hàng không thành công, Chờ xác nhận giao lại, Chuyển hoàn và biến thể trong mock data) hiển thị badge \"Đang chờ COD\", không phải \"Đúng\".",
+            "AC2: Card \"Số lệch\" ở phiên GHN và phiên shop đều không tính đơn \"Đang chờ COD\" vào số lệch.",
+            "AC3: Dropdown lọc trạng thái có thêm lựa chọn \"Đang chờ COD\", lọc đúng danh sách khi chọn.",
+            "AC4: Đơn \"Sai\" (MISMATCH) và \"Không tìm thấy\" (NOT_FOUND) không bị ảnh hưởng — giữ nguyên hành vi cũ.",
+            "AC5: Tổng tiền hiển thị (Tổng COD, Tổng phí DV, Thực nhận, Lợi nhuận ĐL) không đổi so với trước khi sửa — chỉ đổi nhãn trạng thái, không đổi số liệu."
+          ],
+          "notes": [
+            "ĐÃ HUỶ theo yêu cầu trực tiếp của đại lý: \"giữ lại giao diện cũ, ko thêm status đang chờ COD\". Toàn bộ thay đổi đã revert hoàn toàn — 15 item mock data về lại status:\"MATCH\", badge/dropdown/công thức Số lệch đều gỡ bỏ. Giữ file làm lịch sử tham khảo, không xoá.",
+            "Đây là 1 phần trong scope MVP đã thống nhất (qua /project-lead) cho task \"Improve logic đối soát phiên COD\" — KHÔNG bao gồm: parse file GHN thật (modal upload vẫn giả lập), ledger cộng dồn xuyên phiên theo orderCode thật, hay bảng giá vốn/margin GHN (đã từ chối trước đó).",
+            "Cơ sở nghiệp vụ đầy đủ xem tại AGA-RECON-4 (mapping-trang-thai-doi-soat-ghn.md) — bảng mapping 8 trạng thái GHN → nhóm xử lý, đã xác nhận trực tiếp với đại lý.",
+            "order.status (tracking hiển thị đại lý) không được dùng ở đây — toàn bộ logic dựa đúng vào item.ghnStatus của từng dòng trong dữ liệu đối soát."
+          ]
+        },
+        {
+          "id": "AGA-RECON-6",
+          "jiraKey": "",
+          "title": "[AGENCY] Đối soát NVC: Tab \"Quá hạn đối soát\" — cảnh báo đơn đã giao nhưng chưa từng lên file GHN",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn biết đơn nào đã giao thành công quá lâu mà chưa từng xuất hiện trong bất kỳ file đối soát GHN nào, để phát hiện trường hợp GHN có thể đã bỏ sót đơn — mà không bị làm phiền bởi cảnh báo giả do độ trễ báo cáo bình thường của GHN.",
+          "userFlow": [
+            "Vào \"Đối soát NVC\" → tab mới \"Quá hạn đối soát\"",
+            "Thấy danh sách đơn: đã \"Giao hàng thành công\" trên hệ thống quá 30 ngày, nhưng chưa từng có mặt trong dữ liệu đối soát GHN (dù ở phiên nào)",
+            "Mỗi dòng hiện: Mã đơn, Shop, ngày giao thành công, số ngày đã quá hạn, link \"Xem đơn hàng\"",
+            "Nếu không có đơn nào thoả điều kiện → hiện empty state \"Không có đơn nào quá hạn đối soát\""
+          ],
+          "systemFlow": [
+            "computeOverdueOrders() — hàm mới trong AgencyReconciliation.tsx: lọc đơn của shop thuộc đại lý hiện tại (AGN001), status='delivered', loại bỏ đơn đã có trackingCode trong carrier-reconciliation-items.json (bất kỳ phiên nào), tính số ngày từ log delivered đến hiện tại, giữ đơn > OVERDUE_THRESHOLD_DAYS (30)",
+            "Đây là \"so sánh lệch có ngưỡng thời gian\" đã thống nhất — khác so sánh tức thời order.status vs ghnStatus (đã loại bỏ vì luôn báo giả do GHN báo theo kỳ ~15 ngày)",
+            "Đã thêm 1 đơn demo (ORD033, mã GHN00999999, giao 17/04/2024, chưa từng có trong carrier-reconciliation-items.json) vào orders.json để minh hoạ — vì 16 đơn delivered có sẵn đều đã được đối soát."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab chỉ hiện đơn thoả đủ 3 điều kiện: thuộc đại lý hiện tại, đã giao thành công, số ngày từ lúc giao > 30 ngày.",
+            "AC2: Đơn đã có mặt trong carrier-reconciliation-items.json (dù ở phiên nào) — không xuất hiện, kể cả khi đã giao rất lâu.",
+            "AC3: Đơn đã giao nhưng CHƯA đủ 30 ngày — không xuất hiện.",
+            "AC4: Không có đơn nào thoả điều kiện → hiện empty state rõ ràng.",
+            "AC5: Bấm \"Xem đơn hàng\" → điều hướng sang trang \"Đơn hàng\" của đại lý."
+          ],
+          "notes": [
+            "Giải quyết câu hỏi: agency muốn giữ so sánh lệch giữa tracking và file đối soát nhưng so tức thời sẽ báo giả — đổi sang so theo ngưỡng thời gian tích luỹ (30 ngày, dư ra so với chu kỳ GHN ~15 ngày).",
+            "Ngưỡng 30 ngày là số cấu hình cứng (OVERDUE_THRESHOLD_DAYS) — chưa có UI cho đại lý tự chỉnh.",
+            "Đây KHÔNG phải \"lệch số tiền\" (MISMATCH) — là cảnh báo khác: \"chưa từng được đối soát\", cần agency chủ động liên hệ GHN, không tự động giải quyết được.",
+            "Liên quan: AGA-RECON-4 (mapping trạng thái), AGA-RECON-5 (trạng thái Đang chờ COD)."
+          ]
+        },
+        {
+          "id": "AGA-RECON-7",
+          "jiraKey": "",
+          "title": "[AGA] Đối soát: Tổng quan toàn bộ luồng — từ upload file đến tách phiên shop",
+          "status": "draft",
+          "userStory": "Là PO/stakeholder, tôi muốn có 1 tài liệu tổng quan toàn bộ luồng đối soát NVC (từ upload file đến tách phiên shop) viết dễ hiểu không cần đọc code, kèm rõ phần nào đã làm thật và phần nào đang giả lập/còn gap.",
+          "userFlow": [
+            "Bước 1 — Agency upload file đối soát GHN: chọn file, nhập ngày, ghi chú. GAP: hiện chỉ là thanh tiến trình giả, chưa đọc nội dung file thật, phiên tạo ra dùng mock data.",
+            "Bước 2 — Hệ thống tạo 'Phiên NVC': tổng đơn, tổng COD, tổng phí DV, nợ tồn, phí CK COD, thực nhận — chứa nhiều item (mỗi item = 1 đơn).",
+            "Bước 3 — Từng đơn được so khớp: Đúng (MATCH) / Sai (MISMATCH) / Không tìm thấy (NOT_FOUND) / Đang chờ COD (PENDING, mới thêm — đơn giữa vòng đời, đã trừ phí chưa có COD). GAP: chưa nối 2 lần xuất hiện của cùng 1 đơn qua nhiều phiên (ledger xuyên phiên).",
+            "Bước 4 — Agency xác nhận phiên NVC: chốt phiên, ghi nhận đã chuyển khoản.",
+            "Bước 5 — Hệ thống tự tách 'Phiên Shop': nhóm đơn theo shop, hiện Tổng phí DV (shop), Tổng phí DV (GHN), Lợi nhuận ĐL (mới thêm), Nhận về. GAP: chưa có bảng giá vốn GHN thật, không tự bịa công thức margin.",
+            "Bước 6 — Chuyển khoản cho shop: GAP, tab vẫn là placeholder 'Tính năng đang phát triển'.",
+            "Bước 7 — Tab 'Quá hạn đối soát' (song song, mới thêm): đơn giao thành công quá 30 ngày chưa từng lên phiên nào → cảnh báo GHN có thể bỏ sót, dùng ngưỡng thời gian thay vì so sánh tức thời."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tài liệu liệt kê đủ 7 bước theo đúng thứ tự luồng thật trong hệ thống, không bỏ bước nào.",
+            "AC2: Mỗi bước ghi rõ trạng thái Đã làm/Gap, không mập mờ.",
+            "AC3: Có bảng tổng kết Đã làm vs Chưa làm ở cuối tài liệu để PO nắm nhanh không cần đọc hết chi tiết.",
+            "AC4: Nêu rõ 3 nguyên tắc nền tảng áp dụng xuyên suốt (tracking≠billing, không bịa số liệu, so sánh phải có ý nghĩa)."
+          ],
+          "notes": [
+            "Tài liệu tổng hợp (không phải story implement mới) — gộp lại nội dung từ AGA-RECON-4, AGA-RECON-5, AGA-RECON-6 và các gap đã ghi nhận trước đó (giá vốn GHN, lối vào từ đơn → phiên đối soát, nhãn Phiên GHN hardcode cho 247Express) thành 1 bức tranh toàn cảnh cho PO.",
+            "Nên cập nhật lại tài liệu này mỗi khi 1 gap được giải quyết, để luôn là nguồn tham chiếu đúng nhất về hiện trạng luồng đối soát."
+          ]
+        },
+        {
+          "id": "AGA-RECON-8",
+          "jiraKey": "",
+          "title": "[AGENCY] Đối soát NVC: Badge \"Lệch tracking\" (ĐÃ HUỶ)",
+          "status": "reverted",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn thấy ngay trong bảng chi tiết phiên NVC dòng nào có trạng thái hệ thống — tính đến đúng ngày phiên này được xuất — khác với trạng thái GHN đang báo trong file, để phát hiện đúng lúc GHN báo cáo sai/chậm mà không bị nhiễu bởi việc đơn giao SAU ngày phiên (chuyện bình thường).",
+          "userFlow": [
+            "Vào chi tiết 1 \"Phiên GHN\" — cột \"Trạng thái GHN\" của đơn có xung đột hiện thêm badge đỏ nhỏ \"Lệch tracking\" ngay cạnh label trạng thái GHN, nền cả ô tô đỏ nhạt",
+            "Badge hiện ngay khi phát hiện lệch — không chờ ngưỡng số ngày như tab \"Quá hạn đối soát\"",
+            "Di chuột vào badge → tooltip nêu rõ mốc thời gian: \"Tính đến ngày [ngày phiên], hệ thống đã ghi nhận đơn giao thành công — nhưng file đối soát vẫn báo trạng thái này\""
+          ],
+          "systemFlow": [
+            "Vấn đề bản đầu tiên: so order.status (SỐNG, luôn mới nhất) với ghnStatus của file → báo lệch cho MỌI đơn giao sau ngày phiên, dù đó là chuyện bình thường",
+            "Cách sửa: lấy session.paymentDate làm mốc thời gian tham chiếu",
+            "Với mỗi item, tra orderCode → tìm đơn, lọc order.log[] chỉ giữ mốc có updated_date <= session.paymentDate (23:59:59), lấy mốc mới nhất trong số đó = 'hệ thống biết gì TÍNH ĐẾN đúng ngày phiên'",
+            "So asOfLog.status_name với ghnStatus của file — chỉ báo lệch nếu tại đúng thời điểm đó hệ thống đã biết giao thành công mà file chưa",
+            "Đơn giao SAU ngày phiên → tra lịch sử tại ngày phiên đúng là 'chưa giao' → không báo. Đơn giao TRƯỚC ngày phiên mà file chưa cập nhật → mới báo",
+            "Demo: đơn GHN00223457 (ORD004) — chỉnh mốc thời gian: tạo 05/03/2024, giao thành công 10/03/2024, cả 2 đều TRƯỚC ngày phiên GHN001 (15/03/2024) → lệch thật, badge hiện đúng"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tra lịch sử order.log[] tính đến đúng session.paymentDate cho ra 'đã giao thành công', nhưng ghnStatus của item KHÔNG thuộc nhóm thành công → hiện badge đỏ.",
+            "AC2: Đơn giao thành công SAU ngày phiên → tra lịch sử tại ngày phiên KHÔNG cho ra 'đã giao' → không báo badge, dù trạng thái sống hiện tại là gì.",
+            "AC3: Đơn có ghnStatus đã thuộc nhóm thành công → không hiện badge dù lịch sử ra sao.",
+            "AC4: Badge độc lập hoàn toàn với \"Trạng thái ĐS\" và \"Số lệch\".",
+            "AC5: Tooltip nêu rõ đúng ngày mốc so sánh (ngày phiên), không nói chung chung \"hiện tại\"."
+          ],
+          "notes": [
+            "ĐÃ HUỶ: đại lý xem demo thật rồi yêu cầu gỡ bỏ, giữ nguyên giao diện gốc. Đã revert hoàn toàn logic trackingMismatch/asOfLog, JSX badge, và import ordersData khỏi AgencyReconciliationDetail.tsx. Giữ file làm lịch sử tham khảo, không xoá.",
+            "Trả lời trực tiếp câu hỏi 'có cách nào so sánh cùng thời điểm để lấy đúng COD/phí không' — có: dùng lịch sử order.log[] làm 'cỗ máy thời gian', tra lại đúng trạng thái hệ thống biết tại thời điểm file được xuất, thay vì so với trạng thái sống hiện tại. Giảm nhiễu đáng kể so với bản đầu, vẫn giữ tính báo ngay không chờ ngưỡng ngày.",
+            "Vẫn còn 1 nguồn nhiễu nhỏ: GHN trễ báo cáo NGAY SÁT ngày phiên vẫn có thể báo — có thể cộng thêm vài ngày đệm nếu cần, chưa làm vì chưa được yêu cầu.",
+            "Bổ sung, không thay thế tab \"Quá hạn đối soát\" (AGA-RECON-6, nhìn xuyên suốt mọi phiên chứ không chỉ 1 phiên)."
           ]
         }
       ]
@@ -1208,6 +1606,40 @@
             "Từng có badge carrier (GHN/247Express) ở vị trí tương tự trong danh sách này trước đây, đã bị bỏ theo yêu cầu \"bỏ nhãn carrier ở màn hình dịch vụ\" — tag \"Loại đơn\" ở đây thay thế thông tin phân loại đó, không phải khôi phục lại carrier badge.",
             "[Cập nhật] Đã implement. Thêm SendKindTag (tag tĩnh, không phải radio) ngay trong ServiceRow (AgencyServices.tsx), cạnh svc.name — đúng như spec ban đầu, dùng chung style với SendKindTag ở ShopCreate.tsx/ShopDetail.tsx. Không thêm cột header mới, không đổi các cột \"Gói kết nối\"/\"Shop\"/\"Bật/Tắt\". Đã verify qua trình duyệt: tag hiển thị đúng cho cả dịch vụ đã có sendKind lẫn dữ liệu cũ suy theo carrier."
           ]
+        },
+        {
+          "id": "AGA-CARRIER-15",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Chi tiết dịch vụ: chỉnh sửa",
+          "status": "draft",
+          "userStory": "Là Agency Admin, khi sửa 1 dịch vụ đã có (GHN \"Hàng hoá\" hoặc 247Express \"Thư\"), tôi cần các trường tôi chỉnh — bảng giá, Shop ID, loại đơn — được lưu đúng như tôi đã chọn, không bị âm thầm xoá trắng sau khi bấm \"Lưu\"; và với dịch vụ Thư, tôi không cần thấy/chọn Shop ID vì dịch vụ này áp dụng cho toàn bộ shop của đại lý.",
+          "userFlow": [
+            "Vào Thiết lập NVC → tab \"Dịch vụ\" → bấm vào tên 1 dịch vụ đã có → trang \"Thông tin dịch vụ\" (view mode)",
+            "Bấm nút cam \"Chỉnh sửa\" (cuối card \"Cấu hình\") → toàn trang chuyển sang edit mode",
+            "Dịch vụ GHN (Hàng hoá): card \"Thông tin cơ bản\" hiện ô \"Kết nối Shop ID\" — tick chọn, bắt buộc chọn ít nhất 1",
+            "Dịch vụ 247Express (Thư): card \"Thông tin cơ bản\" không hiện ô Shop ID nào — chỉ còn Tên/Mã/Mô tả/Loại đơn",
+            "Bấm \"Lưu\" → mọi thay đổi (bảng giá, Shop ID đã chọn, loại đơn) được lưu đúng, trang quay về view mode hiện đúng giá trị mới"
+          ],
+          "systemFlow": [
+            "Bug fix handleSave (sửa dịch vụ đã có): trước đây priceTableId/shopConnectionIds bị gate theo carrier==='GHN', khiến dịch vụ 247Express/Thư bị xoá trắng bảng giá + Shop ID mỗi lần Lưu — fix bỏ gate, dùng chung cho cả 2 carrier",
+            "isLetterService = derivedCarrier==='247Express' || editForm.sendKind==='letter' — nhận diện Thư ngay qua pill Loại đơn, không đợi chọn bảng giá",
+            "Card \"Thông tin cơ bản\": {!isLetterService && (<Kết nối Shop ID .../>)} — dịch vụ Thư không render field này, không có ghi chú thay thế",
+            "requiresShopId = !isLetterService — dùng cho validation canCreate, dịch vụ Thư không bị chặn tạo/lưu vì thiếu Shop ID",
+            "handleSave ép shopConnectionIds: [] khi carrier là 247Express (cả tạo mới và sửa)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Sửa dịch vụ 247Express (Thư), chọn Shop ID + đổi bảng giá, bấm Lưu → giá trị được giữ đúng, không bị xoá trắng.",
+            "AC2: Card \"Thông tin cơ bản\" dịch vụ Thư (view & edit) không hiện field Shop ID hay ghi chú thay thế nào.",
+            "AC3: Card \"Thông tin cơ bản\" dịch vụ GHN không đổi — vẫn hiện ô Shop ID bắt buộc.",
+            "AC4: Tạo dịch vụ mới, bấm pill \"Thư, bưu phẩm\" TRƯỚC khi chọn bảng giá → ô Shop ID ẩn ngay.",
+            "AC5: Sửa dịch vụ Thư, bấm Lưu → shopConnectionIds luôn ghi [], không giữ giá trị cũ."
+          ],
+          "notes": [
+            "Bug ở AC1 phát hiện qua báo cáo thực tế: \"đối với dịch vụ của thư thì không có chọn shop id\" — hoá ra do bug xoá trắng khi lưu, không phải thiếu UI.",
+            "Sau khi fix bug, đại lý phản hồi tiếp: dịch vụ Thư không nên cho gắn Shop ID nào cả — đổi từ \"sửa bug hiển thị\" sang \"bỏ hẳn field này cho dịch vụ Thư\", kể cả dòng ghi chú thay thế.",
+            "EDIT_STATUS_OPTIONS/serviceTypeId/deliveryZones/hubIds không nằm trong phạm vi fix này.",
+            "Chi tiết kỹ thuật đầy đủ trước khi tách thành story riêng nằm ở mục 10b/10c của prd-hop-nhat-ket-noi-ghn-247.md."
+          ]
         }
       ]
     },
@@ -1225,7 +1657,9 @@
             "Danh sách đầu số chuẩn theo config GHN (valid_mobilephone_headers), không phải danh sách Bộ TT&TT",
             "Đầu số 0868 → prefix 086 đã có trong Viettel, nên thực ra không bị thiếu nếu validate 3 số đầu",
             "Điện thoại cố định (valid_homephone_headers) phức tạp hơn → tách task riêng",
-            "Cần confirm với backend team về format lưu SĐT trong DB: có normalize trước khi lưu không?"
+            "Cần confirm với backend team về format lưu SĐT trong DB: có normalize trước khi lưu không?",
+            "✅ Đã implement MỘT PHẦN qua mock-data/phoneValidation.ts — chỉ áp dụng ở: đăng ký shop Web Shop (WS-LOGIN-1), tạo shop mới Agency Admin, kết nối GHN/247 + yêu cầu điểm lấy hàng 247 (CarrierSetup.tsx), tạo đại lý mới + tạo địa điểm 247 Super Admin (AgencyCreate.tsx, Hubs247.tsx).",
+            "❌ CHƯA áp dụng ở field SĐT người gửi/nhận lúc tạo đơn hàng, và field SĐT ở Cài đặt tài khoản (cả 3 platform) — AC3 (áp dụng nhất quán mọi field) chưa đạt đủ."
           ],
           "userFlow": [
             "Người dùng mở bất kỳ form có field SĐT",

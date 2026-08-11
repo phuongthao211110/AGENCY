@@ -412,7 +412,7 @@ export default function ServiceDetail() {
         // Khu vực áp dụng dùng tĩnh "Tất cả khu vực" cho dịch vụ mới (cả 2 carrier) — không còn
         // chọn riêng deliveryZones/hub ở bước tạo dịch vụ nữa (hub chọn lúc dispatch đơn).
         deliveryZones: undefined,
-        shopConnectionIds: editForm.shopConnectionIds,
+        shopConnectionIds: derivedCarrier === '247Express' ? [] : editForm.shopConnectionIds,
         hubIds: undefined,
         sendKind: editForm.sendKind,
       })
@@ -421,10 +421,13 @@ export default function ServiceDetail() {
     }
     if (id) updateService(id, {
       name: editForm.name.trim(), desc: editForm.desc,
-      priceTableId: editForm.carrier === 'GHN' ? editForm.priceTableId : undefined,
+      // priceTableId và shopConnectionIds dùng chung cho cả GHN và 247Express từ sau khi
+      // hợp nhất luồng — không còn gate theo carrier (trước đây gate khiến sửa dịch vụ 247Express/
+      // Thư bị xoá trắng bảng giá và danh sách Shop ID đã chọn ngay khi lưu).
+      priceTableId: editForm.priceTableId,
       serviceTypeId: editForm.carrier === '247Express' ? editForm.serviceTypeId : undefined,
       deliveryZones: editForm.carrier === '247Express' ? editForm.deliveryZones : undefined,
-      shopConnectionIds: editForm.carrier === 'GHN' ? editForm.shopConnectionIds : [],
+      shopConnectionIds: editForm.carrier === '247Express' ? [] : editForm.shopConnectionIds,
       hubIds: editForm.carrier === '247Express' ? editForm.hubIds : undefined,
       sendKind: editForm.sendKind,
     })
@@ -472,9 +475,16 @@ export default function ServiceDetail() {
     ? (allPriceTables as any[])
     : (allPriceTables as any[]).filter(pt => pt.nvc === editForm.carrier)
 
+  // Dịch vụ Thư/247Express áp dụng cho toàn bộ shop của đại lý, không cần chọn Shop ID
+  // (ẩn hẳn field này, xem JSX bên dưới) — nên không bắt buộc shopConnectionIds cho carrier này.
+  // Khi tạo mới, `derivedCarrier` chỉ xác định được SAU khi chọn bảng giá (mục Cấu hình, nằm
+  // dưới); nếu đại lý bấm pill "Thư, bưu phẩm" (mục Loại đơn, nằm TRÊN) trước, phải nhận biết
+  // ngay qua `sendKind` — không đợi đến lúc chọn bảng giá mới ẩn Shop ID.
+  const isLetterService = derivedCarrier === '247Express' || editForm.sendKind === 'letter'
+  const requiresShopId = !isLetterService
   const canCreate = isNewService
-    ? !!editForm.name.trim() && editForm.shopConnectionIds.length > 0 && !!editForm.priceTableId
-    : !!editForm.name.trim() && editForm.shopConnectionIds.length > 0
+    ? !!editForm.name.trim() && (!requiresShopId || editForm.shopConnectionIds.length > 0) && !!editForm.priceTableId
+    : !!editForm.name.trim() && (!requiresShopId || editForm.shopConnectionIds.length > 0)
 
   const isDefaultOn = !isNewService && !!existing?.enabled
 
@@ -605,15 +615,19 @@ export default function ServiceDetail() {
                     </div>
                   </div>
 
-                  {/* Không còn chọn Hub ở đây — dịch vụ (cả GHN và 247Express) đều kết nối
-                      qua Shop ID, y hệt 1 luồng duy nhất. Hub chỉ chọn lúc đại lý dispatch
-                      đơn đi 247Express (xem AgencyOrders.tsx), không phải ở bước tạo/sửa dịch vụ. */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_LABEL }}>
-                      Kết nối Shop ID <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>
-                    </span>
-                    <ShopIdTable carrier="GHN" shops={editActiveShops} selectedIds={editForm.shopConnectionIds} interactive onToggle={toggleShop} />
-                  </div>
+                  {/* Không còn chọn Hub ở đây — dịch vụ GHN kết nối qua Shop ID. Dịch vụ Thư/
+                      247Express thì áp dụng cho toàn bộ shop của đại lý, không gắn theo Shop ID
+                      nào — khớp đúng cách CreateLetterDrawer (Web Shop) và CreateLetterDrawerAgency
+                      tìm dịch vụ 247Express rẻ nhất của đại lý mà không lọc theo shopConnectionIds,
+                      nên không cần hiện field này cho dịch vụ Thư. */}
+                  {!isLetterService && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_LABEL }}>
+                        Kết nối Shop ID <span style={{ color: '#EF4444', fontSize: 12 }}>*</span>
+                      </span>
+                      <ShopIdTable carrier="GHN" shops={editActiveShops} selectedIds={editForm.shopConnectionIds} interactive onToggle={toggleShop} />
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* ── View mode ── */
@@ -627,20 +641,24 @@ export default function ServiceDetail() {
 
                   <LabelValue label="Loại đơn" value={serviceData.sendKind === 'letter' ? 'Thư, bưu phẩm' : 'Hàng hoá'} />
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Shop</span>
-                    <span style={{ fontSize: 14, color: '#3B82F6', textDecoration: 'underline', fontWeight: 500 }}>
-                      {serviceData.shopConnectionIds.length} shop đang áp dụng dịch vụ
-                    </span>
-                  </div>
+                  {serviceData.carrier !== '247Express' && (
+                    <>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Shop</span>
+                        <span style={{ fontSize: 14, color: '#3B82F6', textDecoration: 'underline', fontWeight: 500 }}>
+                          {serviceData.shopConnectionIds.length} shop đang áp dụng dịch vụ
+                        </span>
+                      </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID</span>
-                      <InfoCircleOutlined style={{ fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'help' }} title="Shop ID được duyệt kết nối với đại lý qua nhà vận chuyển này" />
-                    </div>
-                    <ShopIdTable carrier="GHN" shops={activeShops} selectedIds={serviceData.shopConnectionIds} interactive={false} />
-                  </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 14, color: C_TEXT_LABEL }}>Kết nối Shop ID</span>
+                          <InfoCircleOutlined style={{ fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'help' }} title="Shop ID được duyệt kết nối với đại lý qua nhà vận chuyển này" />
+                        </div>
+                        <ShopIdTable carrier="GHN" shops={activeShops} selectedIds={serviceData.shopConnectionIds} interactive={false} />
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -762,7 +780,7 @@ export default function ServiceDetail() {
                       {!canCreate && (
                         <span style={{ fontSize: 12, color: '#9CA3AF' }}>
                           {!editForm.name.trim() ? 'Nhập tên dịch vụ'
-                            : editForm.shopConnectionIds.length === 0 ? 'Chọn ít nhất 1 Shop ID'
+                            : requiresShopId && editForm.shopConnectionIds.length === 0 ? 'Chọn ít nhất 1 Shop ID'
                             : 'Chọn bảng giá'}
                         </span>
                       )}

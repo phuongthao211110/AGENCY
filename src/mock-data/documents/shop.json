@@ -1,13 +1,47 @@
 {
   "platform": "shop",
   "currentVersion": "0.2.0",
-  "lastUpdated": "2026-07-24",
+  "lastUpdated": "2026-08-05",
   "figmaUrl": "https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW",
   "sections": [
     {
       "key": "login-logout",
       "title": "Login / Logout",
-      "stories": []
+      "stories": [
+        {
+          "id": "WS-LOGIN-1",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đăng ký shop mới (self-service)",
+          "status": "draft",
+          "userStory": "Là chủ shop chưa có tài khoản, tôi muốn tự đăng ký shop và chọn đại lý mình muốn hợp tác, để có thể bắt đầu dùng hệ thống ngay mà không cần đại lý tạo tài khoản hộ.",
+          "userFlow": [
+            "Ở trang Đăng nhập, bấm link \"Chưa có tài khoản? Đăng ký ngay\" → sang /shop/register",
+            "Điền form: Tên shop, Họ tên chủ shop, SĐT, Địa chỉ, chọn 1 đại lý trong dropdown \"Đại lý hợp tác\", Tên đăng nhập, Mật khẩu, Xác nhận mật khẩu",
+            "Bấm \"Đăng ký\" → tài khoản active ngay, vào thẳng /shop/orders (không có bước chờ duyệt)",
+            "Từ trang đăng ký, có link \"Đã có tài khoản? Đăng nhập\" → quay lại /shop/login"
+          ],
+          "systemFlow": [
+            "Dropdown \"Đại lý hợp tác\" chỉ liệt kê đại lý status === 'active' trong agencies.json",
+            "Submit gọi addShop() (shopStore.ts) — tạo Shop mới: id sinh theo SHOP + timestamp, status: 'active' ngay, configuredServices: [] (đại lý cần tự cấu hình dịch vụ/bảng giá sau)",
+            "Shop lưu qua localStorage (cùng cơ chế orderStore.ts) — sống qua reload, thấy được từ Agency Admin (AGA-SHOP-9)",
+            "Validate SĐT dùng chung isValidVNPhone() (phoneValidation.ts, xem AGA-HT-1)",
+            "Validate username: đối chiếu loadShops() — chặn submit nếu trùng"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Dropdown \"Đại lý hợp tác\" chỉ hiện đại lý status === 'active'.",
+            "AC2: SĐT phải đúng 10 số và đầu số hợp lệ theo config GHN thực tế — sai thì chặn submit + hiện lỗi.",
+            "AC3: Tên đăng nhập trùng với shop đã có (bất kỳ đại lý nào) → chặn submit + hiện lỗi.",
+            "AC4: Mật khẩu và Xác nhận mật khẩu không khớp → chặn submit + hiện lỗi ngay tại field Xác nhận mật khẩu.",
+            "AC5: Đăng ký thành công → shop status: 'active' ngay, không cần đại lý duyệt, vào thẳng /shop/orders.",
+            "AC6: Shop vừa đăng ký xuất hiện đúng trong danh sách shop của ĐÚNG đại lý đã chọn ở Agency Admin."
+          ],
+          "notes": [
+            "Quyết định \"chọn đại lý trong form + active ngay\" (không qua bước duyệt) đã chốt trực tiếp với người dùng — khác với luồng carrier-connection request hiện có (CarrierSetup.tsx) vốn có bước chờ duyệt 1–2 ngày.",
+            "Web Shop hiện KHÔNG có khái niệm \"shop đang đăng nhập\" động — toàn bộ Orders.tsx/Pricing.tsx/BankAccounts.tsx hardcode 'SHP001'. Sau khi đăng ký, chính chủ shop khi vào /shop/orders vẫn thấy dữ liệu demo của SHP001, chưa phải dữ liệu (rỗng) của chính mình — gap còn lại, chưa làm.",
+            "Không có bước xác thực SĐT/email (OTP) trước khi active — đánh đổi đã chọn để tối ưu demo, không phải hành vi production-ready."
+          ]
+        }
+      ]
     },
     {
       "key": "orders",
@@ -102,6 +136,173 @@
             "Đây là phần bổ sung để UI đơn thư ở Web Shop nhất quán với UI đơn thư ở Agency Admin — cả 2 bên cùng hiển thị đúng 1 sự thật (đơn đang ở đâu trong luồng agency-mediated dispatch), chỉ khác nhau ở quyền hành động (đại lý dispatch được, shop chỉ xem).",
             "Tham chiếu: banner bên Agency được thêm ở AGA-ORDER-1 (xac-nhan-gui-247express-bat-buoc-chon-hub.md) — cùng 1 phiên làm việc, cùng điều kiện dữ liệu (sendKind === 'letter' && dispatchStatus === 'pending_agency').",
             "Không đổi field \"Trạng thái\" hiển thị ở card \"Thông tin đơn hàng\" (vẫn dùng log[0]?.status_name || order.status, hiện show raw \"pending\" khi chưa có log) — gap này đã tồn tại giống nhau ở cả 2 platform trước khi có thay đổi này, không thuộc phạm vi task này."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-7",
+          "jiraKey": "",
+          "title": "[SHOP] Đơn hàng - Chi tiết: Huỷ đơn và Cập nhật thông tin đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn huỷ đơn hoặc sửa thông tin đơn ngay từ drawer chi tiết, để tự xử lý các trường hợp nhập sai hoặc cần huỷ mà không phải liên hệ ai khác.",
+          "userFlow": [
+            "Ở drawer chi tiết đơn, tab \"Thông tin đơn\", bấm \"Cập nhật\" → các trường chuyển thành ô nhập viền xanh: Bên nhận (tên, SĐT, địa chỉ), Khối lượng, COD, Trạng thái, Phí ship",
+            "Card tổng tiền cập nhật live theo giá trị đang sửa; có dòng nhắc \"Đang sửa thông tin đơn...\"",
+            "Bấm \"Lưu thay đổi\" → lưu vào orderStore, quay về hiển thị bình thường với dữ liệu mới",
+            "Bấm \"Huỷ\" (thay cho \"Cập nhật\" lúc đang sửa) → bỏ hết thay đổi đang nhập, không lưu gì",
+            "Bấm \"Huỷ đơn\" (nút riêng) → hiện cảnh báo đỏ xác nhận, kèm 2 nút \"Không huỷ\"/\"Xác nhận huỷ đơn\"",
+            "Bấm \"Xác nhận huỷ đơn\" → đơn chuyển trạng thái \"Đơn huỷ\", drawer tự đóng"
+          ],
+          "systemFlow": [
+            "OrderDetailDrawer (Web Shop) thêm state editMode/draft (giống Agency) và confirmingCancel (riêng cho luồng huỷ)",
+            "Field sửa ánh xạ đúng field thật của Order: receiverName/receiverPhone/receiverAddress, weight, cod, fee, status",
+            "\"Lưu thay đổi\" → gọi updateOrder(order.id, patch) (hàm dùng chung orderStore.ts) → onUpdated() refresh cả orders và selectedOrder",
+            "\"Xác nhận huỷ đơn\" → gọi cancelOrder(order.id) (hàm có sẵn từ trước) → onUpdated() → onClose() đóng drawer",
+            "editMode và confirmingCancel loại trừ nhau"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm \"Cập nhật\" → field chuyển thành ô nhập được, có dòng cảnh báo nhỏ.",
+            "AC2: Sửa xong bấm \"Lưu thay đổi\" → dữ liệu lưu đúng vào orderStore, danh sách + drawer hiển thị đúng giá trị mới.",
+            "AC3: Bấm \"Huỷ\" khi đang sửa → bỏ hết thay đổi, không lưu gì.",
+            "AC4: Bấm \"Huỷ đơn\" → hiện đúng cảnh báo xác nhận, không huỷ ngay lập tức.",
+            "AC5: Bấm \"Không huỷ\" → quay về trạng thái bình thường, đơn không đổi gì.",
+            "AC6: Bấm \"Xác nhận huỷ đơn\" → order.status đổi thành 'cancelled', đơn chuyển sang tab \"Đơn huỷ\", drawer tự đóng."
+          ],
+          "notes": [
+            "Tái sử dụng đúng updateOrder()/cancelOrder() có sẵn trong orderStore.ts — không tạo cơ chế lưu riêng cho Web Shop.",
+            "Phạm vi field sửa giống hệt Agency (AGA-ORDER-12) — không thêm sửa cho card \"Sản phẩm\"/\"Phụ phí\" vì không có field tương ứng.",
+            "Khác với Agency: Web Shop không có field \"Đơn vị vận chuyển\" trong form sửa, và có nút \"Huỷ đơn\" thật với xác nhận 2 bước — trong khi Agency (AGA-ORDER-12) nút \"Huỷ đơn\" vẫn còn là gap. Không đối xứng hoàn toàn giữa 2 platform ở thời điểm này.",
+            "Nút huỷ nhanh sẵn có trong danh sách (tab \"Chờ xử lý\") dùng chung cancelOrder() — không đổi logic đó."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-8",
+          "jiraKey": "",
+          "title": "[SHOP] Đơn hàng - Xem trạng thái đơn Thư hoàn hàng, phân biệt rõ \"chưa về tay\" và \"đã về tay\"",
+          "status": "draft",
+          "userStory": "Là Shop, khi đơn Thư của tôi bị hoàn hàng, tôi cần biết rõ hàng đã thật sự về tay tôi hay chưa — không chỉ dựa vào status đơn (Đang hoàn hàng/Hoàn tất) dễ gây hiểu lầm — để tôi biết khi nào cần chủ động liên hệ nếu chưa nhận được hàng.",
+          "userFlow": [
+            "Mở đơn Thư đang ở tab \"Đang hoàn hàng\"/\"Hoàn tất\" (đã được đại lý dispatch qua 247Express) → bảng hiện badge vàng \"Chưa về tay bạn\" dưới địa chỉ nhận",
+            "Mở chi tiết đơn → khối cảnh báo vàng: \"Đơn hàng đang được chuyển hoàn — Hàng chưa về tới bạn, vui lòng chờ cập nhật.\" — không có nút hành động nào",
+            "Ngay khi đại lý xác nhận đã giao lại hàng (AGA-ORDER-16) → mở lại/refresh trang là thấy ngay badge/khối đổi xanh: \"Đã về tay bạn\" / \"Bạn đã nhận lại hàng hoàn lúc [ngày giờ]\"",
+            "Text phía Shop giữ đơn giản, không nhắc \"đại lý\"/\"NVC\" — shop chỉ cần biết trạng thái đơn của chính mình",
+            "Nút \"Huỷ đơn\"/\"Cập nhật\" thông thường cũng bị ẩn hẳn trong suốt thời gian đơn ở trạng thái này — huỷ/sửa 1 đơn đã dispatch và đang hoàn hàng không còn hợp lý về nghiệp vụ"
+          ],
+          "systemFlow": [
+            "Đọc field returnHandoverAt: string | null trên Order (orderStore.ts) — field này do phía Agency ghi (AGA-ORDER-16), Shop chỉ đọc, không viết",
+            "Hàm điều kiện isLetterReturnCase(order) (duplicate riêng trong Orders.tsx): đúng khi sendKind==='letter' && dispatchStatus==='dispatched' && status ∈ {returning,cancelled,failed}",
+            "localStorage key ghn_orders_v1 dùng chung 2 platform nên Shop thấy ngay kết quả xác nhận, không cần đồng bộ backend",
+            "Badge/khối cảnh báo đọc trực tiếp isLetterReturnCase(order) + order.returnHandoverAt — không có action nào ghi field này từ phía Shop",
+            "Nút \"Huỷ đơn\"/\"Cập nhật\"/\"Hoàn hàng\" (toàn bộ hàng nút, kể cả editMode/confirmingCancel) chỉ render khi !isLetterReturnCase(order)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đơn Hàng hoá (sendKind: 'goods') không hiện badge/khối cảnh báo này.",
+            "AC2: Đơn Thư bị huỷ trước khi đại lý dispatch (dispatchStatus vẫn pending_agency) không hiện badge này.",
+            "AC3: Đơn Thư đã dispatch, đang returning/cancelled/failed, returnHandoverAt null → badge vàng \"Chưa về tay bạn\", khối vàng trong chi tiết — không có nút/action nào, chỉ đọc.",
+            "AC4: Ngay khi đại lý xác nhận (AGA-ORDER-16) → badge/khối đổi xanh \"Đã về tay bạn\" — không cần shop làm gì.",
+            "AC5: Toàn bộ text phía Shop không chứa từ \"đại lý\" hoặc \"NVC\" ở cả badge và khối cảnh báo.",
+            "AC6: Đơn đang isLetterReturnCase (dù returnHandoverAt null hay đã có giá trị) → không hiện nút \"Huỷ đơn\"/\"Cập nhật\"/\"Hoàn hàng\". Đơn khác không bị ảnh hưởng."
+          ],
+          "notes": [
+            "Tách riêng từ story ban đầu (AGA-ORDER-16, từng gộp cả 2 platform) theo yêu cầu trực tiếp: tách 2 user story riêng cho Agency và Shop.",
+            "Wording giữ đơn giản, không nhắc \"đại lý\"/\"NVC\" theo phản hồi trực tiếp: \"tôi muốn gợi ý về đơn shop đều đơn giản không nói gì tới đại lý\".",
+            "Không có action nào ở Shop cho luồng này — thiết kế có chủ đích, vì chỉ đại lý biết chính xác thời điểm giao vật lý thật.",
+            "Bổ sung sau khi xem demo: ban đầu \"Huỷ đơn\"/\"Cập nhật\" vẫn hiện song song với khối cảnh báo — theo phản hồi trực tiếp, đã bỏ hẳn 2 nút này khi đơn đang ở luồng hoàn hàng.",
+            "Đổi wording lần 2: badge \"Đang chuyển hoàn\"/\"Đã nhận lại hàng hoàn\" trùng/lẫn với dòng trạng thái chung mới thêm (\"Đang hoàn hàng\" cho status returning, cùng màu vàng). Đổi sang \"Chưa về tay bạn\"/\"Đã về tay bạn\" — tách hẳn khỏi từ vựng trạng thái vận chuyển chung."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-9",
+          "jiraKey": "",
+          "title": "[WEB SHOP][247] Đơn hàng: Chi tiết đơn hàng — nút hành động theo trạng thái",
+          "status": "draft",
+          "userStory": "Là Shop, khi mở chi tiết 1 đơn ở tab \"Đơn nháp\", tôi cần thêm nút \"Tạo đơn\" (bên cạnh \"Huỷ\"/\"Cập nhật\") để gửi đơn đi chính thức ngay từ màn chi tiết. Khi đơn đã chuyển sang \"Chờ xử lý\" (đã gửi cho đại lý), tôi không cần nút này nữa, chỉ cần \"Huỷ\"/\"Cập nhật\".",
+          "userFlow": [
+            "Mở đơn ở tab \"Đơn nháp\" → chi tiết đơn hiện 3 nút: \"Tạo đơn\" (cam, chính), \"Cập nhật\", \"Huỷ\"",
+            "Bấm \"Tạo đơn\" → đơn được gửi thật (Hàng hoá: dispatch thẳng GHN; Thư: chuyển dispatchStatus 'pending_agency') → đơn rời tab \"Đơn nháp\"",
+            "Mở đơn ở tab \"Chờ xử lý\" (đơn Thư đã gửi cho đại lý) → chi tiết đơn chỉ còn 2 nút: \"Cập nhật\", \"Huỷ đơn\" — không có \"Tạo đơn\""
+          ],
+          "systemFlow": [
+            "Thêm điều kiện isDraftOrder = order.status === 'pending' && !isPendingCarrier(order) (dùng đúng logic đã có ở ordersByTab.draft)",
+            "isDraftOrder true → thêm nút \"Tạo đơn\" vào hàng nút, đặt trước \"Cập nhật\"",
+            "isDraftOrder false → giữ nguyên hàng nút hiện tại, không có \"Tạo đơn\"",
+            "Nút \"Tạo đơn\" cần hàm submit thật (chưa có) — tái dùng logic dispatch đã có ở CreateOrderDrawer/CreateLetterDrawer, áp dụng lại cho đơn đã tồn tại qua updateOrder()"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đơn ở tab \"Đơn nháp\" → chi tiết đơn hiện đủ 3 nút: \"Tạo đơn\", \"Cập nhật\", \"Huỷ\".",
+            "AC2: Đơn ở tab \"Chờ xử lý\" → chi tiết đơn chỉ hiện 2 nút: \"Cập nhật\", \"Huỷ đơn\" — không có \"Tạo đơn\".",
+            "AC3: Đơn ở các tab khác — không hiện \"Tạo đơn\" (giữ hành vi hiện tại).",
+            "AC4: Bấm \"Tạo đơn\" ở đơn nháp → đơn được gửi thật, chuyển đúng tab, không còn ở \"Đơn nháp\"."
+          ],
+          "notes": [
+            "Đây là spec mới, CHƯA implement — hiện tại card hành động trong OrderDetailDrawer không phân biệt tab, luôn hiện \"Huỷ đơn\"/\"Cập nhật\" cho mọi trạng thái, không có nút \"Tạo đơn\" nào ở màn chi tiết.",
+            "Liên quan gap đã ghi nhận: nút \"Lưu nháp\" trong drawer tạo đơn chưa có onClick — feature này có thể là hướng bổ sung lối vào thứ 2 để gửi 1 đơn đã lưu nháp.",
+            "Cần xác nhận thêm: nút \"Tạo đơn\" ở chi tiết đơn Hàng hoá có cần chọn lại carrier/dịch vụ không, hay dùng luôn thông tin đã lưu — chưa có câu trả lời, ngoài phạm vi AC hiện tại."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-10",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Chi tiết: Xác nhận yêu cầu hoàn hàng",
+          "status": "draft",
+          "userStory": "Là Shop, khi đơn giao lại thất bại nhiều lần (hoặc đang chờ xác nhận giao lại), tôi muốn chủ động yêu cầu hoàn hàng thay vì tiếp tục chờ giao lại — bấm \"Hoàn hàng\" ở chi tiết đơn phải thực sự chuyển đơn sang trạng thái hoàn hàng, không phải nút chết.",
+          "userFlow": [
+            "Đơn ở tab \"Chờ xác nhận giao lại\" (hoặc có log giao thất bại) → bảng và chi tiết đơn đều có nút \"Hoàn hàng\"",
+            "Bấm \"Hoàn hàng\" ở chi tiết đơn → hiện khối cảnh báo cam xác nhận, kèm 2 nút \"Không hoàn hàng\"/\"Xác nhận hoàn hàng\"",
+            "Bấm \"Xác nhận hoàn hàng\" → đơn chuyển status: 'returning', đóng chi tiết, đơn xuất hiện ở tab \"Đã bàn giao - Đang hoàn hàng\"",
+            "Bấm \"Không hoàn hàng\" → quay lại card hành động bình thường, không đổi gì"
+          ],
+          "systemFlow": [
+            "Thêm state confirmingReturn (song song confirmingCancel đã có) trong OrderDetailDrawer",
+            "confirmReturnOrder(): gọi updateOrder(order.id, { status: 'returning' }) — đóng drawer + onUpdated?.() sau khi xác nhận",
+            "Nút \"Hoàn hàng\" trong card hành động đổi từ không có onClick → onClick={() => setConfirmingReturn(true)}",
+            "Thêm nhánh confirmingReturn vào hàng nút, song song editMode/confirmingCancel",
+            "Không đổi nút \"Hoàn hàng\" ở bảng (TRow, prop onReturn) — vẫn chỉ mở chi tiết đơn"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đơn isReturnEligible → nút \"Hoàn hàng\" ở chi tiết đơn bấm được, hiện khối xác nhận, không còn là nút chết.",
+            "AC2: Bấm \"Xác nhận hoàn hàng\" → order.status đổi thành 'returning', đơn chuyển đúng tab.",
+            "AC3: Bấm \"Không hoàn hàng\" → không đổi status, quay lại bình thường.",
+            "AC4: Đơn không isReturnEligible → không hiện nút \"Hoàn hàng\" (không đổi so với trước).",
+            "AC5: Đơn Thư đang isLetterReturnCase không bị ảnh hưởng."
+          ],
+          "notes": [
+            "Nút đã tồn tại từ trước — chỉ bổ sung onClick + luồng xác nhận còn thiếu, theo pattern confirmingCancel đã có sẵn.",
+            "Không thêm log entry vào order.log[] cho hành động này — giữ tối giản, khớp cách confirmCancelOrder() cũng không ghi log.",
+            "Đơn sau khi returning đi theo đúng luồng đã build: hoàn thành công (failed) vào Hoàn tất theo AGA-ORDER-17; đơn Thư áp dụng luôn badge AGA-ORDER-16/SHOP-ORDER-8.",
+            "Chưa xử lý gọi API carrier thật — chỉ đổi status nội bộ, ngoài phạm vi prototype."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-11",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Danh sách đơn hàng: Chờ xử lý",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn có 1 tab riêng \"Chờ xử lý\" trong danh sách đơn hàng để thấy ngay những đơn Thư đã tạo xong và đang chờ đại lý xử lý (chưa gửi nhà vận chuyển) — tách biệt hẳn với \"Đơn nháp\" và các tab đã dispatch.",
+          "userFlow": [
+            "Tab \"Chờ xử lý\" nằm ngay sau \"Đơn nháp\", hiện số lượng đơn đang ở trạng thái này",
+            "Bấm vào tab → chỉ hiện đơn Thư đã tạo nhưng chưa được đại lý dispatch qua 247Express — đơn Hàng hoá không bao giờ xuất hiện ở đây",
+            "Mỗi dòng hiện badge trạng thái \"Chờ xử lý\" (cam) dưới mã đơn",
+            "Bấm vào 1 đơn → mở chi tiết, thấy banner riêng giải thích đơn đang chờ đại lý (SHOP-ORDER-6) — không có hành động nào shop tự làm được",
+            "Khi đại lý xác nhận chọn hub và gửi qua 247Express, đơn tự rời tab \"Chờ xử lý\", chuyển sang tab dispatch tương ứng"
+          ],
+          "systemFlow": [
+            "isPendingCarrier(order): sendKind==='letter' && dispatchStatus==='pending_agency'",
+            "ordersByTab.pending_carrier = orders.filter(isPendingCarrier) — tách riêng khỏi draft (status==='pending' && !isPendingCarrier)",
+            "Tab hiện đếm ordersByTab.pending_carrier.length, đặt ngay sau tab \"Đơn nháp\"",
+            "rowStatus(order) trả về {label:'Chờ xử lý', color:'#F59E0B'} khi isPendingCarrier đúng — override trước khi tra ROW_STATUS_STYLE[order.status]",
+            "Nút \"Huỷ đơn\" vẫn khả dụng ở tab này — shop huỷ được đơn Thư trước khi đại lý dispatch"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Chờ xử lý\" chỉ chứa đơn sendKind:'letter' có dispatchStatus:'pending_agency' — không lẫn đơn Hàng hoá hoặc Thư đã dispatch.",
+            "AC2: Số đếm trên tab khớp đúng, cập nhật ngay không cần tải lại trang.",
+            "AC3: Mỗi dòng hiện badge \"Chờ xử lý\" (cam) — không hiện nhãn \"Đơn nháp\" dù status cũng là 'pending'.",
+            "AC4: Đơn ở tab này huỷ được qua nút \"Huỷ đơn\" trong bảng — huỷ ngay, không cần đại lý.",
+            "AC5: Đại lý dispatch xong → đơn rời tab ở lần load kế tiếp, không cần thao tác thêm từ shop."
+          ],
+          "notes": [
+            "Khác với SHOP-ORDER-6 — SHOP-ORDER-6 nói về banner trong chi tiết 1 đơn; story này nói về danh sách/tab chứa các đơn đó.",
+            "status:'pending' dùng chung cho cả \"Đơn nháp\" và \"Chờ xử lý\" ở tầng dữ liệu — 2 tab phân biệt hoàn toàn bằng dispatchStatus/sendKind, không phải status. Cần lưu ý khi sửa logic liên quan status==='pending' ở nơi khác.",
+            "Agency Admin có tab tương đương cùng tên \"Chờ xử lý\" (isPending247, logic giống hệt) — xem AgencyOrders.tsx."
           ]
         }
       ]

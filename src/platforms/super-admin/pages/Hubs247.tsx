@@ -4,6 +4,7 @@ import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { clientHubs247, createClientHub, type ClientHub247 } from '../agencyStore'
 import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
+import { isValidVNPhone, PHONE_INVALID_MESSAGE } from '../../../mock-data/phoneValidation'
 
 // ── Design tokens ────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -22,7 +23,7 @@ function CreateHubModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
   const [contactPhone, setContactPhone] = useState('')
 
   const districts = VIETNAM_PROVINCES.find(p => p.name === provinceName)?.districts ?? []
-  const canSubmit = address.trim() && districtName && wardName.trim() && contactName.trim() && contactPhone.trim()
+  const canSubmit = address.trim() && districtName && wardName.trim() && contactName.trim() && isValidVNPhone(contactPhone)
 
   const fieldStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: `1px solid ${C_BORDER}`, borderRadius: 8, fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none', boxSizing: 'border-box' }
   const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }
@@ -70,7 +71,11 @@ function CreateHubModal({ onClose, onCreate }: { onClose: () => void; onCreate: 
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={labelStyle}>Số điện thoại liên hệ <span style={{ color: '#EF4444' }}>*</span></label>
-              <input value={contactPhone} onChange={e => setContactPhone(e.target.value.replace(/\D/g, ''))} placeholder="VD: 0981000001" style={fieldStyle} />
+              <input value={contactPhone} onChange={e => setContactPhone(e.target.value.replace(/\D/g, ''))} placeholder="VD: 0981000001"
+                style={{ ...fieldStyle, borderColor: contactPhone && !isValidVNPhone(contactPhone) ? '#EF4444' : C_BORDER }} />
+              {contactPhone && !isValidVNPhone(contactPhone) && (
+                <span style={{ fontSize: 12, color: '#EF4444' }}>{PHONE_INVALID_MESSAGE}</span>
+              )}
             </div>
           </div>
         </div>

@@ -47,3 +47,13 @@ Là Agency Admin (Đại lý), tôi muốn nhập thông tin cơ bản của sho
 **AC9:** Trường hợp nhập SĐT bị trùng trong cùng agency: Hệ thống hiển thị lỗi số điện thoại đã tồn tại trong đại lý, không cho phép tạo shop.
 
 **AC10:** Trường hợp dữ liệu không hợp lệ: Hiển thị message lỗi tại từng field, không cho submit.
+
+## Notes
+
+**⚠️ Trạng thái thật khác với "✅" đã đánh dấu trước đây trong README — story này ĐÃ được đánh dấu xong nhưng code thực tế là 1 UI stub hoàn toàn:** nút "Tạo mới" ở `ShopCreate.tsx` trước đây chỉ `navigate('/agency-admin/shops')`, không lưu gì cả, không validate gì cả (dù giao diện hiển thị đủ field theo AC2).
+
+**Đã fix một phần** (theo yêu cầu trực tiếp "validate required + nối persist thật"):
+- ✅ AC2 (hiển thị field), AC6 (lưu `agencyId`, `status: active` mặc định), AC7 (tenant isolation), AC10 (hiện lỗi từng field, không cho submit) — đã implement.
+- ✅ AC5 một phần: SĐT được validate đúng định dạng di động thật (`isValidVNPhone()`, xem [AGA-HT-1](../he-thong/cap-nhat-dau-so-dien-thoai.md)); Tên shop/Địa chỉ chỉ check không-để-trống, **chưa check** giới hạn 255 ký tự.
+- ❌ **Chưa làm AC9** — SĐT trùng trong cùng agency KHÔNG bị chặn (chỉ mới check trùng **username**, xem [AGA-SHOP-4](./tao-moi-shop-cau-hinh-user-password.md), chưa check trùng SĐT).
+- ❌ AC3 sai lệch: `generateShopCode()` thực tế sinh `"SHOP" + 6 ký tự chữ/số ngẫu nhiên` (VD `SHOPX7K2M9`), không phải đúng format "3 chữ IN HOA + 3 số" như spec.

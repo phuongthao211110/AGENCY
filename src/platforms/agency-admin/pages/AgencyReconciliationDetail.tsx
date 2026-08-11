@@ -4,7 +4,7 @@ import { ConfigProvider } from 'antd'
 import { ArrowLeftOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import allSessions from '../../../mock-data/carrier-reconciliation.json'
-import allItems from '../../../mock-data/carrier-reconciliation-items.json'
+import { getReconciliationItems } from '../../../mock-data/reconciliationLedger'
 
 // ─── GHN shop lookup (mirrors CarrierSetup GHN_SHOPS) ────────────────────────
 const GHN_SHOP_NAMES: Record<string, string> = {
@@ -115,29 +115,8 @@ type CarrierSession = {
   netReceived: number
 }
 
-type ItemRecord = {
-  id: string
-  sessionId: string
-  orderCode: string
-  shopId: string
-  shopName: string
-  ghnCOD: number
-  systemCOD: number
-  ghnFee: number
-  systemFee: number
-  status: 'MATCH' | 'MISMATCH' | 'NOT_FOUND'
-  customerOrderCode: string
-  ghnStatus: string
-  deliveryFee: number
-  redeliveryFee: number
-  insuranceFee: number
-  returnFee: number
-  failedDeliveryCOD: number
-  prepaid: number
-  discount: number
-  serviceFee: number
-  totalReconcileItem: number
-}
+// ItemRecord import từ reconciliationLedger.ts — status ở đó đã tính lại theo ledger cộng dồn
+// xuyên phiên (xem AGA-RECON-4), không phải field tĩnh đọc thẳng từ JSON.
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function AgencyReconciliationDetail() {
@@ -165,7 +144,7 @@ export default function AgencyReconciliationDetail() {
     )
   }
 
-  const items = (allItems as ItemRecord[]).filter(i => i.sessionId === id)
+  const items = getReconciliationItems().filter(i => i.sessionId === id)
   const totalMismatch = items.filter(i => i.status !== 'MATCH').length
   const totalCOD = items.reduce((s, i) => s + i.ghnCOD, 0)
   const totalFee = items.reduce((s, i) => s + i.ghnFee, 0)

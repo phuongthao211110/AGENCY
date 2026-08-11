@@ -90,11 +90,15 @@ function ServiceRow({ svc, onToggle, onOpen }: { svc: AgencyService; onToggle: (
         }
       </div>
 
-      {/* Shop */}
+      {/* Shop — 247Express/Thư áp dụng toàn bộ shop của đại lý, không gắn theo Shop ID */}
       <div style={{ flex: '1 0 0', minWidth: 160 }}>
-        <span style={{ fontSize: 14, color: C_LINK, textDecoration: 'underline', fontWeight: 500 }}>
-          {svc.shopConnectionIds.length} shop đang áp dụng dịch vụ
-        </span>
+        {svc.carrier === '247Express' ? (
+          <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Toàn bộ shop của đại lý</span>
+        ) : (
+          <span style={{ fontSize: 14, color: C_LINK, textDecoration: 'underline', fontWeight: 500 }}>
+            {svc.shopConnectionIds.length} shop đang áp dụng dịch vụ
+          </span>
+        )}
       </div>
 
       {/* Bật/Tắt */}

@@ -166,3 +166,24 @@ Thay đổi tập trung vào **1 utility function** `isValidPhoneVN()` — các 
 - Đầu số `0868` → prefix `086` đã có trong Viettel, nên thực ra không bị thiếu nếu validate 3 số đầu
 - Điện thoại cố định (`valid_homephone_headers`) phức tạp hơn (mã vùng 2–4 số) → tách task riêng
 - Cần confirm với backend team về format lưu SĐT trong DB: có normalize (bỏ khoảng trắng, dấu gạch) trước khi lưu không?
+
+---
+
+## ✅ Đã implement (một phần) — [phoneValidation.ts](../../../src/mock-data/phoneValidation.ts)
+
+Logic tập trung tại 1 utility `isValidVNPhone()` đúng theo AC5 — nhưng **KHÔNG PHẢI toàn bộ field SĐT trong bảng "Các field bị ảnh hưởng" ở trên** đã được nối, chỉ mới áp dụng ở các form sau:
+
+| Platform | Màn hình | Field | Trạng thái |
+|----------|----------|-------|-----------|
+| Web Shop | Đăng ký shop mới ([WS-LOGIN-1](../../shop/login-logout/dang-ky-shop-moi.md)) | SĐT chủ shop | ✅ |
+| Agency Admin | Tạo shop mới (`ShopCreate.tsx`) | SĐT chủ shop | ✅ |
+| Agency Admin | Kết nối tài khoản GHN/247 (`CarrierSetup.tsx`) | SĐT tài khoản NVC | ✅ |
+| Agency Admin | Yêu cầu thêm điểm lấy hàng 247 (`CarrierSetup.tsx`) | SĐT liên hệ | ✅ |
+| Super Admin | Tạo đại lý mới (`AgencyCreate.tsx`) | SĐT chủ đại lý | ✅ |
+| Super Admin | Tạo địa điểm 247 (`Hubs247.tsx`) | SĐT liên hệ | ✅ |
+| **Agency Admin / Web Shop / Super Admin** | **Tạo đơn hàng** (SĐT người gửi/nhận) | — | ❌ Chưa làm |
+| **Agency Admin / Web Shop / Super Admin** | **Cài đặt tài khoản** | — | ❌ Chưa làm |
+
+**Khác biệt so với spec ban đầu:** danh sách đầu số thực tế implement khớp đúng nhóm "Di động — 10 số" đã nêu ở trên (đã có `073`, `080`, `0868`...). Phần "đầu số cũ 11 số" và "điện thoại cố định" **không** được đưa vào validator — chỉ chấp nhận đúng 10 số bắt đầu bằng 0, vì mục tiêu là số liên hệ MỚI (đăng ký/tạo mới), không cần backward-compat với số cũ đã ngừng cấp từ 2018.
+
+AC3 ("áp dụng nhất quán cho tất cả field SĐT trên 3 platform") **chưa đạt đủ** — còn thiếu field tạo đơn hàng và cài đặt tài khoản, xem bảng trên.

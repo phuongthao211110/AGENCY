@@ -34,6 +34,7 @@ import PermissionsAgency from './platforms/agency-admin/pages/settings/Permissio
 // Shop
 import ShopLayout from './platforms/shop/layout/ShopLayout'
 import ShopLogin from './platforms/shop/pages/Login'
+import ShopRegister from './platforms/shop/pages/Register'
 import ShopOrders from './platforms/shop/pages/Orders'
 import ShopReconciliation from './platforms/shop/pages/Reconciliation'
 import ShopPricing from './platforms/shop/pages/Pricing'
@@ -94,6 +95,7 @@ export default function App() {
 
         {/* Shop */}
         <Route path="/shop/login" element={<ShopLogin />} />
+        <Route path="/shop/register" element={<ShopRegister />} />
         <Route path="/shop" element={<ShopLayout />}>
           <Route path="orders" element={<ShopOrders />} />
           <Route path="reconciliation" element={<ShopReconciliation />} />

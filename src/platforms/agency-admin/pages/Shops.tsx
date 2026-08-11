@@ -4,8 +4,8 @@ import { ConfigProvider } from 'antd'
 import { PlusOutlined, SearchOutlined, LinkOutlined, CopyOutlined, CheckOutlined, DownloadOutlined, CloseOutlined, StopOutlined, PlayCircleOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { agencyAdminTheme } from '../../../theme/platforms'
-import allShops from '../../../mock-data/shops.json'
 import allOrders from '../../../mock-data/orders.json'
+import { loadShops, updateShop } from '../../../mock-data/shopStore'
 
 // ── Design tokens (from Figma) ──────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -17,7 +17,10 @@ const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
 
 // ── Data ────────────────────────────────────────────────────
-const RAW = allShops.filter((s) => s.agencyId === 'AGN001')
+// Đọc lại loadShops() mỗi lần gọi (thay vì const module-level cố định 1 lần) — module này
+// được App.tsx import tĩnh nên chỉ evaluate 1 lần cho cả tab, nếu tính RAW/shops ở module scope
+// thì shop tự đăng ký sau đó sẽ KHÔNG BAO GIỜ xuất hiện qua điều hướng SPA (chỉ thấy sau F5/mở
+// URL mới) — buildShops() được gọi lại bên trong component nên luôn đọc đúng dữ liệu mới nhất.
 const OWNER_NAMES = ['Trần Thị Hòa', 'Lê Văn Minh', 'Phạm Thị Hương', 'Đỗ Văn Nam', 'Nguyễn Thị Lan']
 
 function fmt(n: number) {
@@ -26,12 +29,15 @@ function fmt(n: number) {
   return n.toLocaleString()
 }
 
-const shops = RAW.map((s, i) => ({
-  ...s,
-  ownerName: OWNER_NAMES[i % OWNER_NAMES.length],
-  cod:     s.totalOrders * 35_000,
-  revenue: Math.round(s.totalOrders * 35_000 * 0.028),
-}))
+function buildShops() {
+  const raw = loadShops().filter((s) => s.agencyId === 'AGN001')
+  return raw.map((s, i) => ({
+    ...s,
+    ownerName: OWNER_NAMES[i % OWNER_NAMES.length],
+    cod:     s.totalOrders * 35_000,
+    revenue: Math.round(s.totalOrders * 35_000 * 0.028),
+  }))
+}
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
   pending: 'Đơn nháp',
@@ -293,7 +299,7 @@ function BulkActionBar({ count, tab, onClose, onBulkAction }: {
 }
 
 // ── Table row ─────────────────────────────────────────────────
-type Shop = typeof shops[0]
+type Shop = ReturnType<typeof buildShops>[number]
 function TRow({ shop, status, checked, onToggle, onClick }: {
   shop: Shop; status: string; checked: boolean; onToggle: () => void; onClick: () => void
 }) {
@@ -439,7 +445,7 @@ function Pagination({ page, total, pageSize, onPageChange, onPageSizeChange }: {
 }
 
 // ── Export orders modal ─────────────────────────────────────
-function ExportOrdersModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function ExportOrdersModal({ open, onClose, shops }: { open: boolean; onClose: () => void; shops: Shop[] }) {
   const today = new Date()
   const [preset, setPreset] = useState('this_week')
   const [[dateFrom, dateTo], setDateRange] = useState<[string, string]>(
@@ -628,13 +634,15 @@ export default function Shops() {
   const [tab, setTab] = useState<StatusTab>('active')
   const [bulkDeactivateConfirm, setBulkDeactivateConfirm] = useState(false)
 
+  // Tính lại mỗi lần component render (không phải const module-level) — đảm bảo luôn thấy shop
+  // mới tự đăng ký, kể cả khi điều hướng qua lại bằng SPA routing (không reload trang).
+  const shops = buildShops()
+
   const getStatus = (shop: Shop) => {
     if (shop.id in statusOverride) return statusOverride[shop.id]
-    // `shops` is a snapshot spread-copied at module load, so after a remount
-    // (e.g. route away and back) its `status` field can be stale — read the
-    // live shared `allShops` record instead, since deactivate/reactivate
-    // mutate that shared array in place.
-    return (allShops.find((s) => s.id === shop.id)?.status ?? shop.status) as string
+    // `shops` là snapshot copy tại thời điểm module load, sau khi remount (VD: đổi route rồi
+    // quay lại) field `status` có thể bị cũ — đọc lại từ store (localStorage) để lấy giá trị mới nhất.
+    return (loadShops().find((s) => s.id === shop.id)?.status ?? shop.status) as string
   }
 
   const setStatusFor = (ids: Iterable<string>, status: 'active' | 'inactive') => {
@@ -644,10 +652,7 @@ export default function Shops() {
       idList.forEach((id) => { next[id] = status })
       return next
     })
-    idList.forEach((id) => {
-      const raw = allShops.find((s) => s.id === id)
-      if (raw) (raw as any).status = status
-    })
+    idList.forEach((id) => { updateShop(id, { status }) })
   }
 
   const confirmBulkDeactivate = () => {
@@ -826,7 +831,7 @@ export default function Shops() {
         </div>
       </div>
 
-      <ExportOrdersModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} />
+      <ExportOrdersModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} shops={shops} />
 
       {/* Confirm bulk deactivate modal */}
       {bulkDeactivateConfirm && (

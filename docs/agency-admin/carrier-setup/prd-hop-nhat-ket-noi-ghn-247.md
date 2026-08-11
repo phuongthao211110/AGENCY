@@ -348,6 +348,42 @@ User phản hồi bản v0.2 (chỉ merge UX, giữ `CreateLetterDrawer` nguyên
 
 ---
 
+## 10b. Bug fix phát sinh sau hợp nhất — mất `shopConnectionIds`/`priceTableId` khi sửa dịch vụ 247Express/Thư
+
+**Phát hiện:** đại lý báo "đối với dịch vụ của thư thì không có chọn shop id" — kiểm tra `ServiceDetail.tsx` (`handleSave`, đường sửa dịch vụ ĐÃ CÓ, không phải tạo mới) thấy vẫn còn gate theo `carrier` từ TRƯỚC khi hợp nhất:
+
+```ts
+// TRƯỚC (bug) — dù UI đã cho chọn Shop ID/bảng giá giống nhau cho cả 2 carrier
+priceTableId: editForm.carrier === 'GHN' ? editForm.priceTableId : undefined,
+shopConnectionIds: editForm.carrier === 'GHN' ? editForm.shopConnectionIds : [],
+```
+
+→ Với dịch vụ carrier `247Express` (thường là `sendKind: 'letter'`/Thư), mỗi lần bấm "Lưu" ở màn sửa — dù agency vừa chọn Shop ID hay bảng giá gì trong UI — **2 field này đều bị ghi đè về rỗng/undefined** ngay khi lưu. Đây là leftover từ model cũ (trước hợp nhất: chỉ GHN dùng Shop ID, chỉ GHN dùng priceTableId thủ công) không được dọn khi hợp nhất luồng ở Q5.
+
+**Fix:** bỏ gate carrier cho 2 field này — dùng chung `editForm.priceTableId`/`editForm.shopConnectionIds` cho cả 2 carrier, khớp đúng những gì luồng tạo mới (`isNewService`) đã làm đúng từ đầu. Đã verify qua UAT: sửa dịch vụ 247Express (svc-002), chọn 2 Shop ID, lưu → hiển thị lại đúng 2 shop đã chọn, bảng giá không bị mất.
+
+**Chưa đổi (out of scope fix này):** `serviceTypeId`/`deliveryZones`/`hubIds` vẫn gate theo carrier như cũ — các field này thật sự khác biệt hoặc đã không còn dùng (hub chọn ở bước dispatch, không phải ở Service), không phải cùng loại bug.
+
+## 10c. Sửa lại theo phản hồi thêm — bỏ hẳn "Kết nối Shop ID" khỏi dịch vụ Thư/247Express
+
+Sau bản fix 10b, đại lý xem lại UI và yêu cầu: dịch vụ Thư không nên cho gắn theo Shop ID nào — cả ở view và edit.
+
+Đối chiếu lại đúng mục **4.2** của PRD này (đã chốt từ đầu): `shopConnectionIds` trên dịch vụ 247Express "luôn rỗng, vì 247Express không có cơ chế kết nối theo từng shop". Bản hợp nhất UI ở mục 5.4/10b vô tình đi NGƯỢC quyết định này — hiện lại 1 ô chọn Shop ID y hệt GHN cho cả dịch vụ Thư, khiến đại lý hiểu nhầm là phải gắn Shop ID mới dùng được (trong khi `CreateLetterDrawer`/`CreateLetterDrawerAgency` tìm dịch vụ 247Express rẻ nhất của đại lý mà **không** lọc theo `shopConnectionIds` — field này chưa từng có tác dụng thật với luồng Thư).
+
+**Fix (`ServiceDetail.tsx`, `AgencyServices.tsx`):**
+- Card "Thông tin cơ bản" (cả view & edit) — với `carrier === '247Express'`, thay khối "Kết nối Shop ID"/Shop count bằng 1 dòng ghi chú tĩnh: "Toàn bộ shop của đại lý — dịch vụ Thư không giới hạn theo Shop ID".
+- `canCreate`/thông báo validation khi tạo dịch vụ mới: bỏ yêu cầu chọn Shop ID khi carrier suy ra là `247Express` (`requiresShopId = derivedCarrier !== '247Express'`).
+- `handleSave()` (cả tạo mới và sửa): ép `shopConnectionIds: []` khi carrier là `247Express`, khớp đúng ý nghĩa "luôn rỗng" ở mục 4.2.
+- Trang danh sách dịch vụ (`AgencyServices.tsx`) — cột "Shop" hiện "Toàn bộ shop của đại lý" cho carrier `247Express` thay vì "N shop đang áp dụng dịch vụ" (vốn luôn là 0, gây hiểu nhầm).
+
+Đã verify qua UAT: tạo dịch vụ mới chọn bảng giá 247Express → không còn ô "Kết nối Shop ID", nút "Tạo dịch vụ" bấm được ngay không cần chọn shop; dịch vụ Thư có sẵn (svc-002) ở cả view/edit đều chỉ hiện dòng ghi chú; dịch vụ GHN (Hàng hoá) không bị ảnh hưởng — vẫn giữ nguyên ô chọn Shop ID bắt buộc.
+
+**Sửa tiếp — thứ tự trường ở màn tạo mới:** ban đầu gate chỉ theo `derivedCarrier` (suy từ bảng giá đã chọn ở card "Cấu hình", nằm DƯỚI), nên nếu đại lý bấm pill "Thư, bưu phẩm" ở card "Thông tin cơ bản" (nằm TRÊN) TRƯỚC khi chọn bảng giá, ô "Kết nối Shop ID" vẫn hiện ra (chưa kịp ẩn) — vì lúc đó chưa có bảng giá nào để suy ra carrier. Fix: thêm `isLetterService = derivedCarrier === '247Express' || editForm.sendKind === 'letter'`, dùng biến này thay cho `derivedCarrier === '247Express'` ở phần gate Shop ID — nhận diện được ngay qua pill, không phải đợi chọn bảng giá.
+
+**Sửa tiếp lần 2 — bỏ hẳn dòng ghi chú thay thế:** bản đầu thay ô "Kết nối Shop ID" bằng 1 dòng ghi chú tĩnh "Shop áp dụng: Toàn bộ shop của đại lý...". Theo phản hồi tiếp, đại lý muốn bỏ hẳn cả dòng ghi chú này — với dịch vụ Thư, card "Thông tin cơ bản" (view & edit) chỉ còn Tên/Mã/Mô tả/Loại đơn, không còn field nào liên quan Shop ở đây nữa (`{!isLetterService && (...)}` / `{serviceData.carrier !== '247Express' && (...)}`, không còn nhánh else render ghi chú).
+
+---
+
 ## 11. Tài liệu tham chiếu
 
 - `src/platforms/agency-admin/pages/CarrierSetup.tsx` — trang hiện tại cần refactor

@@ -108,6 +108,16 @@ export default function ShopLogin() {
                 </Button>
               </Form.Item>
             </Form>
+
+            <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6B7280' }}>
+              Chưa có tài khoản?{' '}
+              <span
+                onClick={() => navigate('/shop/register')}
+                style={{ color: GHN_ORANGE, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Đăng ký ngay
+              </span>
+            </div>
           </div>
         </div>
       </div>
