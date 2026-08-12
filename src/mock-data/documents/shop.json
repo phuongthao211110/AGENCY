@@ -13,32 +13,38 @@
           "jiraKey": "",
           "title": "[WEB SHOP] Đăng ký shop mới (self-service)",
           "status": "draft",
-          "userStory": "Là chủ shop chưa có tài khoản, tôi muốn tự đăng ký shop và chọn đại lý mình muốn hợp tác, để có thể bắt đầu dùng hệ thống ngay mà không cần đại lý tạo tài khoản hộ.",
+          "userStory": "Là chủ shop chưa có tài khoản, tôi muốn tự đăng ký shop bằng mã đại lý được cung cấp riêng, để có thể bắt đầu dùng hệ thống ngay mà không cần đại lý tạo tài khoản hộ, và đại lý không phải lộ danh sách đối tác của mình cho người ngoài.",
           "userFlow": [
             "Ở trang Đăng nhập, bấm link \"Chưa có tài khoản? Đăng ký ngay\" → sang /shop/register",
-            "Điền form: Tên shop, Họ tên chủ shop, SĐT, Địa chỉ, chọn 1 đại lý trong dropdown \"Đại lý hợp tác\", Tên đăng nhập, Mật khẩu, Xác nhận mật khẩu",
+            "Điền form: Tên shop, Họ tên chủ shop, SĐT, Địa chỉ, Mã đại lý (do đại lý muốn hợp tác cung cấp riêng, không chọn từ danh sách công khai), Tên đăng nhập, Mật khẩu, Xác nhận mật khẩu",
             "Bấm \"Đăng ký\" → tài khoản active ngay, vào thẳng /shop/orders (không có bước chờ duyệt)",
             "Từ trang đăng ký, có link \"Đã có tài khoản? Đăng nhập\" → quay lại /shop/login"
           ],
           "systemFlow": [
-            "Dropdown \"Đại lý hợp tác\" chỉ liệt kê đại lý status === 'active' trong agencies.json",
-            "Submit gọi addShop() (shopStore.ts) — tạo Shop mới: id sinh theo SHOP + timestamp, status: 'active' ngay, configuredServices: [] (đại lý cần tự cấu hình dịch vụ/bảng giá sau)",
+            "Không hiện danh sách/dropdown tên đại lý công khai — thay bằng 1 ô nhập text \"Mã đại lý\", đối chiếu với agency.code trong số các đại lý status === 'active', so khớp không phân biệt hoa/thường",
+            "Mã sai/không khớp → lỗi chung \"Mã đại lý không hợp lệ\" — không gợi ý tên đại lý hay tiết lộ mã có tồn tại nhưng đại lý đang inactive",
+            "Submit gọi addShop() (shopStore.ts) — tạo Shop mới: id sinh theo SHOP + timestamp, agencyId lấy từ đại lý khớp mã, status: 'active' ngay, configuredServices: []",
             "Shop lưu qua localStorage (cùng cơ chế orderStore.ts) — sống qua reload, thấy được từ Agency Admin (AGA-SHOP-9)",
             "Validate SĐT dùng chung isValidVNPhone() (phoneValidation.ts, xem AGA-HT-1)",
             "Validate username: đối chiếu loadShops() — chặn submit nếu trùng"
           ],
           "acceptanceCriteria": [
-            "AC1: Dropdown \"Đại lý hợp tác\" chỉ hiện đại lý status === 'active'.",
-            "AC2: SĐT phải đúng 10 số và đầu số hợp lệ theo config GHN thực tế — sai thì chặn submit + hiện lỗi.",
-            "AC3: Tên đăng nhập trùng với shop đã có (bất kỳ đại lý nào) → chặn submit + hiện lỗi.",
-            "AC4: Mật khẩu và Xác nhận mật khẩu không khớp → chặn submit + hiện lỗi ngay tại field Xác nhận mật khẩu.",
-            "AC5: Đăng ký thành công → shop status: 'active' ngay, không cần đại lý duyệt, vào thẳng /shop/orders.",
-            "AC6: Shop vừa đăng ký xuất hiện đúng trong danh sách shop của ĐÚNG đại lý đã chọn ở Agency Admin."
+            "AC1: Trang đăng ký không hiển thị tên/danh sách đại lý nào ở bất kỳ đâu trong DOM — chỉ có 1 ô nhập \"Mã đại lý\".",
+            "AC2: Nhập mã đại lý đúng (không phân biệt hoa/thường) của 1 đại lý active → cho phép submit, gán đúng agencyId của đại lý đó.",
+            "AC3: Nhập mã sai/không tồn tại/thuộc đại lý không active → chặn submit + hiện đúng 1 message chung \"Mã đại lý không hợp lệ\".",
+            "AC4: SĐT phải đúng 10 số và đầu số hợp lệ theo config GHN thực tế — sai thì chặn submit + hiện lỗi.",
+            "AC5: Tên đăng nhập trùng với shop đã có (bất kỳ đại lý nào) → chặn submit + hiện lỗi.",
+            "AC6: Mật khẩu và Xác nhận mật khẩu không khớp → chặn submit + hiện lỗi ngay tại field Xác nhận mật khẩu.",
+            "AC7: Đăng ký thành công → shop status: 'active' ngay, không cần đại lý duyệt, vào thẳng /shop/orders.",
+            "AC8: Shop vừa đăng ký xuất hiện đúng trong danh sách shop của ĐÚNG đại lý ứng với mã đã nhập ở Agency Admin."
           ],
           "notes": [
-            "Quyết định \"chọn đại lý trong form + active ngay\" (không qua bước duyệt) đã chốt trực tiếp với người dùng — khác với luồng carrier-connection request hiện có (CarrierSetup.tsx) vốn có bước chờ duyệt 1–2 ngày.",
-            "Web Shop hiện KHÔNG có khái niệm \"shop đang đăng nhập\" động — toàn bộ Orders.tsx/Pricing.tsx/BankAccounts.tsx hardcode 'SHP001'. Sau khi đăng ký, chính chủ shop khi vào /shop/orders vẫn thấy dữ liệu demo của SHP001, chưa phải dữ liệu (rỗng) của chính mình — gap còn lại, chưa làm.",
-            "Không có bước xác thực SĐT/email (OTP) trước khi active — đánh đổi đã chọn để tối ưu demo, không phải hành vi production-ready."
+            "Đổi từ dropdown chọn đại lý sang nhập mã đại lý theo yêu cầu trực tiếp: dropdown công khai liệt kê tên toàn bộ đại lý active lộ thông tin đối tác/quy mô cho bất kỳ ai vào trang đăng ký. Mã đại lý do chính đại lý tự gửi riêng cho shop mình muốn mời.",
+            "Tái sử dụng field agency.code có sẵn làm mã mời, không thêm field mới. Nếu triển khai thật, nên tách riêng 1 mã mời độc lập (rotate được) khỏi mã kỹ thuật code.",
+            "Đã thảo luận nhưng KHÔNG chọn: link đăng ký riêng theo đại lý (?agency=AGN001) — không hoạt động tốt trên app native khi mở app nguội (không qua link) và cần Universal Links/App Links cấu hình riêng nếu app chưa cài. Dự án chưa có app native nên không build/test được phần này.",
+            "Quyết định \"active ngay, không qua bước duyệt\" giữ nguyên như trước.",
+            "Web Shop hiện KHÔNG có khái niệm \"shop đang đăng nhập\" động — toàn bộ Orders.tsx/Pricing.tsx/BankAccounts.tsx hardcode 'SHP001' — gap còn lại, chưa làm.",
+            "Không có bước xác thực SĐT/email (OTP) trước khi active — đánh đổi đã chọn để tối ưu demo."
           ]
         }
       ]

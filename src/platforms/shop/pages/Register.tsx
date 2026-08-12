@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Form, Input, Button, Select, ConfigProvider } from 'antd'
+import { Form, Input, Button, ConfigProvider } from 'antd'
 import { shopTheme } from '../../../theme/platforms'
 import { GHN_ORANGE } from '../../../theme/tokens'
 import agencies from '../../../mock-data/agencies.json'
@@ -30,18 +30,25 @@ function GhnLogoBox() {
   )
 }
 
+// Không hiện danh sách tên đại lý công khai — shop phải có mã đại lý do đại lý tự gửi riêng
+// (giống mã mời), tránh lộ thông tin đối tác/quy mô đại lý cho người ngoài xem trang đăng ký.
 const activeAgencies = agencies.filter(a => a.status === 'active')
+const findAgencyByCode = (code: string) =>
+  activeAgencies.find(a => a.code.toLowerCase() === code.trim().toLowerCase())
+const AGENCY_CODE_INVALID_MESSAGE = 'Mã đại lý không hợp lệ'
 
 export default function ShopRegister() {
   const navigate = useNavigate()
 
   const onFinish = (values: {
     shopName: string; ownerName: string; phone: string; address: string
-    agencyId: string; username: string
+    agencyCode: string; username: string
   }) => {
+    const agency = findAgencyByCode(values.agencyCode)
+    if (!agency) return
     addShop({
       id: `SHOP${Date.now().toString().slice(-6)}`,
-      agencyId: values.agencyId,
+      agencyId: agency.id,
       name: values.shopName,
       ownerName: values.ownerName,
       phone: values.phone,
@@ -142,15 +149,18 @@ export default function ShopRegister() {
               </Form.Item>
 
               <Form.Item
-                name="agencyId"
-                label="Đại lý hợp tác"
-                rules={[{ required: true, message: 'Vui lòng chọn đại lý hợp tác' }]}
+                name="agencyCode"
+                label="Mã đại lý"
+                extra="Mã do đại lý bạn muốn hợp tác cung cấp riêng — liên hệ đại lý nếu chưa có mã."
+                rules={[
+                  { required: true, message: 'Vui lòng nhập mã đại lý' },
+                  {
+                    validator: (_, value) =>
+                      !value || findAgencyByCode(value) ? Promise.resolve() : Promise.reject(new Error(AGENCY_CODE_INVALID_MESSAGE)),
+                  },
+                ]}
               >
-                <Select
-                  size="large"
-                  placeholder="Chọn đại lý bạn muốn hợp tác"
-                  options={activeAgencies.map(a => ({ value: a.id, label: a.name }))}
-                />
+                <Input size="large" placeholder="Mã đại lý" />
               </Form.Item>
 
               <Form.Item
