@@ -80,9 +80,11 @@
             "AC11: Form area có overflow-y auto — cuộn được khi nội dung dài hơn viewport."
           ],
           "notes": [
-            "Prototype hiện tại: tab Địa chỉ lấy hàng và In đơn hàng chỉ hiển thị tiêu đề placeholder, chưa có form",
-            "Cài đặt trong popup chưa được persist (localStorage/API) ở prototype; production cần save per-shop-user",
-            "Nút mở popup đặt ở list page (không phải trong drawer tạo đơn) để tiện chỉnh settings mà không cần mở form tạo đơn"
+            "⚠️ AC5 đã lỗi thời — tab \"Thông tin mặc định\" không còn là 1 form đơn nhất, đã tách thành 2 sub-tab Hàng hoá/Thư tài liệu, xem SHOP-ORDER-12.",
+            "Tab In đơn hàng đã implement, không còn placeholder — tách theo loại đơn: Hàng hoá (SHOP-ORDER-13), Thư tài liệu (SHOP-ORDER-14).",
+            "Tab Địa chỉ lấy hàng vẫn chỉ là placeholder, chưa implement.",
+            "Cài đặt trong popup này chưa được persist (localStorage/API) ở prototype; production cần save per-shop-user.",
+            "Nút mở popup đặt ở list page (không phải trong drawer tạo đơn) để tiện chỉnh settings mà không cần mở form tạo đơn."
           ],
           "status": "draft"
         },
@@ -309,6 +311,266 @@
             "Khác với SHOP-ORDER-6 — SHOP-ORDER-6 nói về banner trong chi tiết 1 đơn; story này nói về danh sách/tab chứa các đơn đó.",
             "status:'pending' dùng chung cho cả \"Đơn nháp\" và \"Chờ xử lý\" ở tầng dữ liệu — 2 tab phân biệt hoàn toàn bằng dispatchStatus/sendKind, không phải status. Cần lưu ý khi sửa logic liên quan status==='pending' ở nơi khác.",
             "Agency Admin có tab tương đương cùng tên \"Chờ xử lý\" (isPending247, logic giống hệt) — xem AgencyOrders.tsx."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-12",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - Thông tin mặc định: tách theo loại đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn cấu hình thông tin mặc định riêng cho đơn Hàng hoá và đơn Thư tài liệu, vì 2 loại đơn có field khác nhau — cấu hình chung 1 form dễ gây nhầm lẫn khi field không áp dụng cho loại đơn đó vẫn hiện ra.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"Thông tin mặc định\" (mặc định active)",
+            "Thấy 2 sub-tab: Hàng hoá / Thư tài liệu — mặc định ở Hàng hoá",
+            "Chỉnh sửa các mặc định trong tab đang xem — mỗi tab có bộ giá trị độc lập",
+            "Mục \"Trả hàng\" (Địa chỉ trả hàng) hiện chung, không đổi theo tab"
+          ],
+          "systemFlow": [
+            "Sub-tab bar defaultTab: 'goods' | 'letter', map tới 2 component riêng DefaultInfoSettings/LetterDefaultSettings",
+            "Tab Hàng hoá giữ đủ 4 nhóm: Bên gửi, Sản phẩm, Thông tin đơn hàng, Dịch vụ",
+            "Tab Thư tài liệu bám sát field thật trong CreateLetterDrawer: KHÔNG có Ca lấy hàng, Kích thước, Khai giá/Giao 1 phần/Giao thất bại (toggle), Tự động yêu cầu giao lại; Giá trị hàng đã bỏ hẳn; Ghi chú đơn hàng đổi thành Nội dung thư tài liệu; Ghi chú xem hàng chỉ 2 option đơn giản (sửa tại nguồn VIEW_GOODS_OPTIONS)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab hiện đúng 2 sub-tab Hàng hoá/Thư tài liệu, mặc định ở Hàng hoá.",
+            "AC2: Đổi giá trị 1 tab không ảnh hưởng tab kia (2 bộ state độc lập).",
+            "AC3: Tab Thư tài liệu KHÔNG hiện Ca lấy hàng, Kích thước, Khai giá trị hàng, Giao/Trả 1 phần, Giao thất bại thu tiền, Tự động yêu cầu giao lại.",
+            "AC4: Tab Thư tài liệu hiện đúng 3 field: Khối lượng đơn hàng, Nội dung thư tài liệu, Ghi chú xem hàng (2 option).",
+            "AC5: Mục Trả hàng hiện 1 lần duy nhất, không đổi theo sub-tab."
+          ],
+          "notes": [
+            "Tách ra từ WS-ORDER-1 (story gốc của toàn bộ popup Cài đặt đơn hàng).",
+            "Quyết định tách theo field thật (verify trực tiếp trong code CreateLetterDrawer) — phát hiện nhiều field tưởng dùng chung thực ra chỉ hiện dòng phí tĩnh, không có control tương tác."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-13",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Hàng hoá",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn cấu hình mặc định cho việc in vận đơn đơn Hàng hoá (khổ giấy, thông tin hiển thị, tự động in), để mỗi lần tạo đơn không phải chỉnh lại từ đầu, và xem trước đúng phiếu sẽ in ra trước khi thật sự in.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"In đơn hàng\" → sub-tab \"Hàng hoá\" (mặc định active)",
+            "Bật/tắt \"Tự động in khi tạo đơn\"",
+            "Chọn khổ giấy in — 3 nút: In khổ A5 / In khổ 52 x 70 mm / In khổ 80 x 80 mm",
+            "Tick/bỏ tick từng mục trong \"Thông tin hiển thị trên phiếu in\"",
+            "Xem \"Xem trước phiếu in\" — preview cập nhật theo đúng khổ giấy + mục đã tick"
+          ],
+          "systemFlow": [
+            "paperSize: 'A5' | '52x70' | '80x80', chọn qua PaperSizePicker (3 nút pill, nút chọn tô nền xanh đậm #1E4C7A) — thay dropdown select cũ",
+            "Checklist: 2 mục luôn hiển thị không tắt được (Mã vận đơn + Barcode + QR code, Người nhận); còn lại tick được: Người gửi, Sản phẩm, Khối lượng, Kích thước, COD, Phí ship, Ghi chú, Mã đơn shop, Tên/logo shop",
+            "Preview mô phỏng barcode (vạch) + QR (lưới 9x9, 3 finder pattern góc) cùng encode 1 mã vận đơn, độ rộng đổi theo khổ giấy",
+            "Đơn Hàng hoá có mã vận đơn thật ngay lúc tạo đơn (gửi trực tiếp GHN) nên barcode/QR luôn hợp lệ để in ngay"
+          ],
+          "acceptanceCriteria": [
+            "AC1: 3 nút khổ giấy hiển thị đúng, nút đang chọn nền xanh đậm chữ trắng, còn lại nền xám chữ tối.",
+            "AC2: Mã vận đơn+Barcode+QR và Người nhận luôn tick, không tắt được, có nhãn Luôn hiển thị.",
+            "AC3: Tick/bỏ tick mục còn lại → preview ẩn/hiện đúng dòng tương ứng ngay.",
+            "AC4: Đổi khổ giấy → độ rộng preview đổi theo.",
+            "AC5: Preview hiện đúng 1 barcode + 1 QR cạnh nhau, cùng 1 mã vận đơn.",
+            "AC6: Cấu hình độc lập với sub-tab Thư tài liệu."
+          ],
+          "notes": [
+            "Đã tách thành các story con nhỏ hơn: SHOP-ORDER-15 (khổ giấy), SHOP-ORDER-16 (tự động in), SHOP-ORDER-17 (barcode+QR), SHOP-ORDER-18 (preview), SHOP-ORDER-19 (checklist Hàng hoá) — story này giữ vai trò tổng quan.",
+            "Đã cân nhắc thêm sub-tab thứ 3 \"Mẫu in đơn hàng\" (chọn giữa nhiều mẫu layout cố định) nhưng đã bỏ theo yêu cầu trực tiếp vì \"quá rối rắm\".",
+            "Checklist thiết kế lại 1 lần để đầy đủ thông tin đơn hàng — bản đầu chỉ 5 mục, bản hiện tại 11 mục khớp field thật của Order/CreateOrderDrawer.",
+            "Toàn bộ cấu hình chỉ là preference UI, chưa persist — xem WS-ORDER-1."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-14",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Thư tài liệu chỉ in được sau khi đại lý dispatch qua 247Express",
+          "status": "draft",
+          "userStory": "Là chủ shop gửi đơn Thư tài liệu, tôi muốn biết rõ khi nào mình in được vận đơn thật, để không in nhầm 1 mã tạm không dùng để theo dõi được — vì đơn Thư phải qua đại lý trước khi tới tay 247Express.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"In đơn hàng\" → sub-tab \"Thư tài liệu\"",
+            "Đọc ghi chú đầu trang: chỉ in được sau khi đại lý đã đẩy đơn qua 247Express",
+            "Cấu hình giống sub-tab Hàng hoá (khổ giấy, checklist, preview) — áp dụng cho lúc in vận đơn thật sau khi đại lý dispatch"
+          ],
+          "systemFlow": [
+            "Đã cân nhắc và loại bỏ phương án \"Phiếu giao nhận\" (không barcode/QR, chỉ Mã đơn shop, dùng kèm hàng khi giao vật lý cho đại lý) — quyết định cuối: không làm phiếu giao nhận, chỉ cho in vận đơn thật đúng giai đoạn đã dispatch",
+            "LetterHandoverSettings giống hệt PrintKindSettings (Hàng hoá) — cùng cơ chế Mã vận đơn+Barcode+QR luôn hiển thị, cùng PaperSizePicker — chỉ khác: ghi chú điều kiện thời điểm, label toggle 'Tự động in khi đại lý đẩy đơn qua 247', KHÔNG có COD và Kích thước (cod hardcode 0, không có field kích thước trong CreateLetterDrawer)",
+            "Preview dùng mã mẫu dạng 247EX00987654 (mã 247Express thật) thay vì SPX... (mã Hàng hoá)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đầu sub-tab hiện rõ ghi chú chỉ in được sau khi đại lý dispatch qua 247Express.",
+            "AC2: Checklist KHÔNG có Tiền thu hộ (COD) và Kích thước đơn hàng — khác Hàng hoá.",
+            "AC3: Mã vận đơn+Barcode+QR và Người nhận luôn hiển thị, không tắt được — giống Hàng hoá.",
+            "AC4: Preview hiện đúng barcode+QR, mã mẫu dạng 247EX... (không phải SPX...).",
+            "AC5: Nhãn toggle là \"Tự động in khi đại lý đẩy đơn qua 247\" (không phải \"khi tạo đơn\").",
+            "AC6: Cấu hình độc lập hoàn toàn với sub-tab Hàng hoá."
+          ],
+          "notes": [
+            "Đã tách thành các story con nhỏ hơn: SHOP-ORDER-15 (khổ giấy, dùng chung), SHOP-ORDER-16 (tự động in), SHOP-ORDER-17 (barcode+QR), SHOP-ORDER-18 (preview), SHOP-ORDER-20 (checklist Thư tài liệu) — story này giữ vai trò tổng quan + lịch sử quyết định.",
+            "Lịch sử quyết định (đổi hướng 2 lần): (1) ban đầu giống Hàng hoá có barcode/QR ngay lúc tạo đơn — sai vì chưa có mã vận đơn thật; (2) đổi sang \"Phiếu giao nhận\" không barcode/QR; (3) quyết định cuối: bỏ phiếu giao nhận, quay lại cấu trúc như Hàng hoá nhưng gắn điều kiện thời điểm rõ ràng.",
+            "Ví dụ cụ thể của việc verify field theo đúng code thật (CreateLetterDrawer) trước khi thiết kế UI, tránh suy diễn cảm tính.",
+            "Liên quan trực tiếp luồng dispatch bên Agency Admin (dispatchOrderToCarrier()) — nơi thật sự sinh mã vận đơn 247Express, story này chỉ dừng ở phía Web Shop."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-15",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Chọn khổ giấy in",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn chọn đúng khổ giấy khớp với máy in đang dùng, để phiếu in ra không bị lệch/cắt chữ.",
+          "userFlow": [
+            "Ở tab \"In đơn hàng\" (cả 2 sub-tab), thấy mục \"Khổ giấy in\" với 3 nút pill",
+            "Bấm 1 nút để chọn — nút đang chọn đổi nền xanh đậm, chữ trắng",
+            "Áp dụng ngay cho \"Xem trước phiếu in\""
+          ],
+          "systemFlow": [
+            "PAPER_SIZES: A5, 52x70 (\"52 x 70 mm\"), 80x80 (\"80 x 80 mm\")",
+            "PaperSizePicker({value, onChange}) — 3 button pill, nút chọn nền #1E4C7A chữ trắng, còn lại nền #F3F4F6 chữ #4B5563",
+            "Dùng chung component cho cả 2 sub-tab, mỗi tab giữ state paperSize riêng (goodsPaperSize/letterPaperSize)",
+            "PAPER_PREVIEW_WIDTH map paperSize → độ rộng preview (A5=420px, 52x70=200px, 80x80=280px)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hiện đúng 3 nút In khổ A5 / In khổ 52 x 70 mm / In khổ 80 x 80 mm.",
+            "AC2: Nút chọn nền #1E4C7A chữ trắng, còn lại nền #F3F4F6 chữ #4B5563.",
+            "AC3: Chỉ 1 lựa chọn tại 1 thời điểm.",
+            "AC4: Mặc định chọn 80x80mm khi mở tab lần đầu.",
+            "AC5: Đổi khổ giấy ở 1 sub-tab không ảnh hưởng sub-tab kia."
+          ],
+          "notes": [
+            "Tách từ SHOP-ORDER-13 và SHOP-ORDER-14 theo yêu cầu trực tiếp.",
+            "Ban đầu dùng dropdown select với 4 khổ khác (K80/A6/A5/A4) — đổi hoàn toàn sang 3 khổ + pill button theo ảnh tham khảo người dùng gửi."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-16",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Tự động in vận đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn hệ thống tự mở phiếu in ngay khi vận đơn có thể in được, để không phải quay lại danh sách đơn tìm và in tay từng đơn.",
+          "userFlow": [
+            "Mục \"In vận đơn\" có toggle \"Tự động in...\"",
+            "Hàng hoá: bật → tự mở phiếu in ngay khi tạo đơn thành công",
+            "Thư tài liệu: bật → tự mở phiếu in ngay khi đơn chuyển sang trạng thái đã dispatch qua 247Express"
+          ],
+          "systemFlow": [
+            "State riêng goodsAutoPrint/letterAutoPrint, mặc định true cho cả 2",
+            "Nhãn toggle đổi theo loại đơn — Hàng hoá: \"Tự động in khi tạo đơn\"; Thư tài liệu: \"Tự động in khi đại lý đẩy đơn qua 247\"",
+            "Chỉ là preference UI, chưa nối với hành động in thật hay sự kiện tạo đơn/dispatch thật"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Toggle mặc định Bật khi mở tab lần đầu, cho cả 2 sub-tab.",
+            "AC2: Nhãn/mô tả khác nhau đúng theo loại đơn.",
+            "AC3: Bật/tắt ở 1 sub-tab không ảnh hưởng sub-tab kia."
+          ],
+          "notes": [
+            "Tách từ SHOP-ORDER-13 và SHOP-ORDER-14.",
+            "Gap còn lại: chưa có hành động in thật nào được thực thi — cần làm riêng khi có yêu cầu build in thật."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-17",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Mã vận đơn — Barcode + QR code",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn phiếu in có cả barcode và QR code cùng mã vận đơn, để phù hợp với nhiều loại máy quét khác nhau khi giao hàng.",
+          "userFlow": [
+            "\"Mã vận đơn + Barcode + QR code\" luôn tick, không tắt được",
+            "Xem preview thấy 1 barcode và 1 QR đặt cạnh nhau, cùng 1 mã vận đơn"
+          ],
+          "systemFlow": [
+            "Barcode mô phỏng: dãy barcodeBars render div đen cạnh nhau — chỉ minh hoạ, không quét được",
+            "QR mô phỏng: lưới 9x9, 3 góc là finder pattern, phần còn lại hoa văn cố định theo công thức — không phải QR thật",
+            "Mã vận đơn khác theo loại đơn: SPX... (Hàng hoá, có thật ngay lúc tạo đơn) vs 247EX... (Thư tài liệu, chỉ có thật sau dispatch)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Mục Barcode+QR luôn tick, click không tắt được, nhãn Luôn hiển thị.",
+            "AC2: Preview hiện đúng 1 barcode + 1 QR cạnh nhau.",
+            "AC3: QR mô phỏng có đúng 3 góc finder pattern.",
+            "AC4: Mã vận đơn đúng theo loại đơn (SPX... vs 247EX...)."
+          ],
+          "notes": [
+            "Tách từ SHOP-ORDER-13 và SHOP-ORDER-14.",
+            "QR được thêm sau khi người dùng yêu cầu trực tiếp — trước đó phiếu in chỉ có barcode.",
+            "Chỉ là hình minh hoạ, không tạo barcode/QR thật quét được."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-18",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Xem trước phiếu in",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn xem trước chính xác phiếu in sẽ trông như thế nào trước khi in thật, để chỉnh đúng cấu hình mà không phải in thử nhiều lần tốn giấy.",
+          "userFlow": [
+            "Cấu hình khổ giấy và tick/bỏ tick thông tin hiển thị",
+            "Xem ngay khung preview phía dưới — cập nhật tức thì",
+            "Preview dùng dữ liệu mẫu cố định, có ghi rõ chú thích"
+          ],
+          "systemFlow": [
+            "Khung preview width = PAPER_PREVIEW_WIDTH[paperSize], nền trắng trong khung nền xám",
+            "Nội dung render theo đúng thứ tự thật của phiếu in, mỗi dòng bind theo state checkbox tương ứng",
+            "Không debounce — mọi thay đổi state re-render ngay",
+            "Font monospace mô phỏng cảm giác giấy in nhiệt"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Preview hiện ngay khi vào tab.",
+            "AC2: Tick/bỏ tick → dòng tương ứng hiện/ẩn ngay lập tức.",
+            "AC3: Đổi khổ giấy → độ rộng khung đổi ngay.",
+            "AC4: Chuyển sub-tab → preview đúng dữ liệu mẫu/field tương ứng loại đơn.",
+            "AC5: Có chú thích rõ đây là dữ liệu mẫu."
+          ],
+          "notes": [
+            "Tách từ SHOP-ORDER-13 và SHOP-ORDER-14.",
+            "Không render ra file/hình in/export được — chỉ mô phỏng trực quan trong UI."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-19",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Thông tin hiển thị trên phiếu in (Hàng hoá)",
+          "status": "draft",
+          "userStory": "Là chủ shop gửi đơn Hàng hoá, tôi muốn chọn đúng những thông tin cần in lên phiếu vận đơn, để phiếu đủ dùng cho cả đóng gói, giao hàng và thu tiền mà không in dư thông tin không cần.",
+          "userFlow": [
+            "Thấy danh sách 11 mục trong \"Thông tin hiển thị trên phiếu in\"",
+            "2 mục đầu luôn tick, không tắt được",
+            "Tick/bỏ tick 9 mục còn lại theo nhu cầu"
+          ],
+          "systemFlow": [
+            "Luôn hiển thị: Mã vận đơn+Barcode+QR, Người nhận",
+            "Tick được (mặc định on): Người gửi, Sản phẩm, Khối lượng, Kích thước, COD, Phí ship, Ghi chú; (mặc định off): Mã đơn shop, Tên/logo shop",
+            "Mỗi mục 1 state boolean riêng (goodsShowSender...), độc lập với bộ state Thư tài liệu"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hiện đúng 11 mục theo đúng thứ tự.",
+            "AC2: 2 mục đầu luôn tick, không đổi được.",
+            "AC3: Mặc định đúng theo mô tả.",
+            "AC4: Tick/bỏ tick → phản ánh ngay trong preview."
+          ],
+          "notes": [
+            "Tách từ SHOP-ORDER-13 theo yêu cầu trực tiếp \"hiển thị đầy đủ thông tin trên 1 đơn hàng\" — bản đầu chỉ có 5 mục.",
+            "Đối chứng với SHOP-ORDER-20 để thấy khác biệt: Thư tài liệu không có COD và Kích thước."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-20",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Thông tin hiển thị trên phiếu in (Thư tài liệu)",
+          "status": "draft",
+          "userStory": "Là chủ shop gửi đơn Thư tài liệu, tôi muốn chọn đúng những thông tin cần in lên vận đơn thật (sau khi đại lý đã dispatch qua 247Express), không bị lẫn field chỉ áp dụng cho đơn Hàng hoá.",
+          "userFlow": [
+            "Thấy danh sách 9 mục (ít hơn Hàng hoá 2 mục)",
+            "2 mục đầu luôn tick, không tắt được — giống Hàng hoá",
+            "Tick/bỏ tick 7 mục còn lại"
+          ],
+          "systemFlow": [
+            "Khác Hàng hoá ở đúng 2 điểm — bỏ hẳn, không phải ẩn: không có COD (cod hardcode 0), không có Kích thước (không có field kích thước trong CreateLetterDrawer)",
+            "9 mục còn lại với mặc định riêng: Người gửi/Nội dung thư/Phí ship/Ghi chú = on; Khối lượng/Mã đơn shop/Tên logo shop = off",
+            "State riêng (letterShowSender...), độc lập với Hàng hoá",
+            "Chỉ có ý nghĩa SAU KHI đại lý đã dispatch qua 247Express"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Hiện đúng 9 mục, KHÔNG có COD và Kích thước.",
+            "AC2: 2 mục đầu luôn tick.",
+            "AC3: Mặc định đúng theo mô tả (khác Hàng hoá ở Khối lượng).",
+            "AC4: Tick/bỏ tick → phản ánh ngay trong preview."
+          ],
+          "notes": [
+            "Tách từ SHOP-ORDER-14.",
+            "2 field bị loại đã verify trực tiếp trong code CreateLetterDrawer, không suy diễn cảm tính."
           ]
         }
       ]

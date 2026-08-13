@@ -17,6 +17,15 @@
 | ID | Story | Status |
 |----|-------|--------|
 | WS-ORDER-1 | [Cài đặt đơn hàng mặc định](orders/cai-dat-don-hang-mac-dinh.md) | draft |
+| SHOP-ORDER-12 | [Cài đặt đơn hàng - Thông tin mặc định: tách theo loại đơn](orders/cai-dat-don-hang-mac-dinh-theo-loai-don.md) | draft |
+| SHOP-ORDER-13 | [Cài đặt đơn hàng - In đơn hàng: Hàng hoá (tổng quan)](orders/in-don-hang-hang-hoa.md) | draft |
+| SHOP-ORDER-14 | [Cài đặt đơn hàng - In đơn hàng: Thư tài liệu chỉ in sau khi dispatch qua 247 (tổng quan)](orders/in-don-hang-thu-tai-lieu.md) | draft |
+| SHOP-ORDER-15 | [In đơn hàng: Chọn khổ giấy in](orders/in-don-hang-chon-kho-giay.md) | draft |
+| SHOP-ORDER-16 | [In đơn hàng: Tự động in vận đơn](orders/in-don-hang-tu-dong-in.md) | draft |
+| SHOP-ORDER-17 | [In đơn hàng: Mã vận đơn — Barcode + QR code](orders/in-don-hang-barcode-qr.md) | draft |
+| SHOP-ORDER-18 | [In đơn hàng: Xem trước phiếu in](orders/in-don-hang-xem-truoc-phieu-in.md) | draft |
+| SHOP-ORDER-19 | [In đơn hàng: Thông tin hiển thị trên phiếu in (Hàng hoá)](orders/in-don-hang-thong-tin-hien-thi-hang-hoa.md) | draft |
+| SHOP-ORDER-20 | [In đơn hàng: Thông tin hiển thị trên phiếu in (Thư tài liệu)](orders/in-don-hang-thong-tin-hien-thi-thu.md) | draft |
 | SHOP-ORDER-5 | [Danh sách đơn hàng: Thêm phân loại hàng](orders/danh-sach-don-hang-them-phan-loai-hang.md) | draft |
 | SHOP-ORDER-6 | [Chi tiết: Banner trạng thái đơn thư đang chờ đại lý](orders/chi-tiet-don-thu-trang-thai-cho-dai-ly.md) | draft |
 | SHOP-ORDER-7 | [Chi tiết: Huỷ đơn và Cập nhật thông tin đơn](orders/chi-tiet-huy-cap-nhat-don-hang.md) | draft |

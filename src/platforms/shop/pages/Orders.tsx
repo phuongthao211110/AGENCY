@@ -52,7 +52,7 @@ const PROVINCES = [
 // "Cho thử hàng" bị bỏ theo yêu cầu — 247Express Thư/tài liệu không hỗ trợ cho thử.
 const VIEW_GOODS_OPTIONS: { value: 'none' | 'view_no_try'; label: string }[] = [
   { value: 'none',         label: 'Không cho xem hàng' },
-  { value: 'view_no_try',  label: 'Cho xem hàng không thử' },
+  { value: 'view_no_try',  label: 'Cho xem hàng' },
 ]
 
 // Dùng để ước lượng vùng cho 247Express (không có from/to như GHN, tính theo miền)
@@ -151,6 +151,9 @@ function IcSettings() {
 function IcArrowReturn() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 010 8h-1"/></svg>
 }
+function IcMail() {
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={IC} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l8.4 6a1 1 0 001.2 0L21 7"/></svg>
+}
 
 // ── Checkbox (blue when checked – per Figma design tokens) ───
 function CheckboxBlue({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -184,16 +187,83 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
 }
 
 // ── OrderSettingsModal ────────────────────────────────────────
+const PAPER_SIZES = [
+  { value: 'A5', label: 'A5' },
+  { value: '52x70', label: '52 x 70 mm' },
+  { value: '80x80', label: '80 x 80 mm' },
+]
+const PAPER_PREVIEW_WIDTH: Record<string, number> = { A5: 420, '52x70': 200, '80x80': 280 }
+
+function PaperSizePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      {PAPER_SIZES.map(p => {
+        const selected = value === p.value
+        return (
+          <button
+            key={p.value}
+            onClick={() => onChange(p.value)}
+            style={{
+              padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer',
+              background: selected ? '#1E4C7A' : '#F3F4F6',
+              color: selected ? '#fff' : '#4B5563',
+              fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap',
+            }}
+          >
+            In khổ {p.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function OrderSettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<'default' | 'pickup' | 'print'>('default')
-  const [weightDefault, setWeightDefault] = useState(false)
-  const [sizeDefault, setSizeDefault] = useState(false)
-  const [settingsDeclare, setSettingsDeclare] = useState(false)
-  const [settingsPartial, setSettingsPartial] = useState(false)
-  const [settingsCollectFail, setSettingsCollectFail] = useState(false)
-  const [orderNote, setOrderNote] = useState('')
-  const [autoRedeliver, setAutoRedeliver] = useState(false)
-  const [collectShipFee, setCollectShipFee] = useState(0)
+
+  // Thông tin mặc định — 2 tab: Hàng hoá / Thư tài liệu. Field của tab Thư tài liệu bám sát
+  // đúng field THẬT có trong CreateLetterDrawer (luồng "Gửi thư, tài liệu") — KHÔNG chỉ là bản
+  // rút gọn của Hàng hoá, vì luồng tạo đơn Thư thực tế không có: Ca lấy hàng (điểm lấy hàng suy
+  // ra từ hub 247Express, không cho chọn ca), Kích thước (hardcode "10x10x10cm", không có field
+  // nhập), Khai giá/Giao 1 phần/Giao thất bại thu tiền (hiện dòng phí nhưng feeInsurance/
+  // feePartial/feeDeliveryFail/feeCod đều hardcode 0, không có checkbox bật/tắt), Phí ship do
+  // ai trả + Thu ship khách hàng (cod: 0 hardcode, phí ship auto tính theo dịch vụ 247Express rẻ
+  // nhất, shop không tự chọn). Field thật có: Khối lượng, Giá trị hàng (input số, không phải
+  // toggle), Nội dung thư/tài liệu (thay cho "Ghi chú đơn hàng"), Ghi chú xem hàng.
+  const [defaultTab, setDefaultTab] = useState<'goods' | 'letter'>('goods')
+  const [goodsWeightDefault, setGoodsWeightDefault] = useState(false)
+  const [goodsSizeDefault, setGoodsSizeDefault] = useState(false)
+  const [goodsDeclare, setGoodsDeclare] = useState(false)
+  const [goodsPartial, setGoodsPartial] = useState(false)
+  const [goodsCollectFail, setGoodsCollectFail] = useState(false)
+  const [goodsOrderNote, setGoodsOrderNote] = useState('')
+  const [goodsAutoRedeliver, setGoodsAutoRedeliver] = useState(false)
+  const [goodsCollectShipFee, setGoodsCollectShipFee] = useState(0)
+  const [letterWeightDefault, setLetterWeightDefault] = useState(false)
+  const [letterContentDefault, setLetterContentDefault] = useState('')
+
+  // In đơn hàng — 2 tab: Hàng hoá / Thư tài liệu
+  const [printTab, setPrintTab] = useState<'goods' | 'letter'>('goods')
+  const [goodsAutoPrint, setGoodsAutoPrint] = useState(true)
+  const [goodsPaperSize, setGoodsPaperSize] = useState('80x80')
+  const [goodsShowSender, setGoodsShowSender] = useState(true)
+  const [goodsShowProduct, setGoodsShowProduct] = useState(true)
+  const [goodsShowWeight, setGoodsShowWeight] = useState(true)
+  const [goodsShowSize, setGoodsShowSize] = useState(true)
+  const [goodsShowCOD, setGoodsShowCOD] = useState(true)
+  const [goodsShowShipFee, setGoodsShowShipFee] = useState(true)
+  const [goodsShowNote, setGoodsShowNote] = useState(true)
+  const [goodsShowShopCode, setGoodsShowShopCode] = useState(false)
+  const [goodsShowShopLogo, setGoodsShowShopLogo] = useState(false)
+  const [letterAutoPrint, setLetterAutoPrint] = useState(true)
+  const [letterPaperSize, setLetterPaperSize] = useState('80x80')
+  const [letterShowSender, setLetterShowSender] = useState(true)
+  const [letterShowProduct, setLetterShowProduct] = useState(true)
+  const [letterShowWeight, setLetterShowWeight] = useState(false)
+  const [letterShowShipFee, setLetterShowShipFee] = useState(true)
+  const [letterShowNote, setLetterShowNote] = useState(true)
+  const [letterShowShopCode, setLetterShowShopCode] = useState(false)
+  const [letterShowShopLogo, setLetterShowShopLogo] = useState(false)
 
   if (!open) return null
 
@@ -218,6 +288,417 @@ function OrderSettingsModal({ open, onClose }: { open: boolean; onClose: () => v
         </div>
         {control}
       </div>
+    )
+  }
+
+  function DefaultInfoSettings({
+    weightDefault, setWeightDefault, sizeDefault, setSizeDefault,
+    declareValue, setDeclareValue, partial, setPartial, collectFail, setCollectFail,
+    orderNote, setOrderNote, autoRedeliver, setAutoRedeliver, collectShipFee, setCollectShipFee,
+  }: {
+    weightDefault: boolean; setWeightDefault: (v: boolean) => void
+    sizeDefault: boolean; setSizeDefault: (v: boolean) => void
+    declareValue: boolean; setDeclareValue: (v: boolean) => void
+    partial: boolean; setPartial: (v: boolean) => void
+    collectFail: boolean; setCollectFail: (v: boolean) => void
+    orderNote: string; setOrderNote: (v: string) => void
+    autoRedeliver: boolean; setAutoRedeliver: (v: boolean) => void
+    collectShipFee: number; setCollectShipFee: (v: number) => void
+  }) {
+    return (
+      <>
+        <SectionCard icon={<IcStore />} title="Bên gửi">
+          <SettingRow label="Ca lấy hàng" desc="Thiết lập ca lấy hàng mặc định khi tạo đơn" control={<SelectCtrl value="Tự chọn ca lấy hàng sau" />} />
+        </SectionCard>
+        <SectionCard icon={<IcCube />} title="Sản phẩm">
+          <SettingRow label="Khối lượng đơn hàng" desc="Thiết lập khối lượng đơn hàng mặc định khi tạo đơn" control={<Toggle on={weightDefault} onChange={() => setWeightDefault(!weightDefault)} />} />
+          <SettingRow label="Kích thước đơn hàng" desc="Thiết lập kích thước đơn hàng mặc định khi tạo đơn" control={<Toggle on={sizeDefault} onChange={() => setSizeDefault(!sizeDefault)} />} />
+        </SectionCard>
+        <SectionCard icon={<IcClipboard />} title="Thông tin đơn hàng">
+          <SettingRow label="Khai giá trị hàng" desc="Thiết lập khai giá mặc định khi tạo đơn" control={<Toggle on={declareValue} onChange={() => setDeclareValue(!declareValue)} />} />
+          <SettingRow label="Giao / Trả 1 phần" desc="Thiết lập giao / trả 1 phần mặc định khi tạo đơn" control={<Toggle on={partial} onChange={() => setPartial(!partial)} />} />
+          <SettingRow label="Giao thất bại thu tiền" desc="Giao thất bại thu tiền giúp khách hàng thu thêm khoản phụ phí cho shop khi người nhận không nhận hàng. Khoản phí này Chotdon.AI không cam đoan sẽ thu được 100% mà phụ thuộc vào trao đổi thống nhất giữa shop và bên mua" control={<Toggle on={collectFail} onChange={() => setCollectFail(!collectFail)} />} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6, paddingBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Ghi chú đơn hàng</span>
+            <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px' }}>Thiết lập ghi chú đơn hàng mặc định khi tạo đơn</span>
+            <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px' }}>
+              <textarea value={orderNote} onChange={e => setOrderNote(e.target.value)} placeholder="Ghi chú đơn hàng" style={{ width: '100%', minHeight: 80, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+            </div>
+          </div>
+          <SettingRow label="Ghi chú xem hàng" desc="Thiết lập ghi chú đơn hàng mặc định khi tạo đơn" control={<SelectCtrl value="Cho xem hàng không thử" />} />
+          <SettingRow label="Tự động yêu cầu giao lại" desc='Khi đơn hàng giao không thành công hoàn hàng với các lý do: "Không liên lạc được", "Khách không có nhà" sẽ tự động yêu cầu nhà vận chuyển giao hàng lại' control={<Toggle on={autoRedeliver} onChange={() => setAutoRedeliver(!autoRedeliver)} />} />
+        </SectionCard>
+        <SectionCard icon={<IcTruck />} title="Dịch vụ">
+          <SettingRow label="Phí ship" desc="Thiết lập người trả phí ship mặc định khi tạo đơn" control={<SelectCtrl value="Khách trả phí shop" />} />
+          <SettingRow label="Thu ship khách hàng" desc="Thiết lập thu ship khách hàng mặc định khi tạo đơn" control={
+            <div style={{ width: 240, flexShrink: 0, border: `1px solid ${C_BORDER}`, borderRadius: 6, height: 32, display: 'flex', alignItems: 'center', paddingLeft: 12, overflow: 'hidden' }}>
+              <input type="number" value={collectShipFee} onChange={e => setCollectShipFee(parseFloat(e.target.value) || 0)} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }} />
+              <div style={{ background: '#F3F4F6', borderLeft: `1px solid ${C_BORDER}`, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>đ</span>
+              </div>
+            </div>
+          } />
+        </SectionCard>
+      </>
+    )
+  }
+
+  // Field bám sát đúng luồng "Gửi thư, tài liệu" thật (CreateLetterDrawer) — không có Ca lấy
+  // hàng/Kích thước/Khai giá-Giao 1 phần-Giao thất bại (checkbox)/Phí ship-Thu ship khách hàng,
+  // xem giải thích chi tiết ở comment khai báo state phía trên.
+  function LetterDefaultSettings({
+    weightDefault, setWeightDefault, contentDefault, setContentDefault,
+  }: {
+    weightDefault: boolean; setWeightDefault: (v: boolean) => void
+    contentDefault: string; setContentDefault: (v: string) => void
+  }) {
+    return (
+      <>
+        <SectionCard icon={<IcCube />} title="Sản phẩm">
+          <SettingRow label="Khối lượng đơn hàng" desc="Thiết lập khối lượng đơn hàng mặc định khi tạo đơn thư, tài liệu" control={<Toggle on={weightDefault} onChange={() => setWeightDefault(!weightDefault)} />} />
+        </SectionCard>
+        <SectionCard icon={<IcClipboard />} title="Thông tin thư, tài liệu">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6, paddingBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Nội dung thư, tài liệu</span>
+            <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px' }}>Thiết lập nội dung thư, tài liệu mặc định khi tạo đơn</span>
+            <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px' }}>
+              <textarea value={contentDefault} onChange={e => setContentDefault(e.target.value)} placeholder="Nội dung thư, tài liệu" style={{ width: '100%', minHeight: 80, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+            </div>
+          </div>
+          <SettingRow label="Ghi chú xem hàng" desc="Thiết lập ghi chú xem hàng mặc định khi tạo đơn" control={<SelectCtrl value="Cho xem hàng" />} />
+        </SectionCard>
+      </>
+    )
+  }
+
+  // Chỉ dùng cho đơn Hàng hoá — GHN, shop tự đóng gói và dán vận đơn khi gửi hàng, đã có mã vận
+  // đơn thật ngay lúc tạo đơn nên in barcode/QR là hợp lý. Đơn Thư dùng LetterHandoverSettings
+  // riêng (xem bên dưới) vì KHÔNG có mã vận đơn thật ở giai đoạn này.
+  function PrintKindSettings({
+    autoPrint, setAutoPrint, paperSize, setPaperSize,
+    showSender, setShowSender, showProduct, setShowProduct,
+    showWeight, setShowWeight, showSize, setShowSize,
+    showCOD, setShowCOD, showShipFee, setShowShipFee,
+    showNote, setShowNote, showShopCode, setShowShopCode,
+    showShopLogo, setShowShopLogo, desc,
+  }: {
+    autoPrint: boolean; setAutoPrint: (v: boolean) => void
+    paperSize: string; setPaperSize: (v: string) => void
+    showSender: boolean; setShowSender: (v: boolean) => void
+    showProduct: boolean; setShowProduct: (v: boolean) => void
+    showWeight: boolean; setShowWeight: (v: boolean) => void
+    showSize: boolean; setShowSize: (v: boolean) => void
+    showCOD: boolean; setShowCOD: (v: boolean) => void
+    showShipFee: boolean; setShowShipFee: (v: boolean) => void
+    showNote: boolean; setShowNote: (v: boolean) => void
+    showShopCode: boolean; setShowShopCode: (v: boolean) => void
+    showShopLogo: boolean; setShowShopLogo: (v: boolean) => void
+    desc: string
+  }) {
+    // Khổ giấy → độ rộng preview mô phỏng đúng tỷ lệ
+    const previewWidth = PAPER_PREVIEW_WIDTH[paperSize] ?? 280
+    const barcodeBars = [2,1,3,1,1,2,1,3,2,1,1,2,3,1,2,1,1,3,2,1,1,2,1,3,1,2]
+    // QR mô phỏng — lưới 9x9, 3 góc là "finder pattern" giống QR thật, phần còn lại là hoa văn
+    // giả cố định (không phải QR quét thật được) chỉ để minh hoạ layout phiếu in
+    const QR_SIZE = 9
+    const isFinder = (r: number, c: number) =>
+      (r < 3 && c < 3) || (r < 3 && c >= QR_SIZE - 3) || (r >= QR_SIZE - 3 && c < 3)
+    const qrCells = Array.from({ length: QR_SIZE * QR_SIZE }, (_, i) => {
+      const r = Math.floor(i / QR_SIZE), c = i % QR_SIZE
+      if (isFinder(r, c)) {
+        const inner = r % 3 === 1 && c % 3 === 1
+        return !inner
+      }
+      return (r * 5 + c * 3) % 4 === 0 || (r + c) % 3 === 0
+    })
+    return (
+      <>
+        <span style={{ fontSize: 13, color: '#6B7280', marginTop: -8, marginBottom: 4 }}>{desc}</span>
+        <SectionCard icon={<IcPrinter />} title="In vận đơn">
+          <SettingRow
+            label="Tự động in khi tạo đơn"
+            desc="Tự động mở phiếu in ngay sau khi tạo đơn thành công, không cần vào lại danh sách đơn để in."
+            control={<Toggle on={autoPrint} onChange={() => setAutoPrint(!autoPrint)} />}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 6, paddingBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khổ giấy in</span>
+            <PaperSizePicker value={paperSize} onChange={setPaperSize} />
+          </div>
+        </SectionCard>
+        <SectionCard icon={<IcClipboard />} title="Thông tin hiển thị trên phiếu in">
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginTop: -4 }}>
+            Đầy đủ thông tin của 1 đơn hàng — 2 mục đầu luôn có vì thiếu thì phiếu in không dùng được.
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked onChange={() => {}} />
+            <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Mã vận đơn + Barcode + QR code</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Luôn hiển thị</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked onChange={() => {}} />
+            <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Người nhận (tên, SĐT, địa chỉ)</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Luôn hiển thị</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showSender} onChange={() => setShowSender(!showSender)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Người gửi (tên, SĐT shop)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showProduct} onChange={() => setShowProduct(!showProduct)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Sản phẩm (tên, số lượng)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showWeight} onChange={() => setShowWeight(!showWeight)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khối lượng đơn hàng</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showSize} onChange={() => setShowSize(!showSize)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Kích thước đơn hàng</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showCOD} onChange={() => setShowCOD(!showCOD)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Tiền thu hộ (COD)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showShipFee} onChange={() => setShowShipFee(!showShipFee)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí ship</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showNote} onChange={() => setShowNote(!showNote)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Ghi chú đơn hàng</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showShopCode} onChange={() => setShowShopCode(!showShopCode)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Mã đơn shop (mã nội bộ riêng)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showShopLogo} onChange={() => setShowShopLogo(!showShopLogo)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Tên/logo shop</span>
+          </div>
+        </SectionCard>
+
+        {/* Xem trước phiếu in — phản ánh đúng khổ giấy + thông tin đã chọn ở trên, dùng
+            dữ liệu mẫu để minh hoạ, không phải preview của 1 đơn thật */}
+        <SectionCard icon={<IcReceipt />} title="Xem trước phiếu in">
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginTop: -4 }}>
+            Minh hoạ bằng dữ liệu mẫu — cập nhật theo đúng khổ giấy và thông tin bạn chọn ở trên.
+          </span>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0', background: '#F3F4F6', borderRadius: 8 }}>
+            <div style={{
+              width: previewWidth, background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+              padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'monospace',
+            }}>
+              {showShopLogo && (
+                <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY, paddingBottom: 4, borderBottom: `1px dashed ${C_BORDER}` }}>
+                  SHOP THỜI TRANG MINH ANH
+                </div>
+              )}
+              {/* Barcode + QR mô phỏng — cùng encode 1 mã vận đơn, phục vụ 2 kiểu máy quét khác nhau */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 1, height: 36 }}>
+                    {barcodeBars.map((w, i) => (
+                      <div key={i} style={{ width: w, background: '#111827' }} />
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 12, color: C_TEXT_PRIMARY, letterSpacing: 1 }}>SPX2024061200123</div>
+                </div>
+                <div
+                  title="Quét ra đúng mã vận đơn ở trên"
+                  style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: `repeat(${QR_SIZE}, 4px)`, gridTemplateRows: `repeat(${QR_SIZE}, 4px)`, background: '#fff', border: '1px solid #111827', padding: 2 }}
+                >
+                  {qrCells.map((filled, i) => (
+                    <div key={i} style={{ background: filled ? '#111827' : '#fff' }} />
+                  ))}
+                </div>
+              </div>
+              {showShopCode && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Mã đơn shop: DH-000123</div>}
+              <div style={{ height: 1, background: C_BORDER, margin: '2px 0' }} />
+              {showSender && (
+                <>
+                  <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Người gửi:</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Shop Thời Trang Minh Anh</div>
+                  <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>SĐT: 0901111111</div>
+                  <div style={{ height: 1, background: C_BORDER, margin: '2px 0' }} />
+                </>
+              )}
+              <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Người nhận:</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Nguyễn Văn An</div>
+              <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>SĐT: 0901234567</div>
+              <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>123 Thành Thái, Q10, TP.HCM</div>
+              <div style={{ height: 1, background: C_BORDER, margin: '2px 0' }} />
+              {showProduct && (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: C_TEXT_PRIMARY }}>Sản phẩm</div>
+                  <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>1. Áo thun nam basic - SL: 2</div>
+                </>
+              )}
+              {showWeight && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Khối lượng: 0.35kg</div>}
+              {showSize && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Kích thước: 20x15x10cm</div>}
+              {showCOD && <div style={{ fontSize: 12, fontWeight: 700, color: C_TEXT_PRIMARY }}>Thu hộ (COD): 250,000đ</div>}
+              {showShipFee && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Phí ship: 22,000đ</div>}
+              {showNote && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Ghi chú: Giao giờ hành chính</div>}
+            </div>
+          </div>
+        </SectionCard>
+      </>
+    )
+  }
+
+  // Đơn Thư — KHÔNG dùng mã vận đơn/barcode/QR, vì lúc shop tạo đơn hàng vẫn còn ở
+  // dispatchStatus 'pending_agency', carrierCode null — chưa có mã vận đơn 247Express thật (mã
+  // đó chỉ sinh khi đại lý dispatch). Đây là phiếu giao nhận NỘI BỘ giữa shop và đại lý, đại lý
+  // dùng để đối chiếu khi nhận hàng vật lý, không phải vận đơn để carrier quét.
+  // Đơn Thư — KHÔNG in được ngay lúc tạo đơn (dispatchStatus 'pending_agency', carrierCode null
+  // → chưa có mã vận đơn thật). Chỉ in được SAU KHI đại lý đã dispatch qua 247Express (carrierCode
+  // đổi thành '247EXPRESS'), lúc đó mới có mã vận đơn thật để in barcode/QR — cấu trúc giống hệt
+  // Hàng hoá, chỉ khác thời điểm dùng được và không có COD/Kích thước (không áp dụng cho Thư).
+  function LetterHandoverSettings({
+    autoPrint, setAutoPrint, paperSize, setPaperSize,
+    showSender, setShowSender, showProduct, setShowProduct,
+    showWeight, setShowWeight, showShipFee, setShowShipFee,
+    showNote, setShowNote, showShopCode, setShowShopCode,
+    showShopLogo, setShowShopLogo,
+  }: {
+    autoPrint: boolean; setAutoPrint: (v: boolean) => void
+    paperSize: string; setPaperSize: (v: string) => void
+    showSender: boolean; setShowSender: (v: boolean) => void
+    showProduct: boolean; setShowProduct: (v: boolean) => void
+    showWeight: boolean; setShowWeight: (v: boolean) => void
+    showShipFee: boolean; setShowShipFee: (v: boolean) => void
+    showNote: boolean; setShowNote: (v: boolean) => void
+    showShopCode: boolean; setShowShopCode: (v: boolean) => void
+    showShopLogo: boolean; setShowShopLogo: (v: boolean) => void
+  }) {
+    const previewWidth = PAPER_PREVIEW_WIDTH[paperSize] ?? 280
+    const barcodeBars = [2,1,3,1,1,2,1,3,2,1,1,2,3,1,2,1,1,3,2,1,1,2,1,3,1,2]
+    const QR_SIZE = 9
+    const isFinder = (r: number, c: number) =>
+      (r < 3 && c < 3) || (r < 3 && c >= QR_SIZE - 3) || (r >= QR_SIZE - 3 && c < 3)
+    const qrCells = Array.from({ length: QR_SIZE * QR_SIZE }, (_, i) => {
+      const r = Math.floor(i / QR_SIZE), c = i % QR_SIZE
+      if (isFinder(r, c)) return !(r % 3 === 1 && c % 3 === 1)
+      return (r * 5 + c * 3) % 4 === 0 || (r + c) % 3 === 0
+    })
+    return (
+      <>
+        <span style={{ fontSize: 13, color: '#6B7280', marginTop: -8, marginBottom: 4 }}>
+          Chỉ in được SAU KHI đại lý đã gửi đơn cho nhà vận chuyển — trước đó đơn chưa có mã vận
+          đơn thật (đại lý còn giữ hàng, chưa gửi) nên chưa có gì để in. Cấu hình dưới đây áp dụng
+          cho lúc in vận đơn thật, sau khi đại lý đã gửi hàng.
+        </span>
+        <SectionCard icon={<IcPrinter />} title="In vận đơn">
+          <SettingRow
+            label="Tự động in khi đại lý đã gửi hàng cho nhà vận chuyển"
+            desc="Tự động mở phiếu in ngay khi đơn chuyển sang trạng thái đã dispatch, không cần vào lại danh sách đơn để in."
+            control={<Toggle on={autoPrint} onChange={() => setAutoPrint(!autoPrint)} />}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 6, paddingBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khổ giấy in</span>
+            <PaperSizePicker value={paperSize} onChange={setPaperSize} />
+          </div>
+        </SectionCard>
+        <SectionCard icon={<IcClipboard />} title="Thông tin hiển thị trên phiếu in">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked onChange={() => {}} />
+            <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Mã vận đơn + Barcode + QR code</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Luôn hiển thị</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked onChange={() => {}} />
+            <span style={{ flex: 1, fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Người nhận (tên, SĐT, địa chỉ)</span>
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>Luôn hiển thị</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showSender} onChange={() => setShowSender(!showSender)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Người gửi (tên, SĐT shop)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showProduct} onChange={() => setShowProduct(!showProduct)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Nội dung thư, tài liệu</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showWeight} onChange={() => setShowWeight(!showWeight)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Khối lượng đơn hàng</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showShipFee} onChange={() => setShowShipFee(!showShipFee)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí ship</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showNote} onChange={() => setShowNote(!showNote)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Ghi chú đơn hàng</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showShopCode} onChange={() => setShowShopCode(!showShopCode)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Mã đơn shop (mã nội bộ riêng)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, paddingBottom: 6 }}>
+            <CheckboxBlue checked={showShopLogo} onChange={() => setShowShopLogo(!showShopLogo)} />
+            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Tên/logo shop</span>
+          </div>
+        </SectionCard>
+
+        <SectionCard icon={<IcReceipt />} title="Xem trước phiếu in">
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginTop: -4 }}>
+            Minh hoạ bằng dữ liệu mẫu ở trạng thái đã gửi hàng — mã vận đơn thật do nhà vận chuyển cấp lúc đại lý gửi.
+          </span>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0', background: '#F3F4F6', borderRadius: 8 }}>
+            <div style={{
+              width: previewWidth, background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+              padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'monospace',
+            }}>
+              {showShopLogo && (
+                <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY, paddingBottom: 4, borderBottom: `1px dashed ${C_BORDER}` }}>
+                  SHOP THỜI TRANG MINH ANH
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 1, height: 36 }}>
+                    {barcodeBars.map((w, i) => (
+                      <div key={i} style={{ width: w, background: '#111827' }} />
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 12, color: C_TEXT_PRIMARY, letterSpacing: 1 }}>VC00987654</div>
+                </div>
+                <div
+                  title="Quét ra đúng mã vận đơn ở trên"
+                  style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: `repeat(${QR_SIZE}, 4px)`, gridTemplateRows: `repeat(${QR_SIZE}, 4px)`, background: '#fff', border: '1px solid #111827', padding: 2 }}
+                >
+                  {qrCells.map((filled, i) => (
+                    <div key={i} style={{ background: filled ? '#111827' : '#fff' }} />
+                  ))}
+                </div>
+              </div>
+              {showShopCode && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Mã đơn shop: DH-000123</div>}
+              <div style={{ height: 1, background: C_BORDER, margin: '2px 0' }} />
+              {showSender && (
+                <>
+                  <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Người gửi:</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Shop Thời Trang Minh Anh</div>
+                  <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>SĐT: 0901111111</div>
+                  <div style={{ height: 1, background: C_BORDER, margin: '2px 0' }} />
+                </>
+              )}
+              <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Người nhận:</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>Nguyễn Văn An</div>
+              <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>SĐT: 0901234567</div>
+              <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>123 Thành Thái, Q10, TP.HCM</div>
+              <div style={{ height: 1, background: C_BORDER, margin: '2px 0' }} />
+              {showProduct && (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: C_TEXT_PRIMARY }}>Nội dung thư, tài liệu</div>
+                  <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Hợp đồng lao động</div>
+                </>
+              )}
+              {showWeight && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Khối lượng: 0.35kg</div>}
+              {showShipFee && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Phí ship: 22,000đ</div>}
+              {showNote && <div style={{ fontSize: 12, color: C_TEXT_PRIMARY }}>Ghi chú: Giao giờ hành chính</div>}
+            </div>
+          </div>
+        </SectionCard>
+      </>
     )
   }
 
@@ -266,44 +747,57 @@ function OrderSettingsModal({ open, onClose }: { open: boolean; onClose: () => v
           <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', background: '#fff' }}>
             {activeTab === 'default' && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ width: '100%', maxWidth: 1024, padding: '24px 80px', flexShrink: 0 }}>
+                <div style={{ width: '100%', maxWidth: 1024, padding: '24px 80px 0', flexShrink: 0 }}>
                   <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>Thông tin mặc định</span>
                 </div>
-                <div style={{ width: '100%', maxWidth: 1024, padding: '0 80px 80px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <SectionCard icon={<IcStore />} title="Bên gửi">
-                    <SettingRow label="Ca lấy hàng" desc="Thiết lập ca lấy hàng mặc định khi tạo đơn" control={<SelectCtrl value="Tự chọn ca lấy hàng sau" />} />
-                  </SectionCard>
-                  <SectionCard icon={<IcCube />} title="Sản phẩm">
-                    <SettingRow label="Khối lượng đơn hàng" desc="Thiết lập khối lượng đơn hàng mặc định khi tạo đơn" control={<Toggle on={weightDefault} onChange={() => setWeightDefault(v => !v)} />} />
-                    <SettingRow label="Kích thước đơn hàng" desc="Thiết lập kích thước đơn hàng mặc định khi tạo đơn" control={<Toggle on={sizeDefault} onChange={() => setSizeDefault(v => !v)} />} />
-                  </SectionCard>
-                  <SectionCard icon={<IcClipboard />} title="Thông tin đơn hàng">
-                    <SettingRow label="Khai giá trị hàng" desc="Thiết lập khai giá mặc định khi tạo đơn" control={<Toggle on={settingsDeclare} onChange={() => setSettingsDeclare(v => !v)} />} />
-                    <SettingRow label="Giao / Trả 1 phần" desc="Thiết lập giao / trả 1 phần mặc định khi tạo đơn" control={<Toggle on={settingsPartial} onChange={() => setSettingsPartial(v => !v)} />} />
-                    <SettingRow label="Giao thất bại thu tiền" desc="Giao thất bại thu tiền giúp khách hàng thu thêm khoản phụ phí cho shop khi người nhận không nhận hàng. Khoản phí này Chotdon.AI không cam đoan sẽ thu được 100% mà phụ thuộc vào trao đổi thống nhất giữa shop và bên mua" control={<Toggle on={settingsCollectFail} onChange={() => setSettingsCollectFail(v => !v)} />} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 6, paddingBottom: 6 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Ghi chú đơn hàng</span>
-                      <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px' }}>Thiết lập ghi chú đơn hàng mặc định khi tạo đơn</span>
-                      <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 12px' }}>
-                        <textarea value={orderNote} onChange={e => setOrderNote(e.target.value)} placeholder="Ghi chú đơn hàng" style={{ width: '100%', minHeight: 80, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+
+                {/* Sub-tab bar: Hàng hoá / Thư tài liệu — đơn Thư không có "Ca lấy hàng" */}
+                <div style={{ width: '100%', maxWidth: 1024, padding: '16px 80px 0', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 24, borderBottom: `1px solid ${C_BORDER}` }}>
+                    {([
+                      { key: 'goods', label: 'Hàng hoá', icon: <IcCube /> },
+                      { key: 'letter', label: 'Thư tài liệu', icon: <IcMail /> },
+                    ] as const).map(t => (
+                      <div
+                        key={t.key}
+                        onClick={() => setDefaultTab(t.key)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '10px 2px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                          color: defaultTab === t.key ? '#FF5200' : '#4B5563',
+                          borderBottom: defaultTab === t.key ? '2px solid #FF5200' : '2px solid transparent',
+                          marginBottom: -1,
+                        }}
+                      >
+                        {t.icon}
+                        {t.label}
                       </div>
-                    </div>
-                    <SettingRow label="Ghi chú xem hàng" desc="Thiết lập ghi chú đơn hàng mặc định khi tạo đơn" control={<SelectCtrl value="Cho xem hàng không thử" />} />
-                    <SettingRow label="Tự động yêu cầu giao lại" desc='Khi đơn hàng giao không thành công hoàn hàng với các lý do: "Không liên lạc được", "Khách không có nhà" sẽ tự động yêu cầu nhà vận chuyển giao hàng lại' control={<Toggle on={autoRedeliver} onChange={() => setAutoRedeliver(v => !v)} />} />
-                  </SectionCard>
-                  <SectionCard icon={<IcTruck />} title="Dịch vụ">
-                    <SettingRow label="Phí ship" desc="Thiết lập người trả phí ship mặc định khi tạo đơn" control={<SelectCtrl value="Khách trả phí shop" />} />
-                    <SettingRow label="Thu ship khách hàng" desc="Thiết lập thu ship khách hàng mặc định khi tạo đơn" control={
-                      <div style={{ width: 240, flexShrink: 0, border: `1px solid ${C_BORDER}`, borderRadius: 6, height: 32, display: 'flex', alignItems: 'center', paddingLeft: 12, overflow: 'hidden' }}>
-                        <input type="number" value={collectShipFee} onChange={e => setCollectShipFee(parseFloat(e.target.value) || 0)} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }} />
-                        <div style={{ background: '#F3F4F6', borderLeft: `1px solid ${C_BORDER}`, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>đ</span>
-                        </div>
-                      </div>
-                    } />
-                  </SectionCard>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ width: '100%', maxWidth: 1024, padding: '24px 80px 80px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {defaultTab === 'goods' && (
+                    <DefaultInfoSettings
+                      weightDefault={goodsWeightDefault} setWeightDefault={setGoodsWeightDefault}
+                      sizeDefault={goodsSizeDefault} setSizeDefault={setGoodsSizeDefault}
+                      declareValue={goodsDeclare} setDeclareValue={setGoodsDeclare}
+                      partial={goodsPartial} setPartial={setGoodsPartial}
+                      collectFail={goodsCollectFail} setCollectFail={setGoodsCollectFail}
+                      orderNote={goodsOrderNote} setOrderNote={setGoodsOrderNote}
+                      autoRedeliver={goodsAutoRedeliver} setAutoRedeliver={setGoodsAutoRedeliver}
+                      collectShipFee={goodsCollectShipFee} setCollectShipFee={setGoodsCollectShipFee}
+                    />
+                  )}
+                  {defaultTab === 'letter' && (
+                    <LetterDefaultSettings
+                      weightDefault={letterWeightDefault} setWeightDefault={setLetterWeightDefault}
+                      contentDefault={letterContentDefault} setContentDefault={setLetterContentDefault}
+                    />
+                  )}
+                  {/* Trả hàng — 1 địa điểm vật lý, dùng chung cho cả Hàng hoá và Thư tài liệu */}
                   <SectionCard icon={<IcArrowReturn />} title="Trả hàng">
-                    <SettingRow label="Địa chỉ trả hàng" desc="Khi đơn hàng giao không thành công, hoàn hàng đơn hàng sẽ được chuyển hoàn về địa chỉ mặc định này" control={<SelectCtrl value="Chọn địa chỉ lấy hàng làm địa chỉ trả hàng" flex1 />} />
+                    <SettingRow label="Địa chỉ trả hàng" desc="Khi đơn hàng giao không thành công, hoàn hàng đơn hàng sẽ được chuyển hoàn về địa chỉ mặc định này (áp dụng cho cả đơn Hàng hoá và Thư tài liệu)" control={<SelectCtrl value="Chọn địa chỉ lấy hàng làm địa chỉ trả hàng" flex1 />} />
                   </SectionCard>
                 </div>
               </div>
@@ -314,8 +808,67 @@ function OrderSettingsModal({ open, onClose }: { open: boolean; onClose: () => v
               </div>
             )}
             {activeTab === 'print' && (
-              <div style={{ padding: '40px 80px' }}>
-                <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>In đơn hàng</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: '100%', maxWidth: 1024, padding: '24px 80px 0', flexShrink: 0 }}>
+                  <span style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>In đơn hàng</span>
+                </div>
+
+                {/* Sub-tab bar: Hàng hoá / Thư tài liệu */}
+                <div style={{ width: '100%', maxWidth: 1024, padding: '16px 80px 0', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 24, borderBottom: `1px solid ${C_BORDER}` }}>
+                    {([
+                      { key: 'goods', label: 'Hàng hoá', icon: <IcCube /> },
+                      { key: 'letter', label: 'Thư tài liệu', icon: <IcMail /> },
+                    ] as const).map(t => (
+                      <div
+                        key={t.key}
+                        onClick={() => setPrintTab(t.key)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '10px 2px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                          color: printTab === t.key ? '#FF5200' : '#4B5563',
+                          borderBottom: printTab === t.key ? '2px solid #FF5200' : '2px solid transparent',
+                          marginBottom: -1,
+                        }}
+                      >
+                        {t.icon}
+                        {t.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ width: '100%', maxWidth: 1024, padding: '24px 80px 80px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {printTab === 'goods' && (
+                    <PrintKindSettings
+                      autoPrint={goodsAutoPrint} setAutoPrint={setGoodsAutoPrint}
+                      paperSize={goodsPaperSize} setPaperSize={setGoodsPaperSize}
+                      showSender={goodsShowSender} setShowSender={setGoodsShowSender}
+                      showProduct={goodsShowProduct} setShowProduct={setGoodsShowProduct}
+                      showWeight={goodsShowWeight} setShowWeight={setGoodsShowWeight}
+                      showSize={goodsShowSize} setShowSize={setGoodsShowSize}
+                      showCOD={goodsShowCOD} setShowCOD={setGoodsShowCOD}
+                      showShipFee={goodsShowShipFee} setShowShipFee={setGoodsShowShipFee}
+                      showNote={goodsShowNote} setShowNote={setGoodsShowNote}
+                      showShopCode={goodsShowShopCode} setShowShopCode={setGoodsShowShopCode}
+                      showShopLogo={goodsShowShopLogo} setShowShopLogo={setGoodsShowShopLogo}
+                      desc="Áp dụng cho đơn Hàng hoá gửi trực tiếp qua GHN — shop tự đóng gói và dán vận đơn khi gửi hàng."
+                    />
+                  )}
+                  {printTab === 'letter' && (
+                    <LetterHandoverSettings
+                      autoPrint={letterAutoPrint} setAutoPrint={setLetterAutoPrint}
+                      paperSize={letterPaperSize} setPaperSize={setLetterPaperSize}
+                      showSender={letterShowSender} setShowSender={setLetterShowSender}
+                      showProduct={letterShowProduct} setShowProduct={setLetterShowProduct}
+                      showWeight={letterShowWeight} setShowWeight={setLetterShowWeight}
+                      showShipFee={letterShowShipFee} setShowShipFee={setLetterShowShipFee}
+                      showNote={letterShowNote} setShowNote={setLetterShowNote}
+                      showShopCode={letterShowShopCode} setShowShopCode={setLetterShowShopCode}
+                      showShopLogo={letterShowShopLogo} setShowShopLogo={setLetterShowShopLogo}
+                    />
+                  )}
+                </div>
               </div>
             )}
           </div>

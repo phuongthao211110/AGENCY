@@ -142,8 +142,13 @@ không bị thay đổi.
 
 ## Notes
 
-- Prototype hiện tại: tab **Địa chỉ lấy hàng** và **In đơn hàng** chỉ hiển thị
-  tiêu đề placeholder, chưa có form — cần implement ở story tiếp theo
+- **⚠️ AC5 đã lỗi thời — cập nhật cấu trúc:** tab **Thông tin mặc định** không còn là 1 form
+  đơn nhất — đã tách thành 2 sub-tab **Hàng hoá / Thư tài liệu**, mỗi loại đơn có bộ giá trị
+  mặc định độc lập, xem chi tiết ở [SHOP-ORDER-12](./cai-dat-don-hang-mac-dinh-theo-loai-don.md).
+- **Tab In đơn hàng đã implement**, không còn là placeholder — tách 2 phần theo loại đơn:
+  - Hàng hoá: xem [SHOP-ORDER-13](./in-don-hang-hang-hoa.md)
+  - Thư tài liệu: xem [SHOP-ORDER-14](./in-don-hang-thu-tai-lieu.md)
+- Tab **Địa chỉ lấy hàng** vẫn chỉ là placeholder, chưa implement.
 - Cài đặt trong popup này chưa được persist (localStorage/API) ở prototype;
   production cần save per-shop-user
 - Nút mở popup đặt ở list page (không phải trong drawer tạo đơn) để tiện chỉnh
