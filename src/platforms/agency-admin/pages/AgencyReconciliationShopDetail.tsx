@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
-import { ArrowLeftOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, SearchOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import { getReconciliationItems } from '../../../mock-data/reconciliationLedger'
 import allSessions from '../../../mock-data/carrier-reconciliation.json'
@@ -95,6 +95,7 @@ function TCell({ children, width, flex = '0 0 auto', align = 'left', isHeader = 
 export default function AgencyReconciliationShopDetail() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [search, setSearch] = useState('')
 
   const session: ShopSession | undefined = location.state?.session
 
@@ -114,7 +115,11 @@ export default function AgencyReconciliationShopDetail() {
     it => it.sessionId === session.nvcSessionId && resolveShopId(it) === session.shopId
   )
 
-  const filteredItems = items
+  const filteredItems = items.filter(i => {
+    const q = search.trim().toLowerCase()
+    if (!q) return true
+    return i.orderCode.toLowerCase().includes(q) || (i.customerOrderCode ?? '').toLowerCase().includes(q)
+  })
 
   const totalCOD = items.filter(it => SUCCESS_STATUSES.includes(it.ghnStatus)).reduce((s, i) => s + i.systemCOD, 0)
   const totalFee = items.reduce((s, i) => s + i.systemFee, 0)
@@ -214,6 +219,22 @@ export default function AgencyReconciliationShopDetail() {
           <div style={cardStyle}>
             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 4 }}>Nhận về</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: '#16A34A' }}>{fmt(totalCOD - totalFee)}</div>
+          </div>
+        </div>
+
+        {/* Filter bar */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px 12px', flexShrink: 0 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', flex: 1, maxWidth: 320,
+            background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+          }}>
+            <SearchOutlined style={{ color: C_TEXT_SECONDARY, fontSize: 16, flexShrink: 0 }} />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Tìm theo mã đơn GHN hoặc mã đơn KH"
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent' }}
+            />
           </div>
         </div>
 

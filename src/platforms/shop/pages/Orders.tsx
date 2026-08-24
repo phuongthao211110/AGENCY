@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ConfigProvider } from 'antd'
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
+import { PlusOutlined, SearchOutlined, CloseOutlined, StopOutlined, PrinterOutlined, ArrowLeftOutlined, CopyOutlined, InboxOutlined, MailOutlined } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
 import allShops from '../../../mock-data/shops.json'
 import { loadOrders, addOrder, cancelOrder, updateOrder, type Order } from '../../../mock-data/orderStore'
@@ -24,6 +24,18 @@ const C_BG_HEADER      = '#F3F4F6'
 function isLetterReturnCase(o: Order): boolean {
   return o.sendKind === 'letter' && o.dispatchStatus === 'dispatched'
     && (o.status === 'returning' || o.status === 'cancelled' || o.status === 'failed')
+}
+
+// Chỉ cho huỷ đơn nhanh (nút trong bảng) ở 2 tab "Đơn nháp" và "Chờ xử lý" — cả 2 đều là
+// status 'pending' (Hàng hoá nháp chưa dispatch, hoặc Thư đang chờ đại lý chọn hub).
+function isCancellable(o: Order): boolean {
+  return o.status === 'pending'
+}
+
+// In đơn được khi đã có mã vận đơn thật: Hàng hoá có ngay lúc tạo (gửi trực tiếp GHN); Thư chỉ
+// có SAU KHI đại lý đã dispatch cho nhà vận chuyển (dispatchStatus đổi 'pending_agency' → 'dispatched').
+function isPrintable(o: Order): boolean {
+  return o.sendKind === 'goods' || o.dispatchStatus === 'dispatched'
 }
 
 // ── Fee calculation helpers ──────────────────────────────────
@@ -1068,6 +1080,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       weight: weightGram,
       cod,
       fee: totalShipping,
+      feePayer,
       status: 'pickup',
       createdAt: now.toISOString().split('T')[0],
       actionHistory: [],
@@ -1607,6 +1620,8 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
       weight: weightGram,
       cod: 0,
       fee: totalShipping,
+      // Đơn Thư không có toggle "ai trả ship" (không áp dụng COD/thu khách) — luôn Shop trả.
+      feePayer: 'sender',
       status: 'pending',
       createdAt: now.toISOString().split('T')[0],
       actionHistory: [],
@@ -2117,8 +2132,9 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
   const [draft, setDraft] = useState<OrderDraft | null>(null)
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [confirmingReturn, setConfirmingReturn] = useState(false)
+  const [printOpen, setPrintOpen] = useState(false)
 
-  useEffect(() => { if (order) { setActiveTab('info'); setEditMode(false); setDraft(null); setConfirmingCancel(false); setConfirmingReturn(false) } }, [order?.id])
+  useEffect(() => { if (order) { setActiveTab('info'); setEditMode(false); setDraft(null); setConfirmingCancel(false); setConfirmingReturn(false); setPrintOpen(false) } }, [order?.id])
 
   function startEdit() {
     if (!order) return
@@ -2278,9 +2294,32 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
 
         {/* ── Header ─────────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{order.trackingCode}</span>
-            <span style={{ fontSize: 14, color: '#4B5563', lineHeight: '20px', whiteSpace: 'nowrap' }}>Tạo lúc {order.createdAt}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', flexShrink: 0 }}>
+              <ArrowLeftOutlined style={{ fontSize: 18, color: C_TEXT_PRIMARY }} />
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', whiteSpace: 'nowrap' }}>{order.trackingCode}</span>
+                <CopyOutlined
+                  style={{ fontSize: 13, color: C_TEXT_SECONDARY, cursor: 'pointer' }}
+                  onClick={() => navigator.clipboard?.writeText(order.trackingCode)}
+                  title="Sao chép mã vận đơn"
+                />
+                <span style={{ color: C_BORDER }}>·</span>
+                <span style={{
+                  display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, whiteSpace: 'nowrap',
+                  background: order.sendKind === 'letter' ? '#EDE9FE' : '#FFF4ED',
+                  color: order.sendKind === 'letter' ? '#7C3AED' : C_ACTION,
+                }}>
+                  {order.sendKind === 'letter' ? <MailOutlined /> : <InboxOutlined />}
+                  {order.sendKind === 'letter' ? 'Thư' : 'Hàng hoá'}
+                </span>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: rowStatus(order).color, lineHeight: '18px', whiteSpace: 'nowrap' }}>
+                {rowStatus(order).label}
+              </span>
+            </div>
           </div>
           {/* Tab switcher */}
           <div style={{ display: 'flex', gap: 2, background: '#F3F4F6', borderRadius: 8, padding: 3, marginRight: 12, flexShrink: 0 }}>
@@ -2304,9 +2343,6 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
               </button>
             ))}
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
-            <IcX />
-          </button>
         </div>
         <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
 
@@ -2710,6 +2746,14 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
                     </>
                   ) : (
                     <>
+                      {isPrintable(order) && (
+                        <button
+                          onClick={() => setPrintOpen(true)}
+                          style={{ flex: 1, padding: '8px 12px', background: '#EFF6FF', border: `1px solid #BFDBFE`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1D4ED8', lineHeight: '20px' }}
+                        >
+                          In đơn hàng
+                        </button>
+                      )}
                       <button
                         onClick={() => setConfirmingCancel(true)}
                         style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
@@ -2735,6 +2779,10 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
                 </div>
               )}
             </div>
+
+            {printOpen && order && (
+              <PrintOrderModal orders={[order]} onClose={() => setPrintOpen(false)} />
+            )}
           </div>
         </div>}
 
@@ -2906,11 +2954,11 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
 }
 
 // ── Table row ─────────────────────────────────────────────────
-function TRow({ order, checked, onToggle, onSelect, onReturn, onCancel }: { order: Order; checked: boolean; onToggle: () => void; onSelect: () => void; onReturn?: () => void; onCancel?: () => void }) {
+function TRow({ order, checked, onToggle, onSelect, onReturn, onCancel, onPrint }: { order: Order; checked: boolean; onToggle: () => void; onSelect: () => void; onReturn?: () => void; onCancel?: () => void; onPrint?: () => void }) {
   const [hover, setHover] = useState(false)
   const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
   const weightKg = (order.weight / 1000).toFixed(1)
-  const feeType = parseInt(order.id.replace('ORD', '')) % 2 === 0 ? 'Shop trả' : 'Khách trả'
+  const feeType = order.feePayer === 'receiver' ? 'Khách trả' : 'Shop trả'
 
   return (
     <div
@@ -3011,6 +3059,14 @@ function TRow({ order, checked, onToggle, onSelect, onReturn, onCancel }: { orde
               style={{ marginTop: 4, padding: '2px 8px', background: '#FFF4ED', border: `1px solid #FECBA1`, borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C_ACTION, whiteSpace: 'nowrap', alignSelf: 'flex-start', lineHeight: '18px' }}
             >
               Hoàn hàng
+            </button>
+          )}
+          {onPrint && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onPrint() }}
+              style={{ marginTop: 4, padding: '2px 8px', background: '#EFF6FF', border: `1px solid #BFDBFE`, borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#1D4ED8', whiteSpace: 'nowrap', alignSelf: 'flex-start', lineHeight: '18px' }}
+            >
+              In đơn hàng
             </button>
           )}
           {onCancel && (
@@ -3125,6 +3181,13 @@ export default function ShopOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   // Live orders from store — refresh after drawer creates or cancels
   const [orders, setOrders] = useState<Order[]>(() => loadOrders().filter(o => o.shopId === 'SHP001'))
+  // Huỷ đơn — dùng chung 1 modal cho cả 2 lối vào: nút nhanh từng dòng (mảng 1 phần tử) và
+  // nút hàng loạt ở thanh "Đã chọn N đơn" (mảng nhiều phần tử) — giống pattern dispatchModal
+  // bên Agency Admin. Popup tách khỏi drawer chi tiết vì bảng không có chỗ cho banner inline.
+  const [cancelOrders, setCancelOrders] = useState<Order[] | null>(null)
+  // In đơn hàng — cùng pattern dùng chung 1 modal cho nút nhanh từng dòng (mảng 1 phần tử) và
+  // nút hàng loạt trên thanh "Đã chọn N" (mảng nhiều phần tử) như cancelOrders ở trên.
+  const [printOrders, setPrintOrders] = useState<Order[] | null>(null)
 
   function refreshOrders() {
     setOrders(loadOrders().filter(o => o.shopId === 'SHP001'))
@@ -3300,6 +3363,53 @@ export default function ShopOrders() {
           </div>
         </div>
 
+        {/* Thanh hành động hàng loạt — nổi cố định ở đáy màn hình, cùng bố cục với Agency Admin
+            (nút X + số lượng đã chọn bên trái, hành động hàng loạt bên phải). "Huỷ đơn" huỷ tất
+            cả đơn hợp lệ (đang ở Đơn nháp/Chờ xử lý) trong lựa chọn — đơn không hợp lệ (đã
+            dispatch/đang giao...) tự bị loại khỏi batch, không nằm trong lần huỷ này. */}
+        {selected.size > 0 && (() => {
+          const selectedOrders = orders.filter(o => selected.has(o.id))
+          const eligibleCancel = selectedOrders.filter(isCancellable)
+          const eligiblePrint = selectedOrders.filter(isPrintable)
+          return (
+          <div style={{
+            position: 'fixed', bottom: 0, left: 240, right: 0, zIndex: 250,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px 24px', background: '#111827', boxShadow: '0 -2px 12px rgba(0,0,0,0.15)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button
+                onClick={() => setSelected(new Set())}
+                style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.12)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+              >
+                <CloseOutlined style={{ fontSize: 13 }} />
+              </button>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Đã chọn {selected.size}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {eligiblePrint.length > 0 && (
+                <button
+                  onClick={() => setPrintOrders(eligiblePrint)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: '#1D4ED8', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}
+                >
+                  <PrinterOutlined style={{ fontSize: 15 }} />
+                  In đơn hàng
+                </button>
+              )}
+              {eligibleCancel.length > 0 && (
+                <button
+                  onClick={() => setCancelOrders(eligibleCancel)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(220,38,38,0.16)', border: '1px solid rgba(248,113,113,0.4)', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#F87171', whiteSpace: 'nowrap' }}
+                >
+                  <StopOutlined style={{ fontSize: 15 }} />
+                  Huỷ đơn
+                </button>
+              )}
+            </div>
+          </div>
+          )
+        })()}
+
         {/* Table */}
         <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
           <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
@@ -3314,7 +3424,8 @@ export default function ShopOrders() {
                 onToggle={() => toggleOne(order.id)}
                 onSelect={() => { setSelectedOrder(order as Order); setDetailOpen(true) }}
                 onReturn={() => { setSelectedOrder(order as Order); setDetailOpen(true) }}
-                onCancel={activeTab === 'pending_carrier' ? () => handleCancelOrder(order.id) : undefined}
+                onCancel={isCancellable(order as Order) ? () => setCancelOrders([order as Order]) : undefined}
+                onPrint={isPrintable(order as Order) ? () => setPrintOrders([order as Order]) : undefined}
               />
             ))}
             {paginated.length === 0 && (
@@ -3326,8 +3437,9 @@ export default function ShopOrders() {
           </div>
         </div>
 
-        {/* Pagination */}
-        <div style={{ borderTop: `1px solid ${C_BORDER}` }}>
+        {/* Pagination — chừa khoảng trống dưới khi thanh hành động hàng loạt đang nổi cố định
+            ở đáy màn hình, tránh bị che mất phần điều hướng trang. */}
+        <div style={{ borderTop: `1px solid ${C_BORDER}`, paddingBottom: selected.size > 0 ? 60 : 0 }}>
           <Pagination
             page={page}
             total={filtered.length}
@@ -3353,6 +3465,183 @@ export default function ShopOrders() {
           refreshOrders()
         }}
       />
+
+      {cancelOrders && (
+        <CancelOrderModal
+          orders={cancelOrders}
+          onClose={() => setCancelOrders(null)}
+          onConfirm={() => {
+            cancelOrders.forEach(o => handleCancelOrder(o.id))
+            setSelected(new Set())
+            setCancelOrders(null)
+          }}
+        />
+      )}
+
+      {printOrders && (
+        <PrintOrderModal
+          orders={printOrders}
+          onClose={() => setPrintOrders(null)}
+        />
+      )}
     </ConfigProvider>
+  )
+}
+
+// ── Popup xác nhận huỷ đơn — dùng chung cho cả nút nhanh từng dòng (1 phần tử) và nút
+// hàng loạt ở thanh "Đã chọn N đơn" (nhiều phần tử). Drawer chi tiết dùng banner inline riêng. ──
+function CancelOrderModal({ orders, onClose, onConfirm }: { orders: Order[]; onClose: () => void; onConfirm: () => void }) {
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 300 }}
+      />
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        background: '#fff', borderRadius: 8, padding: 24, zIndex: 301,
+        width: 400, boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+        display: 'flex', flexDirection: 'column', gap: 16,
+      }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', lineHeight: '24px' }}>
+          {orders.length === 1 ? 'Huỷ đơn hàng' : `Huỷ ${orders.length} đơn hàng`}
+        </div>
+        <div style={{ fontSize: 14, color: '#374151', lineHeight: '22px' }}>
+          {orders.length === 1 ? (
+            <>Bạn chắc chắn muốn huỷ đơn <span style={{ fontWeight: 700, color: '#3B82F6' }}>{orders[0].trackingCode}</span>? Thao tác này không thể hoàn tác.</>
+          ) : (
+            <>Bạn chắc chắn muốn huỷ <span style={{ fontWeight: 700, color: '#3B82F6' }}>{orders.length} đơn</span> đã chọn? Thao tác này không thể hoàn tác.</>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button
+            onClick={onClose}
+            style={{ padding: '8px 20px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#374151' }}
+          >
+            Không huỷ
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{ padding: '8px 20px', background: '#DC2626', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff' }}
+          >
+            {orders.length === 1 ? 'Xác nhận huỷ đơn' : `Xác nhận huỷ ${orders.length} đơn`}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Popup in đơn hàng thật — dùng chung cho nút nhanh từng dòng (1 phần tử) và nút hàng loạt
+// (nhiều phần tử). Render đúng dữ liệu THẬT của từng order (không phải mẫu như trong "Cài đặt
+// đơn hàng"). Cố ý KHÔNG đọc state khổ giấy/checklist đang cấu hình ở OrderSettingsModal (2 nơi
+// tách biệt, chưa nối persist) — dùng khổ giấy tự chọn riêng + đúng tập field THẬT có trên Order
+// (không bịa field "Kích thước"/"Ghi chú" vì Order không có field tương ứng). ──────────────────
+function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => void }) {
+  const [paperSize, setPaperSize] = useState('80x80')
+  const previewWidth = PAPER_PREVIEW_WIDTH[paperSize] ?? 280
+  const barcodeBars = [2,1,3,1,1,2,1,3,2,1,1,2,3,1,2,1,1,3,2,1,1,2,1,3,1,2]
+  const QR_SIZE = 9
+  const isFinder = (r: number, c: number) =>
+    (r < 3 && c < 3) || (r < 3 && c >= QR_SIZE - 3) || (r >= QR_SIZE - 3 && c < 3)
+  const qrCells = Array.from({ length: QR_SIZE * QR_SIZE }, (_, i) => {
+    const r = Math.floor(i / QR_SIZE), c = i % QR_SIZE
+    if (isFinder(r, c)) return !(r % 3 === 1 && c % 3 === 1)
+    return (r * 5 + c * 3) % 4 === 0 || (r + c) % 3 === 0
+  })
+
+  return (
+    <>
+      <style>{'@media print { body * { visibility: hidden; } #print-order-area, #print-order-area * { visibility: visible; } #print-order-area { position: fixed; inset: 0; } }'}</style>
+      <div
+        onClick={onClose}
+        className="no-print"
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300 }}
+      />
+      <div
+        className="no-print"
+        style={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          background: '#fff', borderRadius: 12, zIndex: 301,
+          width: 480, maxHeight: '85vh', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #E5E7EB', flexShrink: 0 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
+            {orders.length === 1 ? `In đơn hàng — ${orders[0].trackingCode}` : `In ${orders.length} đơn hàng`}
+          </span>
+          <span onClick={onClose} style={{ cursor: 'pointer', color: '#6B7280', fontSize: 14 }}>✕</span>
+        </div>
+
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Khổ giấy in</span>
+          <PaperSizePicker value={paperSize} onChange={setPaperSize} />
+        </div>
+
+        <div style={{ padding: '0 20px 20px', overflowY: 'auto', flex: 1 }}>
+          <div id="print-order-area" style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+            {orders.map(order => {
+              const isGoods = order.sendKind === 'goods'
+              const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
+              return (
+                <div
+                  key={order.id}
+                  style={{
+                    width: previewWidth, background: '#fff', border: '1px solid #E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                    padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'monospace',
+                  }}
+                >
+                  <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#111827', paddingBottom: 4, borderBottom: '1px dashed #E5E7EB' }}>
+                    {order.senderName}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 1, height: 36 }}>
+                        {barcodeBars.map((w, i) => <div key={i} style={{ width: w, background: '#111827' }} />)}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#111827', letterSpacing: 1 }}>{order.trackingCode}</div>
+                    </div>
+                    <div style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: `repeat(${QR_SIZE}, 4px)`, gridTemplateRows: `repeat(${QR_SIZE}, 4px)`, background: '#fff', border: '1px solid #111827', padding: 2 }}>
+                      {qrCells.map((filled, i) => <div key={i} style={{ background: filled ? '#111827' : '#fff' }} />)}
+                    </div>
+                  </div>
+                  <div style={{ height: 1, background: '#E5E7EB', margin: '2px 0' }} />
+                  <div style={{ fontSize: 12, color: '#111827' }}>Người gửi: <strong>{order.senderName}</strong> — {order.senderPhone}</div>
+                  <div style={{ height: 1, background: '#E5E7EB', margin: '2px 0' }} />
+                  <div style={{ fontSize: 12, color: '#111827' }}>Người nhận:</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{order.receiverName}</div>
+                  <div style={{ fontSize: 12, color: '#111827' }}>SĐT: {order.receiverPhone}</div>
+                  <div style={{ fontSize: 12, color: '#111827' }}>{order.receiverAddress}</div>
+                  <div style={{ height: 1, background: '#E5E7EB', margin: '2px 0' }} />
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{isGoods ? 'Sản phẩm' : 'Nội dung'}</div>
+                  <div style={{ fontSize: 12, color: '#111827' }}>{products[0]}</div>
+                  <div style={{ fontSize: 12, color: '#111827' }}>Khối lượng: {(order.weight / 1000).toFixed(2)}kg</div>
+                  {isGoods && order.cod > 0 && (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>Thu hộ (COD): {order.cod.toLocaleString()}đ</div>
+                  )}
+                  <div style={{ fontSize: 12, color: '#111827' }}>Phí ship: {order.fee.toLocaleString()}đ</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '16px 20px', borderTop: '1px solid #E5E7EB', flexShrink: 0 }}>
+          <button
+            onClick={onClose}
+            style={{ padding: '8px 20px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#374151' }}
+          >
+            Đóng
+          </button>
+          <button
+            onClick={() => window.print()}
+            style={{ padding: '8px 20px', background: '#FF5200', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff' }}
+          >
+            {orders.length > 1 ? `In ${orders.length} đơn` : 'In đơn hàng'}
+          </button>
+        </div>
+      </div>
+    </>
   )
 }

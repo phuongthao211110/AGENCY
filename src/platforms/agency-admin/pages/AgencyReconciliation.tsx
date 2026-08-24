@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import {
@@ -12,6 +12,8 @@ import {
   CloseOutlined,
   DeleteOutlined,
   WarningOutlined,
+  SearchOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import carrierSessionsData from '../../../mock-data/carrier-reconciliation.json'
@@ -85,6 +87,74 @@ const C_LINK           = '#3B82F6'
 const C_BORDER         = '#E5E7EB'
 const C_ACTION         = '#FF5200'
 const C_BG_HEADER      = '#F3F4F6'
+
+// ─── Date-range preset filter — cùng pattern với AgencyOrders.tsx/Shops.tsx (modal Xuất đơn
+// hàng), thêm preset "Tất cả" làm mặc định vì đây là filter danh sách (không filter = xem hết),
+// khác bối cảnh modal xuất file (luôn cần 1 khoảng ngày cụ thể). ─────────────────────────────
+const DATE_PRESETS: { key: string; label: string }[] = [
+  { key: 'all',        label: 'Tất cả' },
+  { key: 'custom',     label: 'Tuỳ chỉnh' },
+  { key: 'this_week',  label: 'Tuần này' },
+  { key: 'last_week',  label: 'Tuần trước' },
+  { key: 'this_month', label: 'Tháng này' },
+  { key: 'last_month', label: 'Tháng trước' },
+  { key: '30d',        label: '30 ngày trước' },
+  { key: '90d',        label: '90 ngày trước' },
+]
+
+function fmtDateInput(d: Date) {
+  return d.toISOString().slice(0, 10)
+}
+
+function fmtDisplayDate(iso: string): string {
+  if (!iso) return '--/--/----'
+  const [y, m, d] = iso.split('-')
+  return `${d}/${m}/${y}`
+}
+
+function computePresetRange(preset: string, today: Date): [string, string] | null {
+  const base = new Date(today)
+  base.setHours(0, 0, 0, 0)
+  if (preset === 'all' || preset === 'custom') return null
+  if (preset === 'this_week' || preset === 'last_week') {
+    const day = base.getDay()
+    const diffToMonday = day === 0 ? -6 : 1 - day
+    const monday = new Date(base)
+    monday.setDate(base.getDate() + diffToMonday + (preset === 'last_week' ? -7 : 0))
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    return [fmtDateInput(monday), fmtDateInput(sunday)]
+  }
+  if (preset === 'this_month' || preset === 'last_month') {
+    const monthOffset = preset === 'last_month' ? -1 : 0
+    const first = new Date(base.getFullYear(), base.getMonth() + monthOffset, 1)
+    const last = new Date(base.getFullYear(), base.getMonth() + monthOffset + 1, 0)
+    return [fmtDateInput(first), fmtDateInput(last)]
+  }
+  if (preset === '30d') {
+    const from = new Date(base)
+    from.setDate(base.getDate() - 29)
+    return [fmtDateInput(from), fmtDateInput(base)]
+  }
+  if (preset === '90d') {
+    const from = new Date(base)
+    from.setDate(base.getDate() - 89)
+    return [fmtDateInput(from), fmtDateInput(base)]
+  }
+  return null
+}
+
+function RadioDot({ checked }: { checked: boolean }) {
+  return (
+    <div style={{
+      width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+      border: `1.5px solid ${checked ? C_ACTION : C_BORDER}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {checked && <div style={{ width: 9, height: 9, borderRadius: '50%', background: C_ACTION }} />}
+    </div>
+  )
+}
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
 type TabKey = 'carrier' | 'shop' | 'transfer' | 'forecast' | 'split' | 'overdue'
@@ -274,6 +344,7 @@ function TabCarrier({
   const navigate = useNavigate()
   const [filterStatus, setFilterStatus]   = useState<'all' | 'pending' | 'confirmed'>('all')
   const [filterCarrier, setFilterCarrier] = useState<'all' | 'GHN' | '247Express'>('all')
+  const [search, setSearch] = useState('')
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -291,9 +362,13 @@ function TabCarrier({
   const confirmed = carrierSessions.filter(s => s.status === 'confirmed').length
   const pending   = carrierSessions.filter(s => s.status === 'pending').length
 
-  const filteredSessions = carrierSessions.filter(s =>
-    filterStatus === 'all' ? true : s.status === filterStatus
-  )
+  const filteredSessions = carrierSessions
+    .filter(s => filterStatus === 'all' ? true : s.status === filterStatus)
+    .filter(s => {
+      const q = search.trim().toLowerCase()
+      if (!q) return true
+      return s.ghnSessionCode.toLowerCase().includes(q) || s.fileName.toLowerCase().includes(q)
+    })
 
   const pendingIds = filteredSessions.filter(s => s.status === 'pending').map(s => s.id)
   const allPendingSelected = pendingIds.length > 0 && pendingIds.every(id => selectedIds.has(id))
@@ -395,6 +470,18 @@ function TabCarrier({
             <option value="confirmed">Đã xác nhận</option>
           </select>
         </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', flex: 1, minWidth: 220,
+          background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+        }}>
+          <SearchOutlined style={{ color: C_TEXT_SECONDARY, fontSize: 16, flexShrink: 0 }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Tìm theo mã phiên GHN hoặc tên file"
+            style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent' }}
+          />
+        </div>
       </div>
 
       {/* Bulk action bar */}
@@ -429,6 +516,7 @@ function TabCarrier({
               </div>
               <TCell width={220} isHeader>Mã phiên GHN</TCell>
               <TCell width={120} isHeader>Ngày TT GHN</TCell>
+              <TCell width={120} isHeader>Ngày upload file</TCell>
               <TCell flex='1 0 0' minWidth={220} isHeader>Tên file</TCell>
               <TCell width={80}  align='right' isHeader>Số đơn</TCell>
               <TCell width={90}  align='right' isHeader>Số lệch</TCell>
@@ -540,7 +628,7 @@ function SessionRow({ session: s, onNavigate, selected, onToggle, onDelete }: {
     <div
       onClick={onNavigate}
       style={{
-        display: 'flex', alignItems: 'center', cursor: 'pointer', minWidth: 1500,
+        display: 'flex', alignItems: 'center', cursor: 'pointer', minWidth: 1620,
         background: selected ? '#FFF4ED' : hover ? '#FAFAFA' : '#fff',
         boxShadow: `inset 0 -1px 0 ${C_BORDER}`,
         transition: 'background 0.1s',
@@ -562,6 +650,9 @@ function SessionRow({ session: s, onNavigate, selected, onToggle, onDelete }: {
         <span style={{ color: C_LINK, fontWeight: 600 }}>{s.ghnSessionCode}</span>
       </TCell>
       <TCell width={120}>{fmtDate(s.paymentDate)}</TCell>
+      <TCell width={120}>
+        <span style={{ color: C_TEXT_SECONDARY }}>{fmtDate(s.createdAt)}</span>
+      </TCell>
       <TCell flex='1 0 0' minWidth={220}>
         <span style={{ color: C_TEXT_SECONDARY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {s.fileName}
@@ -809,7 +900,28 @@ function TabShop({
 }) {
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed'>('all')
   const [filterShop, setFilterShop]     = useState<string>('all')
-  const [filterDate, setFilterDate]     = useState<string>('')
+  const [search, setSearch]             = useState('')
+  const today = new Date()
+  const [datePreset, setDatePreset] = useState('all')
+  const [[dateFrom, dateTo], setDateRange] = useState<[string, string]>(['', ''])
+  const [dateFilterOpen, setDateFilterOpen] = useState(false)
+  const dateFilterRef = useRef<HTMLDivElement>(null)
+
+  const selectDatePreset = (key: string) => {
+    setDatePreset(key)
+    if (key === 'all') { setDateRange(['', '']); return }
+    const range = computePresetRange(key, today)
+    if (range) setDateRange(range)
+  }
+
+  useEffect(() => {
+    if (!dateFilterOpen) return
+    const handler = (e: MouseEvent) => {
+      if (dateFilterRef.current && !dateFilterRef.current.contains(e.target as Node)) setDateFilterOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [dateFilterOpen])
 
   const shopSessions = deriveShopSessions(
     sessions,
@@ -826,13 +938,22 @@ function TabShop({
   const filtered = shopSessions.filter(s => {
     const matchStatus = filterStatus === 'all' || s.status === filterStatus
     const matchShop   = filterShop === 'all' || s.shopId === filterShop
-    const matchDate   = !filterDate
-      || (filterDate >= (s.periodStart ?? s.paymentDate) && filterDate <= (s.periodEnd ?? s.paymentDate))
-    return matchStatus && matchShop && matchDate
+    const periodStart = s.periodStart ?? s.paymentDate
+    const periodEnd   = s.periodEnd ?? s.paymentDate
+    const matchDate   = (!dateFrom || dateFrom <= periodEnd) && (!dateTo || dateTo >= periodStart)
+    const q = search.trim().toLowerCase()
+    const matchSearch = !q
+      || s.shopName.toLowerCase().includes(q)
+      || s.id.toLowerCase().includes(q)
+      || s.nvcSessionCode.toLowerCase().includes(q)
+    return matchStatus && matchShop && matchDate && matchSearch
   })
 
-  const hasActiveFilter = filterStatus !== 'all' || filterShop !== 'all' || !!filterDate
-  const clearFilters = () => { setFilterStatus('all'); setFilterShop('all'); setFilterDate('') }
+  const hasActiveFilter = filterStatus !== 'all' || filterShop !== 'all' || datePreset !== 'all' || !!search
+  const clearFilters = () => {
+    setFilterStatus('all'); setFilterShop('all'); setSearch('')
+    setDatePreset('all'); setDateRange(['', ''])
+  }
 
   const total     = shopSessions.length
   const confirmed = shopSessions.filter(s => s.status === 'confirmed').length
@@ -915,20 +1036,65 @@ function TabShop({
             ))}
           </select>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Ngày trong kỳ:</span>
-          <input
-            type="date"
-            value={filterDate}
-            onChange={e => setFilterDate(e.target.value)}
-            onBlur={e => setFilterDate(e.target.value)}
+        <div ref={dateFilterRef} style={{ position: 'relative' }}>
+          <div
+            onClick={() => setDateFilterOpen(v => !v)}
             style={{
-              border: `1px solid ${filterDate ? C_ACTION : C_BORDER}`, borderRadius: 6,
-              padding: '7px 10px', fontSize: 13, background: '#fff',
-              color: filterDate ? C_ACTION : C_TEXT_PRIMARY,
-              fontWeight: filterDate ? 600 : 400,
-              outline: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+              border: `1px solid ${datePreset !== 'all' ? C_ACTION : C_BORDER}`, borderRadius: 6,
+              padding: '7px 12px', background: '#fff',
             }}
+          >
+            <CalendarOutlined style={{ fontSize: 14, color: datePreset !== 'all' ? C_ACTION : C_TEXT_SECONDARY }} />
+            <span style={{ fontSize: 13, color: datePreset !== 'all' ? C_ACTION : C_TEXT_PRIMARY, fontWeight: datePreset !== 'all' ? 600 : 400, whiteSpace: 'nowrap' }}>
+              {datePreset === 'all' ? 'Thời gian: Tất cả' : `${fmtDisplayDate(dateFrom)} — ${fmtDisplayDate(dateTo)}`}
+            </span>
+          </div>
+
+          {dateFilterOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50,
+              background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 8,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: 16, width: 420,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <input
+                  type="date" value={dateFrom}
+                  onChange={e => { setDateRange([e.target.value, dateTo]); setDatePreset('custom') }}
+                  style={{ flex: 1, border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '8px 10px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none' }}
+                />
+                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>đến</span>
+                <input
+                  type="date" value={dateTo}
+                  onChange={e => { setDateRange([dateFrom, e.target.value]); setDatePreset('custom') }}
+                  style={{ flex: 1, border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '8px 10px', fontSize: 13, color: C_TEXT_PRIMARY, outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 24 }}>
+                {[0, 1].map(col => (
+                  <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                    {DATE_PRESETS.filter((_, i) => i % 2 === col).map(p => (
+                      <div key={p.key} onClick={() => selectDatePreset(p.key)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <RadioDot checked={datePreset === p.key} />
+                        <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>{p.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', flex: 1, minWidth: 220,
+          background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+        }}>
+          <SearchOutlined style={{ color: C_TEXT_SECONDARY, fontSize: 16, flexShrink: 0 }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Tìm theo mã phiên, tên shop hoặc phiên GHN"
+            style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent' }}
           />
         </div>
         {hasActiveFilter && (

@@ -16,9 +16,10 @@ Là chủ shop chưa có tài khoản, tôi muốn tự đăng ký shop bằng m
 ## User Flow
 
 1. Ở trang Đăng nhập (`/shop/login`), bấm link "Chưa có tài khoản? Đăng ký ngay" → sang `/shop/register`.
-2. Điền form: Tên shop, Họ tên chủ shop, Số điện thoại, Địa chỉ, **Mã đại lý** (do đại lý muốn hợp tác cung cấp riêng, không phải chọn từ danh sách công khai), Tên đăng nhập, Mật khẩu, Xác nhận mật khẩu.
-3. Bấm "Đăng ký" → tài khoản active ngay, vào thẳng `/shop/orders` (không có bước chờ duyệt).
-4. Từ trang đăng ký, có link "Đã có tài khoản? Đăng nhập" → quay lại `/shop/login`.
+2. Nhập **Mã đại lý** (do đại lý muốn hợp tác cung cấp riêng, không phải chọn từ danh sách công khai) ở bước riêng đầu tiên — mã đúng mới được vào form chính (xem đầy đủ luồng 2 bước ở [WS-LOGIN-2](./man-hinh-dang-ky.md)).
+3. Điền tiếp form chính: Tên shop, Họ tên chủ shop, Số điện thoại, Địa chỉ, Tên đăng nhập, Mật khẩu, Xác nhận mật khẩu.
+4. Bấm "Đăng ký" → tài khoản active ngay, vào thẳng `/shop/orders` (không có bước chờ duyệt).
+5. Từ trang đăng ký (cả 2 bước), có link "Đã có tài khoản? Đăng nhập" → quay lại `/shop/login`.
 
 ## System Flow
 
@@ -31,7 +32,7 @@ Là chủ shop chưa có tài khoản, tôi muốn tự đăng ký shop bằng m
 
 ## Acceptance Criteria
 
-**AC1:** Trang đăng ký **không hiển thị** tên/danh sách đại lý nào ở bất kỳ đâu trong DOM (kể cả ẩn) — chỉ có 1 ô nhập "Mã đại lý".
+**AC1:** Bước nhập mã (bước 1) **không hiển thị** tên/danh sách đại lý nào ở bất kỳ đâu trong DOM (kể cả ẩn) — chỉ có 1 ô nhập "Mã đại lý". Sau khi nhập ĐÚNG mã, bước 2 mới hiện tên ĐÚNG 1 đại lý khớp mã đó (để xác nhận) — không phải danh sách, và không lộ thêm thông tin gì ngoài cái mã người dùng đã tự biết trước.
 
 **AC2:** Nhập mã đại lý đúng (không phân biệt hoa/thường) của 1 đại lý `active` → cho phép submit, gán đúng `agencyId` của đại lý đó.
 

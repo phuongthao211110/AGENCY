@@ -24,7 +24,8 @@
 | [AGA] Shop - Tạo mới shop: Cấu hình dịch vụ | [tao-moi-shop-cau-hinh-dich-vu.md](./shops/tao-moi-shop-cau-hinh-dich-vu.md) | — | [Draft] |
 | [AGA] Shop - Hiển thị Inactive khi shop tự xoá tài khoản | [inactive-shop-tu-xoa.md](./shops/inactive-shop-tu-xoa.md) | AGENCY-611 | [Draft] |
 | [AGA] Danh sách shop: Hiển thị link đăng nhập shop portal | [hien-thi-link-dang-nhap-shop.md](./shops/hien-thi-link-dang-nhap-shop.md) | AGENCY-608 | [Draft] |
-| [AGA] Shop - Nhận diện shop tự đăng ký trong danh sách | [nhan-dien-shop-tu-dang-ky.md](./shops/nhan-dien-shop-tu-dang-ky.md) | — | [Draft] |
+| [AGENCY] Shop - Danh sách shop: Nhận diện shop tự đăng ký | [nhan-dien-shop-tu-dang-ky.md](./shops/nhan-dien-shop-tu-dang-ky.md) | — | [Draft] |
+| [AGENCY] Shop - Tạo mới shop: Không có dịch vụ khả dụng | [tao-moi-shop-khong-co-dich-vu-kha-dung.md](./shops/tao-moi-shop-khong-co-dich-vu-kha-dung.md) | — | [Draft] |
 
 ## Quản lý đơn hàng
 
@@ -43,7 +44,11 @@
 | [AGENCY] Đơn hàng - Chi tiết: Xem lịch sử trạng thái và lịch sử thao tác | [lich-su-trang-thai-thao-tac.md](./orders/lich-su-trang-thai-thao-tac.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Chi tiết: Cập nhật thông tin đơn (Huỷ đơn vẫn là gap) | [huy-cap-nhat-don-hang.md](./orders/huy-cap-nhat-don-hang.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Tạo đơn hàng thay shop | [tao-don-hang-thay-shop.md](./orders/tao-don-hang-thay-shop.md) | — | [Draft] |
-| [AGENCY] Đơn hàng - Import đơn hàng từ Excel | [import-don-hang.md](./orders/import-don-hang.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Tạo đơn hàng mới : Import đơn hàng hợp lệ | [import-don-hang.md](./orders/import-don-hang.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Tạo đơn hàng mới: Import đơn hàng lỗi | [import-don-hang-loi.md](./orders/import-don-hang-loi.md) | — | [Draft] |
+| [AGENCY] Đơn hàng: Sửa lỗi 2 mũi tên chevron ở dropdown chọn shop/bưu cục | [sua-loi-2-mui-ten-chevron-dropdown.md](./orders/sua-loi-2-mui-ten-chevron-dropdown.md) | — | [Draft] |
+| [AGENCY][247] Đơn hàng: Thêm huỷ đơn ở trạng thái đã tiếp nhận (danh sách + chi tiết đơn hàng) | [huy-don-trang-thai-da-tiep-nhan.md](./orders/huy-don-trang-thai-da-tiep-nhan.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách đơn hàng: Thêm filter phân loại hàng | [danh-sach-them-filter-phan-loai-hang.md](./orders/danh-sach-them-filter-phan-loai-hang.md) | — | [Draft] |
 | [AGENCY][247] Đơn hàng: Tạo đơn thay shop | [tao-don-thu-thay-shop.md](./orders/tao-don-thu-thay-shop.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Xác nhận đã giao hoàn đơn Thư cho shop | [hoan-hang-don-thu-giao-lai-shop.md](./orders/hoan-hang-don-thu-giao-lai-shop.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Đơn hoàn hàng thành công vào tab "Hoàn tất" | [hoan-hang-thanh-cong-vao-tab-hoan-tat.md](./orders/hoan-hang-thanh-cong-vao-tab-hoan-tat.md) | — | [Draft] |
@@ -66,6 +71,10 @@
 | **[SRS]** Tách phiên shop — đặc tả kỹ thuật đầy đủ | [srs-tach-phien-shop.md](./reconciliation/srs-tach-phien-shop.md) | — | [Draft] |
 | Phiên nhà vận chuyển (Phiên GHN) | [phien-nha-van-chuyen.md](./reconciliation/phien-nha-van-chuyen.md) | — | [Draft] |
 | Phiên shop (tự sinh) | [phien-shop.md](./reconciliation/phien-shop.md) | — | [Draft] |
+| [AGENCY] Đối soát - Danh sách phiên GHN: Thêm ngày up file | [them-ngay-up-file.md](./reconciliation/them-ngay-up-file.md) | — | [Draft] |
+| [AGENCY] Đối soát: Thêm search cho danh sách và chi tiết phiên GHN | [them-search-danh-sach-chi-tiet-phien-ghn.md](./reconciliation/them-search-danh-sach-chi-tiet-phien-ghn.md) | — | [Draft] |
+| [AGENCY] Đối soát - Danh sách phiên shop: Thêm search | [them-search-danh-sach-phien-shop.md](./reconciliation/them-search-danh-sach-phien-shop.md) | — | [Draft] |
+| [AGENCY] Đối soát - Chi tiết phiên shop: Thêm search | [them-search-chi-tiet-phien-shop.md](./reconciliation/them-search-chi-tiet-phien-shop.md) | — | [Draft] |
 
 ## Hệ thống
 

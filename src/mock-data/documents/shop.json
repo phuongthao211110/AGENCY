@@ -15,10 +15,11 @@
           "status": "draft",
           "userStory": "Là chủ shop chưa có tài khoản, tôi muốn tự đăng ký shop bằng mã đại lý được cung cấp riêng, để có thể bắt đầu dùng hệ thống ngay mà không cần đại lý tạo tài khoản hộ, và đại lý không phải lộ danh sách đối tác của mình cho người ngoài.",
           "userFlow": [
-            "Ở trang Đăng nhập, bấm link \"Chưa có tài khoản? Đăng ký ngay\" → sang /shop/register",
-            "Điền form: Tên shop, Họ tên chủ shop, SĐT, Địa chỉ, Mã đại lý (do đại lý muốn hợp tác cung cấp riêng, không chọn từ danh sách công khai), Tên đăng nhập, Mật khẩu, Xác nhận mật khẩu",
-            "Bấm \"Đăng ký\" → tài khoản active ngay, vào thẳng /shop/orders (không có bước chờ duyệt)",
-            "Từ trang đăng ký, có link \"Đã có tài khoản? Đăng nhập\" → quay lại /shop/login"
+            "Ở trang Đăng nhập (/shop/login), bấm link \"Chưa có tài khoản? Đăng ký ngay\" → sang /shop/register.",
+            "Nhập Mã đại lý (do đại lý muốn hợp tác cung cấp riêng, không phải chọn từ danh sách công khai) ở bước riêng đầu tiên — mã đúng mới được vào form chính (xem đầy đủ luồng 2 bước ở WS-LOGIN-2).",
+            "Điền tiếp form chính: Tên shop, Họ tên chủ shop, Số điện thoại, Địa chỉ, Tên đăng nhập, Mật khẩu, Xác nhận mật khẩu.",
+            "Bấm \"Đăng ký\" → tài khoản active ngay, vào thẳng /shop/orders (không có bước chờ duyệt).",
+            "Từ trang đăng ký (cả 2 bước), có link \"Đã có tài khoản? Đăng nhập\" → quay lại /shop/login."
           ],
           "systemFlow": [
             "Không hiện danh sách/dropdown tên đại lý công khai — thay bằng 1 ô nhập text \"Mã đại lý\", đối chiếu với agency.code trong số các đại lý status === 'active', so khớp không phân biệt hoa/thường",
@@ -29,7 +30,7 @@
             "Validate username: đối chiếu loadShops() — chặn submit nếu trùng"
           ],
           "acceptanceCriteria": [
-            "AC1: Trang đăng ký không hiển thị tên/danh sách đại lý nào ở bất kỳ đâu trong DOM — chỉ có 1 ô nhập \"Mã đại lý\".",
+            "AC1: Bước nhập mã (bước 1) không hiển thị tên/danh sách đại lý nào ở bất kỳ đâu trong DOM (kể cả ẩn) — chỉ có 1 ô nhập \"Mã đại lý\". Sau khi nhập ĐÚNG mã, bước 2 mới hiện tên ĐÚNG 1 đại lý khớp mã đó (để xác nhận) — không phải danh sách, và không lộ thêm thông tin gì ngoài cái mã người dùng đã tự biết trước.",
             "AC2: Nhập mã đại lý đúng (không phân biệt hoa/thường) của 1 đại lý active → cho phép submit, gán đúng agencyId của đại lý đó.",
             "AC3: Nhập mã sai/không tồn tại/thuộc đại lý không active → chặn submit + hiện đúng 1 message chung \"Mã đại lý không hợp lệ\".",
             "AC4: SĐT phải đúng 10 số và đầu số hợp lệ theo config GHN thực tế — sai thì chặn submit + hiện lỗi.",
@@ -45,6 +46,47 @@
             "Quyết định \"active ngay, không qua bước duyệt\" giữ nguyên như trước.",
             "Web Shop hiện KHÔNG có khái niệm \"shop đang đăng nhập\" động — toàn bộ Orders.tsx/Pricing.tsx/BankAccounts.tsx hardcode 'SHP001' — gap còn lại, chưa làm.",
             "Không có bước xác thực SĐT/email (OTP) trước khi active — đánh đổi đã chọn để tối ưu demo."
+          ]
+        },
+        {
+          "id": "WS-LOGIN-2",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Màn hình đăng ký",
+          "status": "draft",
+          "userStory": "Là chủ shop truy cập trang đăng ký lần đầu, tôi muốn nhập mã đại lý TRƯỚC để biết chắc mình đang đăng ký đúng đại lý muốn hợp tác, rồi mới điền tiếp form thông tin đầy đủ — tránh trường hợp điền hết 7-8 trường xong mới phát hiện mã đại lý sai ở field áp cuối.",
+          "userFlow": [
+            "Truy cập /shop/register — nền tối (#0D0D18), logo \"WEB SHOP\" (khối cam GHN + chữ) cố định góc trên trái, giống hệt bố cục trang Đăng nhập.",
+            "Bước 1 — Nhập mã đại lý: card trắng chỉ có đúng 1 ô \"Mã đại lý\" (kèm dòng phụ chú giải thích cách lấy mã) + nút \"Tiếp tục\" full-width. Không hiện field nào khác của form đăng ký.",
+            "Nhập mã sai → lỗi \"Mã đại lý không hợp lệ\" hiện ngay dưới ô, không chuyển sang bước 2, giá trị đã gõ không bị mất.",
+            "Nhập mã đúng → chuyển sang Bước 2 — Form đăng ký đầy đủ: banner xanh nhạt đầu form xác nhận \"Đăng ký dưới đại lý: {tên đại lý}\", kèm link \"Đổi mã đại lý\" ở góc phải banner.",
+            "Bấm \"Đổi mã đại lý\" → quay lại bước 1, ô mã đại lý giữ nguyên giá trị cũ (sửa nhanh, không phải gõ lại từ đầu).",
+            "Form bước 2 theo đúng thứ tự: Tên shop → Họ tên chủ shop → Số điện thoại → Địa chỉ → Tên đăng nhập → Mật khẩu → Xác nhận mật khẩu — KHÔNG còn field \"Mã đại lý\" (đã xác nhận ở bước 1).",
+            "Nút \"Đăng ký\" cam full-width, cuối form.",
+            "Chân card (hiện ở cả 2 bước): \"Đã có tài khoản? Đăng nhập\" — bấm \"Đăng nhập\" quay lại /shop/login."
+          ],
+          "systemFlow": [
+            "Register.tsx quản lý bước bằng state cục bộ step: 'code' | 'form' — cố ý KHÔNG tách route riêng (VD /shop/register/code), vì luồng chỉ 2 bước, không cần back/forward qua URL hay refresh giữa chừng.",
+            "Bước 1 dùng antd Form với 1 Form.Item custom (validateStatus/help set thủ công qua state codeError, không dùng rules antd) — vì cần validate mã ngay khi bấm \"Tiếp tục\", trước khi bất kỳ field nào của bước 2 tồn tại trong DOM. Mã hợp lệ → lưu cả object agency thật vào state resolvedAgency (không chỉ lưu string mã).",
+            "Bước 2 tái sử dụng gần như nguyên vẹn Form cũ (trước khi tách bước) — chỉ bỏ Form.Item name=\"agencyCode\", thêm banner đọc trực tiếp resolvedAgency.name (từ state, không phải field form nào).",
+            "changeAgencyCode() (nút \"Đổi mã đại lý\"): reset step về 'code', xoá resolvedAgency và codeError, nhưng KHÔNG xoá agencyCodeInput — giữ nguyên giá trị đã gõ trước đó để người dùng sửa nhanh.",
+            "Submit form bước 2 (onFinish) dùng đúng resolvedAgency.id làm agencyId khi gọi addShop() — không đọc lại mã đại lý từ form vì field đó không còn tồn tại ở bước này.",
+            "Toàn bộ business logic khác (đối chiếu mã đại lý với agency.code, validate SĐT/username, addShop()) không đổi so với trước khi tách bước — xem đầy đủ ở WS-LOGIN-1."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Vào /shop/register lần đầu → chỉ thấy đúng 1 ô \"Mã đại lý\" + nút \"Tiếp tục\", không thấy field nào khác của form đăng ký.",
+            "AC2: Nhập mã sai → lỗi \"Mã đại lý không hợp lệ\" hiện ngay dưới ô, không chuyển sang bước 2, không mất giá trị đã gõ.",
+            "AC3: Nhập mã đúng (không phân biệt hoa/thường) → chuyển sang bước 2, hiện banner xanh đúng tên đại lý khớp mã.",
+            "AC4: Ở bước 2, form không còn field \"Mã đại lý\" — đã xác nhận xong ở bước 1.",
+            "AC5: Bấm \"Đổi mã đại lý\" ở bước 2 → quay lại bước 1, ô mã đại lý vẫn giữ giá trị cũ, không bị xoá trắng.",
+            "AC6: Submit thành công ở bước 2 → shop được tạo với đúng agencyId của đại lý đã xác nhận ở bước 1.",
+            "AC7: Nền tối, logo, card trắng 640px căn giữa cả 2 chiều — giữ đồng bộ với Login.tsx ở cả 2 bước.",
+            "AC8: Chân card \"Đã có tài khoản? Đăng nhập\" hiện ở cả 2 bước, điều hướng đúng về /shop/login."
+          ],
+          "notes": [
+            "Đây là bản viết lại toàn bộ sau khi đổi từ luồng \"1 form duy nhất, Mã đại lý là 1 field nằm giữa form\" sang \"2 bước tách biệt\" — theo yêu cầu trực tiếp: đăng ký shop phải cho nhập mã đại lý rồi mới đến màn hình đăng ký. Lý do: tránh chủ shop điền hết 7-8 field xong mới phát hiện mã đại lý sai ở field áp cuối, phải sửa và điền lại; tách riêng giúp phát hiện lỗi sớm nhất (ngay bước đầu), UX cũng rõ ràng hơn: \"xác nhận đối tác\" trước, \"điền thông tin của mình\" sau.",
+            "Không tách thành 2 route riêng — cố ý giữ 1 route, quản lý bước bằng state cục bộ vì luồng ngắn.",
+            "Đã implement và verify bằng Playwright: mã sai → lỗi đúng chỗ, không qua được bước 2; mã đúng (HNC) → qua bước 2, banner đúng tên \"Đại lý Hà Nội Central\"; bấm \"Đổi mã đại lý\" → quay lại bước 1, giữ đúng giá trị đã nhập trước đó.",
+            "WS-LOGIN-1 có phần User Flow cũ ghi \"Điền form: ... Mã đại lý ...\" như đang cùng 1 form — đã cập nhật lại ở đó để khớp đúng 2 bước, không lặp lại chi tiết trình bày màn hình (đã có đủ ở đây)."
           ]
         }
       ]
@@ -445,11 +487,11 @@
           "userFlow": [
             "Mục \"In vận đơn\" có toggle \"Tự động in...\"",
             "Hàng hoá: bật → tự mở phiếu in ngay khi tạo đơn thành công",
-            "Thư tài liệu: bật → tự mở phiếu in ngay khi đơn chuyển sang trạng thái đã dispatch qua 247Express"
+            "Thư tài liệu: bật → tự mở phiếu in ngay khi đơn chuyển sang trạng thái đã dispatch cho nhà vận chuyển"
           ],
           "systemFlow": [
             "State riêng goodsAutoPrint/letterAutoPrint, mặc định true cho cả 2",
-            "Nhãn toggle đổi theo loại đơn — Hàng hoá: \"Tự động in khi tạo đơn\"; Thư tài liệu: \"Tự động in khi đại lý đẩy đơn qua 247\"",
+            "Nhãn toggle đổi theo loại đơn — Hàng hoá: \"Tự động in khi tạo đơn\"; Thư tài liệu: \"Tự động in khi đại lý đã gửi hàng cho nhà vận chuyển\" (KHÔNG nhắc tên NVC/247Express, đúng nguyên tắc shop không biết ai xử lý đơn)",
             "Chỉ là preference UI, chưa nối với hành động in thật hay sự kiện tạo đơn/dispatch thật"
           ],
           "acceptanceCriteria": [
@@ -459,7 +501,8 @@
           ],
           "notes": [
             "Tách từ SHOP-ORDER-13 và SHOP-ORDER-14.",
-            "Gap còn lại: chưa có hành động in thật nào được thực thi — cần làm riêng khi có yêu cầu build in thật."
+            "Gap còn lại: chưa có hành động in thật nào được thực thi — cần làm riêng khi có yêu cầu build in thật.",
+            "Đính chính: nhãn toggle Thư tài liệu trước đây ghi nhầm \"...qua 247\" — đã verify lại code thật (Orders.tsx) và sửa đúng thành \"...cho nhà vận chuyển\", không nêu tên NVC (phát hiện khi viết SHOP-ORDER-24)."
           ]
         },
         {
@@ -521,7 +564,7 @@
         {
           "id": "SHOP-ORDER-19",
           "jiraKey": "",
-          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Thông tin hiển thị trên phiếu in (Hàng hoá)",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng - Hàng hoá: Thông tin hiển thị trên phiếu in",
           "status": "draft",
           "userStory": "Là chủ shop gửi đơn Hàng hoá, tôi muốn chọn đúng những thông tin cần in lên phiếu vận đơn, để phiếu đủ dùng cho cả đóng gói, giao hàng và thu tiền mà không in dư thông tin không cần.",
           "userFlow": [
@@ -548,7 +591,7 @@
         {
           "id": "SHOP-ORDER-20",
           "jiraKey": "",
-          "title": "[WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Thông tin hiển thị trên phiếu in (Thư tài liệu)",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng - Thư/tài liệu: Thông tin hiển thị trên phiếu in",
           "status": "draft",
           "userStory": "Là chủ shop gửi đơn Thư tài liệu, tôi muốn chọn đúng những thông tin cần in lên vận đơn thật (sau khi đại lý đã dispatch qua 247Express), không bị lẫn field chỉ áp dụng cho đơn Hàng hoá.",
           "userFlow": [
@@ -571,6 +614,316 @@
           "notes": [
             "Tách từ SHOP-ORDER-14.",
             "2 field bị loại đã verify trực tiếp trong code CreateLetterDrawer, không suy diễn cảm tính."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-21",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng: Confirm khi huỷ đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn phải xác nhận trước khi huỷ đơn dù huỷ từ nút nhanh trong danh sách hay huỷ hàng loạt nhiều đơn cùng lúc, để không bấm nhầm làm mất đơn ngay lập tức.",
+          "userFlow": [
+            "Ở danh sách đơn (tab \"Đơn nháp\" hoặc \"Chờ xử lý\"), mỗi dòng đủ điều kiện huỷ có nút đỏ nhạt \"Huỷ đơn\" dưới tên người tạo",
+            "Bấm \"Huỷ đơn\" → popup xác nhận hiện giữa màn hình (nền mờ phủ toàn trang): tên mã vận đơn + \"Thao tác này không thể hoàn tác\"",
+            "Bấm \"Không huỷ\" → đóng popup, đơn giữ nguyên không đổi gì",
+            "Bấm \"Xác nhận huỷ đơn\" → đơn chuyển trạng thái \"Đơn huỷ\" thật",
+            "Ngoài ra, tick chọn nhiều đơn (checkbox đầu mỗi dòng) → thanh tối màu \"Đã chọn N\" nổi cố định ở đáy màn hình, kèm nút X tròn để bỏ chọn",
+            "Nếu trong lựa chọn có ít nhất 1 đơn đủ điều kiện huỷ → nút \"Huỷ đơn\" (đỏ nhạt, icon cấm) hiện bên phải thanh",
+            "Bấm \"Huỷ đơn\" trên thanh → cùng popup xác nhận (nội dung đổi sang số nhiều \"N đơn đã chọn\") → xác nhận huỷ tất cả cùng lúc, tự bỏ chọn sau khi xong"
+          ],
+          "systemFlow": [
+            "isCancellable(o) = o.status === 'pending' — quyết định nút \"Huỷ đơn\" nhanh có hiện cho từng dòng hay không, dựa theo TRẠNG THÁI THẬT của đơn thay vì gate cứng theo activeTab như trước (trước đây chỉ activeTab === 'pending_carrier' mới thấy nút, bỏ sót tab \"Đơn nháp\")",
+            "State cancelOrders: Order[] | null — dùng chung 1 modal (CancelOrderModal) cho cả nút nhanh từng dòng (mảng 1 phần tử) lẫn nút hàng loạt (mảng nhiều phần tử), cùng pattern dispatchModal đã có bên Agency Admin cho gửi 247Express",
+            "CancelOrderModal nhận orders: Order[], tự đổi text/nút giữa số ít (\"Huỷ đơn hàng\", \"Xác nhận huỷ đơn\") và số nhiều (\"Huỷ N đơn hàng\", \"Xác nhận huỷ N đơn\")",
+            "Xác nhận → orders.forEach(o => handleCancelOrder(o.id)) (dùng cancelOrder() có sẵn từ orderStore.ts) cho từng đơn trong mảng; nếu là huỷ hàng loạt thì gọi thêm setSelected(new Set()) để tự bỏ chọn",
+            "Thanh \"Đã chọn N\": position: fixed, bottom: 0, left: 240 (bằng đúng SIDEBAR_WIDTH) — nổi trên mọi nội dung trang, không cuộn theo bảng; eligible = selectedOrders.filter(isCancellable) — đơn không hợp lệ (đã dispatch/đang giao...) tự bị loại khỏi nút bấm, không nằm trong lần huỷ hàng loạt đó",
+            "Khu vực phân trang được thêm paddingBottom: 60 khi selected.size > 0, tránh bị thanh nổi cố định che mất",
+            "Checkbox chọn dòng (state selected: Set<string>) đã tồn tại sẵn từ trước nhưng trước đây không có action nào đọc giá trị này — lần này là nơi đầu tiên state đó thực sự được dùng"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Nút \"Huỷ đơn\" nhanh chỉ hiện cho đơn có status 'pending' — đơn ở trạng thái khác (đã dispatch/đang giao/đã xong...) không có nút này.",
+            "AC2: Bấm nút → hiện popup xác nhận (nền mờ phủ toàn trang, card trắng giữa màn hình) — KHÔNG huỷ ngay lập tức khi bấm lần đầu.",
+            "AC3: Bấm \"Không huỷ\" → đóng popup, đơn giữ nguyên trạng thái, không có gì thay đổi.",
+            "AC4: Bấm \"Xác nhận huỷ đơn\" → order.status đổi thành 'cancelled', đơn chuyển sang tab \"Đơn huỷ\".",
+            "AC5: Tick chọn ≥1 đơn (checkbox đầu dòng) → thanh tối màu \"Đã chọn N\" nổi cố định ở đáy màn hình, kèm nút X tròn để bỏ chọn.",
+            "AC6: Nếu lựa chọn có ít nhất 1 đơn hợp lệ để huỷ → nút \"Huỷ đơn\" hiện bên phải thanh; số lượng hợp lệ không hiện trong nhãn nút mà thể hiện qua nội dung popup khi bấm.",
+            "AC7: Lựa chọn toàn đơn không hợp lệ để huỷ (VD: toàn đơn đang giao) → thanh vẫn hiện \"Đã chọn N\" nhưng KHÔNG có nút \"Huỷ đơn\".",
+            "AC8: Bấm \"Huỷ đơn\" trên thanh → popup xác nhận đúng nội dung số nhiều, ghi rõ N đơn sẽ bị huỷ.",
+            "AC9: Xác nhận huỷ hàng loạt → toàn bộ N đơn hợp lệ chuyển 'cancelled' cùng lúc, thanh \"Đã chọn\" tự biến mất (lựa chọn tự xoá)."
+          ],
+          "notes": [
+            "GAP đã sửa: trước đây nút huỷ nhanh trong bảng gọi cancelOrder() NGAY LẬP TỨC, không qua bất kỳ xác nhận nào — bấm nhầm là mất đơn vĩnh viễn không cách nào cứu lại. Story này thêm popup xác nhận cho đúng chuẩn thao tác phá huỷ dữ liệu (destructive action).",
+            "GAP đã sửa: nút huỷ nhanh trước đây chỉ hiện ở tab \"Chờ xử lý\" (activeTab === 'pending_carrier'), bỏ sót hẳn tab \"Đơn nháp\" — giờ dựa theo trạng thái thật của từng đơn (isCancellable) nên đúng cho cả 2 tab.",
+            "Checkbox chọn dòng trong danh sách tồn tại từ trước (state `selected`) nhưng hoàn toàn không gắn hành động nào — dead state. Đây là lần đầu tiên checkbox có tác dụng thật, thông qua thanh \"Đã chọn N\" + nút huỷ hàng loạt.",
+            "Dùng chung 1 modal cho cả nút nhanh và nút hàng loạt (mảng 1 hoặc nhiều phần tử) thay vì tạo 2 UI riêng biệt — cùng cách tiếp cận với dispatchModal bên Agency Admin.",
+            "Drawer chi tiết đơn đã có sẵn cơ chế xác nhận riêng từ trước, không đổi (banner cảnh báo inline, xem SHOP-ORDER-7) — story này chỉ bổ sung 2 lối vào MỚI (nút nhanh trong bảng + nút hàng loạt), dùng popup thay vì banner vì bảng danh sách không có chỗ hiển thị banner cảnh báo dài như trong drawer.",
+            "REDESIGN (sau khi story này đã viết lần đầu): thanh \"Đã chọn N\" đổi từ dạng inline màu xanh nhạt phía trên bảng sang dạng nổi cố định ở đáy màn hình (nền tối, nút X tròn để bỏ chọn thay cho nút chữ \"Bỏ chọn\", nút hành động dạng button đặc có icon thay vì text-link) — theo đúng yêu cầu \"làm giống ảnh tham khảo\" (màn Agency Admin thật của GHN). Agency Admin được áp style này trước, Web Shop áp lại y hệt ngay sau đó để 2 platform nhất quán.",
+            "Agency Admin cũng có thanh hành động hàng loạt cùng style (nổi đáy màn hình, nền tối) với 2 nút: \"Gửi qua 247Express\" (xanh dương) và \"Huỷ đơn\" (đỏ nhạt) — Agency là platform DUY NHẤT có bulk dispatch vì chỉ đại lý mới thao tác với carrier; Web Shop chỉ có bulk \"Huỷ đơn\" vì shop không tự chọn carrier."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-22",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng - Hàng hoá: In vận đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop gửi đơn Hàng hoá, tôi muốn có 1 khu vực \"In vận đơn\" gộp chung 2 thiết lập liên quan trực tiếp tới việc in (tự động in + khổ giấy), để cấu hình xong 1 lần cho việc in vận đơn mà không phải tìm rải rác nhiều nơi.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"In đơn hàng\" → sub-tab \"Hàng hoá\"",
+            "Card đầu tiên có icon máy in + tiêu đề \"In vận đơn\", gộp 2 thiết lập: \"Tự động in khi tạo đơn\" (toggle) và \"Khổ giấy in\" (3 nút pill A5/52x70mm/80x80mm)",
+            "Bật toggle \"Tự động in khi tạo đơn\" → mỗi lần tạo đơn Hàng hoá mới thành công, phiếu in tự mở ngay, không cần quay lại danh sách đơn để in thủ công",
+            "Chọn khổ giấy phù hợp máy in đang dùng — áp dụng ngay cho card preview \"Xem trước phiếu in\" phía dưới"
+          ],
+          "systemFlow": [
+            "Card \"In vận đơn\" là 1 `SectionCard` (icon `IcPrinter`) trong `PrintKindSettings` (Orders.tsx) — gộp UI 2 control độc lập: `Toggle` cho `autoPrint` và `PaperSizePicker` cho `paperSize`, cùng nằm dưới 1 tiêu đề card duy nhất",
+            "`autoPrint`/`paperSize` là state cục bộ trong modal cài đặt, riêng cho sub-tab Hàng hoá (không dùng chung với sub-tab Thư tài liệu)",
+            "Đơn Hàng hoá có mã vận đơn thật ngay lúc tạo đơn (gửi trực tiếp qua GHN, không qua trung gian) nên \"Tự động in\" ở đây in được ngay — khác hẳn ý nghĩa của cùng toggle này bên Thư tài liệu (chỉ có tác dụng thật SAU khi đại lý dispatch, xem SHOP-ORDER-14/16)",
+            "Chi tiết đầy đủ của từng control đã tách riêng: khổ giấy ở SHOP-ORDER-15, toggle tự động in ở SHOP-ORDER-16 — story này chỉ mô tả việc 2 control đó được TRÌNH BÀY CHUNG dưới 1 card \"In vận đơn\""
+          ],
+          "acceptanceCriteria": [
+            "AC1: Card đầu tiên trong sub-tab Hàng hoá có tiêu đề đúng \"In vận đơn\", kèm icon máy in.",
+            "AC2: Trong card này có đủ 2 control: toggle \"Tự động in khi tạo đơn\" và 3 nút chọn khổ giấy — không tách rời ra 2 card khác nhau.",
+            "AC3: Bật/tắt toggle không ảnh hưởng lựa chọn khổ giấy và ngược lại — 2 control độc lập, chỉ gộp chung về mặt hiển thị.",
+            "AC4: Card \"In vận đơn\" của sub-tab Hàng hoá độc lập hoàn toàn với card cùng tên ở sub-tab Thư tài liệu — đổi 1 bên không ảnh hưởng bên kia.",
+            "AC5: Thay đổi ở card này phản ánh ngay tại card \"Xem trước phiếu in\" bên dưới trong cùng sub-tab, không cần thao tác thêm."
+          ],
+          "notes": [
+            "Story này KHÔNG lặp lại chi tiết acceptance criteria đã có ở SHOP-ORDER-15 (Chọn khổ giấy in) và SHOP-ORDER-16 (Tự động in vận đơn) — chỉ ghi nhận việc 2 story con đó được nhóm chung dưới 1 tiêu đề UI \"In vận đơn\" mà trước đó chưa có story nào mô tả rõ.",
+            "Phạm vi cố ý giới hạn riêng cho sub-tab Hàng hoá theo đúng title được yêu cầu — sub-tab Thư tài liệu có card \"In vận đơn\" tương tự nhưng ý nghĩa toggle khác (xem SHOP-ORDER-14), không thuộc phạm vi story này.",
+            "Xem thêm tổng quan toàn bộ tab \"In đơn hàng\" ở SHOP-ORDER-13."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-23",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng - Hàng hoá: Xem trước phiếu in",
+          "status": "draft",
+          "userStory": "Là chủ shop gửi đơn Hàng hoá, tôi muốn xem trước chính xác phiếu in sẽ trông như thế nào ngay khi đang cấu hình ở sub-tab Hàng hoá, để chỉnh đúng khổ giấy và thông tin hiển thị mà không phải in thử tốn giấy.",
+          "userFlow": [
+            "Ở sub-tab \"Hàng hoá\", cấu hình khổ giấy (SHOP-ORDER-15) và tick/bỏ tick checklist \"Thông tin hiển thị trên phiếu in\" (SHOP-ORDER-19)",
+            "Xem ngay khung \"Xem trước phiếu in\" phía dưới cùng sub-tab — cập nhật tức thì theo mọi thay đổi ở trên, không cần bấm nút riêng",
+            "Preview dùng dữ liệu mẫu Hàng hoá cố định (sản phẩm, khối lượng, kích thước, COD...) — có dòng chú thích rõ đây là dữ liệu mẫu, không phải đơn thật"
+          ],
+          "systemFlow": [
+            "Dùng chung 1 cơ chế preview với sub-tab Thư tài liệu — xem chi tiết kỹ thuật đầy đủ (cấu trúc khung, thứ tự render, font monospace, cách bind điều kiện hiện/ẩn) ở SHOP-ORDER-18",
+            "Với sub-tab Hàng hoá cụ thể: preview render đủ dòng COD và Kích thước — 2 field KHÔNG xuất hiện ở preview sub-tab Thư tài liệu (đơn Thư không có COD/kích thước thật, xem SHOP-ORDER-20)",
+            "Khung preview đọc `paperSize` và toàn bộ 9 state checkbox riêng của Hàng hoá (`goodsShowSender`, `goodsShowProduct`... — xem SHOP-ORDER-19) để quyết định dòng nào hiện",
+            "Dữ liệu mẫu minh hoạ dùng số liệu Hàng hoá thật (VD: có tên sản phẩm + số lượng, có số cân nặng/kích thước cụ thể) — khác mẫu Thư tài liệu (nội dung thư dạng text, không có sản phẩm/COD)"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Preview ở sub-tab Hàng hoá hiện ngay khi vào tab, không cần thao tác gì thêm.",
+            "AC2: Tick/bỏ tick bất kỳ mục nào trong checklist Hàng hoá (kể cả COD, Kích thước) → dòng tương ứng hiện/ẩn trong preview ngay lập tức.",
+            "AC3: Đổi khổ giấy ở sub-tab Hàng hoá → độ rộng khung preview đổi theo ngay, không ảnh hưởng khổ giấy/preview đang cấu hình ở sub-tab Thư tài liệu.",
+            "AC4: Preview Hàng hoá hiện đúng dòng COD và Kích thước khi các mục này được tick — 2 dòng này không tồn tại trong preview sub-tab Thư tài liệu dù có tick tương đương hay không.",
+            "AC5: Có dòng chú thích rõ đây là \"dữ liệu mẫu\", không phải đơn thật."
+          ],
+          "notes": [
+            "Story này KHÔNG lặp lại chi tiết kỹ thuật cơ chế preview dùng chung — đã có đầy đủ ở SHOP-ORDER-18 (áp dụng cho cả Hàng hoá lẫn Thư tài liệu). Story này chỉ nêu phần khác biệt và AC riêng khi xét trong phạm vi sub-tab Hàng hoá.",
+            "Khác biệt cốt lõi so với Thư tài liệu: preview Hàng hoá có COD + Kích thước, Thư tài liệu thì không — đúng theo business rule đơn Thư không có 2 field này (CreateLetterDrawer hardcode cod:0, không có input kích thước).",
+            "Preview không thật sự render ra 1 file/hình có thể in hoặc export — chỉ là mô phỏng trực quan trong UI Cài đặt để tham khảo trước, giống mô tả ở SHOP-ORDER-18."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-24",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng - Thư/tài liệu: In vận đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop gửi đơn Thư tài liệu, tôi muốn có 1 khu vực \"In vận đơn\" gộp chung tự động in + khổ giấy, nhưng phải nói rõ đúng thời điểm in được thật (sau khi đại lý đã gửi hàng cho nhà vận chuyển), để không hiểu nhầm là in được ngay như đơn Hàng hoá.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"In đơn hàng\" → sub-tab \"Thư tài liệu\"",
+            "Đọc dòng ghi chú đầu sub-tab: chỉ in được SAU KHI đại lý đã gửi đơn cho nhà vận chuyển — trước đó chưa có mã vận đơn thật để in",
+            "Card đầu tiên có icon máy in + tiêu đề \"In vận đơn\" — giống cấu trúc bên Hàng hoá (SHOP-ORDER-22), gộp toggle \"Tự động in...\" và \"Khổ giấy in\"",
+            "Nhãn toggle khác hẳn Hàng hoá: \"Tự động in khi đại lý đã gửi hàng cho nhà vận chuyển\" — không phải \"khi tạo đơn\", và KHÔNG nhắc tên nhà vận chuyển cụ thể nào",
+            "Chọn khổ giấy — áp dụng ngay cho card \"Xem trước phiếu in\" phía dưới cùng sub-tab"
+          ],
+          "systemFlow": [
+            "Card \"In vận đơn\" là 1 `SectionCard` (icon `IcPrinter`) trong `LetterHandoverSettings` (Orders.tsx) — cùng cấu trúc với `PrintKindSettings` bên Hàng hoá (xem SHOP-ORDER-22), gộp `Toggle` cho `autoPrint` (state riêng của `LetterHandoverSettings`) và `PaperSizePicker` cho `paperSize` riêng của Thư",
+            "Khác biệt DUY NHẤT so với card cùng tên bên Hàng hoá: nhãn toggle là \"Tự động in khi đại lý đã gửi hàng cho nhà vận chuyển\" (đúng text trong code — KHÔNG chứa chữ \"247\"/\"247Express\" ở bất kỳ đâu trong sub-tab này, kể cả dòng ghi chú đầu trang phía trên card, tuân thủ đúng quy tắc \"shop không được biết NVC nào xử lý đơn\")",
+            "Lý do trigger khác Hàng hoá: đơn Thư chỉ có mã vận đơn thật SAU khi carrierCode đổi từ null → '247EXPRESS' lúc đại lý dispatch (xem đầy đủ ở SHOP-ORDER-14) — nhưng vì shop không được biết tên NVC, nhãn toggle diễn đạt trung tính là \"gửi hàng cho nhà vận chuyển\", không nêu đích danh 247Express",
+            "State `autoPrint`/`paperSize` của sub-tab Thư độc lập hoàn toàn với state tương ứng bên Hàng hoá — đổi 1 bên không ảnh hưởng bên kia",
+            "Toggle này (giống bên Hàng hoá) hiện chỉ là preference UI, CHƯA nối với hành động in thật hay listener theo dõi thời điểm carrierCode đổi — xem gap đã ghi ở SHOP-ORDER-16"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Card đầu tiên trong sub-tab Thư tài liệu có tiêu đề đúng \"In vận đơn\", kèm icon máy in — cùng vị trí/cấu trúc với sub-tab Hàng hoá.",
+            "AC2: Nhãn toggle đúng \"Tự động in khi đại lý đã gửi hàng cho nhà vận chuyển\" — KHÔNG dùng nhãn \"khi tạo đơn\" của Hàng hoá.",
+            "AC3: Trong card này có đủ 2 control: toggle tự động in và 3 nút chọn khổ giấy — không tách rời ra 2 card khác nhau.",
+            "AC4: Card \"In vận đơn\" của sub-tab Thư tài liệu độc lập hoàn toàn với card cùng tên ở sub-tab Hàng hoá — đổi 1 bên không ảnh hưởng bên kia.",
+            "AC5: Thay đổi ở card này phản ánh ngay tại card \"Xem trước phiếu in\" bên dưới trong cùng sub-tab, không cần thao tác thêm.",
+            "AC6: Không có bất kỳ chữ \"247\"/\"247Express\" nào xuất hiện ở bất kỳ đâu trong sub-tab Thư tài liệu (kể cả dòng ghi chú đầu trang lẫn nhãn toggle) — đúng nguyên tắc \"shop không được biết NVC nào xử lý đơn\"."
+          ],
+          "notes": [
+            "Cặp story với SHOP-ORDER-22 (bản Hàng hoá) — cùng cấu trúc card \"In vận đơn\", khác đúng 1 điểm: nhãn toggle phản ánh đúng thời điểm in được thật của từng loại đơn, diễn đạt trung tính không nêu tên NVC.",
+            "Story này KHÔNG lặp lại chi tiết AC đã có ở SHOP-ORDER-15 (khổ giấy, dùng chung) và SHOP-ORDER-16 (toggle tự động in) — chỉ ghi nhận việc 2 control được nhóm chung dưới 1 card cho riêng sub-tab Thư tài liệu.",
+            "**Đính chính khi viết story này:** doc SHOP-ORDER-16 từng ghi nhãn toggle Thư là \"Tự động in khi đại lý đẩy đơn qua 247\" — đã verify lại trực tiếp trong code (Orders.tsx dòng 598) và xác nhận text THẬT là \"Tự động in khi đại lý đã gửi hàng cho nhà vận chuyển\", không hề có chữ \"247\". Đã cập nhật lại SHOP-ORDER-16 cho khớp ngay sau đó.",
+            "Xem đầy đủ bối cảnh + lịch sử quyết định 2 lần đổi hướng của toàn bộ sub-tab Thư tài liệu ở SHOP-ORDER-14."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-25",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng - Thư/tài liệu: Xem trước phiếu in",
+          "status": "draft",
+          "userStory": "Là chủ shop gửi đơn Thư tài liệu, tôi muốn xem trước phiếu in ngay khi đang cấu hình ở sub-tab Thư tài liệu, để chỉnh đúng khổ giấy và thông tin hiển thị mà không phải in thử tốn giấy — dù biết phiếu chỉ dùng thật được sau khi đại lý đã gửi hàng cho nhà vận chuyển.",
+          "userFlow": [
+            "Ở sub-tab \"Thư tài liệu\", cấu hình khổ giấy (SHOP-ORDER-15) và tick/bỏ tick checklist \"Thông tin hiển thị trên phiếu in\" (SHOP-ORDER-20)",
+            "Xem ngay khung \"Xem trước phiếu in\" phía dưới cùng sub-tab — cập nhật tức thì theo mọi thay đổi ở trên, không cần bấm nút riêng",
+            "Preview dùng dữ liệu mẫu Thư tài liệu cố định (nội dung thư, không có sản phẩm/COD) — có dòng chú thích rõ đây là dữ liệu mẫu, không phải đơn thật"
+          ],
+          "systemFlow": [
+            "Dùng chung 1 cơ chế preview với sub-tab Hàng hoá — xem chi tiết kỹ thuật đầy đủ (cấu trúc khung, thứ tự render, font monospace, cách bind điều kiện hiện/ẩn) ở SHOP-ORDER-18",
+            "Với sub-tab Thư tài liệu cụ thể: preview KHÔNG render dòng COD và Kích thước — 2 field không áp dụng cho đơn Thư (xem SHOP-ORDER-20), khác preview sub-tab Hàng hoá (SHOP-ORDER-23) có đủ 2 dòng này",
+            "Khung preview đọc `paperSize` và 7 state checkbox riêng của Thư (`letterShowSender`, `letterShowProduct`... — xem SHOP-ORDER-20) để quyết định dòng nào hiện",
+            "Mã vận đơn mẫu trong preview là `VC00987654` — đã verify trực tiếp trong code (Orders.tsx dòng 669). Mã này KHÔNG bắt đầu bằng \"247EX\" như bản nháp đầu tiên từng dùng — đã đổi từ trước theo đúng quy tắc \"không nhắc 247\" áp dụng luôn cho cả giá trị dữ liệu mẫu, không chỉ label/copy tĩnh."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Preview ở sub-tab Thư tài liệu hiện ngay khi vào tab, không cần thao tác gì thêm.",
+            "AC2: Tick/bỏ tick bất kỳ mục nào trong checklist Thư tài liệu → dòng tương ứng hiện/ẩn trong preview ngay lập tức.",
+            "AC3: Đổi khổ giấy ở sub-tab Thư tài liệu → độ rộng khung preview đổi theo ngay, không ảnh hưởng khổ giấy/preview đang cấu hình ở sub-tab Hàng hoá.",
+            "AC4: Preview Thư tài liệu KHÔNG có dòng COD và Kích thước ở bất kỳ trạng thái tick nào — 2 mục này không tồn tại trong checklist của sub-tab này (khác Hàng hoá).",
+            "AC5: Có dòng chú thích rõ đây là \"dữ liệu mẫu\", không phải đơn thật."
+          ],
+          "notes": [
+            "Story này KHÔNG lặp lại chi tiết kỹ thuật cơ chế preview dùng chung — đã có đầy đủ ở SHOP-ORDER-18 (áp dụng cho cả Hàng hoá lẫn Thư tài liệu). Story này chỉ nêu phần khác biệt và AC riêng khi xét trong phạm vi sub-tab Thư tài liệu.",
+            "Cặp story với SHOP-ORDER-23 (bản Hàng hoá) — cùng cơ chế preview, khác ở chỗ không có dòng COD/Kích thước và mã vận đơn mẫu khác (VC00987654 thay vì mã dạng Hàng hoá).",
+            "Khác biệt cốt lõi so với Hàng hoá: preview Thư tài liệu KHÔNG có COD + Kích thước — đúng theo business rule đơn Thư không có 2 field này (CreateLetterDrawer hardcode cod:0, không có input kích thước).",
+            "Preview không thật sự render ra 1 file/hình có thể in hoặc export — chỉ là mô phỏng trực quan trong UI Cài đặt để tham khảo trước, giống mô tả ở SHOP-ORDER-18."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-26",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Danh sách đơn hàng: Thêm button In đơn hàng",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn có nút \"In đơn hàng\" ngay trong danh sách đơn (từng dòng, và khi chọn nhiều đơn cùng lúc), để in vận đơn của đúng đơn hàng thật đó — không phải mở modal \"Cài đặt đơn hàng\" vốn chỉ có phần xem trước bằng dữ liệu mẫu, không in được đơn thật nào.",
+          "userFlow": [
+            "Ở danh sách đơn hàng, mỗi dòng đủ điều kiện in (đã có mã vận đơn thật) có nút xanh \"In đơn hàng\" — nằm trên nút \"Huỷ đơn\" (nếu có), cùng cột \"Người tạo\"",
+            "Bấm nút → popup \"In đơn hàng — {mã vận đơn}\" mở ra, hiện phiếu in với đúng dữ liệu THẬT của đơn đó (mã vận đơn, người gửi/nhận, sản phẩm, khối lượng, COD nếu là Hàng hoá, phí ship) và 1 bộ chọn khổ giấy riêng (A5/52x70mm/80x80mm, mặc định 80x80mm)",
+            "Bấm \"In đơn hàng\" trong popup → gọi lệnh in trình duyệt thật (`window.print()`), CSS in ẩn hết phần chrome/nút bấm, chỉ in đúng khu vực phiếu",
+            "Tick chọn nhiều đơn đủ điều kiện in (checkbox đầu dòng) → thanh \"Đã chọn N\" nổi ở đáy màn hình hiện thêm nút \"In đơn hàng\" (bên trái nút \"Huỷ đơn\") → in hàng loạt, mỗi đơn 1 phiếu riêng trong cùng 1 lần in",
+            "Đơn Thư tài liệu CHƯA được đại lý dispatch cho nhà vận chuyển → KHÔNG có nút này (chưa có mã vận đơn thật để in, đúng quy tắc đã có ở SHOP-ORDER-14)"
+          ],
+          "systemFlow": [
+            "Thêm helper `isPrintable(order)` cùng cách tiếp cận với `isCancellable` (SHOP-ORDER-21): `sendKind === 'goods' || dispatchStatus === 'dispatched'` — Hàng hoá luôn true, Thư chỉ true sau khi đã dispatch",
+            "Nút quick-action per-row: thêm vào `TRow`, cùng khối chứa \"Hoàn hàng\"/\"Huỷ đơn\" (cột \"Người tạo\") — chỉ render khi có prop `onPrint`, đặt TRÊN nút \"Huỷ đơn\" theo đúng thứ tự ưu tiên hành động (in trước, huỷ sau)",
+            "Nút bulk: thêm vào thanh \"Đã chọn N\" đã có sẵn từ SHOP-ORDER-21 — 1 nút thứ 2 (`eligiblePrint = selectedOrders.filter(isPrintable)`), đặt bên trái nút \"Huỷ đơn\" trong cùng thanh",
+            "`PrintOrderModal({ orders, onClose })` (component mới) — dùng chung cho cả 2 lối vào (mảng 1 hoặc nhiều phần tử), render 1 \"vé in\" (ticket) riêng cho từng order với ĐÚNG field thật có trên `Order`: `senderName`/`senderPhone`, `trackingCode` (barcode+QR mock), `receiverName`/`receiverPhone`/`receiverAddress`, sản phẩm (qua `orderProducts` lookup — cùng nguồn cosmetic đã dùng sẵn ở `TRow`), `weight` (đổi ra kg), `cod` (chỉ hiện khi `sendKind === 'goods' && cod > 0`), `fee`",
+            "CỐ Ý KHÔNG đọc state khổ giấy/checklist đang cấu hình trong `OrderSettingsModal` — 2 component tách biệt hoàn toàn (settings modal chỉ mở qua nút \"Cài đặt đơn hàng\", không share state với danh sách đơn), và state đó vốn cũng CHƯA persist (xem WS-ORDER-1). `PrintOrderModal` có bộ chọn khổ giấy RIÊNG, độc lập, mặc định 80x80mm",
+            "In thật bằng `window.print()` thật sự — có `<style>{'@media print {...}'}</style>` ẩn toàn bộ trang trừ `#print-order-area`, nên khi bấm in chỉ ra đúng phần phiếu, không in cả trang danh sách phía sau"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Mỗi dòng đơn Hàng hoá trong danh sách luôn có nút \"In đơn hàng\" (có mã vận đơn thật ngay từ lúc tạo).",
+            "AC2: Đơn Thư tài liệu CHƯA dispatch (`dispatchStatus !== 'dispatched'`) → KHÔNG có nút \"In đơn hàng\".",
+            "AC3: Đơn Thư tài liệu ĐÃ dispatch → có nút \"In đơn hàng\" giống đơn Hàng hoá.",
+            "AC4: Bấm nút → popup hiện đúng dữ liệu THẬT của đơn đó (mã vận đơn, người gửi/nhận, sản phẩm, khối lượng, phí ship) — không phải dữ liệu mẫu.",
+            "AC5: Đơn Hàng hoá có COD > 0 → phiếu hiện dòng \"Thu hộ (COD)\"; đơn Thư hoặc COD = 0 → không hiện dòng này.",
+            "AC6: Popup có bộ chọn khổ giấy riêng (A5/52x70mm/80x80mm), đổi khổ → độ rộng phiếu đổi theo ngay.",
+            "AC7: Tick chọn nhiều đơn → thanh \"Đã chọn N\" hiện thêm nút \"In đơn hàng\" nếu có ít nhất 1 đơn đủ điều kiện in trong lựa chọn; mở popup hiện đủ từng phiếu cho mọi đơn hợp lệ đã chọn.",
+            "AC8: Trong lựa chọn hàng loạt, đơn không đủ điều kiện in (VD Thư chưa dispatch) tự động bị loại khỏi batch in — không chặn hay báo lỗi cho cả thao tác.",
+            "AC9: Bấm nút \"In đơn hàng\" trong popup → gọi `window.print()` thật, chỉ in đúng khu vực phiếu (không in cả popup/nút bấm/trang nền)."
+          ],
+          "notes": [
+            "ĐÃ IMPLEMENT đầy đủ theo spec — nút quick-action per-row + nút bulk trên thanh \"Đã chọn N\" + `PrintOrderModal` với `window.print()` thật. Đã verify bằng Playwright: nút ẩn/hiện đúng theo `isPrintable`, popup hiện đúng dữ liệu thật (không phải mock), in hàng loạt hiện đủ từng phiếu.",
+            "**Quyết định phạm vi:** `PrintOrderModal` KHÔNG đọc/dùng chung state khổ giấy + checklist đang cấu hình ở `OrderSettingsModal` — đây là 2 nơi hoàn toàn tách biệt (modal cấu hình mở/đóng độc lập, state cục bộ không persist ra ngoài). Việc nối 2 nơi này lại (VD qua localStorage hoặc context) là 1 hạng mục tích hợp lớn hơn, chưa làm trong lần này.",
+            "Vì lý do trên, checklist hiển thị trong phiếu in KHÔNG có tuỳ chọn bật/tắt từng mục như trong \"Xem trước phiếu in\" (SHOP-ORDER-23/25) — phiếu in thật luôn hiện đúng 1 bộ field cố định (người gửi, người nhận, sản phẩm, khối lượng, COD nếu áp dụng, phí ship), không có Kích thước/Ghi chú/Mã đơn shop/Logo vì `Order` không có field tương ứng (field \"Sản phẩm\" hiển thị chỉ mang tính minh hoạ qua lookup cosmetic `orderProducts`, không phải field thật lưu trên `Order` — gap này đã ghi nhận từ trước ở nhiều story khác).",
+            "Tái sử dụng đúng 2 pattern UI đã có sẵn thay vì tạo mới: nút quick-action per-row (giống \"Huỷ đơn\", SHOP-ORDER-21) và thanh bulk-action nổi đáy màn hình (cũng SHOP-ORDER-21) — chỉ thêm 1 action mới vào 2 chỗ đã tồn tại, không xây UI riêng.",
+            "`isPrintable(order)` cố ý tách biệt với `isCancellable(order)` dù cùng cách tiếp cận (theo trạng thái đơn) — 2 điều kiện khác nhau hoàn toàn: huỷ được khi CHƯA dispatch (`status === 'pending'`), in được khi Hàng hoá luôn true hoặc Thư ĐÃ dispatch — không dùng chung 1 hàm dù pattern code giống nhau.",
+            "Đây là lần ĐẦU TIÊN toàn bộ tính năng \"In đơn hàng\" (SHOP-ORDER-13 đến 25, vốn chỉ dừng ở cấu hình + preview mẫu) có 1 hành động in THẬT gắn với đơn hàng thật trong danh sách — trước story này, `window.print()` chưa từng được gọi ở đâu trong toàn bộ luồng in."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-27",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Thêm button In đơn hàng",
+          "status": "draft",
+          "userStory": "Là chủ shop đang xem chi tiết 1 đơn hàng, tôi muốn in vận đơn ngay tại đây, để không phải đóng chi tiết quay lại danh sách mới bấm được nút \"In đơn hàng\".",
+          "userFlow": [
+            "Mở chi tiết 1 đơn hàng đủ điều kiện in (đã có mã vận đơn thật — xem điều kiện ở SHOP-ORDER-26)",
+            "Ở hàng nút hành động dưới cùng, thấy nút xanh \"In đơn hàng\" — đứng TRƯỚC \"Huỷ đơn\"/\"Hoàn hàng\"/\"Cập nhật\"",
+            "Bấm nút → popup \"In đơn hàng — {mã vận đơn}\" mở ra, giống hệt popup khi in từ danh sách, hiện đúng dữ liệu THẬT của đơn đang xem",
+            "Bấm \"In đơn hàng\" trong popup → gọi lệnh in trình duyệt thật, chỉ in đúng khu vực phiếu; bấm \"Đóng\" → chỉ đóng popup in, chi tiết đơn hàng vẫn mở nguyên",
+            "Đơn Thư tài liệu CHƯA dispatch, hoặc đơn đang ở trạng thái không hiện hàng nút hành động (case hoàn hàng đặc biệt) → KHÔNG có nút này, nhất quán với danh sách"
+          ],
+          "systemFlow": [
+            "`OrderDetailDrawer` (`Orders.tsx`) thêm state `printOpen` (boolean) — reset về `false` cùng lúc với các state per-order khác (`editMode`, `confirmingCancel`, `confirmingReturn`) trong `useEffect` theo dõi `order?.id`, để đổi qua đơn khác không giữ popup in của đơn cũ",
+            "Nút \"In đơn hàng\" thêm vào hàng nút hành động mặc định (nhánh không edit, không đang confirm huỷ/hoàn) — gate bằng đúng helper `isPrintable(order)` đã có từ SHOP-ORDER-26, không viết điều kiện riêng",
+            "Vì cả hàng nút hành động nằm trong khối `{!isLetterReturnCase(order) && (...)}`, nút In đơn hàng tự động ẩn theo cùng điều kiện đó khi đơn thuộc case hoàn hàng đặc biệt — không cần thêm check riêng",
+            "`onClick={() => setPrintOpen(true)}`; render `{printOpen && order && <PrintOrderModal orders={[order]} onClose={() => setPrintOpen(false)} />}` ngay trong `OrderDetailDrawer` — TÁI SỬ DỤNG 100% component `PrintOrderModal` đã xây ở SHOP-ORDER-26, không viết thêm 1 modal in riêng cho chi tiết",
+            "`PrintOrderModal` nhận `orders={[order]}` (mảng 1 phần tử, giống lối in per-row ở danh sách) — cùng field thật, cùng bộ chọn khổ giấy, cùng cơ chế `window.print()` như khi in từ danh sách hoặc in hàng loạt"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Trong chi tiết đơn hàng (không ở edit mode, không đang confirm huỷ/hoàn), đơn đủ điều kiện in có nút \"In đơn hàng\" trong hàng nút hành động, đứng trước \"Huỷ đơn\"/\"Hoàn hàng\"/\"Cập nhật\".",
+            "AC2: Đơn Thư tài liệu CHƯA dispatch → không có nút \"In đơn hàng\" trong chi tiết, đúng theo `isPrintable` giống danh sách.",
+            "AC3: Bấm nút → mở đúng `PrintOrderModal` đã dùng ở danh sách, hiện dữ liệu THẬT của chính đơn đang xem chi tiết (không phải dữ liệu mẫu).",
+            "AC4: Đóng popup in (nút \"Đóng\" hoặc bấm ra ngoài) → chỉ đóng popup in, chi tiết đơn hàng vẫn mở nguyên, không đóng luôn cả drawer.",
+            "AC5: Chuyển sang xem chi tiết đơn khác → trạng thái đóng/mở popup in reset về đóng, không giữ lại trạng thái đang mở của đơn trước.",
+            "AC6: Đơn thuộc case không hiện hàng nút hành động (hoàn hàng đặc biệt) → cũng không có nút \"In đơn hàng\", nhất quán với việc ẩn toàn bộ hàng nút đó."
+          ],
+          "notes": [
+            "Tái sử dụng 100% `PrintOrderModal` và helper `isPrintable` đã xây ở SHOP-ORDER-26 — story này chỉ thêm 1 lối vào thứ 3 (per-row, bulk, và giờ là chi tiết) vào đúng 1 component in đã có, không viết thêm logic in mới.",
+            "Đã implement và verify bằng Playwright: mở chi tiết 1 đơn Hàng hoá đã dispatch → nút hiện đúng vị trí, bấm mở đúng popup với dữ liệu thật (mã vận đơn, người gửi/nhận, sản phẩm...) khớp với đơn đang xem.",
+            "Không test lại nhánh \"không đủ điều kiện in\" bằng UI thật ở chi tiết vì mock data hiện không có đơn Thư nào ở trạng thái chưa dispatch để mở chi tiết — nhưng logic dùng chung 100% `isPrintable(order)` đã verify ở danh sách (SHOP-ORDER-26 AC2), không phải điều kiện viết riêng cho chi tiết nên không có rủi ro lệch hành vi."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-28",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng: Mã vận đơn + Barcode + QR code trên mẫu in",
+          "status": "draft",
+          "userStory": "Là chủ shop khi in vận đơn thật (từ danh sách, chi tiết, hay in hàng loạt), tôi muốn mỗi phiếu in hiện đúng barcode, QR code và mã vận đơn của CHÍNH đơn đó, để không bị lẫn phiếu giữa các đơn khi in nhiều cùng lúc.",
+          "userFlow": [
+            "Mở popup \"In đơn hàng\" (từ danh sách, chi tiết, hoặc chọn nhiều đơn — SHOP-ORDER-26/SHOP-ORDER-27)",
+            "Mỗi phiếu hiện 1 khối barcode (dạng vạch) bên trái kèm mã vận đơn ngay dưới, và 1 khối QR (lưới ô vuông, 3 góc là finder pattern đặc) bên phải, đặt cạnh nhau",
+            "Mã vận đơn hiển thị đúng của đơn đang in — Hàng hoá hiện mã thật ngay từ lúc tạo, Thư tài liệu hiện mã thật sau khi đại lý dispatch — không phải mã mẫu cố định",
+            "In nhiều đơn cùng lúc → mỗi phiếu có đúng barcode+QR+mã vận đơn riêng của từng đơn tương ứng, không lặp lại hay lẫn giữa các đơn"
+          ],
+          "systemFlow": [
+            "`PrintOrderModal` (`Orders.tsx`) định nghĩa lại (copy) đúng thuật toán mock barcode (`barcodeBars` — mảng độ rộng vạch cố định) và QR (`QR_SIZE=9`, `isFinder` cho 3 góc, công thức hoa văn `(r*5+c*3)%4===0 || (r+c)%3===0`) — CÙNG cách tính đã có ở phần \"Xem trước phiếu in\" trong Cài đặt đơn hàng (SHOP-ORDER-17), nhưng là 1 bản định nghĩa ĐỘC LẬP, không dùng chung component/hàm với bản settings-preview",
+            "Khác biệt cốt lõi so với SHOP-ORDER-17: mã hiển thị dưới barcode là `order.trackingCode` THẬT của từng đơn trong mảng `orders` truyền vào modal, không phải mã mẫu cố định (`SPX...`/`247EX...`)",
+            "Khối render barcode+QR+mã vận đơn nằm bên trong `orders.map(order => ...)` — mỗi đơn trong danh sách in tạo ra đúng 1 phiếu với đúng `order.trackingCode`, `barcodeBars` và `qrCells` của chính nó (2 hằng số này tính 1 lần ở ngoài `.map`, dùng chung hình dạng cho mọi phiếu — chỉ có dòng mã vận đơn text là khác nhau theo từng `order`)",
+            "Vẫn là hình minh hoạ (barcode/QR không phải mã thật, không quét ra dữ liệu bằng máy quét thật) — kế thừa đúng giới hạn đã ghi nhận ở SHOP-ORDER-17, chỉ khác chỗ mã vận đơn hiển thị là dữ liệu thật của đơn thay vì mã mẫu"
+          ],
+          "acceptanceCriteria": [
+            "AC1: Mỗi phiếu trong popup \"In đơn hàng\" có 1 khối barcode (vạch) bên trái + 1 khối QR (lưới, 3 góc là finder pattern đặc) bên phải, đặt cạnh nhau — cùng cấu trúc mock đã có ở Cài đặt đơn hàng (SHOP-ORDER-17).",
+            "AC2: Mã vận đơn hiển thị ngay dưới barcode là mã THẬT của đơn đang in (`order.trackingCode`), không phải mã mẫu.",
+            "AC3: In nhiều đơn cùng lúc → mỗi phiếu hiện đúng barcode+QR+mã vận đơn của đơn tương ứng, không bị lặp hay lẫn giữa các đơn trong cùng 1 lần in.",
+            "AC4: Barcode/QR vẫn là hình minh hoạ, không phải mã thật tạo bằng thư viện chuyên dụng — không quét ra được dữ liệu, đúng giới hạn đã ghi nhận ở SHOP-ORDER-17."
+          ],
+          "notes": [
+            "Story này KHÔNG lặp lại nội dung đã có ở SHOP-ORDER-17 (cấu trúc finder pattern, lý do thêm QR, giới hạn \"không phải mã thật scan được\") — chỉ ghi nhận điểm khác biệt duy nhất: đây là bản dùng trong phiếu in THẬT (`PrintOrderModal`, SHOP-ORDER-26/SHOP-ORDER-27), hiển thị mã vận đơn thật của từng đơn thay vì mã mẫu cố định trong preview cấu hình.",
+            "Thuật toán mock barcode/QR bị COPY lại y hệt (không refactor thành 1 component/hàm dùng chung giữa preview cấu hình và `PrintOrderModal`) — 2 nơi định nghĩa độc lập, đổi 1 bên không ảnh hưởng bên kia. Nếu sau này cần đổi kiểu hiển thị mock, phải sửa ở cả 2 nơi.",
+            "Xác nhận qua đọc code (`Orders.tsx`): khối barcode+QR+mã vận đơn nằm trong `orders.map(...)`, dùng đúng `order.trackingCode` — không phải hardcode 1 mã chung cho cả batch in."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-29",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Header mã vận đơn, loại đơn, trạng thái",
+          "status": "draft",
+          "userStory": "Là chủ shop mở chi tiết 1 đơn hàng, tôi muốn thấy ngay mã vận đơn (copy được), loại đơn và trạng thái hiện tại ngay trên đầu màn hình, cùng nút quay lại rõ ràng, để nắm nhanh thông tin quan trọng nhất của đơn mà không cần đọc sâu vào nội dung bên dưới.",
+          "userFlow": [
+            "Mở chi tiết 1 đơn hàng (bấm mã đơn trong danh sách) → header hiện: nút \"←\" quay lại, mã vận đơn (xanh, đậm) kèm icon sao chép, dấu \"·\" phân cách, rồi tag loại đơn (Hàng hoá/Thư) có icon nhỏ.",
+            "Ngay dưới dòng mã đơn: trạng thái hiện tại của đơn, màu theo đúng trạng thái (VD \"Chờ lấy hàng\" xanh lá, \"Đang giao\" xanh dương...).",
+            "Bấm icon sao chép → copy mã vận đơn vào clipboard.",
+            "Bấm \"←\" → đóng chi tiết, quay lại danh sách đơn hàng."
+          ],
+          "systemFlow": [
+            "Header cũ trong OrderDetailDrawer (Orders.tsx) chỉ có mã vận đơn + \"Tạo lúc {ngày}\" + nút \"X\" đóng ở góc phải — thay bằng cấu trúc mới: \"←\" (thay X, dùng đúng handler onClose cũ), mã vận đơn + CopyOutlined (gọi navigator.clipboard.writeText(order.trackingCode)), dấu \"·\", rồi tag loại đơn.",
+            "Dòng trạng thái dùng lại đúng rowStatus(order) (trả về { label, color }) đã có sẵn từ danh sách (TRow) — không viết logic màu/label mới, đảm bảo trạng thái hiển thị nhất quán giữa danh sách và chi tiết.",
+            "Tag loại đơn tái sử dụng đúng style badge đã có ở danh sách, chỉ đổi nền: Hàng hoá nền cam nhạt (#FFF4ED) + icon InboxOutlined; Thư nền tím nhạt (#EDE9FE) + icon MailOutlined.",
+            "Bỏ hẳn nút \"X\" cũ ở góc phải header — tránh 2 nút cùng làm 1 hành động (đóng drawer) khi đã có \"←\" bên trái đảm nhiệm việc này.",
+            "Tab switcher (Thông tin đơn/Lịch sử trạng thái/Lịch sử thao tác) giữ nguyên vị trí và hành vi, không đổi."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Mở chi tiết đơn → header có đúng thứ tự: nút \"←\", mã vận đơn (xanh đậm), icon sao chép, dấu \"·\", tag loại đơn (icon + text).",
+            "AC2: Dòng ngay dưới hiện đúng trạng thái đơn, màu khớp đúng với màu badge trạng thái ở danh sách (dùng chung rowStatus).",
+            "AC3: Bấm icon sao chép → mã vận đơn được copy vào clipboard.",
+            "AC4: Bấm \"←\" → đóng chi tiết, quay về danh sách đơn hàng — không còn nút \"X\" nào khác trong header.",
+            "AC5: Tag loại đơn: Hàng hoá nền cam nhạt + icon hộp; Thư nền tím nhạt + icon thư — đúng màu/icon phân biệt 2 loại đơn."
+          ],
+          "notes": [
+            "Trước đây header chỉ hiện mã vận đơn + \"Tạo lúc {ngày}\" — bỏ ngày tạo khỏi header (không phải thông tin ưu tiên hàng đầu khi mở chi tiết), thay bằng loại đơn + trạng thái, hữu ích hơn để nhận biết nhanh đơn đang ở đâu trong luồng xử lý.",
+            "Dùng chung rowStatus() và style badge loại đơn đã có ở danh sách (TRow) — không tạo thêm bộ màu/label riêng cho header, tránh lệch màu giữa 2 nơi cùng hiển thị 1 trạng thái.",
+            "Đã implement và verify bằng Playwright: header hiện đúng đủ thành phần theo thứ tự, nút \"←\" đóng đúng drawer, quay về danh sách.",
+            "Chưa làm tương tự cho OrderDetailDrawer bên Agency Admin (AgencyOrders.tsx) — phạm vi yêu cầu chỉ là Web Shop."
           ]
         }
       ]

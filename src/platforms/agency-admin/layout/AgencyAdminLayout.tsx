@@ -23,7 +23,13 @@ const SIDEBAR_WIDTH = 240
 
 const NAV_ITEMS = [
   { key: '/agency-admin/shops', icon: <ShopOutlined />, label: 'Shop' },
-  { key: '/agency-admin/orders', icon: <OrderedListOutlined />, label: 'Đơn hàng' },
+  {
+    key: '/agency-admin/orders', icon: <OrderedListOutlined />, label: 'Đơn hàng',
+    children: [
+      { key: '/agency-admin/orders', label: 'Danh sách đơn hàng' },
+      { key: '/agency-admin/orders/import', label: 'Nhập đơn hàng' },
+    ],
+  },
   { key: '/agency-admin/carrier-setup', icon: <TruckOutlined />, label: 'Thiết lập NVC' },
   { key: '/agency-admin/reconciliation', icon: <AuditOutlined />, label: 'Đối soát NVC' },
 ]
@@ -82,26 +88,52 @@ export default function AgencyAdminLayout() {
             {NAV_ITEMS.map((item) => {
               const active = isActive(item.key)
               return (
-                <div
-                  key={item.key}
-                  onClick={() => navigate(item.key)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '5px 8px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    background: active ? '#FFF3EE' : 'transparent',
-                    color: active ? GHN_ORANGE : '#333',
-                    fontWeight: active ? 600 : 400,
-                    fontSize: 14,
-                  }}
-                >
-                  <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
-                    {item.icon}
-                  </span>
-                  {item.label}
+                <div key={item.key}>
+                  <div
+                    onClick={() => navigate(item.key)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '5px 8px',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      background: active ? '#FFF3EE' : 'transparent',
+                      color: active ? GHN_ORANGE : '#333',
+                      fontWeight: active ? 600 : 400,
+                      fontSize: 14,
+                    }}
+                  >
+                    <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </div>
+                  {/* Menu con — chỉ hiện khi mục cha đang active, để URL con khớp đúng section */}
+                  {item.children && active && (
+                    <div style={{ display: 'flex', flexDirection: 'column', marginTop: 2 }}>
+                      {item.children.map((child) => {
+                        const childActive = location.pathname === child.key
+                        return (
+                          <div
+                            key={child.key}
+                            onClick={() => navigate(child.key)}
+                            style={{
+                              padding: '5px 8px 5px 40px',
+                              borderRadius: 6,
+                              cursor: 'pointer',
+                              background: childActive ? '#FFF3EE' : 'transparent',
+                              color: childActive ? GHN_ORANGE : '#555',
+                              fontWeight: childActive ? 600 : 400,
+                              fontSize: 13,
+                            }}
+                          >
+                            {child.label}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )
             })}

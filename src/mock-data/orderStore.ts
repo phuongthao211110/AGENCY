@@ -22,6 +22,10 @@ export interface Order {
   weight: number
   cod: number
   fee: number
+  // Lựa chọn THẬT của shop lúc tạo đơn — 'sender' = Shop trả ship, 'receiver' = Khách trả ship.
+  // Khác với giá trị luôn cố định "Shop trả ship" khi đối soát với GHN (GHN chỉ biết thu cước
+  // từ bên gửi/đại lý, không có khái niệm thu từ người nhận) — 2 giá trị này KHÁC NHAU có chủ đích.
+  feePayer: 'sender' | 'receiver'
   status: string
   createdAt: string
   // Optional fields present in some JSON entries
@@ -63,6 +67,15 @@ export interface Order {
   // thời điểm đại lý xác nhận đã giao lại hàng hoàn cho shop — null nghĩa là hàng đang ở đại lý,
   // CHƯA về tay shop, dù order.status đã là 'returning'/'cancelled'/'failed'.
   returnHandoverAt?: string | null
+  // Các field mở rộng từ màn "Nhập đơn hàng" (import) — optional vì các luồng tạo đơn khác
+  // (CreateOrderDrawer, CreateLetterDrawer...) chưa thu thập các field này.
+  senderAddress?: string       // địa chỉ Bên gửi thật sự dùng cho đơn (có thể khác địa chỉ mặc định của shop)
+  shopOrderCode?: string       // Mã đơn shop tự đặt — chỉ để đối chiếu, không phải mã vận đơn
+  declaredValue?: number       // Giá trị hàng khai giá (0 = không khai giá)
+  viewGoodsPolicy?: string     // Ghi chú xem hàng — VD "Không cho xem hàng", "Cho xem không thử"
+  orderNote?: string           // Ghi chú đơn hàng
+  pickupShift?: string         // Ca lấy hàng
+  codFailureFee?: number       // Phí thu tiền khi giao thất bại
 }
 
 const STORAGE_KEY = 'ghn_orders_v1'
@@ -79,6 +92,7 @@ function migrateOrder(o: typeof baseOrders[number]): Order {
     carrierCode: raw.carrierCode ?? 'GHN',
     dispatchedAt: raw.dispatchedAt ?? raw.createdAt ?? null,
     dispatchedBy: raw.dispatchedBy ?? null,
+    feePayer: raw.feePayer ?? 'sender',
   }
 }
 

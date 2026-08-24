@@ -19,6 +19,7 @@ Là Agency Admin (Đại lý), tôi muốn cấu hình dịch vụ vận chuyể
 - Shop có thể được gắn với nhiều dịch vụ, mỗi dịch vụ dùng 1 bảng giá riêng
 - Nếu một dịch vụ không được chọn bảng giá → dịch vụ đó không khả dụng với shop này
 - Section "Cấu hình dịch vụ" là Section 3 trong form tạo shop mới, sau "Thông tin cơ bản" (AGA-SHOP-3) và "Cấu hình tài khoản" (AGA-SHOP-4)
+- **Đính chính** (sau khi tách [AGA-SHOP-10](./tao-moi-shop-khong-co-dich-vu-kha-dung.md)): AC8 trước đây yêu cầu thông báo hướng dẫn + CTA điều hướng sang "Thiết lập NVC" khi không có dịch vụ — đại lý xác nhận trực tiếp hành vi ĐÚNG chỉ đơn giản là hiển thị rỗng, không cần thông báo/CTA. AC8 đã sửa lại cho khớp.
 
 ## User Flow
 
@@ -45,4 +46,4 @@ Là Agency Admin (Đại lý), tôi muốn cấu hình dịch vụ vận chuyể
 
 **AC7:** Hệ thống đảm bảo tenant isolation: danh sách dịch vụ và bảng giá trong dropdown chỉ bao gồm dịch vụ/bảng giá thuộc đại lý của Agency Admin đang đăng nhập.
 
-**AC8:** Khi không có dịch vụ nào được cấu hình trong đại lý, Section "Cấu hình dịch vụ" hiển thị thông báo hướng dẫn Agency Admin thiết lập dịch vụ tại màn "Thiết lập NVC" trước.
+**AC8:** Khi không có dịch vụ nào được cấu hình trong đại lý, Section "Cấu hình dịch vụ" hiển thị rỗng (không có dòng dịch vụ nào) — không chặn submit form, không cần thông báo/CTA gì thêm. Chi tiết xem [AGA-SHOP-10](./tao-moi-shop-khong-co-dich-vu-kha-dung.md).

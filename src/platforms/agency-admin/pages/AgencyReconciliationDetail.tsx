@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
-import { ArrowLeftOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, DeleteOutlined, CheckCircleOutlined, SearchOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import allSessions from '../../../mock-data/carrier-reconciliation.json'
 import { getReconciliationItems } from '../../../mock-data/reconciliationLedger'
@@ -123,6 +123,7 @@ export default function AgencyReconciliationDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [filterStatus, setFilterStatus] = useState<'all' | 'MATCH' | 'MISMATCH' | 'NOT_FOUND'>('all')
+  const [search, setSearch] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
 
@@ -149,9 +150,13 @@ export default function AgencyReconciliationDetail() {
   const totalCOD = items.reduce((s, i) => s + i.ghnCOD, 0)
   const totalFee = items.reduce((s, i) => s + i.ghnFee, 0)
 
-  const filteredItems = items.filter(i =>
-    filterStatus === 'all' ? true : i.status === filterStatus
-  )
+  const filteredItems = items
+    .filter(i => filterStatus === 'all' ? true : i.status === filterStatus)
+    .filter(i => {
+      const q = search.trim().toLowerCase()
+      if (!q) return true
+      return i.orderCode.toLowerCase().includes(q) || (i.customerOrderCode ?? '').toLowerCase().includes(q)
+    })
 
   const cardStyle: React.CSSProperties = {
     flex: 1, padding: '14px 16px', border: `1px solid ${C_BORDER}`,
@@ -282,6 +287,18 @@ export default function AgencyReconciliationDetail() {
             <option value="MISMATCH">Sai</option>
             <option value="NOT_FOUND">Không tìm thấy</option>
           </select>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', flex: 1, maxWidth: 320,
+            background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+          }}>
+            <SearchOutlined style={{ color: C_TEXT_SECONDARY, fontSize: 16, flexShrink: 0 }} />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Tìm theo mã đơn GHN hoặc mã đơn KH"
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent' }}
+            />
+          </div>
         </div>
 
         {/* Table */}

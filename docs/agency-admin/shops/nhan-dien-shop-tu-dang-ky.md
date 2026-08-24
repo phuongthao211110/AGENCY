@@ -7,7 +7,7 @@ figma: https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?no
 status: draft
 ---
 
-# [AGA] Shop - Nhận diện shop tự đăng ký trong danh sách
+# [AGENCY] Shop - Danh sách shop: Nhận diện shop tự đăng ký
 
 ## User Story
 

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Form, Input, Button, ConfigProvider } from 'antd'
 import { shopTheme } from '../../../theme/platforms'
@@ -40,15 +41,38 @@ const AGENCY_CODE_INVALID_MESSAGE = 'Mã đại lý không hợp lệ'
 export default function ShopRegister() {
   const navigate = useNavigate()
 
+  // Bước 1: xác nhận mã đại lý trước — chỉ khi mã hợp lệ mới lộ ra form đăng ký đầy đủ.
+  // Tránh trường hợp người dùng điền hết form rồi mới biết mã đại lý sai ở field cuối.
+  const [step, setStep] = useState<'code' | 'form'>('code')
+  const [agencyCodeInput, setAgencyCodeInput] = useState('')
+  const [codeError, setCodeError] = useState('')
+  const [resolvedAgency, setResolvedAgency] = useState<(typeof activeAgencies)[number] | null>(null)
+
+  const submitCode = () => {
+    const agency = findAgencyByCode(agencyCodeInput)
+    if (!agency) {
+      setCodeError(agencyCodeInput.trim() ? AGENCY_CODE_INVALID_MESSAGE : 'Vui lòng nhập mã đại lý')
+      return
+    }
+    setResolvedAgency(agency)
+    setCodeError('')
+    setStep('form')
+  }
+
+  const changeAgencyCode = () => {
+    setStep('code')
+    setResolvedAgency(null)
+    setCodeError('')
+  }
+
   const onFinish = (values: {
     shopName: string; ownerName: string; phone: string; address: string
-    agencyCode: string; username: string
+    username: string
   }) => {
-    const agency = findAgencyByCode(values.agencyCode)
-    if (!agency) return
+    if (!resolvedAgency) return
     addShop({
       id: `SHOP${Date.now().toString().slice(-6)}`,
-      agencyId: agency.id,
+      agencyId: resolvedAgency.id,
       name: values.shopName,
       ownerName: values.ownerName,
       phone: values.phone,
@@ -109,118 +133,160 @@ export default function ShopRegister() {
               Đăng ký shop
             </h2>
 
-            <Form layout="vertical" onFinish={onFinish}>
-              <Form.Item
-                name="shopName"
-                label="Tên shop"
-                rules={[{ required: true, message: 'Vui lòng nhập tên shop' }]}
-              >
-                <Input size="large" placeholder="Tên shop" />
-              </Form.Item>
+            {step === 'code' ? (
+              <>
+                <p style={{ textAlign: 'center', color: '#6B7280', fontSize: 14, marginTop: -16, marginBottom: 24 }}>
+                  Nhập mã đại lý bạn muốn hợp tác để bắt đầu đăng ký. Liên hệ đại lý nếu bạn chưa có mã.
+                </p>
+                <Form layout="vertical" onFinish={submitCode}>
+                  <Form.Item
+                    label="Mã đại lý"
+                    validateStatus={codeError ? 'error' : undefined}
+                    help={codeError || undefined}
+                  >
+                    <Input
+                      size="large"
+                      placeholder="Mã đại lý"
+                      value={agencyCodeInput}
+                      onChange={(e) => { setAgencyCodeInput(e.target.value); if (codeError) setCodeError('') }}
+                      onPressEnter={submitCode}
+                      autoFocus
+                    />
+                  </Form.Item>
 
-              <Form.Item
-                name="ownerName"
-                label="Họ tên chủ shop"
-                rules={[{ required: true, message: 'Vui lòng nhập họ tên chủ shop' }]}
-              >
-                <Input size="large" placeholder="Họ tên chủ shop" />
-              </Form.Item>
-
-              <Form.Item
-                name="phone"
-                label="Số điện thoại"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập số điện thoại' },
-                  {
-                    validator: (_, value) =>
-                      !value || isValidVNPhone(value) ? Promise.resolve() : Promise.reject(new Error(PHONE_INVALID_MESSAGE)),
-                  },
-                ]}
-              >
-                <Input size="large" placeholder="Số điện thoại" />
-              </Form.Item>
-
-              <Form.Item
-                name="address"
-                label="Địa chỉ"
-                rules={[{ required: true, message: 'Vui lòng nhập địa chỉ' }]}
-              >
-                <Input size="large" placeholder="Số nhà, đường, tỉnh/thành" />
-              </Form.Item>
-
-              <Form.Item
-                name="agencyCode"
-                label="Mã đại lý"
-                extra="Mã do đại lý bạn muốn hợp tác cung cấp riêng — liên hệ đại lý nếu chưa có mã."
-                rules={[
-                  { required: true, message: 'Vui lòng nhập mã đại lý' },
-                  {
-                    validator: (_, value) =>
-                      !value || findAgencyByCode(value) ? Promise.resolve() : Promise.reject(new Error(AGENCY_CODE_INVALID_MESSAGE)),
-                  },
-                ]}
-              >
-                <Input size="large" placeholder="Mã đại lý" />
-              </Form.Item>
-
-              <Form.Item
-                name="username"
-                label="Tên đăng nhập"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập tên đăng nhập' },
-                  {
-                    validator: (_, value) =>
-                      !value || !loadShops().some(s => s.username === value)
-                        ? Promise.resolve()
-                        : Promise.reject(new Error('Tên đăng nhập đã được sử dụng, vui lòng chọn tên khác')),
-                  },
-                ]}
-              >
-                <Input size="large" placeholder="Tên đăng nhập" />
-              </Form.Item>
-
-              <Form.Item
-                name="password"
-                label="Mật khẩu"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập mật khẩu' },
-                  { min: 6, message: 'Mật khẩu tối thiểu 6 ký tự' },
-                ]}
-                hasFeedback
-              >
-                <Input.Password size="large" placeholder="Mật khẩu" />
-              </Form.Item>
-
-              <Form.Item
-                name="confirmPassword"
-                label="Xác nhận mật khẩu"
-                dependencies={['password']}
-                hasFeedback
-                rules={[
-                  { required: true, message: 'Vui lòng xác nhận mật khẩu' },
-                  ({ getFieldValue }) => ({
-                    validator(_, value) {
-                      if (!value || getFieldValue('password') === value) return Promise.resolve()
-                      return Promise.reject(new Error('Mật khẩu xác nhận không khớp'))
-                    },
-                  }),
-                ]}
-              >
-                <Input.Password size="large" placeholder="Nhập lại mật khẩu" />
-              </Form.Item>
-
-              <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  size="large"
-                  block
-                  style={{ background: GHN_ORANGE, borderColor: GHN_ORANGE, height: 44, fontWeight: 600 }}
+                  <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      size="large"
+                      block
+                      style={{ background: GHN_ORANGE, borderColor: GHN_ORANGE, height: 44, fontWeight: 600 }}
+                    >
+                      Tiếp tục
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </>
+            ) : (
+              <>
+                {/* Xác nhận đã resolve đúng đại lý — cho đổi lại mã nếu bấm nhầm, không phải điền lại từ đầu */}
+                <div
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                    background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8,
+                    padding: '10px 14px', marginTop: -16, marginBottom: 24,
+                  }}
                 >
-                  Đăng ký
-                </Button>
-              </Form.Item>
-            </Form>
+                  <span style={{ fontSize: 14, color: '#166534' }}>
+                    Đăng ký dưới đại lý: <strong>{resolvedAgency?.name}</strong>
+                  </span>
+                  <span
+                    onClick={changeAgencyCode}
+                    style={{ fontSize: 13, fontWeight: 600, color: GHN_ORANGE, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Đổi mã đại lý
+                  </span>
+                </div>
+
+                <Form layout="vertical" onFinish={onFinish}>
+                  <Form.Item
+                    name="shopName"
+                    label="Tên shop"
+                    rules={[{ required: true, message: 'Vui lòng nhập tên shop' }]}
+                  >
+                    <Input size="large" placeholder="Tên shop" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="ownerName"
+                    label="Họ tên chủ shop"
+                    rules={[{ required: true, message: 'Vui lòng nhập họ tên chủ shop' }]}
+                  >
+                    <Input size="large" placeholder="Họ tên chủ shop" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="phone"
+                    label="Số điện thoại"
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập số điện thoại' },
+                      {
+                        validator: (_, value) =>
+                          !value || isValidVNPhone(value) ? Promise.resolve() : Promise.reject(new Error(PHONE_INVALID_MESSAGE)),
+                      },
+                    ]}
+                  >
+                    <Input size="large" placeholder="Số điện thoại" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="address"
+                    label="Địa chỉ"
+                    rules={[{ required: true, message: 'Vui lòng nhập địa chỉ' }]}
+                  >
+                    <Input size="large" placeholder="Số nhà, đường, tỉnh/thành" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="username"
+                    label="Tên đăng nhập"
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập tên đăng nhập' },
+                      {
+                        validator: (_, value) =>
+                          !value || !loadShops().some(s => s.username === value)
+                            ? Promise.resolve()
+                            : Promise.reject(new Error('Tên đăng nhập đã được sử dụng, vui lòng chọn tên khác')),
+                      },
+                    ]}
+                  >
+                    <Input size="large" placeholder="Tên đăng nhập" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="password"
+                    label="Mật khẩu"
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập mật khẩu' },
+                      { min: 6, message: 'Mật khẩu tối thiểu 6 ký tự' },
+                    ]}
+                    hasFeedback
+                  >
+                    <Input.Password size="large" placeholder="Mật khẩu" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="confirmPassword"
+                    label="Xác nhận mật khẩu"
+                    dependencies={['password']}
+                    hasFeedback
+                    rules={[
+                      { required: true, message: 'Vui lòng xác nhận mật khẩu' },
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          if (!value || getFieldValue('password') === value) return Promise.resolve()
+                          return Promise.reject(new Error('Mật khẩu xác nhận không khớp'))
+                        },
+                      }),
+                    ]}
+                  >
+                    <Input.Password size="large" placeholder="Nhập lại mật khẩu" />
+                  </Form.Item>
+
+                  <Form.Item style={{ marginBottom: 0, marginTop: 8 }}>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      size="large"
+                      block
+                      style={{ background: GHN_ORANGE, borderColor: GHN_ORANGE, height: 44, fontWeight: 600 }}
+                    >
+                      Đăng ký
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </>
+            )}
 
             <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6B7280' }}>
               Đã có tài khoản?{' '}

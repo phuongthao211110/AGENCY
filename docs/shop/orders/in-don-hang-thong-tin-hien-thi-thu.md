@@ -7,7 +7,7 @@ figma: https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW
 status: draft
 ---
 
-# [WEB SHOP] Cài đặt đơn hàng - In đơn hàng: Thông tin hiển thị trên phiếu in (Thư tài liệu)
+# [WEB SHOP] Đơn hàng - In đơn hàng - Thư/tài liệu: Thông tin hiển thị trên phiếu in
 
 ## User Story
 
