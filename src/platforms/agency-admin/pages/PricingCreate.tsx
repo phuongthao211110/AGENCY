@@ -1,6 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined, InfoCircleOutlined, CloseOutlined } from '@ant-design/icons'
+import {
+  regions as routeRegions,
+  routeMatrix,
+  sameProvinceRoute,
+  listRouteNames,
+  type RegionDef,
+} from '../../../mock-data/routeConfig'
 
 const C_ACTION        = '#FF5200'
 const C_LINK          = '#3B82F6'
@@ -12,9 +19,6 @@ const C_BG_HEADER     = '#F3F4F6'
 const C_BG_FORM       = '#F9FAFB'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-type RouteType = 'noi-tinh' | 'noi-vung' | 'lien-vung' | 'noi-vung-tinh' | 'lien-vung-tinh' | 'lien-vung-dac-biet'
-type RegionCode = 'vung1' | 'vung2' | 'vung3' | ''
 
 type OverweightTier = {
   id: string
@@ -51,40 +55,28 @@ type Surcharges = {
 
 type RouteConfig = {
   id: string
-  routeType: RouteType
-  // Chỉ dùng khi routeType === 'lien-tinh'
-  fromRegion: RegionCode
+  routeName: string
+  // Chỉ dùng khi routeName !== sameProvinceRoute
+  fromRegion: string
   fromProvince: string
   fromDistrict: string
   fromWard: string
-  toRegion: RegionCode
+  toRegion: string
   toProvince: string
   toDistrict: string
   toWard: string
   // Giá theo khối lượng chuẩn
   standardWeight: string  // gram cố định
-  basePrice: string       // VND — giá cho gói ≤ standardWeight
+  basePrice: string       // VND — giá cho gói ≤ standardWeight, dùng khi splitUrbanRural = false
+  // Tách 2 giá Nội thành / Ngoại thành cho cùng 1 tuyến (vd bảng giá "Đi bộ") — tuỳ chọn bật/tắt
+  // riêng theo từng tuyến, không bắt buộc cho mọi tuyến.
+  splitUrbanRural: boolean
+  basePriceUrban: string  // VND — Nội thành, dùng khi splitUrbanRural = true
+  basePriceRural: string  // VND — Ngoại thành, dùng khi splitUrbanRural = true
   overweightTiers: OverweightTier[]
   surcharges: Surcharges
 }
 
-const ROUTE_TYPE_LABELS: Record<RouteType, string> = {
-  'noi-tinh':           'Nội tỉnh',
-  'noi-vung':           'Nội vùng',
-  'noi-vung-tinh':      'Nội vùng tỉnh',
-  'lien-vung-dac-biet': 'Liên vùng đặc biệt',
-  'lien-vung':          'Liên vùng',
-  'lien-vung-tinh':     'Liên vùng tỉnh',
-}
-
-
-
-const REGION_OPTIONS = [
-  { value: '',      label: 'Tất cả' },
-  { value: 'vung3', label: 'Vùng 3 — Miền Bắc' },
-  { value: 'vung2', label: 'Vùng 2 — Miền Trung' },
-  { value: 'vung1', label: 'Vùng 1 — Miền Nam' },
-]
 
 
 const makeEmptySurcharges = (): Surcharges => ({
@@ -96,12 +88,13 @@ const makeEmptySurcharges = (): Surcharges => ({
   returnFee:        { value: '', unit: 'vnd' },
 })
 
-const makeEmptyRoute = (routeType: RouteType, id: string): RouteConfig => ({
+const makeEmptyRoute = (routeName: string, id: string): RouteConfig => ({
   id,
-  routeType,
+  routeName,
   fromRegion: '', fromProvince: '', fromDistrict: '', fromWard: '',
   toRegion: '', toProvince: '', toDistrict: '', toWard: '',
   standardWeight: '', basePrice: '',
+  splitUrbanRural: false, basePriceUrban: '', basePriceRural: '',
   overweightTiers: [],
   surcharges: makeEmptySurcharges(),
 })
@@ -118,6 +111,23 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   boxSizing: 'border-box',
   background: '#fff',
+}
+
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <div onClick={onToggle} style={{
+      width: 32, height: 18, borderRadius: 9, cursor: 'pointer', flexShrink: 0,
+      background: on ? C_ACTION : '#D1D5DB',
+      position: 'relative', transition: 'background 0.2s',
+    }}>
+      <div style={{
+        position: 'absolute', top: 2, left: on ? 16 : 2,
+        width: 14, height: 14, borderRadius: '50%',
+        background: '#fff', transition: 'left 0.2s',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+      }} />
+    </div>
+  )
 }
 
 const labelStyle: React.CSSProperties = {
@@ -757,7 +767,7 @@ function RouteBlock({
 
   const toggleSection = (sec: 'overweight' | 'surcharge') =>
     setActiveSection((v) => (v === sec ? null : sec))
-  const isLienTinh         = route.routeType === 'lien-vung-tinh'
+  const showLocationScoping = route.routeName !== sameProvinceRoute
   const updateSurcharges = (updated: Surcharges) => {
     onChange({ ...route, surcharges: updated })
   }
@@ -773,11 +783,11 @@ function RouteBlock({
     onChange({ ...route, [key]: value })
   }
 
-  const handleRouteTypeChange = (newType: RouteType) => {
+  const handleRouteNameChange = (newRouteName: string) => {
     onChange({
       ...route,
-      routeType: newType,
-      // reset location fields khi không phải liên tỉnh
+      routeName: newRouteName,
+      // reset location fields when changing route
       fromRegion: '', fromProvince: '', fromDistrict: '', fromWard: '',
       toRegion: '', toProvince: '', toDistrict: '', toWard: '',
     })
@@ -830,14 +840,14 @@ function RouteBlock({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Tuyến</span>
           <select
-            value={route.routeType}
-            onChange={(e) => handleRouteTypeChange(e.target.value as RouteType)}
+            value={route.routeName}
+            onChange={(e) => handleRouteNameChange(e.target.value)}
             style={{ ...inputStyle, padding: '6px 10px', fontWeight: 600, cursor: 'pointer', fontSize: 13, width: 190 }}
             onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
             onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
           >
-            {(Object.entries(ROUTE_TYPE_LABELS) as [RouteType, string][]).map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
+            {listRouteNames().map((name) => (
+              <option key={name} value={name}>{name}</option>
             ))}
           </select>
         </div>
@@ -862,20 +872,49 @@ function RouteBlock({
           </div>
         </div>
 
-        {/* Giá chuẩn */}
+        {/* Giá chuẩn — hoặc tách Nội thành / Ngoại thành nếu bật */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: 12, color: C_TEXT_LABEL }}>Giá chuẩn <span style={{ color: '#EF4444' }}>*</span></span>
-          <div style={{ position: 'relative', width: 140 }}>
-            <input
-              type="number"
-              value={route.basePrice}
-              onChange={(e) => updateField('basePrice', e.target.value)}
-              placeholder="VD: 20000"
-              style={{ ...inputStyle, width: '100%', paddingRight: 28, boxSizing: 'border-box' }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-            />
-            <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+          <span style={{ fontSize: 12, color: C_TEXT_LABEL, whiteSpace: 'nowrap' }}>Giá chuẩn <span style={{ color: '#EF4444' }}>*</span></span>
+          {route.splitUrbanRural ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {([
+                { key: 'basePriceUrban' as const, label: 'Nội thành' },
+                { key: 'basePriceRural' as const, label: 'Ngoại thành' },
+              ]).map(({ key, label }) => (
+                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 10, color: C_TEXT_SECONDARY }}>{label}</span>
+                  <div style={{ position: 'relative', width: 120 }}>
+                    <input
+                      type="number"
+                      value={route[key]}
+                      onChange={(e) => updateField(key, e.target.value)}
+                      placeholder="VD: 15000"
+                      style={{ ...inputStyle, width: '100%', paddingRight: 24, boxSizing: 'border-box' }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+                    />
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ position: 'relative', width: 140 }}>
+              <input
+                type="number"
+                value={route.basePrice}
+                onChange={(e) => updateField('basePrice', e.target.value)}
+                placeholder="VD: 20000"
+                style={{ ...inputStyle, width: '100%', paddingRight: 28, boxSizing: 'border-box' }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+                onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+              />
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Toggle on={route.splitUrbanRural} onToggle={() => updateField('splitUrbanRural', !route.splitUrbanRural)} />
+            <span style={{ fontSize: 11, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Tách khu vực</span>
           </div>
         </div>
 
@@ -924,8 +963,8 @@ function RouteBlock({
         </div>
       </div>
 
-      {/* Liên tỉnh: location selectors (luôn hiển thị) */}
-      {isLienTinh && (
+      {/* Thu hẹp phạm vi: location selectors (hiển thị cho mọi tuyến trừ Nội Tỉnh) */}
+      {showLocationScoping && (
         <div style={{ padding: '12px 14px', background: C_BG_FORM, borderRadius: 6, marginBottom: 14, border: `1px solid ${C_BORDER}` }}>
           {/* Grid: col1=label, col2=Vùng, col3=Tỉnh, col4=Quận, col5=Phường */}
           <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr 1fr', gap: '8px 10px', alignItems: 'end' }}>
@@ -940,12 +979,12 @@ function RouteBlock({
             <span style={{ fontSize: 12, color: C_TEXT_LABEL, fontWeight: 600, paddingBottom: 7 }}>Từ</span>
             <select
               value={route.fromRegion}
-              onChange={(e) => updateField('fromRegion', e.target.value as RegionCode)}
+              onChange={(e) => updateField('fromRegion', e.target.value)}
               style={{ ...inputStyle, width: '100%', cursor: 'pointer' }}
               onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
               onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
             >
-              {REGION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {[{ value: '', label: 'Tất cả' }, ...routeRegions.map((r) => ({ value: r.id, label: r.name }))].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <input value={route.fromProvince} onChange={(e) => updateField('fromProvince', e.target.value)} placeholder="Tất cả" style={{ ...inputStyle, width: '100%' }} onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')} onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
             <input value={route.fromDistrict} onChange={(e) => updateField('fromDistrict', e.target.value)} placeholder="Tất cả" style={{ ...inputStyle, width: '100%' }} onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')} onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
@@ -955,12 +994,12 @@ function RouteBlock({
             <span style={{ fontSize: 12, color: C_TEXT_LABEL, fontWeight: 600, paddingBottom: 7 }}>Đến</span>
             <select
               value={route.toRegion}
-              onChange={(e) => updateField('toRegion', e.target.value as RegionCode)}
+              onChange={(e) => updateField('toRegion', e.target.value)}
               style={{ ...inputStyle, width: '100%', cursor: 'pointer' }}
               onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
               onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
             >
-              {REGION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {[{ value: '', label: 'Tất cả' }, ...routeRegions.map((r) => ({ value: r.id, label: r.name }))].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <input value={route.toProvince} onChange={(e) => updateField('toProvince', e.target.value)} placeholder="Tất cả" style={{ ...inputStyle, width: '100%' }} onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')} onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
             <input value={route.toDistrict} onChange={(e) => updateField('toDistrict', e.target.value)} placeholder="Tất cả" style={{ ...inputStyle, width: '100%' }} onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')} onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
@@ -1005,67 +1044,32 @@ function RouteBlock({
 
 // ─── Zone guide modal ─────────────────────────────────────────────────────────
 
-const ZONE_GUIDE_ROWS: { type: string; definition: string; routes: string[] }[] = [
-  {
-    type: 'Nội Tỉnh',
-    definition: 'Là lộ trình giao - nhận hàng hóa chỉ trong khu vực của tỉnh thành đó và nằm trong cùng 1 miền gửi hàng.',
-    routes: [
-      'Hà Nội <=> Hà Nội',
-      'Đà Nẵng <=> Đà Nẵng',
-      'Hồ Chí Minh <=> Hồ Chí Minh',
-      'Tỉnh X vùng 1 <=> Tỉnh X vùng 1',
-      'Tỉnh X vùng 2 <=> Tỉnh X vùng 2',
-      'Tỉnh X vùng 3 <=> Tỉnh X vùng 3',
-    ],
-  },
-  {
-    type: 'Nội Vùng',
-    definition: 'Là lộ trình giao - nhận hàng hoá giữa TP. Hà Nội & Vùng 3, TP. Đà Nẵng & Vùng 2, TP. Hồ Chí Minh & Vùng 1.',
-    routes: [
-      'Hà Nội <=> Vùng 3',
-      'Đà Nẵng <=> Vùng 2',
-      'Hồ Chí Minh <=> Vùng 1',
-    ],
-  },
-  {
-    type: 'Nội Vùng Tỉnh',
-    definition: 'Là lộ trình giao - nhận hàng hóa giữa 2 tỉnh thành chỉ nằm trong cùng 1 miền gửi hàng.',
-    routes: [
-      'Vùng 3 <=> Vùng 3',
-      'Vùng 2 <=> Vùng 2',
-      'Vùng 1 <=> Vùng 1',
-    ],
-  },
-  {
-    type: 'Liên Vùng Đặc Biệt',
-    definition: 'Là lộ trình giao - nhận hàng hóa giữa 3 thành phố lớn Hà Nội, Đà Nẵng và Hồ Chí Minh với nhau.',
-    routes: [
-      'Hà Nội <=> Đà Nẵng',
-      'Đà Nẵng <=> Hồ Chí Minh',
-      'Hồ Chí Minh <=> Hà Nội',
-    ],
-  },
-  {
-    type: 'Liên Vùng',
-    definition: 'Là lộ trình giao - nhận hàng hoá giữa TP. Hà Nội và Vùng 1/Vùng 2, TP. Đà Nẵng & Vùng 1/Vùng 3, TP. HCM & Vùng 2/Vùng 3.',
-    routes: [
-      'Hà Nội <=> Vùng 1/Vùng 2',
-      'Đà Nẵng <=> Vùng 1/Vùng 3',
-      'Hồ Chí Minh <=> Vùng 2/Vùng 3',
-    ],
-  },
-  {
-    type: 'Liên Vùng Tỉnh',
-    definition: 'Là lộ trình giao - nhận hàng hóa giữa các tỉnh thành thuộc 2 vùng địa lý khác nhau, bao gồm cả các tuyến giữa miền Bắc và miền Nam.',
-    routes: [
-      'Vùng 3 <=> Vùng 1/Vùng 2',
-      'Vùng 2 <=> Vùng 1/Vùng 3',
-      'Vùng 1 <=> Vùng 2/Vùng 3',
-    ],
-  },
-]
-
 function ZoneGuideModal({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate()
+
+  // Build dynamic guide rows from shared routeConfig store
+  const routeNames = listRouteNames()
+
+  type GuideRow = { name: string; pairs: string[] }
+  const guideRows: GuideRow[] = routeNames.map((routeName) => {
+    if (routeName === sameProvinceRoute) {
+      return { name: routeName, pairs: ['Cùng tỉnh, bất kỳ miền nào'] }
+    }
+    // Collect region pairs that map to this route name
+    const pairs: string[] = []
+    const seen = new Set<string>()
+    for (const [key, name] of Object.entries(routeMatrix)) {
+      if (name !== routeName) continue
+      if (seen.has(key)) continue
+      seen.add(key)
+      const [idA, idB] = key.split('|')
+      const regA = routeRegions.find((r: RegionDef) => r.id === idA)
+      const regB = routeRegions.find((r: RegionDef) => r.id === idB)
+      pairs.push(`${regA?.name ?? idA} ↔ ${regB?.name ?? idB}`)
+    }
+    return { name: routeName, pairs }
+  })
+
   return (
     <div
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
@@ -1086,51 +1090,55 @@ function ZoneGuideModal({ onClose }: { onClose: () => void }) {
         {/* Scrollable body */}
         <div style={{ overflow: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Định nghĩa vùng */}
+          {/* Định nghĩa miền — dynamic */}
           <div style={{ background: C_BG_FORM, border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, marginBottom: 2 }}>Định nghĩa vùng</span>
-            {[
-              { label: 'Vùng 1', mien: 'Miền Nam',   desc: 'Từ Bình Định trở vào các tỉnh miền Nam' },
-              { label: 'Vùng 2', mien: 'Miền Trung', desc: 'Từ Quảng Ngãi ra tới Quảng Bình' },
-              { label: 'Vùng 3', mien: 'Miền Bắc',   desc: 'Từ Hà Tĩnh trở ra các tỉnh miền Bắc' },
-            ].map(({ label, mien, desc }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: 6, fontSize: 13 }}>
-                <span style={{ padding: '1px 8px', borderRadius: 20, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#2563EB', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{label}</span>
-                <span style={{ color: C_TEXT_SECONDARY }}><strong style={{ color: C_TEXT_PRIMARY }}>{mien}</strong> — {desc}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, marginBottom: 2 }}>Định nghĩa miền / vùng</span>
+            {routeRegions.map((region: RegionDef) => (
+              <div key={region.id} style={{ display: 'flex', alignItems: 'baseline', gap: 6, fontSize: 13 }}>
+                <span style={{ padding: '1px 8px', borderRadius: 20, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#2563EB', fontSize: 12, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  {region.name}
+                </span>
+                <span style={{ color: C_TEXT_SECONDARY }}>
+                  {region.provinces.length > 0 ? `${region.provinces.length} tỉnh/thành` : 'Chưa có tỉnh'}
+                </span>
               </div>
             ))}
             <div style={{ marginTop: 4, fontSize: 12, color: '#D97706', fontStyle: 'italic', fontWeight: 500 }}>
-              Lưu ý: 03 thành phố Hà Nội, Đà Nẵng, Hồ Chí Minh không nằm trong 3 phân vùng trên.
+              Miền đặc biệt (Hà Nội, Đà Nẵng, TP. Hồ Chí Minh) không thuộc vùng số — giá tuyến có thể khác.
             </div>
           </div>
 
-          {/* Bảng tuyến */}
+          {/* Bảng tuyến — dynamic */}
           <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-            {/* Table header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 260px', background: C_ACTION }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '170px 1fr', background: C_ACTION }}>
               <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#fff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Tuyến</div>
-              <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#fff', borderRight: '1px solid rgba(255,255,255,0.25)' }}>Định nghĩa</div>
-              <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#fff' }}>Ví dụ</div>
+              <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#fff' }}>Cặp miền áp dụng</div>
             </div>
-            {/* Rows */}
-            {ZONE_GUIDE_ROWS.map((row, rowIdx) => (
+            {guideRows.map((row, rowIdx) => (
               <div
-                key={row.type}
-                style={{ display: 'grid', gridTemplateColumns: '160px 1fr 260px', borderTop: `1px solid ${C_BORDER}`, background: rowIdx % 2 === 0 ? '#fff' : C_BG_FORM }}
+                key={row.name}
+                style={{ display: 'grid', gridTemplateColumns: '170px 1fr', borderTop: `1px solid ${C_BORDER}`, background: rowIdx % 2 === 0 ? '#fff' : C_BG_FORM }}
               >
                 <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, borderRight: `1px solid ${C_BORDER}` }}>
-                  {row.type}
-                </div>
-                <div style={{ padding: '10px 16px', fontSize: 13, color: C_TEXT_SECONDARY, borderRight: `1px solid ${C_BORDER}`, lineHeight: '1.5' }}>
-                  {row.definition}
+                  {row.name}
                 </div>
                 <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {row.routes.map((r, i) => (
-                    <span key={i} style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{r}</span>
+                  {row.pairs.map((p, i) => (
+                    <span key={i} style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{p}</span>
                   ))}
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Link to route config */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => { onClose(); navigate('/agency-admin/route-config') }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: '#3B82F6', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '6px 14px' }}
+            >
+              Chỉnh sửa cấu hình vùng &amp; tuyến →
+            </button>
           </div>
         </div>
       </div>
@@ -1149,25 +1157,21 @@ export default function PricingCreate() {
   const [showZoneGuide, setShowZoneGuide] = useState(false)
   const [bulkWeight, setBulkWeight] = useState('')
   const [bulkPrice, setBulkPrice] = useState('')
-  const [routes, setRoutes] = useState<RouteConfig[]>([
-    makeEmptyRoute('noi-tinh',           '1'),
-    makeEmptyRoute('noi-vung',           '2'),
-    makeEmptyRoute('noi-vung-tinh',      '3'),
-    makeEmptyRoute('lien-vung-dac-biet', '4'),
-    makeEmptyRoute('lien-vung',          '5'),
-    makeEmptyRoute('lien-vung-tinh',     '6'),
-  ])
+  const [routes, setRoutes] = useState<RouteConfig[]>(() =>
+    listRouteNames().map((name, i) => makeEmptyRoute(name, String(i + 1)))
+  )
 
   const canSubmit = name.trim().length > 0
 
   const addRoute = () => {
-    setRoutes((prev) => [...prev, makeEmptyRoute('noi-tinh', Date.now().toString())])
+    setRoutes((prev) => [...prev, makeEmptyRoute(sameProvinceRoute, Date.now().toString())])
   }
 
   const updateRoute = (id: string, updated: RouteConfig) => {
     setRoutes((prev) => {
       const old = prev.find((r) => r.id === id)
-      if (old && (old.standardWeight !== updated.standardWeight || old.basePrice !== updated.basePrice)) {
+      if (old && (old.standardWeight !== updated.standardWeight || old.basePrice !== updated.basePrice
+        || old.basePriceUrban !== updated.basePriceUrban || old.basePriceRural !== updated.basePriceRural)) {
         setBulkWeight('')
         setBulkPrice('')
       }

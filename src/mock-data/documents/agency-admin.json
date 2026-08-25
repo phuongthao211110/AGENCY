@@ -291,6 +291,41 @@
             "Vì vậy đây KHÔNG còn là gap cần vá — mã nguồn hiện tại (ShopCreate.tsx) đã hoạt động đúng: allServices rỗng → bảng rỗng, nút Thêm dịch vụ tự ẩn, không chặn tạo shop. Story này ghi nhận lại hành vi đúng để tránh nhầm lẫn về sau (kể cả trong chính phiên làm việc này).",
             "AC8 của AGA-SHOP-6 (thông báo hướng dẫn + CTA) theo đó cũng cần xem lại/loại bỏ nếu muốn đồng bộ — chưa tự ý sửa AGA-SHOP-6 trong lần này vì chưa được yêu cầu, chỉ nêu ra để lưu ý."
           ]
+        },
+        {
+          "id": "AGA-SHOP-11",
+          "jiraKey": "",
+          "title": "[AGENCY] Shop - Chi tiết shop: Chỉnh sửa thông tin cơ bản",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn chỉnh sửa thông tin cơ bản của shop (tên shop, họ tên chủ shop, số điện thoại, địa chỉ) ngay trên trang chi tiết shop để cập nhật kịp thời mà không cần xoá và tạo lại.",
+          "userFlow": [
+            "Agency Admin vào trang Chi tiết shop",
+            "Nhấn nút Chỉnh sửa",
+            "Trang chuyển sang chế độ edit — section Thông tin cơ bản hiển thị dạng form có thể nhập",
+            "Agency Admin sửa các trường cần thay đổi: Tên shop, Họ tên chủ shop, Số điện thoại, Địa chỉ",
+            "Nhấn Lưu thay đổi để lưu",
+            "Hệ thống validate → lưu thành công → trở về chế độ view với data mới"
+          ],
+          "systemFlow": [
+            "Load thông tin hiện tại của shop, pre-fill vào form",
+            "Validate khi submit: Tên shop bắt buộc; Số điện thoại bắt buộc + đúng định dạng SĐT Việt Nam + unique trong agency (nếu thay đổi)",
+            "Lưu thông tin mới vào shop record",
+            "Hiển thị lại trang view mode với data đã cập nhật"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Nhấn Chỉnh sửa → section Thông tin cơ bản chuyển sang edit mode, hiển thị form pre-fill với các field: Tên shop (bắt buộc, tối đa 255 ký tự), Họ tên chủ shop (tuỳ chọn, tối đa 100 ký tự), Số điện thoại (bắt buộc, đúng định dạng SĐT Việt Nam 10 số bắt đầu 0, unique trong agency), Địa chỉ (tuỳ chọn, số nhà/đường + tỉnh/thành 2 field riêng biệt).",
+            "AC2: Mã shop không được chỉnh sửa — hiển thị read-only ngay cả khi trang đang ở edit mode.",
+            "AC3: Nhấn Lưu thay đổi khi form hợp lệ → lưu thành công, trang trở về view mode với data mới.",
+            "AC4: Lỗi validate hiển thị inline tại từng field: Tên shop để trống → \"Tên shop không được để trống\"; Số điện thoại sai định dạng → \"Số điện thoại không hợp lệ\"; Số điện thoại trùng với shop khác trong agency → \"Số điện thoại đã được sử dụng\".",
+            "AC5: Agency Admin chỉ có thể chỉnh sửa shop thuộc đại lý của mình — không thể chỉnh sửa shop của đại lý khác (tenant isolation).",
+            "AC6: Section Cấu hình tài khoản shop đăng nhập (username/password) không nằm trong phạm vi story này — không hiển thị field đó trong form chỉnh sửa thông tin cơ bản."
+          ],
+          "notes": [
+            "Nút \"Chỉnh sửa\" trong ShopDetail.tsx hiện chưa có onClick handler — bấm vào không làm gì. Story này là spec cho dev implement, chưa phản ánh hành vi thật của prototype.",
+            "Chỉnh sửa thông tin cơ bản không ảnh hưởng đến tài khoản đăng nhập của shop (username/password — nếu cần sửa riêng thì thuộc story khác).",
+            "Phần chỉnh sửa cấu hình dịch vụ/bảng giá khi ở chế độ edit đã được cover ở AGA-SHOP-7."
+          ]
         }
       ]
     },
@@ -1945,6 +1980,164 @@
             "Sau khi fix bug, đại lý phản hồi tiếp: dịch vụ Thư không nên cho gắn Shop ID nào cả — đổi từ \"sửa bug hiển thị\" sang \"bỏ hẳn field này cho dịch vụ Thư\", kể cả dòng ghi chú thay thế.",
             "EDIT_STATUS_OPTIONS/serviceTypeId/deliveryZones/hubIds không nằm trong phạm vi fix này.",
             "Chi tiết kỹ thuật đầy đủ trước khi tách thành story riêng nằm ở mục 10b/10c của prd-hop-nhat-ket-noi-ghn-247.md."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-16",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC - Tạo bảng giá: Tách giá Nội thành / Ngoại thành theo tuyến",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn tuỳ chọn tách giá cước của từng tuyến thành 2 mức \"Nội thành\" và \"Ngoại thành\" thay vì chỉ dùng 1 giá chuẩn chung, để cấu hình bảng giá sát hơn với thực tế vận hành khi mức phí giữa nội/ngoại thành khác nhau đáng kể.",
+          "userFlow": [
+            "Agency Admin vào màn Tạo bảng giá (Thiết lập NVC → tab Bảng giá → Thêm bảng giá)",
+            "Thêm hoặc chọn một tuyến trong danh sách tuyến",
+            "Mỗi tuyến hiển thị ô Giá chuẩn * và bên dưới có toggle Tách khu vực (mặc định TẮT)",
+            "Để dùng 1 giá chung: nhập giá vào ô Giá chuẩn như bình thường, không bật toggle",
+            "Để tách Nội/Ngoại thành: bật toggle Tách khu vực — ô Giá chuẩn đơn được thay bằng 2 ô riêng: Nội thành và Ngoại thành, nhập giá VNĐ cho từng ô",
+            "Tắt lại toggle: quay về 1 ô Giá chuẩn, giá trị Nội/Ngoại thành bị ẩn (không xoá)",
+            "Lưu bảng giá"
+          ],
+          "systemFlow": [
+            "Mỗi tuyến lưu trạng thái toggle splitZone: boolean độc lập — không ảnh hưởng tuyến khác",
+            "Khi splitZone = false: validate và lưu basePrice (giá chuẩn đơn)",
+            "Khi splitZone = true: validate và lưu innerPrice (Nội thành) + outerPrice (Ngoại thành); basePrice không dùng",
+            "Phần Vượt cân và Phụ phí vẫn áp dụng chung cho tuyến, không tách theo Nội/Ngoại thành",
+            "Submit form hiện chỉ chặn khi thiếu Tên bảng giá — chưa validate ô giá của từng tuyến (kể cả trước khi có tính năng này), xem AC6/AC7"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Mỗi dòng tuyến trong form tạo bảng giá có toggle Tách khu vực nằm bên dưới ô Giá chuẩn, mặc định ở trạng thái TẮT.",
+            "AC2: Khi toggle TẮT — tuyến hiển thị 1 ô Giá chuẩn * (bắt buộc): số nguyên ≥ 0, đơn vị VNĐ.",
+            "AC3: Khi bật toggle Tách khu vực — ô Giá chuẩn được thay thế bằng 2 ô riêng: Nội thành * (bắt buộc, số nguyên ≥ 0, đơn vị VNĐ) và Ngoại thành * (bắt buộc, số nguyên ≥ 0, đơn vị VNĐ).",
+            "AC4: Toggle Tách khu vực hoạt động độc lập theo từng tuyến — bật tuyến A không ảnh hưởng tuyến B.",
+            "AC5: Khi tắt lại toggle sau khi đã nhập Nội/Ngoại thành — UI quay về ô Giá chuẩn đơn; giá trị đã nhập cho Nội/Ngoại thành bị ẩn khỏi UI nhưng không bị xoá.",
+            "AC6: Submit form không chặn dù ô Giá chuẩn (toggle TẮT) đang để trống — giữ đúng hành vi hiện có của form trước khi có tính năng này (form chỉ chặn submit khi thiếu Tên bảng giá).",
+            "AC7: Submit form không chặn dù ô Nội thành hoặc Ngoại thành (toggle BẬT) đang để trống — tương tự AC6, chưa có validate bắt buộc ở cấp field giá.",
+            "AC8: Phần Vượt cân và Phụ phí không tách theo Nội/Ngoại thành — vẫn là 1 cấu hình chung cho toàn tuyến dù toggle bật hay tắt."
+          ],
+          "notes": [
+            "Tính năng này lấy cảm hứng từ cấu trúc bảng giá thực tế của GHN dịch vụ \"Đi bộ\": mỗi tuyến có 2 cột giá Nội thành/Ngoại thành + 1 cột \"Thêm 0.5kg\" dùng chung.",
+            "Toggle là tuỳ chọn per-tuyến, không phải cấu hình toàn bảng giá — đây là điểm khác biệt so với các cấu hình bảng giá khác (Vượt cân, Phụ phí áp dụng toàn tuyến).",
+            "Khi tắt toggle, dữ liệu Nội/Ngoại thành không bị mất — hành vi này cho phép Agency Admin thử bật/tắt mà không mất công nhập lại, nhưng giá trị ẩn đó không được lưu nếu submit ở trạng thái TẮT."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-17",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Định nghĩa Miền/Vùng",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem và chỉnh sửa cấu hình phân chia miền/vùng địa lý (tỉnh nào thuộc miền nào) để hệ thống tra tuyến đúng khi tính giá cước — mà không phải tự nhập từ đầu vì đã có sẵn 6 miền theo chuẩn GHN.",
+          "userFlow": [
+            "Agency Admin vào menu CÔNG CỤ → chọn Cấu hình vùng & tuyến",
+            "Trang hiển thị card Bước 1 — Định nghĩa Miền / Vùng với 6 miền đã cấu hình sẵn",
+            "Agency Admin kiểm tra danh sách miền; mỗi miền hiển thị tên + danh sách chip tỉnh đã gán (màu xanh, có nút X)",
+            "Để thêm tỉnh vào miền: bấm dropdown + Thêm tỉnh trong miền đó, chọn tỉnh chưa được gán miền nào",
+            "Để xoá tỉnh khỏi miền: bấm nút X trên chip tỉnh tương ứng",
+            "Để thêm miền mới: bấm + Thêm miền → miền mới rỗng xuất hiện, đổi tên qua input trực tiếp",
+            "Để xoá miền: bấm nút X đỏ trên miền → tất cả cấu hình tuyến tham chiếu miền đó cũng bị xoá theo",
+            "Nếu có tỉnh nào chưa gán miền → banner cảnh báo vàng tự động hiển thị liệt kê các tỉnh đó"
+          ],
+          "systemFlow": [
+            "Trang Cấu hình vùng & tuyến load dữ liệu từ routeConfig.ts (module-level store dùng chung toàn app)",
+            "Bấm + Thêm tỉnh: dropdown chỉ liệt kê tỉnh chưa thuộc miền nào; khi chọn → tỉnh được gán vào miền hiện tại, tự động rút khỏi miền cũ nếu trước đó đã gán",
+            "Bấm X trên chip tỉnh → tỉnh bị xoá khỏi miền, trở về trạng thái chưa gán; dropdown + Thêm tỉnh của các miền khác có lại tỉnh này trong danh sách",
+            "Bấm + Thêm miền → tạo miền mới rỗng với tên mặc định, có thể đổi tên ngay qua input",
+            "Bấm X đỏ xoá miền → xoá miền và đồng thời xoá tất cả cặp miền trong Bước 2 có tham chiếu đến miền vừa xoá (các cặp đó trở về trạng thái chưa cấu hình)",
+            "Hệ thống scan danh sách 63 tỉnh thành → hiển thị banner vàng nếu có tỉnh chưa thuộc miền nào",
+            "Mọi thay đổi ghi vào store dùng chung — lập tức áp dụng cho Bước 2 và màn Tạo bảng giá, không cần reload trang"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Trang Cấu hình vùng & tuyến có card Bước 1 — Định nghĩa Miền / Vùng hiển thị sẵn 6 miền theo đúng quy tắc GHN: Hà Nội (chỉ tỉnh Hà Nội), Đà Nẵng (chỉ tỉnh Đà Nẵng), TP. Hồ Chí Minh (chỉ TP. Hồ Chí Minh), Miền Nam/Vùng 1 (Bình Định trở vào trừ HCM), Miền Trung/Vùng 2 (Quảng Ngãi → Quảng Bình), Miền Bắc/Vùng 3 (Hà Tĩnh trở ra trừ Hà Nội).",
+            "AC2: Mỗi miền hiển thị danh sách chip tỉnh màu xanh đã gán; mỗi chip có nút X riêng — bấm X → tỉnh bị xoá khỏi miền, trở về trạng thái chưa gán.",
+            "AC3: Dropdown + Thêm tỉnh của mỗi miền chỉ liệt kê các tỉnh chưa thuộc miền nào — tỉnh đã gán miền khác không xuất hiện.",
+            "AC4: Gán tỉnh vào miền mới khi tỉnh đó đang thuộc miền khác → hệ thống tự động rút tỉnh khỏi miền cũ, không cần xoá thủ công trước; 1 tỉnh luôn chỉ thuộc đúng 1 miền tại 1 thời điểm.",
+            "AC5: Nút + Thêm miền tạo miền mới rỗng; tên mặc định có thể đổi qua input trực tiếp trên card.",
+            "AC6: Nút X đỏ trên miền → xoá miền và đồng thời xoá tất cả cấu hình tuyến (Bước 2) đang tham chiếu miền đó — các cặp miền liên quan trở về chưa cấu hình.",
+            "AC7: Khi có ít nhất 1 tỉnh chưa thuộc miền nào → banner cảnh báo màu vàng tự động hiển thị, liệt kê tên các tỉnh đó (tối đa 10 tỉnh, còn lại ghi và N tỉnh khác) kèm ghi chú các tỉnh này chưa tra được tuyến.",
+            "AC8: Mọi thay đổi tại Bước 1 lập tức phản ánh vào Bước 2 (cặp miền cập nhật theo) và màn Tạo bảng giá (dropdown Vùng cập nhật theo) — không cần reload trang."
+          ],
+          "notes": [
+            "Trang Kiểm tra tuyến (RouteCheck.tsx, menu CÔNG CỤ) hiện CHƯA được nối vào cấu hình dùng chung này — vẫn dùng logic tra tuyến tĩnh cũ (determineRoute() trong vietnam-provinces.ts). Nếu admin sửa cấu hình Miền/Vùng sau này, trang Kiểm tra tuyến sẽ KHÔNG cập nhật theo — có thể gây lệch dữ liệu giữa 2 trang. Đây là hạn chế đã biết, chưa xử lý.",
+            "Toàn bộ dữ liệu miền lưu ở bộ nhớ trong phiên (module-level state trong routeConfig.ts), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu (6 miền GHN)."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-18",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Đặt tên tuyến & phạm vi áp dụng",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn đặt tên tuyến và chỉ định các cặp miền áp dụng cho từng tuyến để hệ thống biết cặp gửi/nhận nào được gọi là tuyến nào — từ đó dropdown Tuyến trong màn Tạo bảng giá phản ánh đúng cấu trúc giá cước thực tế của đại lý.",
+          "userFlow": [
+            "Agency Admin ở trang Cấu hình vùng & tuyến, cuộn xuống phía dưới card Bước 1",
+            "Card Bước 2 — Đặt tên tuyến & phạm vi áp dụng hiển thị với dòng Nội Tỉnh (badge CỐ ĐỊNH) luôn ở đầu",
+            "Agency Admin có thể đổi tên hiển thị của luật Nội Tỉnh qua input; không cần tick phạm vi vì tự áp dụng mọi cặp cùng tỉnh",
+            "Bấm + Thêm tuyến → tuyến mới tên Tuyến mới N xuất hiện, chưa có phạm vi nào",
+            "Với mỗi tuyến: đổi tên qua input, sau đó bấm chip cặp miền để bật/tắt phạm vi áp dụng (chip cam = đang thuộc tuyến này, chip xám = chưa thuộc)",
+            "Để xoá tuyến: bấm nút X bên phải dòng tuyến → các cặp miền của tuyến đó trở về chưa cấu hình",
+            "Nếu có cặp miền nào chưa thuộc tuyến nào → banner cảnh báo vàng tự động hiển thị"
+          ],
+          "systemFlow": [
+            "Bước 2 đọc danh sách miền từ cùng store routeConfig.ts, tự tính toán tất cả cặp miền hợp lệ (bao gồm cả cặp cùng miền — 2 tỉnh khác nhau cùng miền)",
+            "Bấm chip cặp miền để assign: nếu cặp đó đã thuộc tuyến khác → tự rút khỏi tuyến cũ rồi gán vào tuyến mới; không cho phép 1 cặp thuộc 2 tuyến cùng lúc",
+            "Đổi tên tuyến → áp dụng ngay cho tất cả cặp miền đang dùng tên đó (đổi hàng loạt); tên tuyến là identifier duy nhất, không có ID riêng",
+            "Xoá tuyến → các cặp miền thuộc tuyến đó trở về chưa cấu hình (chip xám); không bị gán nhầm sang tuyến khác",
+            "Hệ thống kiểm tra toàn bộ cặp miền: nếu có cặp chưa thuộc tuyến nào → hiển thị banner vàng cảnh báo",
+            "Danh sách tên tuyến từ Bước 2 được export sang PricingCreate.tsx và cập nhật theo thời gian thực khi admin thay đổi cấu hình"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Card Bước 2 — Đặt tên tuyến & phạm vi áp dụng nằm ngay dưới card Bước 1 trên cùng trang.",
+            "AC2: Dòng Nội Tỉnh (badge CỐ ĐỊNH) luôn hiển thị đầu tiên; tên hiển thị có thể đổi qua input, không có dãy chip cặp miền để tick — luật Nội Tỉnh tự động áp dụng cho mọi cặp gửi/nhận cùng 1 tỉnh bất kể thuộc miền nào.",
+            "AC3: Nút + Thêm tuyến tạo tuyến mới tên mặc định Tuyến mới N, chưa gán phạm vi nào; tên tuyến có thể đổi qua input.",
+            "AC4: Mỗi tuyến hiển thị dãy chip cặp miền — chip cam = cặp miền đang thuộc tuyến này, chip xám = chưa thuộc; chip thể hiện cả cặp cùng miền (Tên miền ↔ Tên miền) và cặp khác miền (Miền A ↔ Miền B).",
+            "AC5: Bấm chip cặp miền ở tuyến B khi cặp đó đang thuộc tuyến A → cặp tự động rút khỏi tuyến A và gán vào tuyến B; 1 cặp miền chỉ thuộc đúng 1 tuyến tại 1 thời điểm.",
+            "AC6: Đổi tên tuyến → tên mới áp dụng ngay cho tất cả cặp miền đang dùng tên đó (đổi hàng loạt), không tạo tuyến trùng hay cắt đứt liên kết.",
+            "AC7: Nút X xoá tuyến → các cặp miền thuộc tuyến đó trở về trạng thái chưa cấu hình (chip xám); không bị gán nhầm sang tuyến khác.",
+            "AC8: Khi có ít nhất 1 cặp miền chưa thuộc tuyến nào → banner cảnh báo màu vàng hiển thị, liệt kê các cặp đó (tối đa 6 cặp, còn lại ghi và N cặp khác) kèm ghi chú chưa tra được tuyến cho các cặp này.",
+            "AC9: Danh sách tên tuyến từ Bước 2 xuất hiện trong dropdown Tuyến tại màn Tạo bảng giá — thêm/xoá/đổi tên tuyến phản ánh ngay khi mở lại màn Tạo bảng giá."
+          ],
+          "notes": [
+            "Trang Kiểm tra tuyến (RouteCheck.tsx, menu CÔNG CỤ) hiện CHƯA được nối vào cấu hình dùng chung này — vẫn dùng logic tra tuyến tĩnh cũ (determineRoute() trong vietnam-provinces.ts). Nếu admin sửa cấu hình Tuyến sau này, trang Kiểm tra tuyến sẽ KHÔNG cập nhật theo — có thể gây lệch dữ liệu giữa 2 trang. Đây là hạn chế đã biết, chưa xử lý.",
+            "Toàn bộ dữ liệu tuyến lưu ở bộ nhớ trong phiên (module-level state trong routeConfig.ts), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu.",
+            "Nhiều cặp miền có thể dùng chung 1 tên tuyến (để định giá giống nhau) — đây là thiết kế có chủ đích, không phải lỗi trùng lặp."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-19",
+          "jiraKey": "",
+          "title": "[AGA] Thiết lập NVC - Tạo bảng giá: Dùng chung cấu hình vùng & tuyến",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn dropdown Tuyến và Vùng trong màn Tạo bảng giá tự động phản ánh cấu hình Miền/Vùng & Tuyến mà tôi đã thiết lập — thay vì bị cố định 6 tuyến hardcode như trước — để mọi bảng giá (GHN, 247Express, NVC khác) đều dùng chung 1 định nghĩa tuyến nhất quán, không cần sửa code khi thêm/bớt tuyến.",
+          "userFlow": [
+            "Agency Admin vào màn Tạo bảng giá (Thiết lập NVC → tab Bảng giá → Thêm bảng giá)",
+            "Trong phần Danh sách tuyến, bấm nút Định nghĩa tuyến để kiểm tra cấu hình hiện tại: modal hiển thị từng tên tuyến + cặp miền đang áp dụng + 1 dòng cố định cho luật Nội Tỉnh",
+            "Bấm link Chỉnh sửa cấu hình vùng & tuyến → trong modal để điều hướng sang trang Cấu hình vùng & tuyến nếu cần sửa",
+            "Bấm Thêm tuyến → dropdown Tuyến liệt kê tên tuyến động từ cấu hình Bước 2 (AGA-CARRIER-18)",
+            "Phần thu hẹp phạm vi Tỉnh/Quận/Phường hiển thị cho tất cả tuyến, trừ tuyến có tên trùng luật Nội Tỉnh",
+            "Dropdown Vùng trong phần thu hẹp phạm vi lấy danh sách tên miền động từ cấu hình Bước 1 (AGA-CARRIER-17)"
+          ],
+          "systemFlow": [
+            "PricingCreate.tsx import danh sách tuyến và miền từ routeConfig.ts (store dùng chung) thay vì mảng hardcode",
+            "Dropdown Tuyến render danh sách options từ listRouteNames() — thêm/xoá/đổi tên tuyến ở trang Cấu hình vùng & tuyến phản ánh ngay khi mở lại form Tạo bảng giá",
+            "Dropdown Vùng trong phần thu hẹp phạm vi render từ mảng regions (export trực tiếp từ routeConfig.ts) thay vì [Vùng 1, Vùng 2, Vùng 3] hardcode",
+            "Kiểm tra tên tuyến = tên luật Nội Tỉnh (sameProvinceRoute): nếu khớp → ẩn section thu hẹp phạm vi Tỉnh/Quận/Phường cho tuyến đó",
+            "Nút Định nghĩa tuyến: modal tự tính toán trực tiếp trong PricingCreate.tsx từ routeMatrix + regions + sameProvinceRoute (không qua 1 hàm helper riêng) — với mỗi tên tuyến, liệt kê cặp miền đang áp dụng (tên đầy đủ) + 1 dòng cố định Nội Tỉnh: Cùng 1 tỉnh, bất kỳ miền nào",
+            "Link Chỉnh sửa cấu hình vùng & tuyến → trong modal dùng navigate('/agency-admin/route-config')"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Dropdown Tuyến trong form Tạo bảng giá lấy danh sách tên tuyến động từ cấu hình Bước 2 — không còn hardcode 6 tuyến cố định.",
+            "AC2: Thêm/đổi tên/xoá tuyến ở trang Cấu hình vùng & tuyến → dropdown Tuyến trong form Tạo bảng giá phản ánh thay đổi ngay khi mở lại form, không cần sửa code.",
+            "AC3: Dropdown Vùng trong phần thu hẹp phạm vi Từ/Đến của mỗi dòng tuyến lấy danh sách tên miền động từ cấu hình Bước 1 — không còn hardcode Vùng 1/2/3.",
+            "AC4: Tuyến có tên trùng luật Nội Tỉnh → phần thu hẹp phạm vi Tỉnh/Quận/Phường bị ẩn cho tuyến đó; tất cả tuyến khác vẫn hiển thị phần thu hẹp phạm vi bình thường.",
+            "AC5: Nút Định nghĩa tuyến mở modal hiển thị: với mỗi tên tuyến, liệt kê đầy đủ các cặp miền đang áp dụng (tên đầy đủ, không viết tắt); cộng thêm 1 dòng cố định Nội Tỉnh: Cùng 1 tỉnh, bất kỳ miền nào.",
+            "AC6: Modal Định nghĩa tuyến có link Chỉnh sửa cấu hình vùng & tuyến → điều hướng thẳng sang trang /agency-admin/route-config.",
+            "AC7: Cấu hình vùng & tuyến dùng chung cho mọi bảng giá (GHN, 247Express, và NVC khác trong tương lai) — không phải cấu hình riêng per bảng giá."
+          ],
+          "notes": [
+            "Trang Kiểm tra tuyến (RouteCheck.tsx, menu CÔNG CỤ) hiện CHƯA được nối vào cấu hình dùng chung này — vẫn dùng logic tra tuyến tĩnh cũ (determineRoute() trong vietnam-provinces.ts). Nếu admin sửa cấu hình Miền/Vùng hoặc Tuyến, trang Kiểm tra tuyến sẽ KHÔNG cập nhật theo — có thể gây lệch dữ liệu giữa 2 trang. Đây là hạn chế đã biết, chưa xử lý.",
+            "Toàn bộ dữ liệu (miền, tuyến) lưu ở bộ nhớ trong phiên (module-level state trong routeConfig.ts), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu."
           ]
         }
       ]

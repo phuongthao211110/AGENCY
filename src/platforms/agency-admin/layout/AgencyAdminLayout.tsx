@@ -13,6 +13,7 @@ import {
   SettingOutlined,
   RightOutlined,
   NodeIndexOutlined,
+  GlobalOutlined,
   RobotOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
@@ -37,7 +38,8 @@ const NAV_ITEMS = [
 const SETTINGS_ITEM = { key: '/agency-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }
 
 const TOOL_ITEMS = [
-  { key: '/agency-admin/route-check', icon: <NodeIndexOutlined />, label: 'Kiểm tra tuyến' },
+  { key: '/agency-admin/route-check',  icon: <NodeIndexOutlined />, label: 'Kiểm tra tuyến' },
+  { key: '/agency-admin/route-config', icon: <GlobalOutlined />,    label: 'Cấu hình vùng & tuyến' },
 ]
 
 
