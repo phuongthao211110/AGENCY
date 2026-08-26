@@ -11,6 +11,7 @@ import {
   DollarOutlined,
   BarChartOutlined,
   SwapRightOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons'
 import { loadShops } from '../../../mock-data/shopStore'
 import allServices from '../../../mock-data/services.json'
@@ -432,6 +433,16 @@ export default function ShopDetail() {
               <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, lineHeight: '18px', marginTop: -8 }}>
                 Bảng giá áp dụng cho từng dịch vụ. Dịch vụ chưa gắn bảng giá sẽ không khả dụng với shop này.
               </span>
+
+              {shop.configuredServices.length === 0 && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 8, padding: '10px 12px' }}>
+                  <ExclamationCircleOutlined style={{ fontSize: 14, color: '#D97706', marginTop: 2 }} />
+                  <span style={{ fontSize: 13, color: '#92400E', lineHeight: '18px' }}>
+                    Shop này chưa được gắn dịch vụ nào — thường gặp ở shop tự đăng ký. Bấm "Chỉnh sửa" bên dưới để gắn bảng giá cho các dịch vụ shop cần dùng.
+                  </span>
+                </div>
+              )}
+
               <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
                 {/* Table header */}
                 <div style={{ display: 'flex', background: '#F3F4F6', padding: '6px 12px' }}>
@@ -463,7 +474,17 @@ export default function ShopDetail() {
                             ) : isConfigured ? (
                               <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>—</span>
                             ) : (
-                              <span style={{ fontSize: 13, color: '#D97706' }}>Dịch vụ không khả dụng</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: '#D97706' }}>
+                                  <ExclamationCircleOutlined style={{ fontSize: 12 }} />
+                                  Chưa gắn bảng giá
+                                </span>
+                                {shop.configuredServices.length > 0 && (
+                                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
+                                    Dịch vụ này chưa khả dụng với shop — bấm "Chỉnh sửa" bên dưới để gắn bảng giá.
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>

@@ -1045,8 +1045,6 @@ function RouteBlock({
 // ─── Zone guide modal ─────────────────────────────────────────────────────────
 
 function ZoneGuideModal({ onClose }: { onClose: () => void }) {
-  const navigate = useNavigate()
-
   // Build dynamic guide rows from shared routeConfig store
   const routeNames = listRouteNames()
 
@@ -1131,14 +1129,8 @@ function ZoneGuideModal({ onClose }: { onClose: () => void }) {
             ))}
           </div>
 
-          {/* Link to route config */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              onClick={() => { onClose(); navigate('/agency-admin/route-config') }}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: '#3B82F6', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '6px 14px' }}
-            >
-              Chỉnh sửa cấu hình vùng &amp; tuyến →
-            </button>
+          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>
+            Cấu hình vùng &amp; tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.
           </div>
         </div>
       </div>

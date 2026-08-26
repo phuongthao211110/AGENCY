@@ -6,6 +6,8 @@ import Agencies from './platforms/super-admin/pages/Agencies'
 import AgencyCreate from './platforms/super-admin/pages/AgencyCreate'
 import AgencyDetail from './platforms/super-admin/pages/AgencyDetail'
 import Hubs247 from './platforms/super-admin/pages/Hubs247'
+import RouteConfig from './platforms/super-admin/pages/RouteConfig'
+import RouteConfigTable from './platforms/super-admin/pages/RouteConfigTable'
 import SuperAdminSettings from './platforms/super-admin/pages/Settings'
 import AccountInfo from './platforms/super-admin/pages/settings/AccountInfo'
 import UserManagement from './platforms/super-admin/pages/settings/UserManagement'
@@ -20,7 +22,6 @@ import ShopDetail from './platforms/agency-admin/pages/ShopDetail'
 import CarrierSetup from './platforms/agency-admin/pages/CarrierSetup'
 import ServiceDetail from './platforms/agency-admin/pages/ServiceDetail'
 import PricingCreate from './platforms/agency-admin/pages/PricingCreate'
-import RouteConfig from './platforms/agency-admin/pages/RouteConfig'
 import PricingDetail from './platforms/agency-admin/pages/PricingDetail'
 import AgencyOrders from './platforms/agency-admin/pages/AgencyOrders'
 import AgencyOrdersImport from './platforms/agency-admin/pages/AgencyOrdersImport'
@@ -60,6 +61,8 @@ export default function App() {
           <Route path="agencies/create" element={<AgencyCreate />} />
           <Route path="agencies/:id" element={<AgencyDetail />} />
           <Route path="hubs-247" element={<Hubs247 />} />
+          <Route path="route-config" element={<RouteConfig />} />
+          <Route path="route-table" element={<RouteConfigTable />} />
           <Route path="settings" element={<SuperAdminSettings />}>
             <Route path="account" element={<AccountInfo />} />
             <Route path="users" element={<UserManagement />} />
@@ -87,7 +90,6 @@ export default function App() {
           <Route path="carrier-setup/services/new" element={<ServiceDetail />} />
           <Route path="carrier-setup/services/:id" element={<ServiceDetail />} />
           <Route path="route-check" element={<RouteCheck />} />
-          <Route path="route-config" element={<RouteConfig />} />
           <Route path="settings" element={<AgencyAdminSettings />}>
             <Route path="account" element={<AccountInfoAgency />} />
             <Route path="users" element={<UserManagementAgency />} />

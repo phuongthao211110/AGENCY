@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
-import { PlusOutlined, CloseOutlined } from '@ant-design/icons'
-import { agencyAdminTheme } from '../../../theme/platforms'
+import { PlusOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { superAdminTheme } from '../../../theme/platforms'
 import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import {
   regions,
@@ -129,7 +129,7 @@ export default function RouteConfig() {
   }
 
   return (
-    <ConfigProvider theme={agencyAdminTheme}>
+    <ConfigProvider theme={superAdminTheme}>
       <div style={{ padding: 24, background: '#fff', minHeight: '100vh', maxWidth: 1100 }}>
 
         {/* Page header */}
@@ -138,19 +138,44 @@ export default function RouteConfig() {
             Cấu hình Vùng &amp; Tuyến
           </h1>
           <p style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginTop: 4 }}>
-            Định nghĩa 1 lần, dùng chung cho mọi bảng giá — sửa ở đây áp dụng ngay cho{' '}
-            <button
-              onClick={() => navigate('/agency-admin/carrier-setup/pricing/create')}
-              style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 13, cursor: 'pointer', padding: 0, fontWeight: 500, textDecoration: 'underline' }}
-            >
-              Tạo bảng giá
-            </button>
-            .
+            Định nghĩa 1 lần, dùng chung cho mọi đại lý — mọi bảng giá (GHN, 247Express, NVC khác)
+            khi được tạo ở Agency Admin sẽ đọc đúng danh sách miền/tuyến này, không cần cấu hình lại
+            theo từng đại lý.
           </p>
         </div>
 
+        {/* ── Giải thích khái niệm — miền / cặp miền / tuyến ── */}
+        <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <InfoCircleOutlined style={{ fontSize: 13, color: '#1D4ED8' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8' }}>Cách tuyến được tính ra</span>
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C_TEXT_PRIMARY }}>1. Miền</div>
+              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>Nhóm các tỉnh lại — mỗi tỉnh thuộc đúng 1 miền.</div>
+            </div>
+            <div style={{ flex: '1 1 200px' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C_TEXT_PRIMARY }}>2. Cặp miền</div>
+              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>2 miền ghép lại khi có đơn gửi từ tỉnh miền này đến tỉnh miền kia — kể cả gửi trong cùng 1 miền.</div>
+            </div>
+            <div style={{ flex: '1 1 200px' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C_TEXT_PRIMARY }}>3. Tuyến</div>
+              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>Tên đặt cho 1 hoặc nhiều cặp miền, dùng để tính giá — nhiều cặp có thể chung 1 tên nếu muốn tính cùng giá.</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingTop: 8, borderTop: '1px solid #BFDBFE', fontSize: 12.5, color: C_TEXT_SECONDARY }}>
+            <span>Ví dụ — đơn gửi từ <b style={{ color: C_TEXT_PRIMARY }}>Hà Nội</b> đến <b style={{ color: C_TEXT_PRIMARY }}>TP. Hồ Chí Minh</b> → cặp miền</span>
+            <span style={{ padding: '2px 8px', borderRadius: 10, background: '#fff', border: '1px solid #BFDBFE', color: '#1D4ED8', fontWeight: 600, fontSize: 12 }}>Hà Nội (Đặc biệt)</span>
+            <span>↔</span>
+            <span style={{ padding: '2px 8px', borderRadius: 10, background: '#fff', border: '1px solid #BFDBFE', color: '#1D4ED8', fontWeight: 600, fontSize: 12 }}>TP. Hồ Chí Minh (Đặc biệt)</span>
+            <span>→ tuyến</span>
+            <span style={{ padding: '2px 8px', borderRadius: 10, background: '#FFF4ED', border: '1px solid #FDBA74', color: '#FF5200', fontWeight: 700, fontSize: 12 }}>Liên Vùng Đặc Biệt</span>
+          </div>
+        </div>
+
         {/* ── Bước 1: Định nghĩa Miền/Vùng ── */}
-        <div style={{ ...cardStyle, marginTop: 20 }}>
+        <div style={{ ...cardStyle, marginTop: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Bước 1 — Định nghĩa Miền / Vùng</span>
@@ -229,7 +254,7 @@ export default function RouteConfig() {
         </div>
 
         {/* ── Bước 2: Đặt tên tuyến & phạm vi áp dụng ── */}
-        <div style={{ ...cardStyle, marginTop: 16, marginBottom: 40 }}>
+        <div style={{ ...cardStyle, marginTop: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Bước 2 — Đặt tên tuyến &amp; phạm vi áp dụng</span>
             <button
@@ -311,6 +336,15 @@ export default function RouteConfig() {
               </span>
             </div>
           )}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 40 }}>
+          <button
+            onClick={() => navigate('/super-admin/route-table')}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: '#3B82F6', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '6px 14px' }}
+          >
+            Xem dạng bảng (cách khác) →
+          </button>
         </div>
 
       </div>

@@ -7,6 +7,8 @@ import {
   UserOutlined,
   BankOutlined,
   EnvironmentOutlined,
+  GlobalOutlined,
+  TableOutlined,
   SettingOutlined,
   LogoutOutlined,
   RightOutlined,
@@ -20,6 +22,8 @@ import { agenciesList, shopConnections, carrierRequests } from '../agencyStore'
 const NAV_ITEMS = [
   { key: '/super-admin/agencies', icon: <BankOutlined />, label: 'Đại lý' },
   { key: '/super-admin/hubs-247', icon: <EnvironmentOutlined />, label: 'Địa chỉ lấy hàng 247' },
+  { key: '/super-admin/route-config', icon: <GlobalOutlined />, label: 'Cấu hình vùng & tuyến' },
+  { key: '/super-admin/route-table', icon: <TableOutlined />, label: 'Cấu hình vùng & tuyến (bảng)' },
 ]
 
 function countAgenciesWithPendingRequests() {
