@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons'
@@ -17,7 +17,14 @@ import {
   removeProvinceFromRegion,
   setRouteName,
   clearRouteName,
+  urbanConfigs,
+  addUrbanProvince,
+  removeUrbanProvince,
+  addUrbanWard,
+  removeUrbanWard,
+  toggleUrbanWardClassification,
   type RegionDef,
+  type UrbanConfig,
 } from '../../../mock-data/routeConfig'
 
 const C_TEXT_PRIMARY   = '#111827'
@@ -49,6 +56,11 @@ export default function RouteConfigTable() {
   )
   const [localMatrix, setLocalMatrix] = useState<Record<string, string>>(() => ({ ...routeMatrix }))
   const [localSameRoute, setLocalSameRoute] = useState(sameProvinceRoute)
+  const [localUrbanConfigs, setLocalUrbanConfigs] = useState<UrbanConfig[]>(() =>
+    urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
+  )
+  const [newProvinceName, setNewProvinceName] = useState('')
+  const [newWardInputs, setNewWardInputs] = useState<Record<string, string>>({})
 
   const assignedSet    = new Set(localRegions.flatMap((r) => r.provinces))
   const unassignedList = ALL_PROVINCES.filter((p) => !assignedSet.has(p))
@@ -102,6 +114,41 @@ export default function RouteConfigTable() {
       setRouteName(regionIdA, regionIdB, trimmed)
     }
     setLocalMatrix(() => ({ ...routeMatrix }))
+  }
+
+  const syncUrbanConfigs = () => {
+    setLocalUrbanConfigs(urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) })))
+  }
+
+  const handleAddUrbanProvince = () => {
+    const name = newProvinceName.trim()
+    if (!name) return
+    addUrbanProvince(name)
+    syncUrbanConfigs()
+    setNewProvinceName('')
+  }
+
+  const handleRemoveUrbanProvince = (province: string) => {
+    removeUrbanProvince(province)
+    setLocalUrbanConfigs((prev) => prev.filter((u) => u.province !== province))
+  }
+
+  const handleAddUrbanWard = (province: string) => {
+    const ward = (newWardInputs[province] ?? '').trim()
+    if (!ward) return
+    addUrbanWard(province, ward, false)
+    syncUrbanConfigs()
+    setNewWardInputs((prev) => ({ ...prev, [province]: '' }))
+  }
+
+  const handleRemoveUrbanWard = (province: string, ward: string) => {
+    removeUrbanWard(province, ward)
+    syncUrbanConfigs()
+  }
+
+  const handleToggleUrbanWard = (province: string, ward: string) => {
+    toggleUrbanWardClassification(province, ward)
+    syncUrbanConfigs()
   }
 
   return (
@@ -304,6 +351,115 @@ export default function RouteConfigTable() {
               <span style={{ fontSize: 12, color: '#B45309' }}>
                 {unconfiguredPairs.length} cặp miền chưa thuộc tuyến nào — xem cột "Tên tuyến" để trống ở trên.
               </span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Nội thành / Ngoại thành — tách biệt với vùng/tuyến ở trên, chỉ vài thành phố cần ── */}
+        <div style={{ ...cardStyle, marginTop: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Nội thành / Ngoại thành</span>
+              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
+                Theo xã/phường (địa giới mới sau sáp nhập 2025, cấp quận/huyện không còn) — chỉ vài
+                thành phố có phân biệt giá Nội/Ngoại thành, dùng cho toggle "Tách khu vực" khi tạo
+                bảng giá. Dữ liệu demo minh hoạ, chưa đầy đủ toàn bộ xã/phường thật.
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                value={newProvinceName}
+                onChange={(e) => setNewProvinceName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddUrbanProvince() }}
+                placeholder="Tên tỉnh/thành mới..."
+                style={{ ...inputStyle, fontSize: 13, width: 200 }}
+              />
+              <button
+                onClick={handleAddUrbanProvince}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}
+              >
+                <PlusOutlined style={{ fontSize: 12 }} /> Thêm tỉnh
+              </button>
+            </div>
+          </div>
+
+          {localUrbanConfigs.length === 0 ? (
+            <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, padding: 8 }}>Chưa có tỉnh nào cấu hình Nội/Ngoại thành.</div>
+          ) : (
+            <div style={{ overflowX: 'auto', border: `1px solid ${C_BORDER}`, borderRadius: 8 }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 560 }}>
+                <thead>
+                  <tr>
+                    <th style={{ background: C_BG_HEADER, textAlign: 'left', padding: '8px 12px', fontSize: 12, color: C_TEXT_SECONDARY, borderBottom: `1px solid ${C_BORDER}` }}>Xã / Phường mới</th>
+                    <th style={{ background: C_BG_HEADER, textAlign: 'left', padding: '8px 12px', fontSize: 12, color: C_TEXT_SECONDARY, borderBottom: `1px solid ${C_BORDER}` }}>Tỉnh mới</th>
+                    <th style={{ background: C_BG_HEADER, textAlign: 'left', padding: '8px 12px', fontSize: 12, color: C_TEXT_SECONDARY, borderBottom: `1px solid ${C_BORDER}` }}>Phân loại</th>
+                    <th style={{ background: C_BG_HEADER, padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}` }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {localUrbanConfigs.map((config) => (
+                    <Fragment key={config.province}>
+                      {config.wards.map((w, idx) => (
+                        <tr key={`${config.province}-${w.ward}`}>
+                          <td style={{ padding: '7px 12px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_PRIMARY }}>{w.ward}</td>
+                          <td style={{ padding: '7px 12px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>{config.province}</td>
+                          <td style={{ padding: '6px 12px', borderBottom: `1px solid ${C_BORDER}` }}>
+                            <button
+                              onClick={() => handleToggleUrbanWard(config.province, w.ward)}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 12,
+                                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                                background: w.isUrban ? '#FFF4ED' : '#F9FAFB',
+                                border: `1px solid ${w.isUrban ? '#FDBA74' : C_BORDER}`,
+                                color: w.isUrban ? '#FF5200' : C_TEXT_SECONDARY,
+                              }}
+                            >
+                              {w.isUrban ? 'Nội thành' : 'Ngoại thành'}
+                            </button>
+                          </td>
+                          <td style={{ padding: '6px 12px', borderBottom: `1px solid ${C_BORDER}`, textAlign: 'right' }}>
+                            <button
+                              onClick={() => handleRemoveUrbanWard(config.province, w.ward)}
+                              style={{ border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer' }}
+                              title="Xoá xã/phường này"
+                            >
+                              <CloseOutlined style={{ fontSize: 12 }} />
+                            </button>
+                            {idx === 0 && (
+                              <button
+                                onClick={() => handleRemoveUrbanProvince(config.province)}
+                                style={{ border: 'none', background: 'transparent', color: '#9CA3AF', cursor: 'pointer', marginLeft: 8, fontSize: 11 }}
+                                title={`Bỏ phân biệt Nội/Ngoại thành cho ${config.province}`}
+                              >
+                                bỏ tỉnh
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr key={`${config.province}-add`}>
+                        <td colSpan={4} style={{ padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, background: '#F9FAFB' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <input
+                              value={newWardInputs[config.province] ?? ''}
+                              onChange={(e) => setNewWardInputs((prev) => ({ ...prev, [config.province]: e.target.value }))}
+                              onKeyDown={(e) => { if (e.key === 'Enter') handleAddUrbanWard(config.province) }}
+                              placeholder={`Thêm xã/phường mới cho ${config.province}...`}
+                              style={{ ...inputStyle, fontSize: 12, width: 280 }}
+                            />
+                            <button
+                              onClick={() => handleAddUrbanWard(config.province)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: C_TEXT_PRIMARY }}
+                            >
+                              <PlusOutlined style={{ fontSize: 10 }} /> Thêm
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

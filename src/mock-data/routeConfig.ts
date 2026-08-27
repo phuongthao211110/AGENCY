@@ -9,6 +9,19 @@ export interface RegionDef {
   provinces: string[]
 }
 
+/** 1 xã/phường (theo địa giới mới sau sáp nhập 2025) + phân loại Nội/Ngoại thành. */
+export interface UrbanWard {
+  ward: string
+  isUrban: boolean
+}
+
+/** 1 tỉnh/thành (tên mới sau sáp nhập) có phân biệt Nội thành/Ngoại thành — liệt kê rõ
+ * từng xã/phường, không suy ra từ quận/huyện cũ nữa (cấp quận/huyện đã bị bỏ từ 2025). */
+export interface UrbanConfig {
+  province: string
+  wards: UrbanWard[]
+}
+
 // ─── Internal seed constants ──────────────────────────────────────────────────
 
 const ZONE_NAMES: Record<Zone, string> = {
@@ -71,6 +84,57 @@ export const routeMatrix: Record<string, string> = {
   [pairKey('V3', 'V3')]: 'Nội Vùng Tỉnh',
 }
 
+// Demo — 1 phần xã/phường tiêu biểu theo địa giới MỚI sau sáp nhập 2025 (không phải danh sách
+// đầy đủ toàn bộ đơn vị). "Ngoại thành" của TP. Hồ Chí Minh dùng đúng tên xã thật thuộc khu vực
+// Bà Rịa - Vũng Tàu (cũ) đã sáp nhập vào TP. Hồ Chí Minh; các nơi khác là tên minh hoạ tương tự
+// cách đặt tên thật ("Khu vực ... cũ") — cần đại lý/Super Admin bổ sung đầy đủ khi có dữ liệu chính thức.
+export const urbanConfigs: UrbanConfig[] = [
+  {
+    province: 'Hà Nội',
+    wards: [
+      { ward: 'Phường Hoàn Kiếm (Khu vực Quận Hoàn Kiếm cũ)', isUrban: true },
+      { ward: 'Phường Ba Đình (Khu vực Quận Ba Đình cũ)', isUrban: true },
+      { ward: 'Phường Cầu Giấy (Khu vực Quận Cầu Giấy cũ)', isUrban: true },
+      { ward: 'Phường Thanh Xuân (Khu vực Quận Thanh Xuân cũ)', isUrban: true },
+      { ward: 'Phường Hai Bà Trưng (Khu vực Quận Hai Bà Trưng cũ)', isUrban: true },
+      { ward: 'Xã Sóc Sơn (Khu vực Huyện Sóc Sơn cũ)', isUrban: false },
+      { ward: 'Xã Ba Vì (Khu vực Huyện Ba Vì cũ)', isUrban: false },
+      { ward: 'Xã Chương Mỹ (Khu vực Huyện Chương Mỹ cũ)', isUrban: false },
+      { ward: 'Xã Mỹ Đức (Khu vực Huyện Mỹ Đức cũ)', isUrban: false },
+      { ward: 'Xã Phú Xuyên (Khu vực Huyện Phú Xuyên cũ)', isUrban: false },
+    ],
+  },
+  {
+    province: 'TP. Hồ Chí Minh',
+    wards: [
+      { ward: 'Phường Sài Gòn (Khu vực Quận 1 cũ)', isUrban: true },
+      { ward: 'Phường Bến Thành (Khu vực Quận 1 cũ)', isUrban: true },
+      { ward: 'Phường Chợ Lớn (Khu vực Quận 5 cũ)', isUrban: true },
+      { ward: 'Phường Thủ Đức (Khu vực TP. Thủ Đức cũ)', isUrban: true },
+      { ward: 'Phường Bình Dương (Khu vực TP. Thủ Dầu Một cũ)', isUrban: true },
+      { ward: 'Xã Xuyên Mộc (Khu vực Xã Xuyên Mộc cũ)', isUrban: false },
+      { ward: 'Xã Long Điền (Khu vực Thị trấn Long Điền cũ)', isUrban: false },
+      { ward: 'Xã Đất Đỏ (Khu vực Thị trấn Đất Đỏ cũ)', isUrban: false },
+      { ward: 'Xã Bình Châu (Khu vực Xã Bình Châu cũ)', isUrban: false },
+      { ward: 'Xã Châu Đức (Khu vực Xã Xà Bang cũ)', isUrban: false },
+      { ward: 'Xã Hồ Tràm (Khu vực Xã Phước Thuận cũ)', isUrban: false },
+    ],
+  },
+  {
+    province: 'Đà Nẵng',
+    wards: [
+      { ward: 'Phường Hải Châu (Khu vực Quận Hải Châu cũ)', isUrban: true },
+      { ward: 'Phường Thanh Khê (Khu vực Quận Thanh Khê cũ)', isUrban: true },
+      { ward: 'Phường Sơn Trà (Khu vực Quận Sơn Trà cũ)', isUrban: true },
+      { ward: 'Phường Ngũ Hành Sơn (Khu vực Quận Ngũ Hành Sơn cũ)', isUrban: true },
+      { ward: 'Xã Hội An (Khu vực TP. Hội An cũ)', isUrban: false },
+      { ward: 'Xã Tam Kỳ (Khu vực TP. Tam Kỳ cũ)', isUrban: false },
+      { ward: 'Xã Núi Thành (Khu vực Huyện Núi Thành cũ)', isUrban: false },
+      { ward: 'Xã Duy Xuyên (Khu vực Huyện Duy Xuyên cũ)', isUrban: false },
+    ],
+  },
+]
+
 // ─── Setters ──────────────────────────────────────────────────────────────────
 
 export function setSameProvinceRoute(name: string): void {
@@ -94,6 +158,21 @@ export function resolveRouteName(fromProvince: string, toProvince: string): stri
   const toReg   = findRegionOf(toProvince)
   if (!fromReg || !toReg) return null
   return routeMatrix[pairKey(fromReg.id, toReg.id)] ?? null
+}
+
+export function findUrbanConfig(province: string): UrbanConfig | undefined {
+  return urbanConfigs.find((u) => u.province === province)
+}
+
+/**
+ * Resolve Nội thành/Ngoại thành cho 1 xã/phường cụ thể.
+ * true = Nội thành, false = Ngoại thành, null = tỉnh này hoặc xã/phường này chưa có phân loại.
+ */
+export function resolveUrbanArea(province: string, ward: string): boolean | null {
+  const config = findUrbanConfig(province)
+  if (!config) return null
+  const found = config.wards.find((w) => w.ward === ward)
+  return found ? found.isUrban : null
 }
 
 /**
@@ -176,4 +255,43 @@ export function deleteRouteName(name: string): void {
   for (const key of Object.keys(routeMatrix)) {
     if (routeMatrix[key] === name) delete routeMatrix[key]
   }
+}
+
+/** Thêm 1 tỉnh/thành vào danh sách có phân biệt Nội thành/Ngoại thành, ban đầu chưa có xã/phường nào. */
+export function addUrbanProvince(province: string): UrbanConfig {
+  const existing = findUrbanConfig(province)
+  if (existing) return existing
+  const config: UrbanConfig = { province, wards: [] }
+  urbanConfigs.push(config)
+  return config
+}
+
+/** Bỏ hẳn 1 tỉnh khỏi danh sách có Nội/Ngoại thành — tỉnh đó về lại trạng thái không phân biệt. */
+export function removeUrbanProvince(province: string): void {
+  const idx = urbanConfigs.findIndex((u) => u.province === province)
+  if (idx !== -1) urbanConfigs.splice(idx, 1)
+}
+
+/** Thêm 1 xã/phường mới vào 1 tỉnh đã có phân biệt Nội/Ngoại thành. */
+export function addUrbanWard(province: string, ward: string, isUrban: boolean): void {
+  const config = findUrbanConfig(province)
+  if (!config) return
+  if (config.wards.some((w) => w.ward === ward)) return
+  config.wards.push({ ward, isUrban })
+}
+
+/** Xoá hẳn 1 xã/phường khỏi danh sách của 1 tỉnh. */
+export function removeUrbanWard(province: string, ward: string): void {
+  const config = findUrbanConfig(province)
+  if (!config) return
+  const idx = config.wards.findIndex((w) => w.ward === ward)
+  if (idx !== -1) config.wards.splice(idx, 1)
+}
+
+/** Đổi phân loại Nội thành ↔ Ngoại thành cho 1 xã/phường đã có trong danh sách. */
+export function toggleUrbanWardClassification(province: string, ward: string): void {
+  const config = findUrbanConfig(province)
+  if (!config) return
+  const found = config.wards.find((w) => w.ward === ward)
+  if (found) found.isUrban = !found.isUrban
 }
