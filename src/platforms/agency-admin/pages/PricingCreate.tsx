@@ -6,6 +6,7 @@ import {
   routeMatrix,
   sameProvinceRoute,
   listRouteNames,
+  urbanConfigs,
   type RegionDef,
 } from '../../../mock-data/routeConfig'
 
@@ -757,10 +758,12 @@ function RouteBlock({
   route,
   onChange,
   onDelete,
+  onOpenZoneGuide,
 }: {
   route: RouteConfig
   onChange: (updated: RouteConfig) => void
   onDelete: () => void
+  onOpenZoneGuide: () => void
 }) {
   const [activeSection, setActiveSection] = useState<null | 'overweight' | 'surcharge'>(null)
   const [weightError, setWeightError] = useState(false)
@@ -850,6 +853,24 @@ function RouteBlock({
               <option key={name} value={name}>{name}</option>
             ))}
           </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Toggle on={route.splitUrbanRural} onToggle={() => updateField('splitUrbanRural', !route.splitUrbanRural)} />
+            <span
+              onClick={() => updateField('splitUrbanRural', !route.splitUrbanRural)}
+              style={{ fontSize: 11, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap', cursor: 'pointer' }}
+            >
+              Tách Nội thành/Ngoại thành
+            </span>
+            {route.splitUrbanRural && (
+              <button
+                onClick={onOpenZoneGuide}
+                title="Xem xã/phường nào tính Nội thành/Ngoại thành"
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#3B82F6', display: 'flex', alignItems: 'center', padding: 0 }}
+              >
+                <InfoCircleOutlined style={{ fontSize: 12 }} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Khối lượng chuẩn */}
@@ -872,26 +893,24 @@ function RouteBlock({
           </div>
         </div>
 
-        {/* Giá chuẩn — hoặc tách Nội thành / Ngoại thành nếu bật */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Giá chuẩn — hoặc tách Nội thành / Ngoại thành nếu bật ở phần Tuyến */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontSize: 12, color: C_TEXT_LABEL, whiteSpace: 'nowrap' }}>Giá chuẩn <span style={{ color: '#EF4444' }}>*</span></span>
           {route.splitUrbanRural ? (
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 0, border: `1px solid ${C_BORDER}`, borderRadius: 6, overflow: 'hidden', width: 'fit-content' }}>
               {([
                 { key: 'basePriceUrban' as const, label: 'Nội thành' },
                 { key: 'basePriceRural' as const, label: 'Ngoại thành' },
-              ]).map(({ key, label }) => (
-                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <span style={{ fontSize: 10, color: C_TEXT_SECONDARY }}>{label}</span>
-                  <div style={{ position: 'relative', width: 120 }}>
+              ]).map(({ key, label }, i) => (
+                <div key={key} style={{ display: 'flex', flexDirection: 'column', borderLeft: i > 0 ? `1px solid ${C_BORDER}` : 'none' }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: C_TEXT_SECONDARY, background: C_BG_HEADER, padding: '3px 8px' }}>{label}</span>
+                  <div style={{ position: 'relative', width: 122 }}>
                     <input
                       type="number"
                       value={route[key]}
                       onChange={(e) => updateField(key, e.target.value)}
                       placeholder="VD: 15000"
-                      style={{ ...inputStyle, width: '100%', paddingRight: 24, boxSizing: 'border-box' }}
-                      onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+                      style={{ ...inputStyle, width: '100%', border: 'none', borderRadius: 0, paddingRight: 24, boxSizing: 'border-box' }}
                     />
                     <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
                   </div>
@@ -912,10 +931,6 @@ function RouteBlock({
               <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Toggle on={route.splitUrbanRural} onToggle={() => updateField('splitUrbanRural', !route.splitUrbanRural)} />
-            <span style={{ fontSize: 11, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>Tách khu vực</span>
-          </div>
         </div>
 
         {/* Buttons ngưỡng vượt cân + phụ phí — căn phải, cùng column structure với các field */}
@@ -1129,6 +1144,48 @@ function ZoneGuideModal({ onClose }: { onClose: () => void }) {
             ))}
           </div>
 
+          {/* Định nghĩa Nội thành / Ngoại thành — dynamic */}
+          <div>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, display: 'block', marginBottom: 8 }}>
+              Định nghĩa Nội thành / Ngoại thành (áp dụng khi bật "Tách Nội thành/Ngoại thành" ở 1 tuyến)
+            </span>
+            {urbanConfigs.length === 0 ? (
+              <div style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Chưa có tỉnh nào được cấu hình Nội thành/Ngoại thành.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {urbanConfigs.map((config) => (
+                  <div key={config.province} style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+                    <div style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>
+                      {config.province}
+                    </div>
+                    <div style={{ padding: '10px 16px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {config.wards.length === 0 ? (
+                        <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>Chưa có xã/phường nào.</span>
+                      ) : (
+                        config.wards.map((w) => (
+                          <span
+                            key={w.ward}
+                            style={{
+                              padding: '3px 8px', borderRadius: 12, fontSize: 12, fontWeight: 600,
+                              background: w.isUrban ? '#FFF4ED' : '#F9FAFB',
+                              border: `1px solid ${w.isUrban ? '#FDBA74' : C_BORDER}`,
+                              color: w.isUrban ? C_ACTION : C_TEXT_SECONDARY,
+                            }}
+                          >
+                            {w.ward}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: 8, fontSize: 12, color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>
+              Cam = Nội thành, xám = Ngoại thành.
+            </div>
+          </div>
+
           <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>
             Cấu hình vùng &amp; tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.
           </div>
@@ -1337,6 +1394,7 @@ export default function PricingCreate() {
                 route={route}
                 onChange={(updated) => updateRoute(route.id, updated)}
                 onDelete={() => deleteRoute(route.id)}
+                onOpenZoneGuide={() => setShowZoneGuide(true)}
               />
             ))}
             <button
