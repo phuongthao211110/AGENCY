@@ -38,5 +38,5 @@ Là chủ shop, tôi muốn hệ thống tự mở phiếu in ngay khi vận đ�
 ## Notes
 
 - Tách từ [SHOP-ORDER-13](./in-don-hang-hang-hoa.md) và [SHOP-ORDER-14](./in-don-hang-thu-tai-lieu.md).
-- **Gap còn lại:** toggle này hiện chỉ là cấu hình hiển thị, chưa có hành động in thật nào được thực thi trong app (không có tính năng in thật ở prototype này) — cần làm riêng khi có yêu cầu build in thật.
+- **Gap còn lại (vẫn đúng sau thay đổi kiến trúc tháng 9/2026):** toggle `autoPrint` giờ persist qua `printSettingsStore.ts` (xem [SHOP-ORDER-30](./in-don-hang-thu-cau-hinh-ap-dung-van-don-that.md)) thay vì mất khi đóng modal — nhưng KHÔNG có bất kỳ đoạn code nào đọc `autoPrint` để tự mở `PrintOrderModal` khi tạo đơn Hàng hoá hay khi đại lý dispatch đơn Thư. Prototype đã có tính năng in thật (`window.print()` qua `PrintOrderModal` từ SHOP-ORDER-26/27) — điều còn thiếu là trigger tự động (auto-open modal đúng thời điểm). Cần làm riêng khi có yêu cầu.
 - **Đính chính:** nhãn toggle Thư tài liệu trước đây ghi nhầm "...qua 247" — đã verify lại code thật (`Orders.tsx`) và sửa đúng thành "...cho nhà vận chuyển", không nêu tên NVC (phát hiện khi viết [SHOP-ORDER-24](./in-don-hang-thu-tai-lieu-in-van-don.md)).

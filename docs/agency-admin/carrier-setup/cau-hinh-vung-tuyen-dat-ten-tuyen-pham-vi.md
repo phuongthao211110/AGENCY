@@ -4,18 +4,33 @@ jiraKey:
 platform: agency-admin
 section: Thiết lập NVC
 figma: https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN
-status: draft
+status: superseded
 ---
 
-# [AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Đặt tên tuyến & phạm vi áp dụng
+# [AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Đặt tên tuyến & phạm vi áp dụng (ĐÃ CHUYỂN SANG SUPER ADMIN)
 
-## User Story
+## ⚠️ Story này đã lỗi thời — không còn khớp code hiện tại
+
+Cùng lý do với **AGA-CARRIER-17**: toàn bộ "Cấu hình vùng & tuyến" (gồm cả Bước 2 mô tả ở story này) đã **chuyển hẳn lên Super Admin, bỏ hẳn khỏi Agency Admin**. Agency Admin không còn trang này, menu CÔNG CỤ chỉ còn "Kiểm tra tuyến".
+
+Hiện tại:
+- Trang thật (card "Bước 2 — Đặt tên tuyến & phạm vi áp dụng" như mô tả ở story này) nằm ở Super Admin, route `/super-admin/route-config` (`RouteConfig.tsx`).
+- Toàn bộ nội dung User Flow/System Flow/AC bên dưới **đã được viết lại chính xác cho đúng platform** tại **GSA-ROUTE-4** (`docs/super-admin/route-config/buoc-2-dat-ten-tuyen-va-pham-vi-ap-dung.md`) — đọc file đó để có tài liệu đúng, đầy đủ và cập nhật nhất.
+- Ghi chú cũ về `RouteCheck.tsx` "hiện CHƯA được nối vào cấu hình dùng chung" **cũng đã lỗi thời** — gap đó đã được fix (`RouteCheck.tsx` giờ đọc `resolveRouteName()`/`listRouteNames()`/`regions` trực tiếp từ `routeConfig.ts`, đã verify bằng Playwright).
+
+Giữ lại file này (không xoá) để lưu lịch sử — không dùng làm tài liệu tham chiếu cho việc implement hay QA nữa.
+
+---
+
+## Nội dung gốc (đã lỗi thời, chỉ lưu tham khảo lịch sử)
+
+### User Story
 
 Là Agency Admin (Đại lý), tôi muốn đặt tên tuyến và chỉ định các cặp miền áp dụng cho
 từng tuyến để hệ thống biết cặp gửi/nhận nào được gọi là tuyến nào — từ đó dropdown
 "Tuyến" trong màn Tạo bảng giá phản ánh đúng cấu trúc giá cước thực tế của đại lý.
 
-## User Flow
+### User Flow
 
 1. Agency Admin ở trang **Cấu hình vùng & tuyến**, cuộn xuống phía dưới card Bước 1
 2. Card **Bước 2 — Đặt tên tuyến & phạm vi áp dụng** hiển thị với dòng "Nội Tỉnh" (badge **CỐ ĐỊNH**) luôn ở đầu
@@ -25,7 +40,7 @@ từng tuyến để hệ thống biết cặp gửi/nhận nào được gọi 
 6. Để xoá tuyến: bấm nút X bên phải dòng tuyến → các cặp miền của tuyến đó trở về "chưa cấu hình"
 7. Nếu có cặp miền nào chưa thuộc tuyến nào → banner cảnh báo vàng tự động hiển thị
 
-## System Flow
+### System Flow
 
 1. Bước 2 đọc danh sách miền từ cùng store `routeConfig.ts`, tự tính toán tất cả cặp miền hợp lệ (bao gồm cả cặp cùng miền — 2 tỉnh khác nhau cùng miền)
 2. Bấm chip cặp miền để assign: nếu cặp đó đã thuộc tuyến khác → tự rút khỏi tuyến cũ rồi gán vào tuyến mới; không cho phép 1 cặp thuộc 2 tuyến cùng lúc
@@ -34,7 +49,7 @@ từng tuyến để hệ thống biết cặp gửi/nhận nào được gọi 
 5. Hệ thống kiểm tra toàn bộ cặp miền: nếu có cặp chưa thuộc tuyến nào → hiển thị banner vàng cảnh báo
 6. Danh sách tên tuyến từ Bước 2 được export sang `PricingCreate.tsx` và cập nhật theo thời gian thực khi admin thay đổi cấu hình
 
-## Acceptance Criteria
+### Acceptance Criteria (gốc — xem GSA-ROUTE-4 để có AC đúng hiện tại)
 
 **AC1:** Card "Bước 2 — Đặt tên tuyến & phạm vi áp dụng" nằm ngay dưới card Bước 1 trên cùng trang.
 
@@ -54,8 +69,8 @@ từng tuyến để hệ thống biết cặp gửi/nhận nào được gọi 
 
 **AC9:** Danh sách tên tuyến từ Bước 2 xuất hiện trong dropdown "Tuyến" tại màn Tạo bảng giá — thêm/xoá/đổi tên tuyến phản ánh ngay khi mở lại màn Tạo bảng giá.
 
-## Notes
+## Notes (gốc — mục 1 đã lỗi thời, xem cảnh báo đầu file)
 
-- Trang "Kiểm tra tuyến" (`RouteCheck.tsx`, menu CÔNG CỤ) **hiện CHƯA được nối** vào cấu hình dùng chung này — vẫn dùng logic tra tuyến tĩnh cũ (`determineRoute()` trong `vietnam-provinces.ts`). Nếu admin sửa cấu hình Tuyến sau này, trang "Kiểm tra tuyến" sẽ KHÔNG cập nhật theo — có thể gây lệch dữ liệu giữa 2 trang. Đây là hạn chế đã biết, chưa xử lý.
-- Toàn bộ dữ liệu tuyến lưu ở bộ nhớ trong phiên (module-level state trong `routeConfig.ts`), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu.
-- Nhiều cặp miền có thể dùng chung 1 tên tuyến (để định giá giống nhau) — đây là thiết kế có chủ đích, không phải lỗi trùng lặp.
+- ~~Trang "Kiểm tra tuyến" hiện CHƯA được nối vào cấu hình dùng chung này...~~ **Đã fix** — xem cảnh báo đầu file.
+- Toàn bộ dữ liệu tuyến lưu ở bộ nhớ trong phiên (module-level state trong `routeConfig.ts`), KHÔNG có backend/persistence thật. *(Vẫn đúng ở Super Admin — xem GSA-ROUTE-6.)*
+- Nhiều cặp miền có thể dùng chung 1 tên tuyến (để định giá giống nhau) — đây là thiết kế có chủ đích, không phải lỗi trùng lặp. *(Vẫn đúng.)*

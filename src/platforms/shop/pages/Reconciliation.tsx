@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { EyeOutlined, CheckCircleOutlined, WarningOutlined, CalendarOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
+import { EyeOutlined, CalendarOutlined, SearchOutlined } from '@ant-design/icons'
 import allCarrierSessions from '../../../mock-data/carrier-reconciliation.json'
-import allItemsData from '../../../mock-data/carrier-reconciliation-items.json'
+import { getReconciliationItems, type ItemRecord } from '../../../mock-data/reconciliationLedger'
 import allShops from '../../../mock-data/shops.json'
 
 // ── Design tokens ────────────────────────────────────────────
@@ -22,19 +23,6 @@ type NVCSession = {
   status: 'pending' | 'confirmed'
   note: string
   ghnSessionCode: string
-}
-
-type ItemRecord = {
-  id: string
-  sessionId: string
-  orderCode: string
-  shopId: string
-  shopName: string
-  ghnCOD: number
-  systemCOD: number
-  ghnFee: number
-  systemFee: number
-  status: 'MATCH' | 'MISMATCH' | 'NOT_FOUND'
 }
 
 type ShopSession = {
@@ -82,7 +70,10 @@ function buildShopSessions(): ShopSession[] {
   )
 
   const groups = new Map<string, { items: ItemRecord[]; session: NVCSession }>()
-  ;(allItemsData as ItemRecord[]).forEach(item => {
+  // Đọc qua getReconciliationItems() (reconciliationLedger.ts) — status đã cộng dồn theo
+  // orderCode xuyên nhiều phiên GHN, không phải field tĩnh đọc thẳng từ JSON (khớp cách
+  // AgencyReconciliationShopDetail.tsx tính, tránh Shop thấy "Đúng/Sai" lệch với Agency Admin).
+  getReconciliationItems().forEach(item => {
     if (item.shopId !== MY_SHOP_ID) return
     if (!confirmedIds.has(item.sessionId)) return
     if (!groups.has(item.sessionId)) {
@@ -134,12 +125,6 @@ const fmtPeriod = (start?: string, end?: string) => {
   return `${dd(start)}/${mm(start)} – ${dd(end)}/${mm(end)}/${yy(end)}`
 }
 
-const ITEM_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  MATCH:     { label: 'Đúng',           color: '#16A34A', bg: '#F0FDF4' },
-  MISMATCH:  { label: 'Sai',            color: '#DC2626', bg: '#FEF2F2' },
-  NOT_FOUND: { label: 'Không tìm thấy', color: '#6B7280', bg: '#F9FAFB' },
-}
-
 // ── Stat card ─────────────────────────────────────────────────
 function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
@@ -155,7 +140,8 @@ function TRow({ session, onView }: { session: ShopSession; onView: () => void })
   const [hover, setHover] = useState(false)
   return (
     <div
-      style={{ display: 'flex', alignItems: 'center', background: hover ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}`, cursor: 'default' }}
+      onClick={onView}
+      style={{ display: 'flex', alignItems: 'center', background: hover ? '#FAFAFA' : '#fff', transition: 'background 0.1s', borderBottom: `1px solid ${C_BORDER}`, cursor: 'pointer' }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -197,153 +183,12 @@ function TRow({ session, onView }: { session: ShopSession; onView: () => void })
       </div>
       <div style={{ flex: '0 0 72px', minWidth: 72, padding: '10px 8px', display: 'flex', justifyContent: 'center' }}>
         <button
-          onClick={onView}
+          onClick={(e) => { e.stopPropagation(); onView() }}
           style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: C_ACTION, fontSize: 13, fontWeight: 600 }}
         >
           <EyeOutlined style={{ fontSize: 14 }} />
           Xem
         </button>
-      </div>
-    </div>
-  )
-}
-
-// ── Detail Modal ──────────────────────────────────────────────
-function DetailModal({ session, onClose }: { session: ShopSession; onClose: () => void }) {
-  return (
-    <div
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: 640, maxHeight: '80vh', background: '#fff', borderRadius: 12,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-          display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        }}
-      >
-        {/* Header */}
-        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <div>
-            <span style={{ fontSize: 16, fontWeight: 600, color: C_TEXT_PRIMARY }}>
-              Phiên đối soát:{' '}
-            </span>
-            <span style={{ fontSize: 16, fontWeight: 700, color: C_LINK }}>{session.id}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>
-              Phiên GHN: <span style={{ color: C_LINK, fontWeight: 600 }}>{session.nvcSessionCode}</span>
-            </span>
-            {fmtPeriod(session.periodStart, session.periodEnd) && (
-              <>
-                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>·</span>
-                <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 500 }}>
-                  {fmtPeriod(session.periodStart, session.periodEnd)}
-                </span>
-              </>
-            )}
-            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>·</span>
-            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>TT: {fmtDate(session.paymentDate)}</span>
-            <button
-              onClick={onClose}
-              style={{ marginLeft: 8, border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: C_TEXT_SECONDARY, lineHeight: 1 }}
-            >
-              ×
-            </button>
-          </div>
-        </div>
-
-        {/* Summary mini-cards */}
-        <div style={{ display: 'flex', gap: 12, padding: '16px 24px', flexShrink: 0 }}>
-          <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', border: `1px solid ${C_BORDER}`, borderRadius: 8 }}>
-            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Tổng COD (shop)</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(session.totalCOD)}</div>
-          </div>
-          <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', border: `1px solid ${C_BORDER}`, borderRadius: 8 }}>
-            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Tổng phí DV (shop)</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmt(session.feeShop)}</div>
-          </div>
-          <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', border: `1px solid ${C_BORDER}`, borderRadius: 8 }}>
-            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 2 }}>Nhận về</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: C_ACTION }}>{fmt(session.netAmount)}</div>
-          </div>
-          {session.totalMismatch > 0 && (
-            <div style={{ flex: 1, textAlign: 'center', padding: '10px 8px', border: '1px solid #FCA5A5', borderRadius: 8, background: '#FEF2F2' }}>
-              <div style={{ fontSize: 12, color: '#DC2626', marginBottom: 2 }}>Số lệch</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#DC2626' }}>{session.totalMismatch}</div>
-            </div>
-          )}
-        </div>
-
-        {/* Orders table */}
-        <div style={{ maxHeight: 300, overflowY: 'auto', padding: '0 24px 16px' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, marginBottom: 8 }}>
-            Danh sách đơn hàng ({session.totalOrders} đơn)
-          </div>
-          <div style={{ minWidth: 540 }}>
-            {/* Table header */}
-            <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center', borderRadius: '6px 6px 0 0' }}>
-              <div style={{ flex: '1 0 0', padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY }}>Mã đơn GHN</div>
-              <div style={{ width: 120, flexShrink: 0, padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY, textAlign: 'right' }}>COD</div>
-              <div style={{ width: 100, flexShrink: 0, padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Phí ship</div>
-              <div style={{ width: 130, flexShrink: 0, padding: '6px 8px', fontSize: 13, color: C_TEXT_SECONDARY, textAlign: 'center' }}>Trạng thái</div>
-            </div>
-            <div style={{ height: 1, background: C_BORDER }} />
-            {session.items.map(item => {
-              const st = ITEM_STATUS[item.status]
-              const hasCODDiff = item.ghnCOD !== item.systemCOD
-              const hasFeeDiff = item.ghnFee !== item.systemFee
-              return (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${C_BORDER}` }}>
-                  <div style={{ flex: '1 0 0', padding: '8px 8px' }}>
-                    <span style={{ fontSize: 13, color: C_LINK, fontWeight: 500 }}>{item.orderCode}</span>
-                  </div>
-                  <div style={{ width: 120, flexShrink: 0, padding: '8px 8px', textAlign: 'right' }}>
-                    <span style={{ fontSize: 13, color: hasCODDiff ? '#DC2626' : C_TEXT_PRIMARY, fontWeight: hasCODDiff ? 600 : 400 }}>
-                      {fmt(item.ghnCOD)}
-                    </span>
-                    {hasCODDiff && (
-                      <div style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>
-                        HT: {fmt(item.systemCOD)}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ width: 100, flexShrink: 0, padding: '8px 8px', textAlign: 'right' }}>
-                    <span style={{ fontSize: 13, color: hasFeeDiff ? '#DC2626' : C_TEXT_SECONDARY, fontWeight: hasFeeDiff ? 600 : 400 }}>
-                      {fmt(item.ghnFee)}
-                    </span>
-                    {hasFeeDiff && (
-                      <div style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>
-                        HT: {fmt(item.systemFee)}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ width: 130, flexShrink: 0, padding: '8px 8px', display: 'flex', justifyContent: 'center' }}>
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                      padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
-                      background: st.bg, color: st.color,
-                    }}>
-                      {item.status === 'MATCH' ? <CheckCircleOutlined /> : <WarningOutlined />}
-                      {st.label}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding: '12px 24px', borderTop: `1px solid ${C_BORDER}`, display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
-          <button
-            onClick={onClose}
-            style={{ padding: '7px 20px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 14, color: C_TEXT_PRIMARY }}
-          >
-            Đóng
-          </button>
-        </div>
       </div>
     </div>
   )
@@ -446,12 +291,19 @@ function ScheduleSection({ schedule, onEdit }: { schedule: string; onEdit: () =>
 
 // ── Main ──────────────────────────────────────────────────────
 export default function ShopReconciliation() {
-  const [selected, setSelected] = useState<ShopSession | null>(null)
+  const navigate = useNavigate()
   const [codSchedule, setCodSchedule] = useState<string>(myShop?.codSchedule ?? 'Thứ 2, 3, 4, 5, 6')
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [search, setSearch] = useState('')
 
   const totalNetAmount = mySessions.reduce((s, r) => s + r.netAmount, 0)
   const totalMismatch  = mySessions.reduce((s, r) => s + r.totalMismatch, 0)
+
+  const filteredSessions = mySessions.filter(s => {
+    const q = search.trim().toLowerCase()
+    if (!q) return true
+    return s.id.toLowerCase().includes(q) || s.nvcSessionCode.toLowerCase().includes(q)
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
@@ -479,6 +331,22 @@ export default function ShopReconciliation() {
         )}
       </div>
 
+      {/* Search */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px 12px', flexShrink: 0 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', flex: 1, maxWidth: 320,
+          background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+        }}>
+          <SearchOutlined style={{ color: C_TEXT_SECONDARY, fontSize: 16, flexShrink: 0 }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Tìm theo mã phiên hoặc phiên GHN"
+            style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent' }}
+          />
+        </div>
+      </div>
+
       {/* Table */}
       <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
         <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
@@ -504,14 +372,18 @@ export default function ShopReconciliation() {
               </div>
             )}
 
-            {mySessions.map(s => (
-              <TRow key={s.id} session={s} onView={() => setSelected(s)} />
+            {mySessions.length > 0 && filteredSessions.length === 0 && (
+              <div style={{ padding: '48px 16px', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>
+                Không tìm thấy phiên phù hợp
+              </div>
+            )}
+
+            {filteredSessions.map(s => (
+              <TRow key={s.id} session={s} onView={() => navigate(`/shop/reconciliation/${s.id}`, { state: { session: s } })} />
             ))}
           </div>
         </div>
       </div>
-
-      {selected && <DetailModal session={selected} onClose={() => setSelected(null)} />}
 
       {showScheduleModal && (
         <ScheduleModal

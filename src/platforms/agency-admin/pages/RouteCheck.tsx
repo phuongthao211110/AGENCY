@@ -7,32 +7,85 @@ import {
   CheckCircleFilled,
   InfoCircleOutlined,
 } from '@ant-design/icons'
+import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import {
-  VIETNAM_PROVINCES,
-  determineRoute,
-  ZONE_LABELS,
-  ZONE_COLORS,
-  type Zone,
-} from '../../../mock-data/vietnam-provinces'
+  regions,
+  routeMatrix,
+  sameProvinceRoute,
+  listRouteNames,
+  findRegionOf,
+  resolveRouteName,
+  type RegionDef,
+} from '../../../mock-data/routeConfig'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
 
-const ROUTE_ORDER = [
-  { name: 'Nội Tỉnh', desc: 'sender == receiver (cùng tỉnh)', color: '#059669' },
-  { name: 'Liên Vùng Đặc Biệt', desc: 'HN ↔ ĐN / ĐN ↔ HCM / HCM ↔ HN', color: '#D97706' },
-  { name: 'Nội Vùng', desc: 'HN ↔ V3 / ĐN ↔ V2 / HCM ↔ V1', color: '#2563EB' },
-  { name: 'Liên Vùng', desc: 'HN ↔ V1/V2 / ĐN ↔ V1/V3 / HCM ↔ V2/V3', color: '#7C3AED' },
-  { name: 'Nội Vùng Tỉnh', desc: 'Khác tỉnh, cùng vùng (không phải 3 TP lớn)', color: '#0891B2' },
-  { name: 'Liên Vùng Tỉnh', desc: '2 tỉnh thuộc 2 vùng khác nhau', color: '#DC2626' },
+// Bảng màu ổn định theo id/tên — không phụ thuộc 6 vùng cố định, tự thích ứng khi
+// Super Admin thêm/sửa miền hoặc tuyến ở "Cấu hình vùng & tuyến".
+const PALETTE = [
+  { color: '#059669', bg: '#ECFDF5' },
+  { color: '#D97706', bg: '#FFFBEB' },
+  { color: '#2563EB', bg: '#EFF6FF' },
+  { color: '#7C3AED', bg: '#F5F3FF' },
+  { color: '#0891B2', bg: '#ECFEFF' },
+  { color: '#DC2626', bg: '#FEF2F2' },
+  { color: '#DB2777', bg: '#FDF2F8' },
+  { color: '#65A30D', bg: '#F7FEE7' },
 ]
 
-const ZONE_ORDER: Zone[] = ['HN', 'DN', 'HCM', 'V3', 'V2', 'V1']
+function colorForKey(key: string): { color: string; bg: string } {
+  let hash = 0
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0
+  return PALETTE[hash % PALETTE.length]
+}
+
+type RouteCheckResult = {
+  route: string
+  description: string
+  color: string
+  bgColor: string
+  fromRegion?: RegionDef
+  toRegion?: RegionDef
+} | null
+
+function buildResult(fromProvince: string, toProvince: string): RouteCheckResult {
+  const routeName = resolveRouteName(fromProvince, toProvince)
+  if (!routeName) return null
+  const fromRegion = findRegionOf(fromProvince)
+  const toRegion = findRegionOf(toProvince)
+  const { color, bg } = colorForKey(routeName)
+  const description = fromProvince === toProvince
+    ? `Giao hàng trong cùng tỉnh/thành phố — ${fromProvince}`
+    : `Giao hàng giữa ${fromRegion?.name ?? '—'} và ${toRegion?.name ?? '—'}`
+  return { route: routeName, description, color, bgColor: bg, fromRegion, toRegion }
+}
+
+// Danh sách tuyến kèm cặp miền áp dụng — dựa trên routeMatrix hiện tại (dynamic).
+type GuideRow = { name: string; pairs: string[] }
+function buildGuideRows(): GuideRow[] {
+  return listRouteNames().map((routeName) => {
+    if (routeName === sameProvinceRoute) {
+      return { name: routeName, pairs: ['Cùng tỉnh, bất kỳ miền nào'] }
+    }
+    const pairs: string[] = []
+    const seen = new Set<string>()
+    for (const [key, name] of Object.entries(routeMatrix)) {
+      if (name !== routeName || seen.has(key)) continue
+      seen.add(key)
+      const [idA, idB] = key.split('|')
+      const regA = regions.find((r) => r.id === idA)
+      const regB = regions.find((r) => r.id === idB)
+      pairs.push(`${regA?.name ?? idA} ↔ ${regB?.name ?? idB}`)
+    }
+    return { name: routeName, pairs }
+  })
+}
 
 export default function RouteCheck() {
   const [fromProvince, setFromProvince] = useState<string | null>(null)
   const [fromDistrict, setFromDistrict] = useState<string | null>(null)
   const [toProvince, setToProvince] = useState<string | null>(null)
   const [toDistrict, setToDistrict] = useState<string | null>(null)
-  const [result, setResult] = useState<ReturnType<typeof determineRoute>>(null)
+  const [result, setResult] = useState<RouteCheckResult>(null)
   const [checked, setChecked] = useState(false)
 
   const fromDistrictOptions =
@@ -48,6 +101,7 @@ export default function RouteCheck() {
     })) ?? []
 
   const provinceOptions = VIETNAM_PROVINCES.map((p) => ({ value: p.name, label: p.name }))
+  const guideRows = buildGuideRows()
 
   const handleSwap = () => {
     const tmpP = fromProvince
@@ -62,7 +116,7 @@ export default function RouteCheck() {
 
   const handleCheck = () => {
     if (!fromProvince || !toProvince) return
-    const r = determineRoute(fromProvince, toProvince)
+    const r = buildResult(fromProvince, toProvince)
     setResult(r)
     setChecked(true)
   }
@@ -80,7 +134,7 @@ export default function RouteCheck() {
           </h1>
         </div>
         <p style={{ margin: 0, fontSize: 13, color: '#6B7280' }}>
-          Nhập địa điểm lấy và giao để xác định tuyến trong hệ thống phân vùng GHN
+          Nhập địa điểm lấy và giao để xác định tuyến theo cấu hình vùng &amp; tuyến hiện tại (do Super Admin quản lý)
         </p>
       </div>
 
@@ -140,25 +194,25 @@ export default function RouteCheck() {
               />
             </div>
             {fromProvince && (() => {
-              const zone = VIETNAM_PROVINCES.find((p) => p.name === fromProvince)?.zone
-              if (!zone) return null
-              const zc = ZONE_COLORS[zone]
+              const region = findRegionOf(fromProvince)
+              if (!region) return null
+              const c = colorForKey(region.id)
               return (
                 <div
                   style={{
                     marginTop: 8,
                     padding: '3px 8px',
                     borderRadius: 4,
-                    background: zc.bg,
+                    background: c.bg,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 4,
                     fontSize: 11,
-                    color: zc.color,
+                    color: c.color,
                     fontWeight: 500,
                   }}
                 >
-                  <span>{ZONE_LABELS[zone]}</span>
+                  <span>{region.name}</span>
                 </div>
               )
             })()}
@@ -233,25 +287,25 @@ export default function RouteCheck() {
               />
             </div>
             {toProvince && (() => {
-              const zone = VIETNAM_PROVINCES.find((p) => p.name === toProvince)?.zone
-              if (!zone) return null
-              const zc = ZONE_COLORS[zone]
+              const region = findRegionOf(toProvince)
+              if (!region) return null
+              const c = colorForKey(region.id)
               return (
                 <div
                   style={{
                     marginTop: 8,
                     padding: '3px 8px',
                     borderRadius: 4,
-                    background: zc.bg,
+                    background: c.bg,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 4,
                     fontSize: 11,
-                    color: zc.color,
+                    color: c.color,
                     fontWeight: 500,
                   }}
                 >
-                  <span>{ZONE_LABELS[zone]}</span>
+                  <span>{region.name}</span>
                 </div>
               )
             })()}
@@ -322,10 +376,11 @@ export default function RouteCheck() {
                 </span>
               </div>
 
-              {/* Zones */}
+              {/* Regions */}
               <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                {[{ label: 'Vùng lấy', zone: result.fromZone }, { label: 'Vùng giao', zone: result.toZone }].map(({ label, zone }) => {
-                  const zc = ZONE_COLORS[zone]
+                {[{ label: 'Miền lấy', region: result.fromRegion }, { label: 'Miền giao', region: result.toRegion }].map(({ label, region }) => {
+                  if (!region) return null
+                  const c = colorForKey(region.id)
                   return (
                     <div
                       key={label}
@@ -335,13 +390,13 @@ export default function RouteCheck() {
                         gap: 6,
                         padding: '3px 10px',
                         borderRadius: 4,
-                        background: zc.bg,
-                        border: `1px solid ${zc.color}30`,
+                        background: c.bg,
+                        border: `1px solid ${c.color}30`,
                         fontSize: 12,
                       }}
                     >
                       <span style={{ color: '#6B7280' }}>{label}:</span>
-                      <span style={{ color: zc.color, fontWeight: 600 }}>{ZONE_LABELS[zone]}</span>
+                      <span style={{ color: c.color, fontWeight: 600 }}>{region.name}</span>
                     </div>
                   )
                 })}
@@ -363,13 +418,13 @@ export default function RouteCheck() {
             color: '#DC2626',
           }}
         >
-          Không thể xác định tuyến. Vui lòng kiểm tra lại thông tin địa điểm.
+          Không thể xác định tuyến. Vui lòng kiểm tra lại thông tin địa điểm — có thể tỉnh này chưa được Super Admin gán vào miền nào, hoặc cặp miền này chưa được đặt tên tuyến.
         </div>
       )}
 
       {/* Reference tables */}
       <div style={{ display: 'flex', gap: 16 }}>
-        {/* Zone table */}
+        {/* Region table */}
         <div
           style={{
             flex: 1,
@@ -389,15 +444,14 @@ export default function RouteCheck() {
             }}
           >
             <InfoCircleOutlined style={{ color: '#6B7280', fontSize: 13 }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Phân vùng GHN</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Định nghĩa miền / vùng</span>
           </div>
           <div style={{ padding: 4 }}>
-            {ZONE_ORDER.map((zone) => {
-              const zc = ZONE_COLORS[zone]
-              const provinces = VIETNAM_PROVINCES.filter((p) => p.zone === zone).map((p) => p.name)
+            {regions.map((region) => {
+              const c = colorForKey(region.id)
               return (
                 <div
-                  key={zone}
+                  key={region.id}
                   style={{
                     display: 'flex',
                     gap: 10,
@@ -411,19 +465,20 @@ export default function RouteCheck() {
                       minWidth: 120,
                       fontSize: 12,
                       fontWeight: 600,
-                      color: zc.color,
-                      background: zc.bg,
+                      color: c.color,
+                      background: c.bg,
                       padding: '2px 8px',
                       borderRadius: 4,
                       display: 'inline-flex',
                       alignItems: 'center',
                       height: 22,
+                      flexShrink: 0,
                     }}
                   >
-                    {ZONE_LABELS[zone]}
+                    {region.name}
                   </div>
                   <div style={{ fontSize: 11, color: '#6B7280', lineHeight: 1.5 }}>
-                    {provinces.join(', ')}
+                    {region.provinces.length > 0 ? region.provinces.join(', ') : 'Chưa có tỉnh'}
                   </div>
                 </div>
               )
@@ -452,47 +507,56 @@ export default function RouteCheck() {
             }}
           >
             <NodeIndexOutlined style={{ color: '#6B7280', fontSize: 13 }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>6 Tuyến GHN</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{guideRows.length} Tuyến hiện tại</span>
           </div>
           <div style={{ padding: 8 }}>
-            {ROUTE_ORDER.map((r, i) => (
-              <div
-                key={r.name}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 8,
-                  padding: '7px 8px',
-                  borderRadius: 6,
-                  borderBottom: i < ROUTE_ORDER.length - 1 ? `1px solid #F3F4F6` : 'none',
-                }}
-              >
-                <span
+            {guideRows.map((row, i) => {
+              const c = colorForKey(row.name)
+              return (
+                <div
+                  key={row.name}
                   style={{
-                    minWidth: 18,
-                    height: 18,
-                    borderRadius: '50%',
-                    background: r.color,
-                    color: '#fff',
-                    fontSize: 10,
-                    fontWeight: 700,
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginTop: 1,
-                    flexShrink: 0,
+                    alignItems: 'flex-start',
+                    gap: 8,
+                    padding: '7px 8px',
+                    borderRadius: 6,
+                    borderBottom: i < guideRows.length - 1 ? `1px solid #F3F4F6` : 'none',
                   }}
                 >
-                  {i + 1}
-                </span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: r.color }}>{r.name}</div>
-                  <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{r.desc}</div>
+                  <span
+                    style={{
+                      minWidth: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      background: c.color,
+                      color: '#fff',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginTop: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: c.color }}>{row.name}</div>
+                    {row.pairs.map((p, pi) => (
+                      <div key={pi} style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{p}</div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
+      </div>
+
+      <div style={{ marginTop: 12, fontSize: 12, color: '#9CA3AF', fontStyle: 'italic' }}>
+        Cấu hình miền &amp; tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.
       </div>
     </div>
   )

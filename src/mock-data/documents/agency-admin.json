@@ -1103,6 +1103,38 @@
             "Nên tái sử dụng đúng pattern dropdown custom đã xây cho filter \"Shop\" (label xám + value cam, popover click-outside-close) để đồng bộ UI, thay vì dùng <select> gốc.",
             "Đính chính liên quan: AGA-ORDER-3 (doc cũ về hiển thị \"Loại đơn\") mô tả \"cột riêng\" đã LỖI THỜI — cột \"Loại đơn\" hiện KHÔNG còn tách riêng, đã gộp vào dòng thứ 3 của ô \"Mã đơn hàng\" (icon + text) từ lần redesign danh sách trước đó. Đã cập nhật lại AGA-ORDER-3 cho khớp thực tế, tách biệt với story filter này (2 việc khác nhau: hiển thị vs lọc)."
           ]
+        },
+        {
+          "id": "AGA-ORDER-25",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Danh sách đơn hàng: Đơn nháp",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem tab \"Đơn nháp\" trong danh sách đơn hàng để biết đơn nào đang ở trạng thái pending (chưa được xử lý gì thêm) trước khi chuyển sang các bước bàn giao/vận chuyển.",
+          "userFlow": [
+            "Agency Admin vào menu \"Đơn hàng\" → mặc định active tab \"Đơn nháp\"",
+            "Danh sách hiển thị các đơn status === \"pending\" thuộc các shop của đại lý, KHÔNG bao gồm đơn Thư đang chờ đại lý xử lý (2 khái niệm khác nhau dù cùng status gốc)",
+            "Với mỗi đơn đủ điều kiện, có nút \"Huỷ đơn\" ở cột thao tác",
+            "Tick chọn nhiều đơn → thanh hành động hàng loạt hiện ở đáy, có nút \"Huỷ đơn\" cho cả lựa chọn"
+          ],
+          "systemFlow": [
+            "AgencyOrders.tsx dòng 2629: ordersByTab.draft = orders.filter(o => o.status === \"pending\" && !isPending247(o)) — isPending247(o) = o.sendKind === \"letter\" && o.dispatchStatus === \"pending_agency\" (dòng 2625). Tách 2 nhánh vì cùng status: \"pending\" gốc nhưng ý nghĩa khác nhau: Hàng hoá pending = đơn thật sự còn \"nháp\"; Thư pending + pending_agency = đơn đã shop gửi, đang chờ đại lý chọn hub — nhánh này hiện ở tab \"Chờ xử lý\" riêng.",
+            "Tab mặc định khi load trang: useState(\"draft\") (dòng 2563).",
+            "isCancellable(o) = o.status === \"pending\" (dòng 89-91) — Đơn nháp và Chờ xử lý là 2 tab DUY NHẤT cho phép huỷ đơn theo cách này.",
+            "Badge số đếm tab dùng countColor: \"#F59E0B\" (cam), icon <FileOutlined /> (dòng 2668).",
+            "Phát hiện quan trọng: không có luồng tạo đơn nào đưa đơn mới vào tab này. Đơn Hàng hoá (CreateOrderDrawer, Web Shop) tạo đơn với status: \"pickup\" NGAY LẬP TỨC (Orders.tsx dòng 1097), kèm dispatchStatus: \"dispatched\", carrierCode: \"GHN\" — bỏ qua hẳn trạng thái pending. Đơn Thư (CreateLetterDrawer) tạo với status: \"pending\" nhưng dispatchStatus: \"pending_agency\" (dòng 1638-1643) → bị loại khỏi \"Đơn nháp\" bởi isPending247, hiện ở \"Chờ xử lý\" thay vào đó. 3 đơn hiện có trong tab (ORD012, ORD020, ORD028) đều là dữ liệu seed cũ chưa có field dispatch tường minh."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Đơn nháp\" là tab mặc định khi vào trang \"Đơn hàng\".",
+            "AC2: Tab chỉ hiện đơn status === \"pending\" thuộc shop của đại lý đang đăng nhập, loại trừ đơn Thư đang pending_agency (đơn đó thuộc tab \"Chờ xử lý\").",
+            "AC3: Mỗi đơn trong tab có nút \"Huỷ đơn\" — bấm được vì mọi đơn trong tab này đều thoả isCancellable.",
+            "AC4: Tick chọn nhiều đơn → thanh hành động hàng loạt hiện nút \"Huỷ đơn\" áp dụng cho toàn bộ lựa chọn.",
+            "AC5 (gap đã xác nhận): Không có luồng tạo đơn nào trong ứng dụng tạo ra đơn mới rơi vào tab này — đơn Hàng hoá vào thẳng \"Chờ bàn giao\", đơn Thư vào \"Chờ xử lý\". Dữ liệu hiện có chỉ đến từ 3 đơn seed cũ (ORD012, ORD020, ORD028)."
+          ],
+          "notes": [
+            "Tách chi tiết từ AGA-ORDER-6 (story tổng quan 8 tab) — story đó đã có 1 dòng note ngắn về cách tách \"Đơn nháp\"/\"Chờ xử lý\", story này đào sâu đúng riêng tab \"Đơn nháp\".",
+            "Gap đáng chú ý: tên tab \"Đơn nháp\" ngụ ý đây là nơi đơn \"mới tạo, chưa xử lý\" sẽ xuất hiện — nhưng vì luồng tạo đơn Hàng hoá thật (CreateOrderDrawer) bỏ qua trạng thái pending hoàn toàn (tạo thẳng ở pickup), tab này trên thực tế không có đường vào từ bất kỳ hành động nào của shop hay đại lý hiện tại — chỉ tồn tại nhờ dữ liệu seed lịch sử.",
+            "Huỷ đơn ở đây (isCancellable) không ghi log vào order.log[] — khác hoàn toàn với luồng huỷ 247Express đã tiếp nhận (xem AGA-ORDER-23)."
+          ]
         }
       ]
     },
@@ -2024,8 +2056,8 @@
         {
           "id": "AGA-CARRIER-17",
           "jiraKey": "",
-          "title": "[AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Định nghĩa Miền/Vùng",
-          "status": "draft",
+          "title": "[AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Định nghĩa Miền/Vùng (ĐÃ CHUYỂN SANG SUPER ADMIN)",
+          "status": "superseded",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn xem và chỉnh sửa cấu hình phân chia miền/vùng địa lý (tỉnh nào thuộc miền nào) để hệ thống tra tuyến đúng khi tính giá cước — mà không phải tự nhập từ đầu vì đã có sẵn 6 miền theo chuẩn GHN.",
           "userFlow": [
             "Agency Admin vào menu CÔNG CỤ → chọn Cấu hình vùng & tuyến",
@@ -2058,6 +2090,9 @@
             "AC8: Mọi thay đổi tại Bước 1 lập tức phản ánh vào Bước 2 (cặp miền cập nhật theo) và màn Tạo bảng giá (dropdown Vùng cập nhật theo) — không cần reload trang."
           ],
           "notes": [
+            "ĐÃ LỖI THỜI — tính năng này đã chuyển hẳn sang Super Admin (route /super-admin/route-config), bỏ hẳn khỏi Agency Admin. Menu CÔNG CỤ của Agency Admin giờ chỉ còn \"Kiểm tra tuyến\". Xem GSA-ROUTE-2 (docs/super-admin/route-config/buoc-1-dinh-nghia-mien-vung.md) để có tài liệu đúng và đầy đủ nhất.",
+            "Ghi chú cũ về RouteCheck.tsx \"chưa nối vào cấu hình dùng chung\" cũng đã lỗi thời — gap đó đã được fix, RouteCheck.tsx giờ đọc resolveRouteName()/listRouteNames()/regions trực tiếp từ routeConfig.ts.",
+            "Giữ file này lại để lưu lịch sử, không dùng làm tài liệu tham chiếu implement/QA nữa.",
             "Trang Kiểm tra tuyến (RouteCheck.tsx, menu CÔNG CỤ) hiện CHƯA được nối vào cấu hình dùng chung này — vẫn dùng logic tra tuyến tĩnh cũ (determineRoute() trong vietnam-provinces.ts). Nếu admin sửa cấu hình Miền/Vùng sau này, trang Kiểm tra tuyến sẽ KHÔNG cập nhật theo — có thể gây lệch dữ liệu giữa 2 trang. Đây là hạn chế đã biết, chưa xử lý.",
             "Toàn bộ dữ liệu miền lưu ở bộ nhớ trong phiên (module-level state trong routeConfig.ts), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu (6 miền GHN)."
           ]
@@ -2065,8 +2100,8 @@
         {
           "id": "AGA-CARRIER-18",
           "jiraKey": "",
-          "title": "[AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Đặt tên tuyến & phạm vi áp dụng",
-          "status": "draft",
+          "title": "[AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Đặt tên tuyến & phạm vi áp dụng (ĐÃ CHUYỂN SANG SUPER ADMIN)",
+          "status": "superseded",
           "userStory": "Là Agency Admin (Đại lý), tôi muốn đặt tên tuyến và chỉ định các cặp miền áp dụng cho từng tuyến để hệ thống biết cặp gửi/nhận nào được gọi là tuyến nào — từ đó dropdown Tuyến trong màn Tạo bảng giá phản ánh đúng cấu trúc giá cước thực tế của đại lý.",
           "userFlow": [
             "Agency Admin ở trang Cấu hình vùng & tuyến, cuộn xuống phía dưới card Bước 1",
@@ -2098,6 +2133,9 @@
             "AC9: Danh sách tên tuyến từ Bước 2 xuất hiện trong dropdown Tuyến tại màn Tạo bảng giá — thêm/xoá/đổi tên tuyến phản ánh ngay khi mở lại màn Tạo bảng giá."
           ],
           "notes": [
+            "ĐÃ LỖI THỜI — tính năng này đã chuyển hẳn sang Super Admin (route /super-admin/route-config), bỏ hẳn khỏi Agency Admin. Xem GSA-ROUTE-4 (docs/super-admin/route-config/buoc-2-dat-ten-tuyen-va-pham-vi-ap-dung.md) để có tài liệu đúng và đầy đủ nhất.",
+            "Ghi chú cũ về RouteCheck.tsx \"chưa nối vào cấu hình dùng chung\" cũng đã lỗi thời — gap đó đã được fix, RouteCheck.tsx giờ đọc resolveRouteName()/listRouteNames()/regions trực tiếp từ routeConfig.ts.",
+            "Giữ file này lại để lưu lịch sử, không dùng làm tài liệu tham chiếu implement/QA nữa.",
             "Trang Kiểm tra tuyến (RouteCheck.tsx, menu CÔNG CỤ) hiện CHƯA được nối vào cấu hình dùng chung này — vẫn dùng logic tra tuyến tĩnh cũ (determineRoute() trong vietnam-provinces.ts). Nếu admin sửa cấu hình Tuyến sau này, trang Kiểm tra tuyến sẽ KHÔNG cập nhật theo — có thể gây lệch dữ liệu giữa 2 trang. Đây là hạn chế đã biết, chưa xử lý.",
             "Toàn bộ dữ liệu tuyến lưu ở bộ nhớ trong phiên (module-level state trong routeConfig.ts), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu.",
             "Nhiều cặp miền có thể dùng chung 1 tên tuyến (để định giá giống nhau) — đây là thiết kế có chủ đích, không phải lỗi trùng lặp."
@@ -2108,36 +2146,41 @@
           "jiraKey": "",
           "title": "[AGA] Thiết lập NVC - Tạo bảng giá: Dùng chung cấu hình vùng & tuyến",
           "status": "draft",
-          "userStory": "Là Agency Admin (Đại lý), tôi muốn dropdown Tuyến và Vùng trong màn Tạo bảng giá tự động phản ánh cấu hình Miền/Vùng & Tuyến mà tôi đã thiết lập — thay vì bị cố định 6 tuyến hardcode như trước — để mọi bảng giá (GHN, 247Express, NVC khác) đều dùng chung 1 định nghĩa tuyến nhất quán, không cần sửa code khi thêm/bớt tuyến.",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn dropdown \"Tuyến\" và \"Vùng\" trong màn Tạo bảng giá tự động phản ánh cấu hình Miền/Vùng & Tuyến do Super Admin thiết lập — thay vì bị cố định 6 tuyến hardcode như trước — để mọi bảng giá (GHN, 247Express, NVC khác) đều dùng chung 1 định nghĩa tuyến nhất quán, không cần sửa code khi thêm/bớt tuyến.",
           "userFlow": [
             "Agency Admin vào màn Tạo bảng giá (Thiết lập NVC → tab Bảng giá → Thêm bảng giá)",
-            "Trong phần Danh sách tuyến, bấm nút Định nghĩa tuyến để kiểm tra cấu hình hiện tại: modal hiển thị từng tên tuyến + cặp miền đang áp dụng + 1 dòng cố định cho luật Nội Tỉnh",
-            "Bấm link Chỉnh sửa cấu hình vùng & tuyến → trong modal để điều hướng sang trang Cấu hình vùng & tuyến nếu cần sửa",
-            "Bấm Thêm tuyến → dropdown Tuyến liệt kê tên tuyến động từ cấu hình Bước 2 (AGA-CARRIER-18)",
-            "Phần thu hẹp phạm vi Tỉnh/Quận/Phường hiển thị cho tất cả tuyến, trừ tuyến có tên trùng luật Nội Tỉnh",
-            "Dropdown Vùng trong phần thu hẹp phạm vi lấy danh sách tên miền động từ cấu hình Bước 1 (AGA-CARRIER-17)"
+            "Trong phần \"Danh sách tuyến\", bấm nút \"Định nghĩa tuyến\" (nút bấm, không phải tên modal) → modal \"Bảng mô tả tuyến dịch vụ\" mở ra, gồm 3 khối: Định nghĩa miền/vùng (chip miền + số tỉnh/thành mỗi miền), Bảng tuyến (2 cột: Tuyến | Cặp miền áp dụng), và Định nghĩa Nội thành/Ngoại thành (chip xã/phường theo tỉnh, cam = Nội thành/xám = Ngoại thành)",
+            "Modal chỉ để XEM — không có link chỉnh sửa nào; dòng chú thích cuối modal ghi rõ \"Cấu hình vùng & tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.\"",
+            "Với mỗi dòng tuyến trong form, nếu bật toggle \"Tách Nội thành/Ngoại thành\" → xuất hiện icon (i) cạnh toggle, bấm vào cũng mở CÙNG modal \"Bảng mô tả tuyến dịch vụ\" ở trên (không phải modal riêng)",
+            "Bấm \"Thêm tuyến\" → dropdown \"Tuyến\" liệt kê tên tuyến động từ cấu hình Bước 2 bên Super Admin (xem GSA-ROUTE-4)",
+            "Phần thu hẹp phạm vi Tỉnh/Quận/Phường hiển thị cho tất cả tuyến, trừ tuyến có tên trùng luật \"Nội Tỉnh\"",
+            "Dropdown \"Vùng\" trong phần thu hẹp phạm vi lấy danh sách tên miền động từ cấu hình Bước 1 bên Super Admin (xem GSA-ROUTE-2)"
           ],
           "systemFlow": [
-            "PricingCreate.tsx import danh sách tuyến và miền từ routeConfig.ts (store dùng chung) thay vì mảng hardcode",
-            "Dropdown Tuyến render danh sách options từ listRouteNames() — thêm/xoá/đổi tên tuyến ở trang Cấu hình vùng & tuyến phản ánh ngay khi mở lại form Tạo bảng giá",
-            "Dropdown Vùng trong phần thu hẹp phạm vi render từ mảng regions (export trực tiếp từ routeConfig.ts) thay vì [Vùng 1, Vùng 2, Vùng 3] hardcode",
+            "PricingCreate.tsx import danh sách tuyến và miền từ routeConfig.ts (store dùng chung với Super Admin) thay vì mảng hardcode",
+            "Dropdown \"Tuyến\" render danh sách options từ listRouteNames() — thêm/xoá/đổi tên tuyến ở Super Admin phản ánh ngay khi mở lại form Tạo bảng giá (cùng phiên trình duyệt, không cần reload)",
+            "Dropdown \"Vùng\" trong phần thu hẹp phạm vi render từ mảng regions (export trực tiếp từ routeConfig.ts) thay vì [\"Vùng 1\", \"Vùng 2\", \"Vùng 3\"] hardcode",
             "Kiểm tra tên tuyến = tên luật Nội Tỉnh (sameProvinceRoute): nếu khớp → ẩn section thu hẹp phạm vi Tỉnh/Quận/Phường cho tuyến đó",
-            "Nút Định nghĩa tuyến: modal tự tính toán trực tiếp trong PricingCreate.tsx từ routeMatrix + regions + sameProvinceRoute (không qua 1 hàm helper riêng) — với mỗi tên tuyến, liệt kê cặp miền đang áp dụng (tên đầy đủ) + 1 dòng cố định Nội Tỉnh: Cùng 1 tỉnh, bất kỳ miền nào",
-            "Link Chỉnh sửa cấu hình vùng & tuyến → trong modal dùng navigate('/agency-admin/route-config')"
+            "Component ZoneGuideModal (PricingCreate.tsx dòng 1062–1196) tự tính toán trực tiếp từ routeMatrix + routeRegions + sameProvinceRoute + urbanConfigs (không qua 1 hàm helper riêng) — render 3 khối: \"Định nghĩa miền / vùng\" (mỗi miền là 1 chip + số tỉnh/thành), \"Bảng tuyến\" (grid 2 cột, mỗi tuyến liệt kê các cặp miền áp dụng, tuyến \"Nội Tỉnh\" hiện dòng \"Cùng tỉnh, bất kỳ miền nào\"), \"Định nghĩa Nội thành / Ngoại thành\" (mỗi tỉnh trong urbanConfigs là 1 card, chip xã/phường màu theo isUrban)",
+            "ZoneGuideModal được mở từ 2 nơi: nút \"Định nghĩa tuyến\" ở đầu \"Danh sách tuyến\" (setShowZoneGuide(true)), và icon (i) cạnh toggle \"Tách Nội thành/Ngoại thành\" của mỗi dòng tuyến (onOpenZoneGuide truyền xuống RouteBlock) — cả 2 đều mở CHUNG 1 modal, không phải 2 modal riêng",
+            "Modal KHÔNG chứa bất kỳ link/nút điều hướng nào sang trang cấu hình — Agency Admin chỉ đọc, không sửa được miền/tuyến/Nội-Ngoại thành"
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Dropdown Tuyến trong form Tạo bảng giá lấy danh sách tên tuyến động từ cấu hình Bước 2 — không còn hardcode 6 tuyến cố định.",
-            "AC2: Thêm/đổi tên/xoá tuyến ở trang Cấu hình vùng & tuyến → dropdown Tuyến trong form Tạo bảng giá phản ánh thay đổi ngay khi mở lại form, không cần sửa code.",
-            "AC3: Dropdown Vùng trong phần thu hẹp phạm vi Từ/Đến của mỗi dòng tuyến lấy danh sách tên miền động từ cấu hình Bước 1 — không còn hardcode Vùng 1/2/3.",
-            "AC4: Tuyến có tên trùng luật Nội Tỉnh → phần thu hẹp phạm vi Tỉnh/Quận/Phường bị ẩn cho tuyến đó; tất cả tuyến khác vẫn hiển thị phần thu hẹp phạm vi bình thường.",
-            "AC5: Nút Định nghĩa tuyến mở modal hiển thị: với mỗi tên tuyến, liệt kê đầy đủ các cặp miền đang áp dụng (tên đầy đủ, không viết tắt); cộng thêm 1 dòng cố định Nội Tỉnh: Cùng 1 tỉnh, bất kỳ miền nào.",
-            "AC6: Modal Định nghĩa tuyến có link Chỉnh sửa cấu hình vùng & tuyến → điều hướng thẳng sang trang /agency-admin/route-config.",
-            "AC7: Cấu hình vùng & tuyến dùng chung cho mọi bảng giá (GHN, 247Express, và NVC khác trong tương lai) — không phải cấu hình riêng per bảng giá."
+            "AC1: Dropdown \"Tuyến\" trong form Tạo bảng giá lấy danh sách tên tuyến động từ cấu hình Super Admin — không còn hardcode 6 tuyến cố định.",
+            "AC2: Super Admin thêm/đổi tên/xoá tuyến → dropdown \"Tuyến\" trong form Tạo bảng giá phản ánh thay đổi ngay khi mở lại form (cùng phiên trình duyệt), không cần sửa code.",
+            "AC3: Dropdown \"Vùng\" trong phần thu hẹp phạm vi Từ/Đến của mỗi dòng tuyến lấy danh sách tên miền động từ cấu hình Super Admin — không còn hardcode \"Vùng 1/2/3\".",
+            "AC4: Tuyến có tên trùng luật \"Nội Tỉnh\" → phần thu hẹp phạm vi Tỉnh/Quận/Phường bị ẩn cho tuyến đó; tất cả tuyến khác vẫn hiển thị phần thu hẹp phạm vi bình thường.",
+            "AC5: Nút \"Định nghĩa tuyến\" mở modal \"Bảng mô tả tuyến dịch vụ\" gồm đúng 3 khối: Định nghĩa miền/vùng, Bảng tuyến (Tuyến | Cặp miền áp dụng, có dòng \"Nội Tỉnh: Cùng tỉnh, bất kỳ miền nào\"), và Định nghĩa Nội thành/Ngoại thành.",
+            "AC6: Modal \"Bảng mô tả tuyến dịch vụ\" KHÔNG có bất kỳ link hay nút điều hướng nào sang trang cấu hình khác — chỉ có dòng chú thích tĩnh \"Cấu hình vùng & tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.\"",
+            "AC7: Icon (i) cạnh toggle \"Tách Nội thành/Ngoại thành\" (khi bật) mở đúng modal \"Bảng mô tả tuyến dịch vụ\" ở trên — không phải modal riêng cho Nội/Ngoại thành.",
+            "AC8: Cấu hình vùng & tuyến dùng chung cho mọi bảng giá (GHN, 247Express, và NVC khác trong tương lai) — không phải cấu hình riêng per bảng giá, và không phải cấu hình riêng per đại lý."
           ],
           "notes": [
-            "Trang Kiểm tra tuyến (RouteCheck.tsx, menu CÔNG CỤ) hiện CHƯA được nối vào cấu hình dùng chung này — vẫn dùng logic tra tuyến tĩnh cũ (determineRoute() trong vietnam-provinces.ts). Nếu admin sửa cấu hình Miền/Vùng hoặc Tuyến, trang Kiểm tra tuyến sẽ KHÔNG cập nhật theo — có thể gây lệch dữ liệu giữa 2 trang. Đây là hạn chế đã biết, chưa xử lý.",
-            "Toàn bộ dữ liệu (miền, tuyến) lưu ở bộ nhớ trong phiên (module-level state trong routeConfig.ts), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu."
+            "Lịch sử quyết định: Ban đầu có xây 1 trang chi tiết chỉ-xem (RouteConfigView.tsx) cho Agency Admin để \"thấy những gì Super Admin đã cấu hình\", kèm link điều hướng từ modal sang đó — sau đó bị huỷ theo phản hồi trực tiếp: \"ý tôi là trên agency ko cần thấy trang cấu hình vùng/tuyến mà xem định nghĩa tuyến trong bảng giá như cũ\". Trang RouteConfigView.tsx đã bị xoá, modal quay lại dạng thông tin thuần tuý như hiện tại — đây là lý do AC6 khẳng định modal không có link điều hướng nào.",
+            "RouteCheck.tsx \"chưa được nối vào cấu hình dùng chung\" — đã fix, RouteCheck.tsx giờ đọc resolveRouteName()/listRouteNames()/regions trực tiếp từ routeConfig.ts, đã verify bằng Playwright (đổi tên tuyến ở Super Admin thấy ngay ở Agency Admin, không cần reload).",
+            "Toàn bộ dữ liệu (miền, tuyến, Nội/Ngoại thành) lưu ở bộ nhớ trong phiên (module-level state trong routeConfig.ts), KHÔNG có backend/persistence thật — reload lại toàn trang (F5, tab mới) sẽ trả về đúng dữ liệu seed ban đầu.",
+            "Xem GSA-ROUTE-6 để có bảng \"Tác động đa nền tảng\" đầy đủ từ góc nhìn Super Admin (bên cấu hình), bổ sung cho story này (bên tiêu thụ)."
           ]
         }
       ]

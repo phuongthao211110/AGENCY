@@ -4,6 +4,7 @@ import { PlusOutlined, SearchOutlined, CloseOutlined, StopOutlined, PrinterOutli
 import { shopTheme } from '../../../theme/platforms'
 import allShops from '../../../mock-data/shops.json'
 import { loadOrders, addOrder, cancelOrder, updateOrder, type Order } from '../../../mock-data/orderStore'
+import { printSettings, updatePrintSetting, type PrintKindConfig } from '../../../mock-data/printSettingsStore'
 import allPricing from '../../../mock-data/pricing.json'
 import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
 import { clientHubs247 } from '../../super-admin/agencyStore'
@@ -230,6 +231,17 @@ function PaperSizePicker({ value, onChange }: { value: string; onChange: (v: str
   )
 }
 
+// State cho 1 field checklist/khổ giấy in — khởi tạo từ printSettingsStore (đã persist qua
+// localStorage) và ghi ngược lại store mỗi lần đổi, để PrintOrderModal đọc được cùng giá trị.
+function usePrintField<K extends keyof PrintKindConfig>(kind: 'goods' | 'letter', key: K) {
+  const [value, setValue] = useState<PrintKindConfig[K]>(printSettings[kind][key])
+  const set = (v: PrintKindConfig[K]) => {
+    setValue(v)
+    updatePrintSetting(kind, key, v)
+  }
+  return [value, set] as const
+}
+
 function OrderSettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<'default' | 'pickup' | 'print'>('default')
 
@@ -254,28 +266,29 @@ function OrderSettingsModal({ open, onClose }: { open: boolean; onClose: () => v
   const [letterWeightDefault, setLetterWeightDefault] = useState(false)
   const [letterContentDefault, setLetterContentDefault] = useState('')
 
-  // In đơn hàng — 2 tab: Hàng hoá / Thư tài liệu
+  // In đơn hàng — 2 tab: Hàng hoá / Thư tài liệu. State đọc/ghi trực tiếp printSettingsStore
+  // (dùng chung với PrintOrderModal) thay vì chỉ giữ local — đây chính là chỗ nối persist.
   const [printTab, setPrintTab] = useState<'goods' | 'letter'>('goods')
-  const [goodsAutoPrint, setGoodsAutoPrint] = useState(true)
-  const [goodsPaperSize, setGoodsPaperSize] = useState('80x80')
-  const [goodsShowSender, setGoodsShowSender] = useState(true)
-  const [goodsShowProduct, setGoodsShowProduct] = useState(true)
-  const [goodsShowWeight, setGoodsShowWeight] = useState(true)
-  const [goodsShowSize, setGoodsShowSize] = useState(true)
-  const [goodsShowCOD, setGoodsShowCOD] = useState(true)
-  const [goodsShowShipFee, setGoodsShowShipFee] = useState(true)
-  const [goodsShowNote, setGoodsShowNote] = useState(true)
-  const [goodsShowShopCode, setGoodsShowShopCode] = useState(false)
-  const [goodsShowShopLogo, setGoodsShowShopLogo] = useState(false)
-  const [letterAutoPrint, setLetterAutoPrint] = useState(true)
-  const [letterPaperSize, setLetterPaperSize] = useState('80x80')
-  const [letterShowSender, setLetterShowSender] = useState(true)
-  const [letterShowProduct, setLetterShowProduct] = useState(true)
-  const [letterShowWeight, setLetterShowWeight] = useState(false)
-  const [letterShowShipFee, setLetterShowShipFee] = useState(true)
-  const [letterShowNote, setLetterShowNote] = useState(true)
-  const [letterShowShopCode, setLetterShowShopCode] = useState(false)
-  const [letterShowShopLogo, setLetterShowShopLogo] = useState(false)
+  const [goodsAutoPrint, setGoodsAutoPrint] = usePrintField('goods', 'autoPrint')
+  const [goodsPaperSize, setGoodsPaperSize] = usePrintField('goods', 'paperSize')
+  const [goodsShowSender, setGoodsShowSender] = usePrintField('goods', 'showSender')
+  const [goodsShowProduct, setGoodsShowProduct] = usePrintField('goods', 'showProduct')
+  const [goodsShowWeight, setGoodsShowWeight] = usePrintField('goods', 'showWeight')
+  const [goodsShowSize, setGoodsShowSize] = usePrintField('goods', 'showSize')
+  const [goodsShowCOD, setGoodsShowCOD] = usePrintField('goods', 'showCOD')
+  const [goodsShowShipFee, setGoodsShowShipFee] = usePrintField('goods', 'showShipFee')
+  const [goodsShowNote, setGoodsShowNote] = usePrintField('goods', 'showNote')
+  const [goodsShowShopCode, setGoodsShowShopCode] = usePrintField('goods', 'showShopCode')
+  const [goodsShowShopLogo, setGoodsShowShopLogo] = usePrintField('goods', 'showShopLogo')
+  const [letterAutoPrint, setLetterAutoPrint] = usePrintField('letter', 'autoPrint')
+  const [letterPaperSize, setLetterPaperSize] = usePrintField('letter', 'paperSize')
+  const [letterShowSender, setLetterShowSender] = usePrintField('letter', 'showSender')
+  const [letterShowProduct, setLetterShowProduct] = usePrintField('letter', 'showProduct')
+  const [letterShowWeight, setLetterShowWeight] = usePrintField('letter', 'showWeight')
+  const [letterShowShipFee, setLetterShowShipFee] = usePrintField('letter', 'showShipFee')
+  const [letterShowNote, setLetterShowNote] = usePrintField('letter', 'showNote')
+  const [letterShowShopCode, setLetterShowShopCode] = usePrintField('letter', 'showShopCode')
+  const [letterShowShopLogo, setLetterShowShopLogo] = usePrintField('letter', 'showShopLogo')
 
   if (!open) return null
 
@@ -3534,11 +3547,14 @@ function CancelOrderModal({ orders, onClose, onConfirm }: { orders: Order[]; onC
 
 // ── Popup in đơn hàng thật — dùng chung cho nút nhanh từng dòng (1 phần tử) và nút hàng loạt
 // (nhiều phần tử). Render đúng dữ liệu THẬT của từng order (không phải mẫu như trong "Cài đặt
-// đơn hàng"). Cố ý KHÔNG đọc state khổ giấy/checklist đang cấu hình ở OrderSettingsModal (2 nơi
-// tách biệt, chưa nối persist) — dùng khổ giấy tự chọn riêng + đúng tập field THẬT có trên Order
-// (không bịa field "Kích thước"/"Ghi chú" vì Order không có field tương ứng). ──────────────────
+// đơn hàng"). Khổ giấy mặc định + checklist hiển thị field đọc từ printSettingsStore — cùng nguồn
+// với "Cài đặt đơn hàng", theo đúng loại đơn (Hàng hoá/Thư) của từng order. Khổ giấy vẫn cho đổi
+// tự do ngay trong phiên in này (không ghi ngược lại store — đó là lựa chọn 1 lần, không phải đổi
+// mặc định). "Kích thước đơn hàng" trong checklist không áp dụng được ở đây vì Order không có field
+// tương ứng (chỉ có ý nghĩa ở preview mẫu bên "Cài đặt đơn hàng").
 function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => void }) {
-  const [paperSize, setPaperSize] = useState('80x80')
+  const currentShop = allShops.find(s => s.id === 'SHP001')!
+  const [paperSize, setPaperSize] = useState(printSettings[orders[0]?.sendKind ?? 'goods'].paperSize)
   const previewWidth = PAPER_PREVIEW_WIDTH[paperSize] ?? 280
   const barcodeBars = [2,1,3,1,1,2,1,3,2,1,1,2,3,1,2,1,1,3,2,1,1,2,1,3,1,2]
   const QR_SIZE = 9
@@ -3584,6 +3600,7 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
             {orders.map(order => {
               const isGoods = order.sendKind === 'goods'
               const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
+              const cfg = printSettings[order.sendKind]
               return (
                 <div
                   key={order.id}
@@ -3592,9 +3609,11 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
                     padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'monospace',
                   }}
                 >
-                  <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#111827', paddingBottom: 4, borderBottom: '1px dashed #E5E7EB' }}>
-                    {order.senderName}
-                  </div>
+                  {cfg.showShopLogo && (
+                    <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#111827', paddingBottom: 4, borderBottom: '1px dashed #E5E7EB' }}>
+                      {currentShop.name}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: 1, height: 36 }}>
@@ -3606,21 +3625,39 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
                       {qrCells.map((filled, i) => <div key={i} style={{ background: filled ? '#111827' : '#fff' }} />)}
                     </div>
                   </div>
+                  {cfg.showShopCode && order.shopOrderCode && (
+                    <div style={{ fontSize: 12, color: '#111827' }}>Mã đơn shop: {order.shopOrderCode}</div>
+                  )}
                   <div style={{ height: 1, background: '#E5E7EB', margin: '2px 0' }} />
-                  <div style={{ fontSize: 12, color: '#111827' }}>Người gửi: <strong>{order.senderName}</strong> — {order.senderPhone}</div>
-                  <div style={{ height: 1, background: '#E5E7EB', margin: '2px 0' }} />
+                  {cfg.showSender && (
+                    <>
+                      <div style={{ fontSize: 12, color: '#111827' }}>Người gửi: <strong>{order.senderName}</strong> — {order.senderPhone}</div>
+                      <div style={{ height: 1, background: '#E5E7EB', margin: '2px 0' }} />
+                    </>
+                  )}
                   <div style={{ fontSize: 12, color: '#111827' }}>Người nhận:</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{order.receiverName}</div>
                   <div style={{ fontSize: 12, color: '#111827' }}>SĐT: {order.receiverPhone}</div>
                   <div style={{ fontSize: 12, color: '#111827' }}>{order.receiverAddress}</div>
                   <div style={{ height: 1, background: '#E5E7EB', margin: '2px 0' }} />
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{isGoods ? 'Sản phẩm' : 'Nội dung'}</div>
-                  <div style={{ fontSize: 12, color: '#111827' }}>{products[0]}</div>
-                  <div style={{ fontSize: 12, color: '#111827' }}>Khối lượng: {(order.weight / 1000).toFixed(2)}kg</div>
-                  {isGoods && order.cod > 0 && (
+                  {cfg.showProduct && (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{isGoods ? 'Sản phẩm' : 'Nội dung'}</div>
+                      <div style={{ fontSize: 12, color: '#111827' }}>{products[0]}</div>
+                    </>
+                  )}
+                  {cfg.showWeight && (
+                    <div style={{ fontSize: 12, color: '#111827' }}>Khối lượng: {(order.weight / 1000).toFixed(2)}kg</div>
+                  )}
+                  {isGoods && cfg.showCOD && order.cod > 0 && (
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>Thu hộ (COD): {order.cod.toLocaleString()}đ</div>
                   )}
-                  <div style={{ fontSize: 12, color: '#111827' }}>Phí ship: {order.fee.toLocaleString()}đ</div>
+                  {cfg.showShipFee && (
+                    <div style={{ fontSize: 12, color: '#111827' }}>Phí ship: {order.fee.toLocaleString()}đ</div>
+                  )}
+                  {cfg.showNote && order.orderNote && (
+                    <div style={{ fontSize: 12, color: '#111827' }}>Ghi chú: {order.orderNote}</div>
+                  )}
                 </div>
               )
             })}

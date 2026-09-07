@@ -46,3 +46,14 @@ _Chưa có stories_
 |-------|------|------|--------|
 | [GSA] Duyệt yêu cầu: Duyệt kết nối Shop ID GHN của đại lý | [duyet-ket-noi-shop-id-ghn.md](./approvals/duyet-ket-noi-shop-id-ghn.md) | — | [Draft] |
 | [GSA] Duyệt yêu cầu: Duyệt kích hoạt nhà vận chuyển mới (247Express) | [duyet-kich-hoat-nha-van-chuyen-moi.md](./approvals/duyet-kich-hoat-nha-van-chuyen-moi.md) | — | [Draft] |
+
+## Cấu hình Vùng & Tuyến
+
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [GSA] Cấu hình Vùng & Tuyến: Tổng quan và giải thích khái niệm | [tong-quan-va-giai-thich-khai-niem.md](./route-config/tong-quan-va-giai-thich-khai-niem.md) | — | [Draft] |
+| [GSA] Cấu hình Vùng & Tuyến: Bước 1 — Định nghĩa Miền/Vùng | [buoc-1-dinh-nghia-mien-vung.md](./route-config/buoc-1-dinh-nghia-mien-vung.md) | — | [Draft] |
+| [GSA] Cấu hình Vùng & Tuyến: Điền nhanh theo khoảng tỉnh | [dien-nhanh-theo-khoang-tinh.md](./route-config/dien-nhanh-theo-khoang-tinh.md) | — | [Draft] |
+| [GSA] Cấu hình Vùng & Tuyến: Bước 2 — Đặt tên tuyến và phạm vi áp dụng | [buoc-2-dat-ten-tuyen-va-pham-vi-ap-dung.md](./route-config/buoc-2-dat-ten-tuyen-va-pham-vi-ap-dung.md) | — | [Draft] |
+| [GSA] Cấu hình Vùng & Tuyến: Nội thành / Ngoại thành | [noi-thanh-ngoai-thanh.md](./route-config/noi-thanh-ngoai-thanh.md) | — | [Draft] |
+| [GSA] Cấu hình Vùng & Tuyến: Dữ liệu dùng chung cho Agency Admin | [du-lieu-dung-chung-cho-agency-admin.md](./route-config/du-lieu-dung-chung-cho-agency-admin.md) | — | [Draft] |

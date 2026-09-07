@@ -55,6 +55,7 @@
 | [AGENCY] Đơn hàng - Mapping trạng thái 247Express thật → order.status | [mapping-trang-thai-247express.md](./orders/mapping-trang-thai-247express.md) | — | [Draft] |
 | [AGENCY][247] Đơn hàng: Chọn nhiều đơn và đẩy qua 247Express | [chon-nhieu-don-day-qua-247.md](./orders/chon-nhieu-don-day-qua-247.md) | AGENCY-656 | [Draft] |
 | [AGENCY] Đơn hàng - Danh sách đơn hàng: Filter shop | [danh-sach-don-hang-filter-shop.md](./orders/danh-sach-don-hang-filter-shop.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Danh sách đơn hàng: Đơn nháp | [danh-sach-tab-don-nhap.md](./orders/danh-sach-tab-don-nhap.md) | — | [Draft] |
 
 ## Đối soát & Chuyển khoản
 

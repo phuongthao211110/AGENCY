@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
@@ -48,7 +47,6 @@ const inputStyle: React.CSSProperties = {
 }
 
 export default function RouteConfig() {
-  const navigate = useNavigate()
 
   // ── Local state seeded from shared store ──────────────────────────────────
   // Deep-copy so React detects mutations via setState
@@ -66,6 +64,13 @@ export default function RouteConfig() {
     urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
   )
   const [newProvinceName, setNewProvinceName] = useState('')
+  // Điền nhanh theo khoảng tỉnh (Bước 1) — gán 1 dải tỉnh liên tiếp vào 1 miền cùng lúc,
+  // dựa theo thứ tự Bắc → Nam đã có sẵn trong ALL_PROVINCES (3 TP đặc biệt trước, rồi
+  // Miền Bắc → Miền Trung → Miền Nam). Không thay thế tick tay — chỉ giảm số lần bấm cho
+  // phần lớn tỉnh, ngoại lệ vẫn sửa tay bằng chip như cũ.
+  const [rangeRegionId, setRangeRegionId] = useState('')
+  const [rangeFrom, setRangeFrom] = useState('')
+  const [rangeTo, setRangeTo] = useState('')
   // Ô nhập xã/phường mới — theo từng tỉnh (key = tên tỉnh)
   const [newWardInputs, setNewWardInputs] = useState<Record<string, string>>({})
 
@@ -99,6 +104,22 @@ export default function RouteConfig() {
     assignProvinceToRegion(province, regionId)
     // Re-sync from store (province may have been removed from other regions)
     setLocalRegions(() => regions.map((r) => ({ ...r, provinces: [...r.provinces] })))
+  }
+
+  // Gán cả dải tỉnh (theo thứ tự Bắc → Nam trong ALL_PROVINCES) vào 1 miền — điền nhanh
+  // thay vì chọn "+ Thêm tỉnh" từng dòng. Tỉnh trong dải đang thuộc miền khác sẽ bị chuyển sang.
+  const handleApplyRange = () => {
+    if (!rangeRegionId || !rangeFrom || !rangeTo) return
+    const idxFrom = ALL_PROVINCES.indexOf(rangeFrom)
+    const idxTo   = ALL_PROVINCES.indexOf(rangeTo)
+    if (idxFrom === -1 || idxTo === -1) return
+    const [lo, hi] = idxFrom <= idxTo ? [idxFrom, idxTo] : [idxTo, idxFrom]
+    for (let i = lo; i <= hi; i++) {
+      assignProvinceToRegion(ALL_PROVINCES[i], rangeRegionId)
+    }
+    setLocalRegions(regions.map((r) => ({ ...r, provinces: [...r.provinces] })))
+    setRangeFrom('')
+    setRangeTo('')
   }
 
   const handleRemoveProvince = (province: string, regionId: string) => {
@@ -241,6 +262,52 @@ export default function RouteConfig() {
             >
               <PlusOutlined style={{ fontSize: 12 }} /> Thêm miền
             </button>
+          </div>
+
+          {/* Điền nhanh theo khoảng tỉnh — gán 1 dải tỉnh liên tiếp (Bắc→Nam) vào 1 miền */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: C_BG_HEADER, borderRadius: 8, padding: '10px 12px' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: C_TEXT_SECONDARY, flexShrink: 0 }}>Điền nhanh theo khoảng tỉnh:</span>
+            <select
+              value={rangeFrom}
+              onChange={(e) => setRangeFrom(e.target.value)}
+              style={{ ...inputStyle, fontSize: 12, padding: '4px 6px', cursor: 'pointer' }}
+            >
+              <option value="">Từ tỉnh...</option>
+              {ALL_PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>đến</span>
+            <select
+              value={rangeTo}
+              onChange={(e) => setRangeTo(e.target.value)}
+              style={{ ...inputStyle, fontSize: 12, padding: '4px 6px', cursor: 'pointer' }}
+            >
+              <option value="">Đến tỉnh...</option>
+              {ALL_PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>→ gán vào</span>
+            <select
+              value={rangeRegionId}
+              onChange={(e) => setRangeRegionId(e.target.value)}
+              style={{ ...inputStyle, fontSize: 12, padding: '4px 6px', cursor: 'pointer' }}
+            >
+              <option value="">Chọn miền...</option>
+              {localRegions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            <button
+              onClick={handleApplyRange}
+              disabled={!rangeRegionId || !rangeFrom || !rangeTo}
+              style={{
+                padding: '4px 12px', borderRadius: 6, border: 'none', fontSize: 12, fontWeight: 600,
+                cursor: (!rangeRegionId || !rangeFrom || !rangeTo) ? 'default' : 'pointer',
+                background: (!rangeRegionId || !rangeFrom || !rangeTo) ? '#D1D5DB' : '#FF5200',
+                color: '#fff',
+              }}
+            >
+              Áp dụng
+            </button>
+            <span style={{ fontSize: 11, color: C_TEXT_SECONDARY, width: '100%' }}>
+              Dựa theo thứ tự Bắc → Nam có sẵn — tỉnh đang thuộc miền khác sẽ bị chuyển sang miền vừa chọn. Chỉ để điền nhanh hàng loạt; vẫn sửa tay từng tỉnh bằng chip bên dưới cho các ngoại lệ.
+            </span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -469,15 +536,6 @@ export default function RouteConfig() {
               ))}
             </div>
           )}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 40 }}>
-          <button
-            onClick={() => navigate('/super-admin/route-table')}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: '#3B82F6', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '6px 14px' }}
-          >
-            Xem dạng bảng (cách khác) →
-          </button>
         </div>
 
       </div>

@@ -4,18 +4,34 @@ jiraKey:
 platform: agency-admin
 section: Thiết lập NVC
 figma: https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN
-status: draft
+status: superseded
 ---
 
-# [AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Định nghĩa Miền/Vùng
+# [AGA] Thiết lập NVC - Cấu hình vùng & tuyến: Định nghĩa Miền/Vùng (ĐÃ CHUYỂN SANG SUPER ADMIN)
 
-## User Story
+## ⚠️ Story này đã lỗi thời — không còn khớp code hiện tại
+
+Story này ban đầu mô tả trang "Cấu hình vùng & tuyến" nằm ở menu **CÔNG CỤ** của **Agency Admin**. Sau đó có quyết định trực tiếp: **chuyển hẳn quyền cấu hình Miền/Vùng & Tuyến lên Super Admin, bỏ hẳn khỏi Agency Admin** — đại lý không tự cấu hình được nữa, chỉ dùng chung 1 cấu hình duy nhất do Super Admin quản lý cho mọi đại lý.
+
+Hiện tại:
+- Agency Admin's `TOOL_ITEMS` (menu CÔNG CỤ) chỉ còn đúng 1 mục **"Kiểm tra tuyến"** (`RouteCheck.tsx`) — không còn mục "Cấu hình vùng & tuyến" nào.
+- Trang cấu hình thật (chip + input như mô tả ở story này) nằm ở Super Admin, route `/super-admin/route-config` (`RouteConfig.tsx`), menu "Cấu hình vùng & tuyến".
+- Toàn bộ nội dung User Flow/System Flow/AC bên dưới **đã được viết lại chính xác cho đúng platform** tại **[GSA-ROUTE-2](../../super-admin/route-config/buoc-1-dinh-nghia-mien-vung.md)** — đọc file đó để có tài liệu đúng, đầy đủ và cập nhật nhất cho tính năng này.
+- Ghi chú ở "Notes" cũ của story này (bên dưới) về việc `RouteCheck.tsx` "hiện CHƯA được nối vào cấu hình dùng chung" **cũng đã lỗi thời** — gap đó đã được fix: `RouteCheck.tsx` giờ đọc `resolveRouteName()`/`listRouteNames()`/`regions` trực tiếp từ `routeConfig.ts` (đã verify bằng Playwright: đổi tên tuyến ở Super Admin, sang "Kiểm tra tuyến" ở Agency Admin thấy tên mới ngay không cần reload).
+
+Giữ lại file này (không xoá) để lưu lịch sử — không dùng làm tài liệu tham chiếu cho việc implement hay QA nữa.
+
+---
+
+## Nội dung gốc (đã lỗi thời, chỉ lưu tham khảo lịch sử)
+
+### User Story
 
 Là Agency Admin (Đại lý), tôi muốn xem và chỉnh sửa cấu hình phân chia miền/vùng địa lý
 (tỉnh nào thuộc miền nào) để hệ thống tra tuyến đúng khi tính giá cước — mà không phải
 tự nhập từ đầu vì đã có sẵn 6 miền theo chuẩn GHN.
 
-## User Flow
+### User Flow
 
 1. Agency Admin vào menu **CÔNG CỤ** → chọn **Cấu hình vùng & tuyến**
 2. Trang hiển thị card **Bước 1 — Định nghĩa Miền / Vùng** với 6 miền đã cấu hình sẵn
@@ -26,7 +42,7 @@ tự nhập từ đầu vì đã có sẵn 6 miền theo chuẩn GHN.
 7. Để xoá miền: bấm nút X đỏ trên miền → tất cả cấu hình tuyến tham chiếu miền đó cũng bị xoá theo
 8. Nếu có tỉnh nào chưa gán miền → banner cảnh báo vàng tự động hiển thị liệt kê các tỉnh đó
 
-## System Flow
+### System Flow
 
 1. Trang Cấu hình vùng & tuyến load dữ liệu từ `routeConfig.ts` (module-level store dùng chung toàn app)
 2. Bấm **+ Thêm tỉnh**: dropdown chỉ liệt kê tỉnh chưa thuộc miền nào; khi chọn → tỉnh được gán vào miền hiện tại, tự động rút khỏi miền cũ nếu trước đó đã gán
@@ -36,7 +52,7 @@ tự nhập từ đầu vì đã có sẵn 6 miền theo chuẩn GHN.
 6. Hệ thống scan danh sách 63 tỉnh thành → hiển thị banner vàng nếu có tỉnh chưa thuộc miền nào
 7. Mọi thay đổi ghi vào store dùng chung — lập tức áp dụng cho Bước 2 và màn Tạo bảng giá, không cần reload trang
 
-## Acceptance Criteria
+### Acceptance Criteria (gốc — xem GSA-ROUTE-2 để có AC đúng hiện tại)
 
 **AC1:** Trang "Cấu hình vùng & tuyến" có card "Bước 1 — Định nghĩa Miền / Vùng" hiển thị sẵn 6 miền theo đúng quy tắc GHN: Hà Nội (chỉ tỉnh Hà Nội), Đà Nẵng (chỉ tỉnh Đà Nẵng), TP. Hồ Chí Minh (chỉ TP. Hồ Chí Minh), Miền Nam/Vùng 1 (Bình Định trở vào trừ HCM), Miền Trung/Vùng 2 (Quảng Ngãi → Quảng Bình), Miền Bắc/Vùng 3 (Hà Tĩnh trở ra trừ Hà Nội).
 
@@ -54,7 +70,7 @@ tự nhập từ đầu vì đã có sẵn 6 miền theo chuẩn GHN.
 
 **AC8:** Mọi thay đổi tại Bước 1 lập tức phản ánh vào Bước 2 (cặp miền cập nhật theo) và màn Tạo bảng giá (dropdown Vùng cập nhật theo) — không cần reload trang.
 
-## Notes
+## Notes (gốc — mục 1 đã lỗi thời, xem cảnh báo đầu file)
 
-- Trang "Kiểm tra tuyến" (`RouteCheck.tsx`, menu CÔNG CỤ) **hiện CHƯA được nối** vào cấu hình dùng chung này — vẫn dùng logic tra tuyến tĩnh cũ (`determineRoute()` trong `vietnam-provinces.ts`). Nếu admin sửa cấu hình Miền/Vùng sau này, trang "Kiểm tra tuyến" sẽ KHÔNG cập nhật theo — có thể gây lệch dữ liệu giữa 2 trang. Đây là hạn chế đã biết, chưa xử lý.
-- Toàn bộ dữ liệu miền lưu ở bộ nhớ trong phiên (module-level state trong `routeConfig.ts`), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu (6 miền GHN).
+- ~~Trang "Kiểm tra tuyến" (`RouteCheck.tsx`, menu CÔNG CỤ) hiện CHƯA được nối vào cấu hình dùng chung này...~~ **Đã fix** — xem cảnh báo đầu file.
+- Toàn bộ dữ liệu miền lưu ở bộ nhớ trong phiên (module-level state trong `routeConfig.ts`), KHÔNG có backend/persistence thật — reload lại toàn trang (browser mới/tab mới) sẽ trả về đúng dữ liệu seed ban đầu (6 miền GHN). *(Vẫn đúng ở Super Admin — xem GSA-ROUTE-6.)*

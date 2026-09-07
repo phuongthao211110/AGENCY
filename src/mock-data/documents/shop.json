@@ -319,7 +319,8 @@
             "Nút đã tồn tại từ trước — chỉ bổ sung onClick + luồng xác nhận còn thiếu, theo pattern confirmingCancel đã có sẵn.",
             "Không thêm log entry vào order.log[] cho hành động này — giữ tối giản, khớp cách confirmCancelOrder() cũng không ghi log.",
             "Đơn sau khi returning đi theo đúng luồng đã build: hoàn thành công (failed) vào Hoàn tất theo AGA-ORDER-17; đơn Thư áp dụng luôn badge AGA-ORDER-16/SHOP-ORDER-8.",
-            "Chưa xử lý gọi API carrier thật — chỉ đổi status nội bộ, ngoài phạm vi prototype."
+            "Chưa xử lý gọi API carrier thật — chỉ đổi status nội bộ, ngoài phạm vi prototype.",
+            "Khoảng hở — câu xác nhận sai với đơn Thư: AC5 chỉ bảo vệ giai đoạn SAU khi đã returning (isLetterReturnCase chặn nút). Ở giai đoạn redelivery, đơn Thư vẫn qua isReturnEligible và thấy câu xác nhận sai — 'nhà vận chuyển sẽ chuyển hoàn về địa chỉ trả hàng đã đăng ký' (sai cơ chế với đơn Thư, và field tham chiếu chưa implement thật). Xem SHOP-ORDER-35 để biết chi tiết."
           ]
         },
         {
@@ -368,20 +369,22 @@
             "Mục \"Trả hàng\" (Địa chỉ trả hàng) hiện chung, không đổi theo tab"
           ],
           "systemFlow": [
-            "Sub-tab bar defaultTab: 'goods' | 'letter', map tới 2 component riêng DefaultInfoSettings/LetterDefaultSettings",
-            "Tab Hàng hoá giữ đủ 4 nhóm: Bên gửi, Sản phẩm, Thông tin đơn hàng, Dịch vụ",
-            "Tab Thư tài liệu bám sát field thật trong CreateLetterDrawer: KHÔNG có Ca lấy hàng, Kích thước, Khai giá/Giao 1 phần/Giao thất bại (toggle), Tự động yêu cầu giao lại; Giá trị hàng đã bỏ hẳn; Ghi chú đơn hàng đổi thành Nội dung thư tài liệu; Ghi chú xem hàng chỉ 2 option đơn giản (sửa tại nguồn VIEW_GOODS_OPTIONS)"
+            "Sub-tab bar defaultTab: 'goods' | 'letter', map tới 2 component riêng DefaultInfoSettings/LetterDefaultSettings — 2 component tách biệt, không dùng chung 1 component với nhiều nhánh if vì field khác nhau đủ nhiều",
+            "Tab Hàng hoá giữ đủ 4 nhóm: Bên gửi (Ca lấy hàng), Sản phẩm (Khối lượng, Kích thước), Thông tin đơn hàng (Khai giá trị hàng, Giao/Trả 1 phần, Giao thất bại thu tiền, Ghi chú đơn hàng, Ghi chú xem hàng, Tự động yêu cầu giao lại), Dịch vụ (Phí ship, Thu ship khách hàng)",
+            "Tab Thư tài liệu có bộ field riêng, nhỏ gọn hơn, bám sát đúng CreateLetterDrawer — chi tiết đầy đủ xem SHOP-ORDER-31"
           ],
           "acceptanceCriteria": [
             "AC1: Tab hiện đúng 2 sub-tab Hàng hoá/Thư tài liệu, mặc định ở Hàng hoá.",
             "AC2: Đổi giá trị 1 tab không ảnh hưởng tab kia (2 bộ state độc lập).",
-            "AC3: Tab Thư tài liệu KHÔNG hiện Ca lấy hàng, Kích thước, Khai giá trị hàng, Giao/Trả 1 phần, Giao thất bại thu tiền, Tự động yêu cầu giao lại.",
-            "AC4: Tab Thư tài liệu hiện đúng 3 field: Khối lượng đơn hàng, Nội dung thư tài liệu, Ghi chú xem hàng (2 option).",
+            "AC3: Tab Thư tài liệu KHÔNG hiện Ca lấy hàng, Kích thước, Khai giá trị hàng, Giao/Trả 1 phần, Giao thất bại thu tiền, Tự động yêu cầu giao lại, Phí ship, Thu ship khách hàng.",
+            "AC4: Tab Thư tài liệu có bộ field riêng — chi tiết từng field và hành vi tương tác xem SHOP-ORDER-31.",
             "AC5: Mục Trả hàng hiện 1 lần duy nhất, không đổi theo sub-tab."
           ],
           "notes": [
             "Tách ra từ WS-ORDER-1 (story gốc của toàn bộ popup Cài đặt đơn hàng).",
-            "Quyết định tách theo field thật (verify trực tiếp trong code CreateLetterDrawer) — phát hiện nhiều field tưởng dùng chung thực ra chỉ hiện dòng phí tĩnh, không có control tương tác."
+            "Quyết định tách theo field thật (verify trực tiếp trong code CreateLetterDrawer) — phát hiện nhiều field tưởng dùng chung thực ra chỉ hiện dòng phí tĩnh, không có control tương tác.",
+            "Chi tiết đầy đủ sub-tab Thư tài liệu (từng field, hành vi tương tác, lịch sử quyết định về Ghi chú xem hàng là placeholder tĩnh) → SHOP-ORDER-31.",
+            "AC5 (mục Trả hàng): field Địa chỉ trả hàng là SelectCtrl tĩnh chưa implement — field áp dụng cho cả 2 loại đơn (đích đến đều là địa chỉ trả hàng đã đăng ký) nhưng mô tả chưa phân biệt rõ cơ chế giao chặng cuối (NVC giao thẳng vs đại lý giao lại) — chi tiết xem SHOP-ORDER-36."
           ]
         },
         {
@@ -501,7 +504,7 @@
           ],
           "notes": [
             "Tách từ SHOP-ORDER-13 và SHOP-ORDER-14.",
-            "Gap còn lại: chưa có hành động in thật nào được thực thi — cần làm riêng khi có yêu cầu build in thật.",
+            "Gap còn lại (vẫn đúng sau thay đổi kiến trúc tháng 9/2026): toggle `autoPrint` giờ persist qua `printSettingsStore.ts` (xem SHOP-ORDER-30) thay vì mất khi đóng modal — nhưng KHÔNG có code nào đọc `autoPrint` để tự mở `PrintOrderModal` khi tạo đơn hay khi đại lý dispatch. Prototype đã có tính năng in thật (`window.print()` qua `PrintOrderModal` từ SHOP-ORDER-26/27) — điều còn thiếu là trigger tự động. Cần làm riêng khi có yêu cầu.",
             "Đính chính: nhãn toggle Thư tài liệu trước đây ghi nhầm \"...qua 247\" — đã verify lại code thật (Orders.tsx) và sửa đúng thành \"...cho nhà vận chuyển\", không nêu tên NVC (phát hiện khi viết SHOP-ORDER-24)."
           ]
         },
@@ -791,12 +794,12 @@
         {
           "id": "SHOP-ORDER-26",
           "jiraKey": "",
-          "title": "[WEB SHOP] Đơn hàng - Danh sách đơn hàng: Thêm button In đơn hàng",
+          "title": "[WEB SHOP] Đơn hàng - Danh sách đơn hàng: Thêm nút In vận đơn",
           "status": "draft",
           "userStory": "Là chủ shop, tôi muốn có nút \"In đơn hàng\" ngay trong danh sách đơn (từng dòng, và khi chọn nhiều đơn cùng lúc), để in vận đơn của đúng đơn hàng thật đó — không phải mở modal \"Cài đặt đơn hàng\" vốn chỉ có phần xem trước bằng dữ liệu mẫu, không in được đơn thật nào.",
           "userFlow": [
             "Ở danh sách đơn hàng, mỗi dòng đủ điều kiện in (đã có mã vận đơn thật) có nút xanh \"In đơn hàng\" — nằm trên nút \"Huỷ đơn\" (nếu có), cùng cột \"Người tạo\"",
-            "Bấm nút → popup \"In đơn hàng — {mã vận đơn}\" mở ra, hiện phiếu in với đúng dữ liệu THẬT của đơn đó (mã vận đơn, người gửi/nhận, sản phẩm, khối lượng, COD nếu là Hàng hoá, phí ship) và 1 bộ chọn khổ giấy riêng (A5/52x70mm/80x80mm, mặc định 80x80mm)",
+            "Bấm nút → popup \"In đơn hàng — {mã vận đơn}\" mở ra, hiện phiếu in với đúng dữ liệu THẬT của đơn đó, áp đúng bộ cài đặt đã cấu hình trong Cài đặt đơn hàng cho loại đơn tương ứng (khổ giấy, checklist field hiển thị); bộ chọn khổ giấy (A5/52x70mm/80x80mm) khởi tạo từ cài đặt đã lưu, đổi trong popup chỉ có hiệu lực cho lần in đó",
             "Bấm \"In đơn hàng\" trong popup → gọi lệnh in trình duyệt thật (`window.print()`), CSS in ẩn hết phần chrome/nút bấm, chỉ in đúng khu vực phiếu",
             "Tick chọn nhiều đơn đủ điều kiện in (checkbox đầu dòng) → thanh \"Đã chọn N\" nổi ở đáy màn hình hiện thêm nút \"In đơn hàng\" (bên trái nút \"Huỷ đơn\") → in hàng loạt, mỗi đơn 1 phiếu riêng trong cùng 1 lần in",
             "Đơn Thư tài liệu CHƯA được đại lý dispatch cho nhà vận chuyển → KHÔNG có nút này (chưa có mã vận đơn thật để in, đúng quy tắc đã có ở SHOP-ORDER-14)"
@@ -806,7 +809,7 @@
             "Nút quick-action per-row: thêm vào `TRow`, cùng khối chứa \"Hoàn hàng\"/\"Huỷ đơn\" (cột \"Người tạo\") — chỉ render khi có prop `onPrint`, đặt TRÊN nút \"Huỷ đơn\" theo đúng thứ tự ưu tiên hành động (in trước, huỷ sau)",
             "Nút bulk: thêm vào thanh \"Đã chọn N\" đã có sẵn từ SHOP-ORDER-21 — 1 nút thứ 2 (`eligiblePrint = selectedOrders.filter(isPrintable)`), đặt bên trái nút \"Huỷ đơn\" trong cùng thanh",
             "`PrintOrderModal({ orders, onClose })` (component mới) — dùng chung cho cả 2 lối vào (mảng 1 hoặc nhiều phần tử), render 1 \"vé in\" (ticket) riêng cho từng order với ĐÚNG field thật có trên `Order`: `senderName`/`senderPhone`, `trackingCode` (barcode+QR mock), `receiverName`/`receiverPhone`/`receiverAddress`, sản phẩm (qua `orderProducts` lookup — cùng nguồn cosmetic đã dùng sẵn ở `TRow`), `weight` (đổi ra kg), `cod` (chỉ hiện khi `sendKind === 'goods' && cod > 0`), `fee`",
-            "CỐ Ý KHÔNG đọc state khổ giấy/checklist đang cấu hình trong `OrderSettingsModal` — 2 component tách biệt hoàn toàn (settings modal chỉ mở qua nút \"Cài đặt đơn hàng\", không share state với danh sách đơn), và state đó vốn cũng CHƯA persist (xem WS-ORDER-1). `PrintOrderModal` có bộ chọn khổ giấy RIÊNG, độc lập, mặc định 80x80mm",
+            "`PrintOrderModal` đọc cấu hình in từ `printSettings[order.sendKind]` (`printSettingsStore.ts`, persist qua localStorage key `ghn_print_settings_v1`) — với mỗi đơn trong danh sách in, áp đúng bộ cấu hình theo loại: `printSettings.letter` cho đơn Thư, `printSettings.goods` cho đơn Hàng hoá, cho phép in hàng loạt lẫn 2 loại cùng lúc, mỗi đơn áp đúng bộ checklist của loại đó. Khổ giấy khi mở popup lấy từ `printSettings[orders[0]?.sendKind ?? 'goods'].paperSize` — đúng khổ đã cấu hình cho loại đơn đầu tiên, không còn cứng 80x80mm; người dùng vẫn đổi được khổ giấy ngay trong phiên in đó nhưng thay đổi KHÔNG ghi ngược lại store. Xem chi tiết tích hợp ở SHOP-ORDER-30",
             "In thật bằng `window.print()` thật sự — có `<style>{'@media print {...}'}</style>` ẩn toàn bộ trang trừ `#print-order-area`, nên khi bấm in chỉ ra đúng phần phiếu, không in cả trang danh sách phía sau"
           ],
           "acceptanceCriteria": [
@@ -815,15 +818,15 @@
             "AC3: Đơn Thư tài liệu ĐÃ dispatch → có nút \"In đơn hàng\" giống đơn Hàng hoá.",
             "AC4: Bấm nút → popup hiện đúng dữ liệu THẬT của đơn đó (mã vận đơn, người gửi/nhận, sản phẩm, khối lượng, phí ship) — không phải dữ liệu mẫu.",
             "AC5: Đơn Hàng hoá có COD > 0 → phiếu hiện dòng \"Thu hộ (COD)\"; đơn Thư hoặc COD = 0 → không hiện dòng này.",
-            "AC6: Popup có bộ chọn khổ giấy riêng (A5/52x70mm/80x80mm), đổi khổ → độ rộng phiếu đổi theo ngay.",
+            "AC6: Popup có bộ chọn khổ giấy (A5/52x70mm/80x80mm), khởi tạo từ khổ đã cấu hình trong Cài đặt đơn hàng cho loại đơn của đơn đầu tiên trong batch; đổi khổ trong popup → độ rộng phiếu đổi theo ngay, nhưng không cập nhật ngược lại cài đặt mặc định.",
             "AC7: Tick chọn nhiều đơn → thanh \"Đã chọn N\" hiện thêm nút \"In đơn hàng\" nếu có ít nhất 1 đơn đủ điều kiện in trong lựa chọn; mở popup hiện đủ từng phiếu cho mọi đơn hợp lệ đã chọn.",
             "AC8: Trong lựa chọn hàng loạt, đơn không đủ điều kiện in (VD Thư chưa dispatch) tự động bị loại khỏi batch in — không chặn hay báo lỗi cho cả thao tác.",
             "AC9: Bấm nút \"In đơn hàng\" trong popup → gọi `window.print()` thật, chỉ in đúng khu vực phiếu (không in cả popup/nút bấm/trang nền)."
           ],
           "notes": [
             "ĐÃ IMPLEMENT đầy đủ theo spec — nút quick-action per-row + nút bulk trên thanh \"Đã chọn N\" + `PrintOrderModal` với `window.print()` thật. Đã verify bằng Playwright: nút ẩn/hiện đúng theo `isPrintable`, popup hiện đúng dữ liệu thật (không phải mock), in hàng loạt hiện đủ từng phiếu.",
-            "**Quyết định phạm vi:** `PrintOrderModal` KHÔNG đọc/dùng chung state khổ giấy + checklist đang cấu hình ở `OrderSettingsModal` — đây là 2 nơi hoàn toàn tách biệt (modal cấu hình mở/đóng độc lập, state cục bộ không persist ra ngoài). Việc nối 2 nơi này lại (VD qua localStorage hoặc context) là 1 hạng mục tích hợp lớn hơn, chưa làm trong lần này.",
-            "Vì lý do trên, checklist hiển thị trong phiếu in KHÔNG có tuỳ chọn bật/tắt từng mục như trong \"Xem trước phiếu in\" (SHOP-ORDER-23/25) — phiếu in thật luôn hiện đúng 1 bộ field cố định (người gửi, người nhận, sản phẩm, khối lượng, COD nếu áp dụng, phí ship), không có Kích thước/Ghi chú/Mã đơn shop/Logo vì `Order` không có field tương ứng (field \"Sản phẩm\" hiển thị chỉ mang tính minh hoạ qua lookup cosmetic `orderProducts`, không phải field thật lưu trên `Order` — gap này đã ghi nhận từ trước ở nhiều story khác).",
+            "Cập nhật kiến trúc (xem SHOP-ORDER-30): Claim cũ \"CỐ Ý KHÔNG đọc\" và \"state chưa persist\" đã LỖI THỜI kể từ khi `printSettingsStore.ts` được giới thiệu. `PrintOrderModal` hiện ĐÃ đọc `printSettings[order.sendKind]` (persist qua localStorage) để áp khổ giấy mặc định và hiển thị/ẩn field theo checklist — cùng nguồn với `OrderSettingsModal`. Claim cũ ghi nhận đúng quyết định tại thời điểm SHOP-ORDER-26 implement (integration là hạng mục chưa làm khi đó) và được giữ lại để bảo tồn lịch sử.",
+            "Sau khi tích hợp `printSettingsStore` (SHOP-ORDER-30), phiếu in thật áp theo checklist đã cấu hình — KHÔNG còn in cố định 1 bộ field. Ngoại lệ còn lại: `showSize` (\"Kích thước đơn hàng\") không áp dụng được lên phiếu in thật vì `Order` không có field kích thước — chỉ ảnh hưởng preview mẫu trong Cài đặt đơn hàng. Với đơn Thư, checklist không có `showSize` và `showCOD` (2 field này không tồn tại trong `LetterHandoverSettings`, không phải chỉ ẩn). Field \"Sản phẩm\" vẫn là lookup cosmetic qua `orderProducts`, không phải field thật lưu trên `Order`.",
             "Tái sử dụng đúng 2 pattern UI đã có sẵn thay vì tạo mới: nút quick-action per-row (giống \"Huỷ đơn\", SHOP-ORDER-21) và thanh bulk-action nổi đáy màn hình (cũng SHOP-ORDER-21) — chỉ thêm 1 action mới vào 2 chỗ đã tồn tại, không xây UI riêng.",
             "`isPrintable(order)` cố ý tách biệt với `isCancellable(order)` dù cùng cách tiếp cận (theo trạng thái đơn) — 2 điều kiện khác nhau hoàn toàn: huỷ được khi CHƯA dispatch (`status === 'pending'`), in được khi Hàng hoá luôn true hoặc Thư ĐÃ dispatch — không dùng chung 1 hàm dù pattern code giống nhau.",
             "Đây là lần ĐẦU TIÊN toàn bộ tính năng \"In đơn hàng\" (SHOP-ORDER-13 đến 25, vốn chỉ dừng ở cấu hình + preview mẫu) có 1 hành động in THẬT gắn với đơn hàng thật trong danh sách — trước story này, `window.print()` chưa từng được gọi ở đâu trong toàn bộ luồng in."
@@ -832,7 +835,7 @@
         {
           "id": "SHOP-ORDER-27",
           "jiraKey": "",
-          "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Thêm button In đơn hàng",
+          "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Thêm nút In vận đơn",
           "status": "draft",
           "userStory": "Là chủ shop đang xem chi tiết 1 đơn hàng, tôi muốn in vận đơn ngay tại đây, để không phải đóng chi tiết quay lại danh sách mới bấm được nút \"In đơn hàng\".",
           "userFlow": [
@@ -860,7 +863,8 @@
           "notes": [
             "Tái sử dụng 100% `PrintOrderModal` và helper `isPrintable` đã xây ở SHOP-ORDER-26 — story này chỉ thêm 1 lối vào thứ 3 (per-row, bulk, và giờ là chi tiết) vào đúng 1 component in đã có, không viết thêm logic in mới.",
             "Đã implement và verify bằng Playwright: mở chi tiết 1 đơn Hàng hoá đã dispatch → nút hiện đúng vị trí, bấm mở đúng popup với dữ liệu thật (mã vận đơn, người gửi/nhận, sản phẩm...) khớp với đơn đang xem.",
-            "Không test lại nhánh \"không đủ điều kiện in\" bằng UI thật ở chi tiết vì mock data hiện không có đơn Thư nào ở trạng thái chưa dispatch để mở chi tiết — nhưng logic dùng chung 100% `isPrintable(order)` đã verify ở danh sách (SHOP-ORDER-26 AC2), không phải điều kiện viết riêng cho chi tiết nên không có rủi ro lệch hành vi."
+            "Không test lại nhánh \"không đủ điều kiện in\" bằng UI thật ở chi tiết vì mock data hiện không có đơn Thư nào ở trạng thái chưa dispatch để mở chi tiết — nhưng logic dùng chung 100% `isPrintable(order)` đã verify ở danh sách (SHOP-ORDER-26 AC2), không phải điều kiện viết riêng cho chi tiết nên không có rủi ro lệch hành vi.",
+            "Về cài đặt in (SHOP-ORDER-30): `PrintOrderModal` được tái sử dụng ở story này giờ đọc cấu hình từ `printSettingsStore.ts` (khổ giấy mặc định, checklist field hiển thị) — behavior mới này áp dụng tự động cho lối vào chi tiết giống hệt lối vào danh sách và bulk, không cần thêm code riêng."
           ]
         },
         {
@@ -925,13 +929,462 @@
             "Đã implement và verify bằng Playwright: header hiện đúng đủ thành phần theo thứ tự, nút \"←\" đóng đúng drawer, quay về danh sách.",
             "Chưa làm tương tự cho OrderDetailDrawer bên Agency Admin (AgencyOrders.tsx) — phạm vi yêu cầu chỉ là Web Shop."
           ]
+        },
+        {
+          "id": "SHOP-ORDER-30",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng - Thư/tài liệu: Khổ giấy & checklist áp dụng lên vận đơn thật",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn cấu hình khổ giấy và checklist thông tin hiển thị trong sub-tab \"Thư tài liệu\" của Cài đặt đơn hàng có hiệu lực thật sự khi tôi bấm in vận đơn đơn Thư, để không phải chỉnh lại mỗi lần in và phiếu in ra đúng với những gì tôi đã cài sẵn.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"In đơn hàng\" → sub-tab \"Thư tài liệu\".",
+            "Chọn khổ giấy (VD A5), bật/tắt checklist: Người gửi, Nội dung, Khối lượng, Phí ship, Ghi chú đơn hàng, Mã đơn shop, Tên/logo shop.",
+            "Đóng Cài đặt đơn hàng.",
+            "Mở \"In đơn hàng\" cho bất kỳ đơn Thư nào đã dispatch (từ danh sách, chi tiết, hoặc in hàng loạt — SHOP-ORDER-26/27): popup mở với khổ giấy đã cấu hình, phiếu in chỉ hiển thị đúng những field đã tick.",
+            "Có thể đổi khổ giấy ngay trong popup — chỉ có hiệu lực cho lần in đó, không đổi cài đặt mặc định."
+          ],
+          "systemFlow": [
+            "`printSettingsStore.ts` (`src/mock-data/printSettingsStore.ts`) — lưu `{ goods: PrintKindConfig, letter: PrintKindConfig }` vào localStorage key `ghn_print_settings_v1`. Export `printSettings` (object sống, load từ localStorage khi module khởi tạo) và `updatePrintSetting(kind, key, value)` (ghi + persist ngay). `PrintKindConfig` gồm: `autoPrint, paperSize, showSender, showProduct, showWeight, showSize, showCOD, showShipFee, showNote, showShopCode, showShopLogo`. Default letter: `paperSize: '80x80', showSender: true, showProduct: true, showWeight: false, showSize: false, showCOD: false, showShipFee: true, showNote: true, showShopCode: false, showShopLogo: false`.",
+            "`usePrintField` hook (`Orders.tsx` dòng 236) — khởi tạo state từ `printSettings[kind][key]`, mỗi lần đổi gọi `updatePrintSetting(kind, key, value)`. `OrderSettingsModal` dùng hook này cho toàn bộ field In đơn hàng cả 2 loại — dòng 283–291 cho letter: `letterAutoPrint`, `letterPaperSize`, `letterShowSender`, `letterShowProduct`, `letterShowWeight`, `letterShowShipFee`, `letterShowNote`, `letterShowShopCode`, `letterShowShopLogo`.",
+            "`PrintOrderModal` (`Orders.tsx` dòng 3555): khổ giấy state khởi tạo từ `printSettings[orders[0]?.sendKind ?? 'goods'].paperSize` (dòng 3557). Với mỗi đơn trong `orders.map(order => ...)`: đọc `cfg = printSettings[order.sendKind]` (dòng 3603) — đơn Thư dùng `printSettings.letter`, đơn Hàng hoá dùng `printSettings.goods`. Field áp theo `cfg`: `showShopLogo` → tên shop thật; `showShopCode && order.shopOrderCode` → Mã đơn shop; `showSender` → Người gửi; `showProduct` → Nội dung/Sản phẩm; `showWeight` → Khối lượng; `isGoods && showCOD && order.cod > 0` → COD; `showShipFee` → Phí ship; `showNote && order.orderNote` → Ghi chú. Người nhận và barcode+QR+mã vận đơn luôn hiển thị.",
+            "Khổ giấy trong popup vẫn cho đổi tự do (dòng 3595) — thay đổi KHÔNG gọi `updatePrintSetting`, không persist.",
+            "`showSize` có trong interface `PrintKindConfig` nhưng `PrintOrderModal` không dùng vì `Order` không có field kích thước (ghi chú tại `printSettingsStore.ts` dòng 12–14). Với đơn Thư, `showSize` và `showCOD` không có toggle UI tương ứng trong `LetterHandoverSettings`."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Cấu hình khổ giấy A5 trong sub-tab Thư tài liệu → đóng Cài đặt → mở \"In đơn hàng\" cho 1 đơn Thư đã dispatch → popup mở với khổ giấy A5 (không phải 80x80mm).",
+            "AC2: Tắt tick \"Người gửi\" trong sub-tab Thư tài liệu → mở \"In đơn hàng\" cho 1 đơn Thư → phiếu in không có dòng \"Người gửi: ...\".",
+            "AC3: Bật tick \"Tên/logo shop\" → phiếu in Thư hiện tên shop thật (`currentShop.name`) ở đầu phiếu; tắt tick → không có dòng đó.",
+            "AC4: Bật tick \"Ghi chú đơn hàng\" → hiện \"Ghi chú: {order.orderNote}\" nếu đơn có ghi chú; nếu `order.orderNote` rỗng/undefined → không hiện dòng Ghi chú dù tick đang bật.",
+            "AC5: Cài đặt persist qua reload trang — reload → Cài đặt đơn hàng vẫn hiện đúng các tick đã chọn; mở \"In đơn hàng\" → áp đúng cài đặt đó.",
+            "AC6: In hàng loạt lẫn đơn Thư và đơn Hàng hoá → đơn Thư áp `printSettings.letter`, đơn Hàng hoá áp `printSettings.goods` — không bị lẫn cài đặt giữa 2 loại trong cùng batch.",
+            "AC7: Đổi khổ giấy trong popup \"In đơn hàng\" (VD A5 → 80x80mm) → in xong, đóng popup → mở lại Cài đặt đơn hàng → khổ giấy sub-tab Thư vẫn là A5 (thay đổi trong popup không persist).",
+            "AC8: `showSize` ảnh hưởng preview mẫu trong Cài đặt đơn hàng bình thường — nhưng không có dòng kích thước nào xuất hiện trên phiếu in đơn Thư thật."
+          ],
+          "notes": [
+            "Thay đổi kiến trúc cốt lõi: Trước story này, toàn bộ state \"In đơn hàng\" trong `OrderSettingsModal` là `useState` cục bộ thuần tuý — không persist, không share, đóng modal là mất. `PrintOrderModal` (SHOP-ORDER-26) vì thế \"CỐ Ý KHÔNG đọc\" state đó và dùng khổ giấy cứng 80x80mm. Story này document chính xác thay đổi: giới thiệu `printSettingsStore.ts` làm shared persisted store, nối `OrderSettingsModal` và `PrintOrderModal` qua cùng 1 nguồn.",
+            "autoPrint vẫn chưa có trigger thật — toggle `autoPrint` giờ persist qua store nhưng không có code nào đọc nó để tự mở `PrintOrderModal` khi tạo đơn hay khi đại lý dispatch. Đây vẫn là preference UI thuần tuý (xem SHOP-ORDER-16). Không document behavior tự động in như đã hoạt động.",
+            "`showSize` là gap vĩnh viễn với thực tế `Order` — interface `PrintKindConfig` có field `showSize` nhưng `PrintOrderModal` không đọc vì `Order` (orderStore.ts) không có field kích thước. Comment code tại `printSettingsStore.ts` dòng 12–14 ghi nhận rõ điều này. Với đơn Thư, `DEFAULT_LETTER.showSize = false` và không có toggle UI tương ứng trong `LetterHandoverSettings`.",
+            "Preview mẫu và phiếu in thật cùng đọc 1 nguồn, render 2 giao diện độc lập: preview mẫu dùng dữ liệu giả cố định (mã `VC00987654`, nội dung \"Hợp đồng lao động\", tên shop giả); phiếu in thật dùng `order.trackingCode`, `order.orderNote`, `currentShop.name` thật. File liên quan: `src/mock-data/printSettingsStore.ts`, `src/platforms/shop/pages/Orders.tsx` dòng 236 (usePrintField hook), dòng 3555 (PrintOrderModal)."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-31",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - Thông tin mặc định: Thư tài liệu (tổng quan)",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn cấu hình thông tin mặc định riêng cho đơn Thư tài liệu, để giảm thao tác nhập lại khi tạo đơn Thư mới.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"Thông tin mặc định\".",
+            "Bấm sub-tab Thư tài liệu (mặc định là Hàng hoá).",
+            "Thấy 2 nhóm: Sản phẩm và Thông tin thư, tài liệu — chi tiết từng field xem các story con SHOP-ORDER-32/33/34."
+          ],
+          "systemFlow": [
+            "Component LetterDefaultSettings nhận đúng 2 prop tương tác: weightDefault: boolean (toggle) và contentDefault: string (textarea).",
+            "Mục Trả hàng (Địa chỉ trả hàng) render bên ngoài cả 2 component — cố định, không đổi theo sub-tab."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Sub-tab Thư tài liệu hiện đúng 2 nhóm: Sản phẩm (toggle Khối lượng đơn hàng) và Thông tin thư, tài liệu (textarea Nội dung thư, tài liệu + dòng Ghi chú xem hàng).",
+            "AC2: Sub-tab Thư tài liệu KHÔNG hiện: Ca lấy hàng, Kích thước đơn hàng, Khai giá trị hàng, Giao/Trả 1 phần, Giao thất bại thu tiền, Tự động yêu cầu giao lại, Phí ship, Thu ship khách hàng."
+          ],
+          "notes": [
+            "Story con: SHOP-ORDER-32 Khối lượng đơn hàng mặc định, SHOP-ORDER-33 Nội dung thư tài liệu mặc định, SHOP-ORDER-34 Ghi chú xem hàng.",
+            "Mục Trả hàng (Địa chỉ trả hàng) render bên ngoài cả 2 sub-tab, là SelectCtrl tĩnh chưa implement — field áp dụng cho cả 2 loại đơn (đích đến đều là địa chỉ trả hàng đã đăng ký) nhưng cơ chế giao chặng cuối khác nhau (NVC giao thẳng vs đại lý giao lại) — chi tiết xem SHOP-ORDER-36.",
+            "Tách ra từ SHOP-ORDER-12 (story tổng quan về cơ chế 2 sub-tab Hàng hoá/Thư tài liệu)."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-32",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - Thông tin mặc định - Thư tài liệu: Khối lượng đơn hàng mặc định",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn bật toggle \"Khối lượng đơn hàng\" trong sub-tab Thư tài liệu để đơn Thư mới tự có khối lượng mặc định điền sẵn, không phải nhập lại mỗi lần.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"Thông tin mặc định\" → sub-tab Thư tài liệu.",
+            "Trong nhóm Sản phẩm: bấm toggle \"Khối lượng đơn hàng\" để bật hoặc tắt.",
+            "Toggle phản ánh trạng thái On/Off ngay lập tức."
+          ],
+          "systemFlow": [
+            "Toggle nhận prop weightDefault: boolean từ component LetterDefaultSettings.",
+            "Khi toggle thay đổi → gọi setWeightDefault(!weightDefault) cập nhật state cha.",
+            "State weightDefault (sub-tab Thư tài liệu) hoàn toàn độc lập với state khối lượng trong DefaultInfoSettings (sub-tab Hàng hoá)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Toggle \"Khối lượng đơn hàng\" nằm trong nhóm Sản phẩm của sub-tab Thư tài liệu, bấm được, phản ánh đúng trạng thái On/Off ngay lập tức (animation knob trượt + đổi màu nền).",
+            "AC2: Giá trị toggle sub-tab Thư tài liệu hoàn toàn độc lập với sub-tab Hàng hoá — bật/tắt 1 bên không ảnh hưởng bên kia."
+          ],
+          "notes": []
+        },
+        {
+          "id": "SHOP-ORDER-33",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - Thông tin mặc định - Thư tài liệu: Nội dung thư, tài liệu mặc định",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn điền sẵn nội dung thư thường dùng vào cài đặt mặc định, để mỗi lần tạo đơn Thư mới trường \"Nội dung thư, tài liệu\" được prefill sẵn, không phải gõ lại.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"Thông tin mặc định\" → sub-tab Thư tài liệu.",
+            "Trong nhóm Thông tin thư, tài liệu: gõ hoặc xoá nội dung trong textarea \"Nội dung thư, tài liệu\".",
+            "Khi rỗng, placeholder \"Nội dung thư, tài liệu\" hiện trong ô. Ô resize được theo chiều dọc."
+          ],
+          "systemFlow": [
+            "Textarea nhận prop contentDefault: string từ component LetterDefaultSettings.",
+            "Khi nội dung thay đổi → gọi setContentDefault(e.target.value) cập nhật state cha."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Textarea \"Nội dung thư, tài liệu\" nằm trong nhóm Thông tin thư, tài liệu của sub-tab Thư tài liệu — nhập/xoá nội dung phản ánh đúng state, ô có thể resize theo chiều dọc.",
+            "AC2: Khi textarea rỗng, placeholder \"Nội dung thư, tài liệu\" hiện trong ô (màu #9CA3AF)."
+          ],
+          "notes": []
+        },
+        {
+          "id": "SHOP-ORDER-34",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - Thông tin mặc định - Thư tài liệu: Ghi chú xem hàng",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi vào sub-tab Thư tài liệu của Thông tin mặc định, tôi thấy dòng \"Ghi chú xem hàng\" hiển thị cố định \"Cho xem hàng\" kèm chevron-down — dòng này chưa tương tác được, chưa cho phép thay đổi giá trị tại màn Cài đặt này.",
+          "userFlow": [
+            "Vào \"Cài đặt đơn hàng\" → tab \"Thông tin mặc định\" → sub-tab Thư tài liệu.",
+            "Trong nhóm Thông tin thư, tài liệu, thấy dòng \"Ghi chú xem hàng\" hiển thị \"Cho xem hàng\" kèm icon chevron-down — trông giống dropdown.",
+            "Bấm vào dòng đó → không có phản ứng gì: không mở dropdown, không thay đổi giá trị."
+          ],
+          "systemFlow": [
+            "Dòng \"Ghi chú xem hàng\" render qua component SelectCtrl (định nghĩa tại Orders.tsx dòng 730–737) với value=\"Cho xem hàng\".",
+            "SelectCtrl là component hiển thị thuần túy (div + span + icon chevron-down) — không có onClick, onChange, hay dropdown logic nào. Luôn hiện cứng chuỗi được truyền vào prop value.",
+            "LetterDefaultSettings không có prop nào tương ứng với field này — không có state, không có handler.",
+            "Tập giá trị ý định (VIEW_GOODS_OPTIONS dòng 66 Orders.tsx: \"Cho xem hàng\" / \"Không cho xem hàng\") đã định nghĩa sẵn và dùng thật ở CreateLetterDrawer (dòng 1826/1834), nhưng chưa nối vào màn Cài đặt này."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Dòng \"Ghi chú xem hàng\" trong nhóm Thông tin thư, tài liệu hiển thị chuỗi \"Cho xem hàng\" và icon chevron-down.",
+            "AC2: Bấm vào dòng này → không mở dropdown, không thay đổi giá trị, không có sự kiện click nào — đây là placeholder hiển thị thuần túy (SelectCtrl không có onClick/onChange).",
+            "AC3: LetterDefaultSettings không nhận prop nào cho field \"Ghi chú xem hàng\" — không có state, không có handler tương ứng trong component này."
+          ],
+          "notes": [
+            "SelectCtrl (dòng 730–737 Orders.tsx) là component tĩnh: div + span + icon chevron-down, không có sự kiện nào — verify trực tiếp trong code.",
+            "Tập giá trị khi implement đầy đủ: VIEW_GOODS_OPTIONS (dòng 66 Orders.tsx): \"Cho xem hàng\" / \"Không cho xem hàng\" — không bao gồm \"không thử\" vốn chỉ hợp với hàng vật lý. Constant này đã dùng thật ở CreateLetterDrawer (dòng 1826/1834), chưa nối vào màn Cài đặt.",
+            "Phân biệt rõ với CreateLetterDrawer: ở màn tạo đơn, \"Ghi chú xem hàng\" là dropdown thật dùng VIEW_GOODS_OPTIONS làm lựa chọn; ở màn Cài đặt này, chỉ là SelectCtrl tĩnh giữ chỗ hiển thị."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-35",
+          "jiraKey": "",
+          "title": "[SHOP] Đơn hàng - Chi tiết: Câu xác nhận hoàn hàng dùng sai chủ ngữ cho đơn Thư",
+          "status": "draft",
+          "userStory": "Là Shop, khi bấm 'Hoàn hàng' cho đơn Thư ở trạng thái chờ xác nhận giao lại, tôi muốn thấy câu xác nhận đúng với cách hàng thực sự được hoàn — câu hiện tại dùng chủ ngữ 'nhà vận chuyển' không chính xác với đơn Thư vì người giao chặng cuối là đại lý, không phải NVC trực tiếp.",
+          "userFlow": [
+            "Đơn Thư (sendKind: 'letter') ở status redelivery hoặc log cuối DELIVERY_FAIL/WAITING_TO_RETURN → isReturnEligible đúng → nút 'Hoàn hàng' xuất hiện ở chi tiết đơn.",
+            "Bấm 'Hoàn hàng' → hiện khối xác nhận cam với câu hiện tại: 'Bạn chắc chắn muốn yêu cầu hoàn hàng đơn này? Đơn sẽ chuyển sang trạng thái Đang hoàn hàng — nhà vận chuyển sẽ chuyển hoàn về địa chỉ trả hàng đã đăng ký.'",
+            "Câu này sai ở CHỦ NGỮ với đơn Thư: đích đến 'địa chỉ trả hàng đã đăng ký' vẫn đúng cho cả 2 loại đơn, nhưng người thực hiện giao chặng cuối là ĐẠI LÝ — NVC (247Express) giao về đại lý trước (xem SHOP-ORDER-8, field returnHandoverAt), đại lý sau đó tự giao lại hàng cho shop tại địa chỉ trả hàng đã đăng ký.",
+            "Câu xác nhận đề xuất (dùng chung cho cả 2 loại, bỏ hẳn chủ ngữ): 'Đơn sẽ chuyển sang trạng thái Đang hoàn hàng — hàng sẽ được hoàn về địa chỉ trả hàng đã đăng ký.'"
+          ],
+          "systemFlow": [
+            "isReturnEligible(order) (Orders.tsx dòng 2047–2052): kiểm tra status === 'redelivery' hoặc log[0].action trong DELIVERY_FAIL/WAITING_TO_RETURN — không kiểm tra sendKind, tức áp dụng cho cả đơn Thư và Hàng hoá.",
+            "isLetterReturnCase(order) yêu cầu status trong {'returning','cancelled','failed'} — không bao gồm redelivery — nên đơn Thư ở redelivery vẫn qua isReturnEligible và thấy nút 'Hoàn hàng'.",
+            "Câu xác nhận cứng duy nhất (Orders.tsx dòng 2706) không phân nhánh theo sendKind. Gap: chủ ngữ 'nhà vận chuyển' không đúng với đơn Thư — người giao chặng cuối là đại lý. Đích đến 'địa chỉ trả hàng đã đăng ký' đúng cho cả 2 loại.",
+            "Field 'Địa chỉ trả hàng' trong Cài đặt đơn hàng (Orders.tsx dòng 825): SelectCtrl tĩnh — không onClick, không onChange, không lưu giá trị thật. Gap riêng, xem SHOP-ORDER-36.",
+            "Fix đề xuất: dùng câu trung tính bỏ hẳn chủ ngữ — áp dụng chung cho cả 2 loại: 'Đơn sẽ chuyển sang trạng thái Đang hoàn hàng — hàng sẽ được hoàn về địa chỉ trả hàng đã đăng ký.' Không cần phân nhánh theo sendKind."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Đơn Thư (sendKind: 'letter') ở status redelivery — isReturnEligible đúng, isLetterReturnCase chưa đúng → nút 'Hoàn hàng' hiện đúng ở chi tiết đơn. (Hành vi hiện tại đúng, giữ nguyên.)",
+            "AC2: Bấm 'Hoàn hàng' trên đơn Thư → câu xác nhận hiện tại dùng chủ ngữ 'nhà vận chuyển' cho cả 2 loại đơn, không phân nhánh theo sendKind. Sai với đơn Thư vì người giao chặng cuối là đại lý, không phải NVC. Đích đến 'địa chỉ trả hàng đã đăng ký' đúng cho cả 2 loại. (Gap xác nhận tại code dòng 2706, chưa fix.)",
+            "AC3 (đề xuất): Sau khi fix, câu xác nhận dùng chung cho cả 2 loại đơn, bỏ hẳn chủ ngữ: 'Đơn sẽ chuyển sang trạng thái Đang hoàn hàng — hàng sẽ được hoàn về địa chỉ trả hàng đã đăng ký.'",
+            "AC4 (đề xuất): Câu xác nhận không chứa từ 'đại lý' hoặc 'NVC' — giữ đúng nguyên tắc đã áp dụng ở SHOP-ORDER-8 AC5."
+          ],
+          "notes": [
+            "Gap phát hiện: isReturnEligible và câu xác nhận tại Orders.tsx dòng 2704–2708 không phân biệt sendKind — đơn Thư thấy cùng câu xác nhận với Hàng hoá. Gap duy nhất là chủ ngữ 'nhà vận chuyển' không đúng với đơn Thư; đích đến 'địa chỉ trả hàng đã đăng ký' đúng cho cả 2 loại.",
+            "Câu xác nhận Hàng hoá: cũng dùng chủ ngữ 'nhà vận chuyển' — đúng với Hàng hoá (NVC GHN giao thẳng về địa chỉ lấy hàng shop). Câu trung tính không nêu chủ ngữ vẫn đúng cho Hàng hoá và khớp nghiệp vụ của Thư.",
+            "Khoảng hở với SHOP-ORDER-10 AC5: AC5 của story đó chỉ bảo vệ giai đoạn SAU khi đã returning (isLetterReturnCase chặn nút). Câu xác nhận sai xảy ra TRƯỚC khi bấm xác nhận, ở giai đoạn redelivery.",
+            "Story này ở mức 'phát hiện + đề xuất' — chưa implement. Fix thực tế không cần phân nhánh sendKind, chỉ cần đổi câu xác nhận sang dạng trung tính dùng chung."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-36",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt đơn hàng - Trả hàng: Địa chỉ trả hàng — field tĩnh chưa implement, áp dụng cho cả 2 loại đơn qua 2 cơ chế khác nhau",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi vào 'Cài đặt đơn hàng' tôi thấy mục 'Trả hàng' với field 'Địa chỉ trả hàng' hiển thị cố định ở cuối trang — field này áp dụng cho cả đơn Hàng hoá lẫn Thư tài liệu (đích đến đều là địa chỉ trả hàng đã đăng ký), nhưng chưa tương tác được, và mô tả chưa làm rõ sự khác biệt về cơ chế giao chặng cuối giữa 2 loại đơn.",
+          "userFlow": [
+            "Vào 'Cài đặt đơn hàng' → bất kỳ tab nào (Thông tin mặc định hoặc In đơn hàng) → cuộn xuống cuối trang.",
+            "Thấy section 'Trả hàng' với 1 dòng: 'Địa chỉ trả hàng' kèm mô tả 'Khi đơn hàng giao không thành công, hoàn hàng đơn hàng sẽ được chuyển hoàn về địa chỉ mặc định này (áp dụng cho cả đơn Hàng hoá và Thư tài liệu)'.",
+            "Control hiển thị 'Chọn địa chỉ lấy hàng làm địa chỉ trả hàng' — trông như dropdown có chevron-down.",
+            "Bấm vào → không mở dropdown, không thay đổi giá trị, không có phản ứng gì."
+          ],
+          "systemFlow": [
+            "Section 'Trả hàng' render bằng SectionCard (Orders.tsx dòng 823–825) nằm NGOÀI cả DefaultInfoSettings (sub-tab Hàng hoá) lẫn LetterDefaultSettings (sub-tab Thư tài liệu) — không thay đổi khi chuyển sub-tab.",
+            "SelectCtrl (dòng 730–737): div + span + icon chevron-down, không có onClick, onChange hay bất kỳ event handler nào. Luôn hiện cứng chuỗi truyền vào value, không lưu giá trị.",
+            "Mô tả 'áp dụng cho cả đơn Hàng hoá và Thư tài liệu' ĐÚNG về phạm vi: field này có nghiệp vụ với cả 2 loại đơn — đích đến đều là địa chỉ trả hàng đã đăng ký. Điểm chưa rõ trong mô tả: cơ chế giao chặng cuối khác nhau — Hàng hoá: NVC (GHN) giao thẳng đến địa chỉ này; Thư tài liệu: NVC (247Express) giao về đại lý trước (returnHandoverAt, xem SHOP-ORDER-8), đại lý sau đó tự giao lại tới địa chỉ trả hàng đã đăng ký."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Section 'Trả hàng' (Địa chỉ trả hàng) hiển thị 1 lần duy nhất trong 'Cài đặt đơn hàng', nằm ngoài cả 2 sub-tab Hàng hoá/Thư tài liệu — không thay đổi khi chuyển sub-tab đang chọn.",
+            "AC2: Control 'Địa chỉ trả hàng' là SelectCtrl tĩnh — luôn hiện cứng 'Chọn địa chỉ lấy hàng làm địa chỉ trả hàng', bấm vào không mở dropdown, không thay đổi giá trị, không có sự kiện click nào. (Gap: field chưa implement.)",
+            "AC3 (đề xuất): Mô tả 'áp dụng cho cả đơn Hàng hoá và Thư tài liệu' đúng về phạm vi nhưng chưa làm rõ sự khác biệt về cơ chế giao chặng cuối: với Hàng hoá, NVC giao thẳng đến địa chỉ trả hàng; với Thư tài liệu, đại lý giao chặng cuối sau khi nhận hàng từ NVC. (Đề xuất: bổ sung mô tả hoặc tooltip để phân biệt 2 cơ chế.)"
+          ],
+          "notes": [
+            "SelectCtrl (dòng 730–737 Orders.tsx): div + span + icon chevron-down, không có onClick, onChange hay bất kỳ event handler nào — verify trực tiếp trong code. Pattern placeholder tĩnh giống hệt 'Ghi chú xem hàng' đã ghi nhận ở SHOP-ORDER-34.",
+            "Nghiệp vụ đúng với đơn Thư: NVC (247Express) giao về đại lý trước (field returnHandoverAt, SHOP-ORDER-8), đại lý tự giao lại cho shop tại địa chỉ trả hàng đã đăng ký — đích đến đúng, người thực hiện chặng cuối là đại lý chứ không phải NVC.",
+            "Phân biệt với SHOP-ORDER-35: SHOP-ORDER-35 ghi nhận câu xác nhận hoàn hàng dùng chủ ngữ 'nhà vận chuyển' không chính xác với đơn Thư — người giao chặng cuối là đại lý. Story này (SHOP-ORDER-36) ghi nhận chính field đó tại nguồn định nghĩa với 2 điểm: (1) chưa implement; (2) mô tả chưa phân biệt rõ cơ chế giao chặng cuối giữa 2 loại đơn. Hai story bổ sung nhau, không trùng nhau."
+          ]
         }
       ]
     },
     {
       "key": "reconciliation",
       "title": "Đối soát",
-      "stories": []
+      "stories": [
+        {
+          "id": "SHOP-RECON-1",
+          "jiraKey": "",
+          "title": "[SHOP] Đối soát: Danh sách phiên đối soát",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn xem danh sách các phiên đối soát giữa tôi và đại lý (COD chuyển về, phí dịch vụ đã trừ) để theo dõi lịch sử thanh toán và phát hiện sớm các phiên có đơn lệch.",
+          "userFlow": [
+            "Vào menu \"Đối soát\" → trang /shop/reconciliation hiển thị.",
+            "Phần trên: 4 stat card tổng quan — Tổng phiên, Tổng nhận về, Chờ thanh toán, Đơn lệch.",
+            "Ô tìm kiếm: nhập mã phiên hoặc mã phiên GHN → bảng lọc realtime (chi tiết đầy đủ xem SHOP-RECON-6).",
+            "Phần dưới: bảng danh sách phiên, mỗi dòng gồm: Mã phiên, Phiên GHN (mã NVC gốc), Thời gian (khoảng period), Ngày TT, Số đơn, Tổng COD, Tổng phí DV, Nhận về, Trạng thái, nút \"Xem\".",
+            "Bấm vào BẤT KỲ đâu trên dòng (không chỉ nút \"Xem\") → điều hướng sang trang chi tiết phiên (SHOP-RECON-3)."
+          ],
+          "systemFlow": [
+            "Reconciliation.tsx gọi buildShopSessions() (dòng ~76–117): lọc carrier-reconciliation.json lấy các phiên NVC có status: \"confirmed\" và item có shopId === \"SHP001\", gộp theo sessionId, tạo danh sách ShopSession[] với id dạng COD_SHOP_{YYYYMMDD}{seq}_{shopId}.",
+            "Mỗi ShopSession có: id, nvcSessionId, nvcSessionCode, period, paymentDate, orderCount, totalCOD (shop), feeShop (shop), netAmount = totalCOD - feeShop.",
+            "Items trong session được tính qua getReconciliationItems() từ src/mock-data/reconciliationLedger.ts — hàm này cộng dồn phí xuyên nhiều phiên GHN, trả về status: MATCH | MISMATCH | NOT_FOUND cho từng đơn.",
+            "4 stat card tính từ sessions (KHÔNG bị ảnh hưởng bởi ô tìm kiếm — luôn tính trên toàn bộ danh sách gốc, không phải danh sách đã lọc): Tổng phiên = sessions.length; Tổng nhận về = sum(session.netAmount); Chờ thanh toán = tổng số phiên; Đơn lệch = tổng đơn MISMATCH/NOT_FOUND, chỉ hiện khi > 0.",
+            "Ô tìm kiếm lọc theo Mã phiên/Phiên GHN — chi tiết công thức, empty-state, AC đầy đủ xem SHOP-RECON-6.",
+            "Badge trạng thái mỗi dòng hiện hardcode \"Chờ thanh toán\" (cam) — không đọc field trạng thái thật nào từ dữ liệu.",
+            "Cột \"Nhận về\" (netAmount) tô màu C_ACTION (#FF5200) in đậm.",
+            "TRow nhận onView gắn vào onClick của CẢ container dòng (cursor: \"pointer\") — không chỉ riêng nút \"Xem\". Nút \"Xem\" vẫn giữ onClick riêng nhưng gọi e.stopPropagation() trước để tránh bắn onClick 2 lần.",
+            "onView gọi navigate(\"reconciliation/:id\", { state: { session } }) — truyền toàn bộ object session qua location.state, không dùng query param hay refetch theo :id."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Trang danh sách chỉ hiện phiên đối soát của đúng shop đang đăng nhập (shopId === \"SHP001\"), không lộ phiên của shop khác trong cùng đại lý.",
+            "AC2: Chỉ hiện phiên NVC có status: \"confirmed\" — phiên NVC chưa confirmed không xuất hiện trong danh sách.",
+            "AC3: 4 stat card hiển thị đúng: Tổng phiên, Tổng nhận về, Chờ thanh toán, Đơn lệch (chỉ hiện khi > 0) — tính trên toàn bộ danh sách, không đổi theo kết quả tìm kiếm.",
+            "AC4: Bảng hiển thị đủ các cột: Mã phiên, Phiên GHN, Thời gian, Ngày TT, Số đơn, Tổng COD, Tổng phí DV, Nhận về, Trạng thái, nút Xem.",
+            "AC5: Cột \"Nhận về\" hiển thị màu #FF5200 in đậm.",
+            "AC6: Bấm vào bất kỳ đâu trên 1 dòng (không riêng nút \"Xem\") → điều hướng đúng sang trang chi tiết của đúng phiên đó, truyền đủ object session qua location.state.",
+            "AC7: Card \"Đơn lệch\" không hiển thị nếu không có đơn nào lệch (giá trị = 0).",
+            "AC8: Ô tìm kiếm lọc theo Mã phiên hoặc Phiên GHN — chi tiết AC đầy đủ xem SHOP-RECON-6."
+          ],
+          "notes": [
+            "getReconciliationItems() (reconciliationLedger.ts) thay thế việc đọc thẳng JSON tĩnh — thay đổi quan trọng để khớp cách Agency Admin (AgencyReconciliationShopDetail.tsx) tính status MATCH/MISMATCH/NOT_FOUND. Trước khi sửa, 2 nơi có thể cho kết quả khác nhau cho cùng 1 đơn.",
+            "Trạng thái phiên (badge \"Chờ thanh toán\") hiện hardcode — chưa có field trạng thái thật trên ShopSession. Khi implement thật cần thêm field paymentStatus.",
+            "Web Shop toàn bộ trang này hardcode shopId = 'SHP001' — gap: không có khái niệm \"shop đang đăng nhập\" động.",
+            "Ô tìm kiếm và click-cả-dòng-để-vào-chi-tiết được thêm SAU khi story này viết lần đầu — đã cập nhật lại User Flow/System Flow/AC cho khớp code hiện tại, không phải viết lại từ đầu.",
+            "Chi tiết đầy đủ về ô tìm kiếm (công thức lọc, empty-state, AC) đã tách sang SHOP-RECON-6 — story này chỉ nhắc qua trong User Flow/System Flow để tránh trùng lặp."
+          ]
+        },
+        {
+          "id": "SHOP-RECON-2",
+          "jiraKey": "",
+          "title": "[SHOP] Đối soát: Lịch nhận COD và đổi lịch",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn xem lịch nhận COD hiện tại của mình và có thể đổi sang lịch phù hợp hơn (ví dụ mỗi ngày thay vì hằng tuần), để chủ động biết khi nào tiền COD về tài khoản.",
+          "userFlow": [
+            "Vào trang \"Đối soát\" → phía trên bảng danh sách phiên có section \"Lịch nhận COD\" hiển thị lịch hiện tại, ví dụ \"Thứ 2, 3, 4, 5, 6\".",
+            "Bấm nút \"Đổi lịch\" → modal \"Đổi lịch nhận COD\" mở ra.",
+            "Modal hiển thị danh sách 12 option cố định (radio), option đang chọn được pre-select.",
+            "Chọn 1 option khác → bấm \"Xác nhận\" → modal đóng, lịch cập nhật ngay trong section.",
+            "Bấm \"Huỷ\" hoặc đóng modal → không thay đổi lịch."
+          ],
+          "systemFlow": [
+            "ScheduleSection (Reconciliation.tsx) đọc myShop.codSchedule từ shops.json làm giá trị khởi tạo, lưu vào state codSchedule.",
+            "Nút \"Đổi lịch\" mở ScheduleModal — modal hiển thị mảng SCHEDULE_OPTIONS (12 option cố định).",
+            "Khi xác nhận: setCodSchedule(selectedOption) — chỉ cập nhật state local trong component, không ghi ngược lại shops.json hay bất kỳ store/localStorage nào.",
+            "Hậu quả: thay đổi lịch mất hoàn toàn khi reload trang, lần mở trang kế tiếp sẽ đọc lại myShop.codSchedule gốc từ shops.json."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Section \"Lịch nhận COD\" hiển thị đầu trang Đối soát, phía trên bảng danh sách phiên.",
+            "AC2: Lịch nhận COD hiện tại được hiển thị rõ.",
+            "AC3: Bấm \"Đổi lịch\" → modal mở, hiện đúng 12 option cố định dạng radio, option hiện tại được pre-select.",
+            "AC4: Chọn option khác → bấm \"Xác nhận\" → modal đóng, section cập nhật hiển thị lịch mới trong cùng phiên trình duyệt.",
+            "AC5: Bấm \"Huỷ\" hoặc đóng modal chưa bấm \"Xác nhận\" → lịch không thay đổi.",
+            "AC6 (gap): Sau khi đổi lịch thành công, nếu reload trang → lịch quay về giá trị gốc từ shops.json, thay đổi không được giữ lại. Hành vi này cần ghi nhận trong UI hoặc fix bằng persist vào localStorage/API."
+          ],
+          "notes": [
+            "Gap được ghi nhận có chủ đích: setCodSchedule chỉ set local state — người dùng CÓ thể chọn và thấy thay đổi trong phiên, nhưng không persist qua reload.",
+            "Khi implement thật cần persist lịch nhận COD: gọi API cập nhật về backend, hoặc tối thiểu lưu vào localStorage với key theo shopId.",
+            "12 option trong SCHEDULE_OPTIONS là danh sách cố định trong code."
+          ]
+        },
+        {
+          "id": "SHOP-RECON-3",
+          "jiraKey": "",
+          "title": "[SHOP] Đối soát: Chi tiết phiên — tổng quan và summary card",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi xem chi tiết một phiên đối soát, tôi muốn thấy ngay tổng quan số liệu của phiên đó (số đơn, tổng COD, tổng phí dịch vụ, số tiền sẽ nhận về) mà không thấy các chi phí nội bộ của đại lý — phần tôi cần là \"nhận về bao nhiêu\", không phải \"đại lý trả NVC bao nhiêu\" hay \"lợi nhuận đại lý bao nhiêu\".",
+          "userFlow": [
+            "Từ trang danh sách đối soát, bấm \"Xem\" ở một phiên → sang trang /shop/reconciliation/:id.",
+            "Header: breadcrumb \"← Đối soát / {session.id}\", tiêu đề \"Phiên {id}\", badge trạng thái \"Chờ thanh toán\".",
+            "Dòng thông tin phiên: \"Phiên GHN: {nvcSessionCode} · {khoảng thời gian} · TT: {ngày thanh toán}\".",
+            "4 summary card: Số đơn, Tổng COD, Tổng phí DV, Nhận về.",
+            "Phía dưới: ô tìm kiếm và bảng chi tiết đơn (SHOP-RECON-4)."
+          ],
+          "systemFlow": [
+            "ReconciliationDetail.tsx (route /shop/reconciliation/:id) đọc session từ location.state?.session.",
+            "Nếu không có location.state?.session → hiện dòng \"Không tìm thấy phiên đối soát. Quay lại\" với link về /shop/reconciliation.",
+            "Items: getReconciliationItems().filter(it => it.sessionId === session.nvcSessionId && it.shopId === 'SHP001') — không dùng resolveShopId vì Shop chỉ xem 1 shopId cố định.",
+            "4 summary card: Số đơn = items.length; Tổng COD = sum(item.systemCOD) đơn thành công; Tổng phí DV = sum(item.systemFee) (field phí gốc, KHÔNG phải công thức breakdown 5 phụ phí dùng ở bảng chi tiết SHOP-RECON-4); Nhận về = totalCOD - totalFee, màu đỏ #DC2626 nếu âm, xanh #16A34A nếu dương.",
+            "KHÔNG hiển thị card \"Tổng phí DV (GHN)\" và \"Lợi nhuận ĐL\" — đây là chi phí nội bộ đại lý, không thuộc phạm vi shop được xem. Quyết định có chủ đích.",
+            "Badge trạng thái hardcode \"Chờ thanh toán\" — khớp với trang danh sách."
+          ],
+          "crossPlatformImpact": [
+            "Agency Admin — AgencyReconciliationShopDetail.tsx: cùng nguồn dữ liệu getReconciliationItems(), cùng helper TCell/feeCell/dual. Agency Admin hiển thị thêm 2 card \"Tổng phí DV (GHN)\" và \"Lợi nhuận ĐL\" — phần Web Shop cố ý không hiện."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Trang chi tiết hiển thị đúng breadcrumb \"← Đối soát / {session.id}\", tiêu đề \"Phiên {id}\", badge \"Chờ thanh toán\".",
+            "AC2: Dòng thông tin phiên hiện đủ: mã phiên GHN (nvcSessionCode), khoảng thời gian (period), ngày thanh toán — format \"Phiên GHN: {code} · {period} · TT: {date}\".",
+            "AC3: Hiển thị đúng 4 summary card: Số đơn, Tổng COD, Tổng phí DV, Nhận về. Không có card thứ 5 hay thứ 6 nào.",
+            "AC4: Card \"Nhận về\" đổi màu theo dấu: giá trị âm → đỏ #DC2626; giá trị dương → xanh #16A34A.",
+            "AC5: Trang KHÔNG hiển thị \"Tổng phí DV (GHN)\" hay \"Lợi nhuận ĐL\" ở bất kỳ vị trí nào.",
+            "AC6: Nếu truy cập trực tiếp qua URL (không có location.state) → hiện thông báo \"Không tìm thấy phiên đối soát\" kèm link quay lại, không crash trang.",
+            "AC7: Bấm breadcrumb \"← Đối soát\" → về đúng trang danh sách /shop/reconciliation."
+          ],
+          "notes": [
+            "Thiết kế theo đúng mẫu AgencyReconciliationShopDetail.tsx — cùng helper TCell, feeCell, dual để hiển thị 2 dòng số.",
+            "Ranh giới quyền xem rõ ràng: Shop không cần biết đại lý trả NVC bao nhiêu hay đại lý lời bao nhiêu. Việc hiện ra các con số này sẽ lộ pricing strategy của đại lý với shop.",
+            "Xem SHOP-RECON-5 về gap reload trang mất dữ liệu do session chỉ đi qua router state."
+          ]
+        },
+        {
+          "id": "SHOP-RECON-4",
+          "jiraKey": "",
+          "title": "[SHOP] Đối soát: Bảng chi tiết đơn hàng trong phiên",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi xem chi tiết một phiên đối soát, tôi muốn thấy breakdown từng đơn hàng — COD thu được, từng loại phí bị trừ, và số tiền thực nhận cho mỗi đơn — để đối chiếu với dữ liệu của mình và phát hiện đơn nào bị tính sai.",
+          "userFlow": [
+            "Trong trang chi tiết phiên (SHOP-RECON-3), phía dưới 4 summary card có ô tìm kiếm (chi tiết đầy đủ xem SHOP-RECON-7).",
+            "Bảng 14 cột hiển thị từng đơn trong phiên, số liệu chi tiết từng cột phụ thuộc trạng thái đơn (thành công / chưa thành công / trung gian).",
+            "Cuộn ngang khi bảng vượt độ rộng màn hình."
+          ],
+          "systemFlow": [
+            "Items lọc: getReconciliationItems().filter(it => it.sessionId === session.nvcSessionId && it.shopId === 'SHP001').",
+            "Ô tìm kiếm lọc theo mã đơn GHN / mã đơn của shop — công thức, empty-state, AC đầy đủ xem SHOP-RECON-7.",
+            "14 cột theo thứ tự: Mã đơn GHN (orderCode), Mã đơn của bạn (customerOrderCode), Trạng thái GHN (màu theo nhóm: xanh lá=thành công, đỏ=thất bại, xám=trung gian, cam=khác), Tiền COD (dual, chỉ khi kết thúc), Giao TT thu sau (chỉ khi chưa thành công), Phí giao hàng (deliveryFee, chưa thành công), Phí bảo hiểm (insuranceFee, chưa thành công), Giao trả 1 phần (partialDelivery, thành công), Phí giao thất bại (failedDelivery, thành công), Phí thu hộ (codFee, thành công), Phí kích hoạt giao lại (redeliveryFee, thành công), Phí hoàn (returnFee, thành công), Phí DV (sysFee, luôn hiện), Tổng đối soát (net, luôn hiện, in đậm).",
+            "Công thức sysFee: đơn thành công = partialDelivery + failedDelivery + codFee + redeliveryFee + returnFee; đơn chưa thành công = deliveryFee + insuranceFee.",
+            "Công thức net: (thành công ? item.systemCOD : 0) - sysFee (sysFee = biến cục bộ tính riêng cho dòng bảng, khác item.systemFee dùng ở summary card SHOP-RECON-3).",
+            "Hiển thị dual (2 dòng): dòng trên = số hệ thống thật, dòng dưới chữ nhỏ xám #6B7280 = số GHN tham chiếu.",
+            "Ô không áp dụng cho nhóm đơn hiện tại → hiển thị — (gạch ngang)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bảng hiển thị đúng 14 cột theo thứ tự đã mô tả.",
+            "AC2: Cột \"Trạng thái GHN\" tô màu đúng theo nhóm: xanh lá (thành công), đỏ (thất bại), xám (trung gian/chưa có), cam (khác).",
+            "AC3: Cột \"Tiền COD\" chỉ hiện khi đơn ở trạng thái kết thúc (Giao thành công / Hoàn hàng thành công). Đơn trung gian ô này để —.",
+            "AC4: 5 cột phụ phí (Giao trả 1 phần, Phí giao thất bại, Phí thu hộ, Phí kích hoạt giao lại, Phí hoàn) chỉ hiện số khi đơn thành công; chưa thành công để —.",
+            "AC5: 2 cột (Phí giao hàng, Phí bảo hiểm) chỉ hiện số khi đơn chưa thành công; đã thành công để —.",
+            "AC6: Cột \"Phí DV\" = tổng phí theo đúng công thức. Cột \"Tổng đối soát\" = net đúng công thức, in đậm.",
+            "AC7: Ô dual: dòng trên = số hệ thống (màu thường), dòng dưới = số GHN tham chiếu (chữ nhỏ, màu xám #6B7280).",
+            "AC8: Bảng cuộn ngang trong container overflow-x: auto — body trang không cuộn ngang.",
+            "Phần AC về ô tìm kiếm (lọc realtime, empty-state) xem SHOP-RECON-7."
+          ],
+          "notes": [
+            "Tách phần search (User Flow, System Flow, AC riêng) sang SHOP-RECON-7 — tránh lặp nội dung ở 2 nơi.",
+            "Công thức sysFee và net dùng đúng theo Agency Admin (AgencyReconciliationShopDetail.tsx) — không tự nghĩ công thức mới.",
+            "Hiện chưa có cột hay badge riêng trong bảng để đánh dấu trực tiếp đơn MISMATCH / NOT_FOUND — gap tiếp theo nếu muốn shop tự đối chiếu dễ hơn."
+          ]
+        },
+        {
+          "id": "SHOP-RECON-5",
+          "jiraKey": "",
+          "title": "[SHOP] Đối soát: Gap — reload trang chi tiết mất dữ liệu phiên",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi tôi bookmark hoặc chia sẻ link trang chi tiết phiên đối soát, hoặc đơn giản là refresh trình duyệt đang xem, tôi mong đợi vẫn thấy đúng nội dung phiên đó — không phải trang lỗi trắng \"Không tìm thấy phiên đối soát\".",
+          "userFlow": [
+            "Hiện tại (có bug): Từ danh sách → bấm \"Xem\" → trang chi tiết hiển thị bình thường. Nhấn F5 (reload) hoặc mở lại link từ bookmark → trang hiện \"Không tìm thấy phiên đối soát. Quay lại\".",
+            "Mong đợi (sau fix): Truy cập URL /shop/reconciliation/:id bằng bất kỳ cách nào → trang tự fetch/build dữ liệu phiên từ :id, hiển thị đúng nội dung."
+          ],
+          "systemFlow": [
+            "Nguyên nhân: ReconciliationDetail.tsx đọc dữ liệu bằng const session = location.state?.session (router state). location.state chỉ tồn tại khi navigate từ cùng phiên trình duyệt — bị xóa khi reload, không có ở tab mới, bookmark, hay chia sẻ link.",
+            "Hướng fix: đọc :id từ URL (useParams().id), gọi lại buildShopSessions() để tìm session khớp id. Giữ location.state?.session làm fast-path khi navigate từ danh sách, chỉ dùng buildShopSessions() khi state không có."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1 (gap hiện tại): Reload trang chi tiết phiên → hiện \"Không tìm thấy phiên đối soát\" dù phiên đó tồn tại. Đây là hành vi hiện tại cần ghi nhận, chưa phải sau fix.",
+            "AC2 (after fix): Truy cập /shop/reconciliation/:id trực tiếp (bookmark, tab mới, reload) → trang tự build lại dữ liệu từ :id, hiển thị đúng nội dung phiên.",
+            "AC3 (after fix): Navigate từ danh sách (có location.state) → trang vẫn hiển thị ngay, không bị chậm thêm.",
+            "AC4 (after fix): :id không khớp phiên nào → hiện fallback \"Không tìm thấy phiên đối soát\" với link quay lại, không crash."
+          ],
+          "notes": [
+            "Gap này tương đồng với nhiều trang detail khác trong prototype đang dùng router state thay vì URL params để truyền dữ liệu — pattern không bền vững cho production.",
+            "buildShopSessions() hiện tại chỉ lọc shopId === 'SHP001' hardcode — khi fix cũng cần đảm bảo không lộ phiên của shop khác nếu shopId được đọc động."
+          ]
+        },
+        {
+          "id": "SHOP-RECON-6",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đối soát - Danh sách phiên: Search phiên",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn tìm nhanh 1 phiên đối soát theo mã phiên hoặc mã phiên GHN, để không phải cuộn tìm thủ công khi danh sách có nhiều phiên.",
+          "userFlow": [
+            "Vào trang \"Đối soát\" (/shop/reconciliation), bên dưới 4 stat card có 1 ô tìm kiếm.",
+            "Gõ từ khoá vào ô — bảng danh sách phiên lọc ngay theo thời gian thực, không cần bấm Enter hay nút tìm.",
+            "Từ khoá khớp với Mã phiên HOẶC Phiên GHN của bất kỳ dòng nào → dòng đó hiện.",
+            "Xoá hết từ khoá → bảng trở lại đầy đủ danh sách gốc.",
+            "Gõ từ khoá không khớp phiên nào → bảng hiện thông báo \"Không tìm thấy phiên phù hợp\"."
+          ],
+          "systemFlow": [
+            "Reconciliation.tsx: state const [search, setSearch] = useState(\"\").",
+            "filteredSessions = mySessions.filter(s => { const q = search.trim().toLowerCase(); if (!q) return true; return s.id.toLowerCase().includes(q) || s.nvcSessionCode.toLowerCase().includes(q) }) — so khớp substring, không phân biệt hoa/thường, khớp 1 trong 2 field là đủ.",
+            "Ô tìm kiếm dùng chung style với ô search đã có ở trang \"Đơn hàng\" (SearchOutlined + input nền trong suốt, viền C_BORDER) — không tạo pattern UI mới.",
+            "Bảng render filteredSessions.map(...) thay vì mySessions.map(...) — nhưng 4 stat card phía trên vẫn tính từ mySessions gốc (KHÔNG đổi theo kết quả tìm kiếm).",
+            "2 nhánh empty-state tách biệt: mySessions.length === 0 → \"Chưa có phiên đối soát nào\"; mySessions.length > 0 && filteredSessions.length === 0 → \"Không tìm thấy phiên phù hợp\"."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Ô tìm kiếm hiện ngay dưới 4 stat card, phía trên bảng danh sách phiên.",
+            "AC2: Gõ từ khoá → bảng lọc realtime, không cần bấm Enter hay nút tìm kiếm riêng.",
+            "AC3: Tìm kiếm khớp theo Mã phiên HOẶC Phiên GHN, không phân biệt hoa/thường, so khớp substring.",
+            "AC4: Xoá hết từ khoá → bảng hiện lại đầy đủ danh sách gốc.",
+            "AC5: Không có phiên nào khớp từ khoá → hiện \"Không tìm thấy phiên phù hợp\" — khác thông báo với trường hợp danh sách gốc rỗng.",
+            "AC6: 4 stat card không thay đổi theo kết quả tìm kiếm — luôn phản ánh toàn bộ danh sách phiên của shop."
+          ],
+          "notes": [
+            "Tách ra từ SHOP-RECON-1 (story tổng quan danh sách phiên) — SHOP-RECON-1 đã cập nhật để trỏ sang story này cho chi tiết phần search, tránh lặp nội dung ở 2 nơi.",
+            "Cùng pattern search đã dùng ở Agency Admin cho các danh sách phiên đối soát tương tự (AGA-RECON-10/11/12) — không phải tính năng phát minh riêng cho Web Shop."
+          ]
+        },
+        {
+          "id": "SHOP-RECON-7",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đối soát - Chi tiết phiên: Search phiên đối soát",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi xem chi tiết 1 phiên đối soát có nhiều đơn hàng, tôi muốn tìm nhanh 1 đơn cụ thể theo mã đơn GHN hoặc mã đơn của mình, để không phải cuộn cả bảng để tìm.",
+          "userFlow": [
+            "Trong trang chi tiết phiên (/shop/reconciliation/:id), ngay dưới 4 summary card có 1 ô tìm kiếm, phía trên bảng chi tiết đơn.",
+            "Gõ mã đơn GHN hoặc mã đơn của shop vào ô — bảng lọc realtime, không cần bấm Enter.",
+            "Xoá hết từ khoá → bảng hiện lại đầy đủ toàn bộ đơn trong phiên.",
+            "Gõ từ khoá không khớp đơn nào → bảng hiện \"Không tìm thấy đơn hàng phù hợp\"."
+          ],
+          "systemFlow": [
+            "ReconciliationDetail.tsx: state const [search, setSearch] = useState(\"\").",
+            "filteredItems = items.filter(it => { const q = search.trim().toLowerCase(); if (!q) return true; return it.orderCode.toLowerCase().includes(q) || (it.customerOrderCode ?? \"\").toLowerCase().includes(q) }) — so khớp substring, không phân biệt hoa/thường, khớp 1 trong 2 field là đủ.",
+            "items (nguồn trước khi lọc search) đã được lọc sẵn theo đúng phiên + đúng shop (xem SHOP-RECON-3/4) — ô tìm kiếm chỉ lọc thêm trên tập đó.",
+            "4 summary card phía trên tính từ items GỐC (chưa lọc search) — KHÔNG đổi theo kết quả tìm kiếm, giống cách 4 stat card ở trang danh sách không đổi theo search (SHOP-RECON-6).",
+            "Bảng render filteredItems.map(...) thay vì items.map(...) trực tiếp.",
+            "Ô tìm kiếm dùng chung style với ô search ở trang danh sách phiên (SHOP-RECON-6) và trang \"Đơn hàng\" — không tạo pattern UI mới."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Ô tìm kiếm hiện ngay dưới 4 summary card, phía trên bảng chi tiết đơn.",
+            "AC2: Gõ từ khoá → bảng lọc realtime, không cần bấm Enter.",
+            "AC3: Tìm kiếm khớp theo Mã đơn GHN (orderCode) HOẶC Mã đơn của bạn (customerOrderCode), không phân biệt hoa/thường, so khớp substring.",
+            "AC4: Xoá hết từ khoá → bảng hiện lại đầy đủ toàn bộ đơn trong phiên.",
+            "AC5: Không có đơn nào khớp từ khoá → hiện \"Không tìm thấy đơn hàng phù hợp\".",
+            "AC6: 4 summary card không đổi theo kết quả tìm kiếm — luôn tính trên toàn bộ đơn của phiên, không phải danh sách đã lọc.",
+            "AC7: Ô tìm kiếm chỉ lọc trong phạm vi đơn của đúng phiên đang xem và đúng shop — không tìm lẫn sang đơn của phiên khác."
+          ],
+          "notes": [
+            "Tách ra từ SHOP-RECON-4 (story bảng chi tiết đơn hàng) — SHOP-RECON-4 đã cập nhật để trỏ sang story này cho chi tiết phần search, tránh lặp nội dung ở 2 nơi.",
+            "Cùng cơ chế với SHOP-RECON-6 (search ở trang danh sách phiên) — 2 ô tìm kiếm độc lập, lọc 2 tập dữ liệu khác nhau, không dùng chung state."
+          ]
+        }
+      ]
     },
     {
       "key": "pricing",

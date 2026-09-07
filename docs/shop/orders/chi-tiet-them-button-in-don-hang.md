@@ -7,7 +7,7 @@ figma: https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW
 status: draft
 ---
 
-# [WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Thêm button In đơn hàng
+# [WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Thêm nút In vận đơn
 
 ## User Story
 
@@ -48,3 +48,4 @@ Là chủ shop đang xem chi tiết 1 đơn hàng, tôi muốn in vận đơn ng
 - Tái sử dụng 100% `PrintOrderModal` và helper `isPrintable` đã xây ở [SHOP-ORDER-26](./danh-sach-them-button-in-don-hang.md) — story này chỉ thêm 1 lối vào thứ 3 (per-row, bulk, và giờ là chi tiết) vào đúng 1 component in đã có, không viết thêm logic in mới.
 - Đã implement và verify bằng Playwright: mở chi tiết 1 đơn Hàng hoá đã dispatch → nút hiện đúng vị trí, bấm mở đúng popup với dữ liệu thật (mã vận đơn, người gửi/nhận, sản phẩm...) khớp với đơn đang xem.
 - Không test lại nhánh "không đủ điều kiện in" bằng UI thật ở chi tiết vì mock data hiện không có đơn Thư nào ở trạng thái chưa dispatch để mở chi tiết — nhưng logic dùng chung 100% `isPrintable(order)` đã verify ở danh sách ([SHOP-ORDER-26](./danh-sach-them-button-in-don-hang.md) AC2), không phải điều kiện viết riêng cho chi tiết nên không có rủi ro lệch hành vi.
+- **Về cài đặt in ([SHOP-ORDER-30](./in-don-hang-thu-cau-hinh-ap-dung-van-don-that.md)):** `PrintOrderModal` được tái sử dụng ở story này giờ đọc cấu hình từ `printSettingsStore.ts` (khổ giấy mặc định, checklist field hiển thị) — behavior mới này áp dụng tự động cho lối vào chi tiết giống hệt lối vào danh sách và bulk, không cần thêm code riêng.

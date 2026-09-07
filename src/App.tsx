@@ -7,7 +7,6 @@ import AgencyCreate from './platforms/super-admin/pages/AgencyCreate'
 import AgencyDetail from './platforms/super-admin/pages/AgencyDetail'
 import Hubs247 from './platforms/super-admin/pages/Hubs247'
 import RouteConfig from './platforms/super-admin/pages/RouteConfig'
-import RouteConfigTable from './platforms/super-admin/pages/RouteConfigTable'
 import SuperAdminSettings from './platforms/super-admin/pages/Settings'
 import AccountInfo from './platforms/super-admin/pages/settings/AccountInfo'
 import UserManagement from './platforms/super-admin/pages/settings/UserManagement'
@@ -40,6 +39,7 @@ import ShopLogin from './platforms/shop/pages/Login'
 import ShopRegister from './platforms/shop/pages/Register'
 import ShopOrders from './platforms/shop/pages/Orders'
 import ShopReconciliation from './platforms/shop/pages/Reconciliation'
+import ShopReconciliationDetail from './platforms/shop/pages/ReconciliationDetail'
 import ShopPricing from './platforms/shop/pages/Pricing'
 import ShopSupport from './platforms/shop/pages/Support'
 import ShopSettings from './platforms/shop/pages/Settings'
@@ -62,7 +62,6 @@ export default function App() {
           <Route path="agencies/:id" element={<AgencyDetail />} />
           <Route path="hubs-247" element={<Hubs247 />} />
           <Route path="route-config" element={<RouteConfig />} />
-          <Route path="route-table" element={<RouteConfigTable />} />
           <Route path="settings" element={<SuperAdminSettings />}>
             <Route path="account" element={<AccountInfo />} />
             <Route path="users" element={<UserManagement />} />
@@ -105,6 +104,7 @@ export default function App() {
         <Route path="/shop" element={<ShopLayout />}>
           <Route path="orders" element={<ShopOrders />} />
           <Route path="reconciliation" element={<ShopReconciliation />} />
+          <Route path="reconciliation/:id" element={<ShopReconciliationDetail />} />
           <Route path="pricing" element={<ShopPricing />} />
           <Route path="support" element={<ShopSupport />} />
           <Route path="settings" element={<ShopSettings />}>
