@@ -11,7 +11,8 @@ import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import {
   regions,
   routeMatrix,
-  sameProvinceRoute,
+  isSameProvinceRouteName,
+  describeSameProvinceRoutePairs,
   listRouteNames,
   findRegionOf,
   resolveRouteName,
@@ -63,8 +64,8 @@ function buildResult(fromProvince: string, toProvince: string): RouteCheckResult
 type GuideRow = { name: string; pairs: string[] }
 function buildGuideRows(): GuideRow[] {
   return listRouteNames().map((routeName) => {
-    if (routeName === sameProvinceRoute) {
-      return { name: routeName, pairs: ['Cùng tỉnh, bất kỳ miền nào'] }
+    if (isSameProvinceRouteName(routeName)) {
+      return { name: routeName, pairs: describeSameProvinceRoutePairs(routeName) }
     }
     const pairs: string[] = []
     const seen = new Set<string>()

@@ -50,8 +50,11 @@ export const regions: RegionDef[] = ZONE_ORDER.map((zone) => ({
   provinces: VIETNAM_PROVINCES.filter((p) => p.zone === zone).map((p) => p.name),
 }))
 
-/** Route name for same-province pairs. */
-export let sameProvinceRoute = 'Nội Tỉnh'
+/** Route name for same-province pairs, theo từng miền — mỗi miền có 1 tên tuyến "nội tỉnh" riêng
+ * (vd Hà Nội ⇔ Hà Nội có thể khác giá với Miền Nam (Vùng 1) nội tỉnh). Key = regionId. */
+export const sameProvinceRouteByRegion: Record<string, string> = Object.fromEntries(
+  ZONE_ORDER.map((zone) => [zone, 'Nội Tỉnh'])
+)
 
 /** Matrix: pairKey(regionIdA, regionIdB) → route name. */
 export const routeMatrix: Record<string, string> = {
@@ -137,8 +140,25 @@ export const urbanConfigs: UrbanConfig[] = [
 
 // ─── Setters ──────────────────────────────────────────────────────────────────
 
-export function setSameProvinceRoute(name: string): void {
-  sameProvinceRoute = name
+export function getSameProvinceRouteName(regionId: string): string {
+  return sameProvinceRouteByRegion[regionId] ?? 'Nội Tỉnh'
+}
+
+export function setSameProvinceRouteForRegion(regionId: string, name: string): void {
+  sameProvinceRouteByRegion[regionId] = name
+}
+
+/** true nếu `name` là tên tuyến "nội tỉnh" của ít nhất 1 miền — dùng để nhận diện hàng
+ * "nội tỉnh" (không cần chọn tỉnh) khi tên tuyến không còn là 1 hằng số duy nhất. */
+export function isSameProvinceRouteName(name: string): boolean {
+  return Object.values(sameProvinceRouteByRegion).includes(name)
+}
+
+/** Mô tả phạm vi áp dụng của 1 tên tuyến "nội tỉnh" — liệt kê từng miền đang dùng tên này. */
+export function describeSameProvinceRoutePairs(routeName: string): string[] {
+  return regions
+    .filter((r) => getSameProvinceRouteName(r.id) === routeName)
+    .map((r) => (r.provinces.length === 1 ? `${r.provinces[0]} ↔ ${r.provinces[0]}` : `Cùng 1 tỉnh trong ${r.name}`))
 }
 
 // ─── Query functions ──────────────────────────────────────────────────────────
@@ -153,7 +173,10 @@ export function findRegionOf(province: string): RegionDef | undefined {
  * or if the region pair has no name in the matrix.
  */
 export function resolveRouteName(fromProvince: string, toProvince: string): string | null {
-  if (fromProvince === toProvince) return sameProvinceRoute
+  if (fromProvince === toProvince) {
+    const reg = findRegionOf(fromProvince)
+    return reg ? getSameProvinceRouteName(reg.id) : null
+  }
   const fromReg = findRegionOf(fromProvince)
   const toReg   = findRegionOf(toProvince)
   if (!fromReg || !toReg) return null
@@ -177,12 +200,12 @@ export function resolveUrbanArea(province: string, ward: string): boolean | null
 
 /**
  * List of all unique route names currently defined,
- * in order of first appearance (sameProvinceRoute first, then matrix values).
+ * in order of first appearance (sameProvinceRouteByRegion values first, then matrix values).
  */
 export function listRouteNames(): string[] {
   const seen = new Set<string>()
   const result: string[] = []
-  for (const name of [sameProvinceRoute, ...Object.values(routeMatrix)]) {
+  for (const name of [...Object.values(sameProvinceRouteByRegion), ...Object.values(routeMatrix)]) {
     if (!seen.has(name)) {
       seen.add(name)
       result.push(name)
@@ -196,6 +219,7 @@ export function listRouteNames(): string[] {
 export function addRegion(name: string): RegionDef {
   const newRegion: RegionDef = { id: `region_${Date.now()}`, name, provinces: [] }
   regions.push(newRegion)
+  sameProvinceRouteByRegion[newRegion.id] = 'Nội Tỉnh'
   return newRegion
 }
 
@@ -207,6 +231,7 @@ export function renameRegion(id: string, name: string): void {
 export function deleteRegion(id: string): void {
   const idx = regions.findIndex((r) => r.id === id)
   if (idx !== -1) regions.splice(idx, 1)
+  delete sameProvinceRouteByRegion[id]
   // Remove all matrix entries that reference this region id
   for (const key of Object.keys(routeMatrix)) {
     if (key.split('|').includes(id)) delete routeMatrix[key]

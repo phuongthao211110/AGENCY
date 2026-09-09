@@ -16,7 +16,7 @@ Là GHN Super Admin, tôi muốn đặt tên tuyến và tick các cặp miền 
 ## User Flow
 
 1. Super Admin cuộn đến khối "Bước 2: Đặt tên tuyến & phạm vi áp dụng" trong trang Cấu hình Vùng & Tuyến
-2. Hệ thống hiển thị 1 dòng cố định "Nội Tỉnh" (không có nút xoá) + danh sách các tuyến do Super Admin tạo
+2. Hệ thống hiển thị 1 dòng cố định "Nội Tỉnh" cho MỖI miền đang có (không có nút xoá, mỗi miền đổi tên độc lập) + danh sách các tuyến do Super Admin tạo
 3. Super Admin đổi tên tuyến bằng cách nhập trực tiếp vào ô input trên card tuyến
 4. Super Admin bấm chip cặp miền để tick/bỏ tick cặp đó vào tuyến hiện tại
 5. Super Admin tạo tuyến mới bằng nút "+ Thêm tuyến"
@@ -25,7 +25,7 @@ Là GHN Super Admin, tôi muốn đặt tên tuyến và tick các cặp miền 
 ## System Flow
 
 1. `RouteConfig.tsx` dòng 371–454 render khối Bước 2 — nếu Bước 1 chưa có miền nào, hiển thị "Chưa có miền nào — thêm miền ở Bước 1 trước." thay vì danh sách tuyến
-2. Dòng "Nội Tỉnh" là luật cứng: 2 tỉnh giống nhau luôn map vào tuyến này không phụ thuộc miền — không có nút X để xoá, tên đổi được qua ô input
+2. Mỗi miền có 1 dòng "Nội Tỉnh" riêng (`sameProvinceRouteByRegion[regionId]`) — 2 tỉnh giống nhau map vào tên tuyến của ĐÚNG miền chứa tỉnh đó (không còn 1 tên chung cho mọi miền); mỗi dòng không có nút X để xoá, tên đổi được qua ô input riêng của từng miền
 3. `handleRenameTuyen` — đổi tên tuyến: vì hệ thống lưu tên chuỗi làm khoá (không phải ID riêng), đổi tên 1 chỗ áp dụng cho mọi cặp miền đang gán tên tuyến đó
 4. `handleToggleChip` — tick/bỏ tick cặp miền vào tuyến hiện tại: 1 cặp miền chỉ thuộc đúng 1 tuyến tại 1 thời điểm; tick cặp đang thuộc tuyến khác sẽ tự chuyển tuyến mà không cảnh báo
 5. `handleDeleteTuyen` — xoá tuyến: các cặp miền đang gán tuyến đó chuyển thành "chưa cấu hình"; cặp miền không bị xoá, chỉ mất tên tuyến
@@ -33,7 +33,7 @@ Là GHN Super Admin, tôi muốn đặt tên tuyến và tick các cặp miền 
 
 ## Acceptance Criteria
 
-**AC1:** Dòng "Nội Tỉnh" luôn hiển thị cố định ở đầu danh sách, không có nút xoá, kèm mô tả cố định "Phạm vi: cùng 1 tỉnh, bất kỳ miền nào — không cần tick, luôn áp dụng." Tên "Nội Tỉnh" có thể đổi qua ô input.
+**AC1:** Mỗi miền đang có hiển thị 1 dòng "Nội Tỉnh" riêng, cố định ở đầu danh sách (trên các card tuyến), không có nút xoá, kèm mô tả "Phạm vi: các tỉnh trong {tên miền}, gửi trong cùng 1 tỉnh — không cần tick, luôn áp dụng." Tên mỗi dòng đổi được độc lập qua ô input riêng — đổi tên miền này không ảnh hưởng tên của miền khác.
 
 **AC2:** Mỗi card tuyến gồm: ô input đổi tên tuyến inline, dải chip cặp miền (mỗi chip là 1 cặp miền có thể có — gồm cả cùng miền, ví dụ "Miền Nam (Vùng 1)" ↔ "Miền Nam (Vùng 1)" nghĩa là 2 tỉnh khác nhau cùng thuộc Miền Nam), và nút X để xoá tuyến.
 
@@ -52,3 +52,5 @@ Là GHN Super Admin, tôi muốn đặt tên tuyến và tick các cặp miền 
 ## Notes
 
 - Tên tuyến được lưu làm khoá tra cứu trong store (không phải UUID riêng biệt) — nên khi đổi tên tuyến cần đổi đồng bộ ở mọi cặp miền đang dùng tên đó. Đây là ràng buộc thiết kế hiện tại của prototype; production cần ID bất biến cho tuyến.
+- Thêm miền mới ở Bước 1 (`addRegion`) tự động seed thêm 1 dòng "Nội Tỉnh" mặc định cho miền đó ở Bước 2; xoá miền (`deleteRegion`) cũng xoá luôn dòng tương ứng — không cần thao tác thêm ở Bước 2.
+- Trước đây (bản cũ hơn) chỉ có 1 dòng "Nội Tỉnh" DÙNG CHUNG cho mọi miền — đã đổi thành mỗi miền 1 dòng riêng để hỗ trợ tính giá khác nhau cho nội tỉnh theo từng miền (vd Hà Nội có thể tính giá nội tỉnh khác Miền Nam (Vùng 1)).

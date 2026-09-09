@@ -25,7 +25,7 @@ Là GHN Super Admin, tôi muốn đảm bảo cấu hình Vùng & Tuyến tôi �
 
 1. Toàn bộ dữ liệu Vùng & Tuyến lưu trong module-level mutable object `routeConfig.ts` — không có backend, không có localStorage; thay đổi có hiệu lực ngay trong phiên SPA hiện tại mà không cần reload trang
 2. **Dropdown tuyến khi tạo bảng giá** (`PricingCreate.tsx`, Agency Admin): gọi `listRouteNames()` từ `routeConfig.ts` để lấy danh sách tên tuyến duy nhất hiện có — Super Admin thêm/xoá/đổi tên tuyến sẽ phản ánh ngay trong dropdown này mà không cần đại lý cấu hình lại
-3. **Công cụ kiểm tra tuyến** (`RouteCheck.tsx`, Agency Admin): gọi `resolveRouteName()` và `listRouteNames()` từ cùng store — logic tra cứu: 2 tỉnh giống nhau → tuyến cố định (Nội Tỉnh); khác tỉnh → tra miền của mỗi tỉnh → tra cặp miền trong ma trận → ra tên tuyến; trả `null` nếu tỉnh chưa gán miền hoặc cặp miền chưa có tên tuyến
+3. **Công cụ kiểm tra tuyến** (`RouteCheck.tsx`, Agency Admin): gọi `resolveRouteName()` và `listRouteNames()` từ cùng store — logic tra cứu: 2 tỉnh giống nhau → tra miền của tỉnh đó → trả tên "Nội Tỉnh" RIÊNG của miền đó (`sameProvinceRouteByRegion[regionId]`, mỗi miền có thể đặt tên/giá khác nhau); khác tỉnh → tra miền của mỗi tỉnh → tra cặp miền trong ma trận → ra tên tuyến; trả `null` nếu tỉnh chưa gán miền hoặc cặp miền chưa có tên tuyến
 4. **Modal Nội/Ngoại thành** (`UrbanGuideModal` trong `PricingCreate.tsx`, Agency Admin): đọc `urbanConfigs` và `resolveUrbanArea()` từ `routeConfig.ts` — Agency Admin chỉ xem, không cấu hình
 5. Reload trang thật (F5) sẽ reset toàn bộ về dữ liệu seed ban đầu vì không có backend thật
 
@@ -54,3 +54,4 @@ Là GHN Super Admin, tôi muốn đảm bảo cấu hình Vùng & Tuyến tôi �
 ## Notes
 
 - Store `routeConfig.ts` là module-level mutable object (không phải localStorage hay API) — điều hướng client-side (SPA, PlatformSwitcher) giữa Super Admin và Agency Admin trong cùng phiên trình duyệt sẽ thấy thay đổi ngay; reload trang thật (F5) reset về seed ban đầu vì không có backend thật.
+- Bảng "N Tuyến hiện tại" ở `RouteCheck.tsx` và bảng tuyến trong `ZoneGuideModal` (`PricingCreate.tsx`) đều gọi `isSameProvinceRouteName()` + `describeSameProvinceRoutePairs()` để tách dòng "Nội Tỉnh" thành nhiều dòng con — mỗi miền đang dùng tên đó liệt kê 1 dòng riêng (vd "Hà Nội ↔ Hà Nội", "Cùng 1 tỉnh trong Miền Nam (Vùng 1)"); nếu 2 miền đổi sang 2 tên khác nhau, chúng tách thành 2 mục riêng trong danh sách tuyến thay vì gộp chung 1 dòng "Nội Tỉnh" như trước.

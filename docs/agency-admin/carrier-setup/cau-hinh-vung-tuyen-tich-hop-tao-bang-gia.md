@@ -27,7 +27,7 @@ chung 1 định nghĩa tuyến nhất quán, không cần sửa code khi thêm/b
 3. Modal chỉ để XEM — không có link chỉnh sửa nào; dòng chú thích cuối modal ghi rõ "Cấu hình vùng & tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý."
 4. Với mỗi dòng tuyến trong form, nếu bật toggle "Tách Nội thành/Ngoại thành" → xuất hiện icon (i) cạnh toggle, bấm vào cũng mở CÙNG modal "Bảng mô tả tuyến dịch vụ" ở trên (không phải modal riêng)
 5. Bấm "Thêm tuyến" → dropdown "Tuyến" liệt kê tên tuyến động từ cấu hình Bước 2 bên Super Admin (xem GSA-ROUTE-4)
-6. Phần thu hẹp phạm vi Tỉnh/Quận/Phường hiển thị cho tất cả tuyến, trừ tuyến có tên trùng luật "Nội Tỉnh"
+6. Phần thu hẹp phạm vi Tỉnh/Quận/Phường hiển thị cho tất cả tuyến, trừ tuyến có tên trùng 1 trong các luật "Nội Tỉnh" (mỗi miền có thể đặt tên nội tỉnh riêng — xem GSA-ROUTE-4)
 7. Dropdown "Vùng" trong phần thu hẹp phạm vi lấy danh sách tên miền động từ cấu hình Bước 1 bên Super Admin (xem GSA-ROUTE-2)
 
 ## System Flow
@@ -35,8 +35,8 @@ chung 1 định nghĩa tuyến nhất quán, không cần sửa code khi thêm/b
 1. `PricingCreate.tsx` import danh sách tuyến và miền từ `routeConfig.ts` (store dùng chung với Super Admin) thay vì mảng hardcode
 2. Dropdown "Tuyến" render danh sách options từ `listRouteNames()` — thêm/xoá/đổi tên tuyến ở Super Admin phản ánh ngay khi mở lại form Tạo bảng giá (cùng phiên trình duyệt, không cần reload)
 3. Dropdown "Vùng" trong phần thu hẹp phạm vi render từ mảng `regions` (export trực tiếp từ `routeConfig.ts`) thay vì ["Vùng 1", "Vùng 2", "Vùng 3"] hardcode
-4. Kiểm tra tên tuyến = tên luật Nội Tỉnh (`sameProvinceRoute`): nếu khớp → ẩn section thu hẹp phạm vi Tỉnh/Quận/Phường cho tuyến đó
-5. Component `ZoneGuideModal` (`PricingCreate.tsx` dòng 1062–1196) tự tính toán trực tiếp từ `routeMatrix` + `routeRegions` + `sameProvinceRoute` + `urbanConfigs` (không qua 1 hàm helper riêng) — render 3 khối: "Định nghĩa miền / vùng" (mỗi miền là 1 chip + số tỉnh/thành), "Bảng tuyến" (grid 2 cột, mỗi tuyến liệt kê các cặp miền áp dụng, tuyến "Nội Tỉnh" hiện dòng "Cùng tỉnh, bất kỳ miền nào"), "Định nghĩa Nội thành / Ngoại thành" (mỗi tỉnh trong `urbanConfigs` là 1 card, chip xã/phường màu theo `isUrban`)
+4. Kiểm tra `isSameProvinceRouteName(routeName)` — true nếu tên tuyến khớp tên nội tỉnh của BẤT KỲ miền nào (`sameProvinceRouteByRegion`, mỗi miền 1 tên riêng): nếu khớp → ẩn section thu hẹp phạm vi Tỉnh/Quận/Phường cho tuyến đó
+5. Component `ZoneGuideModal` (`PricingCreate.tsx`) tự tính toán trực tiếp từ `routeMatrix` + `routeRegions` + `sameProvinceRouteByRegion` + `urbanConfigs` qua helper `isSameProvinceRouteName()`/`describeSameProvinceRoutePairs()` — render 3 khối: "Định nghĩa miền / vùng" (mỗi miền là 1 chip + số tỉnh/thành), "Bảng tuyến" (grid 2 cột, mỗi tuyến liệt kê các cặp miền áp dụng; tuyến trùng tên nội tỉnh của 1 hay nhiều miền hiện 1 dòng con cho MỖI miền đang dùng tên đó, ví dụ "Hà Nội ↔ Hà Nội" / "Cùng 1 tỉnh trong Miền Nam (Vùng 1)" — 2 miền đặt tên khác nhau sẽ tách thành 2 mục tuyến riêng), "Định nghĩa Nội thành / Ngoại thành" (mỗi tỉnh trong `urbanConfigs` là 1 card, chip xã/phường màu theo `isUrban`)
 6. `ZoneGuideModal` được mở từ 2 nơi: nút "Định nghĩa tuyến" ở đầu "Danh sách tuyến" (`setShowZoneGuide(true)`), và icon (i) cạnh toggle "Tách Nội thành/Ngoại thành" của mỗi dòng tuyến (`onOpenZoneGuide` truyền xuống `RouteBlock`) — cả 2 đều mở CHUNG 1 modal, không phải 2 modal riêng
 7. Modal KHÔNG chứa bất kỳ link/nút điều hướng nào sang trang cấu hình — Agency Admin chỉ đọc, không sửa được miền/tuyến/Nội-Ngoại thành
 
@@ -48,9 +48,9 @@ chung 1 định nghĩa tuyến nhất quán, không cần sửa code khi thêm/b
 
 **AC3:** Dropdown "Vùng" trong phần thu hẹp phạm vi Từ/Đến của mỗi dòng tuyến lấy danh sách tên miền động từ cấu hình Super Admin — không còn hardcode "Vùng 1/2/3".
 
-**AC4:** Tuyến có tên trùng luật "Nội Tỉnh" → phần thu hẹp phạm vi Tỉnh/Quận/Phường bị ẩn cho tuyến đó; tất cả tuyến khác vẫn hiển thị phần thu hẹp phạm vi bình thường.
+**AC4:** Tuyến có tên trùng tên nội tỉnh của bất kỳ miền nào → phần thu hẹp phạm vi Tỉnh/Quận/Phường bị ẩn cho tuyến đó; tất cả tuyến khác vẫn hiển thị phần thu hẹp phạm vi bình thường.
 
-**AC5:** Nút "Định nghĩa tuyến" mở modal "Bảng mô tả tuyến dịch vụ" gồm đúng 3 khối: Định nghĩa miền/vùng, Bảng tuyến (Tuyến | Cặp miền áp dụng, có dòng "Nội Tỉnh: Cùng tỉnh, bất kỳ miền nào"), và Định nghĩa Nội thành/Ngoại thành.
+**AC5:** Nút "Định nghĩa tuyến" mở modal "Bảng mô tả tuyến dịch vụ" gồm đúng 3 khối: Định nghĩa miền/vùng, Bảng tuyến (Tuyến | Cặp miền áp dụng — tuyến nội tỉnh liệt kê 1 dòng con cho mỗi miền đang dùng tên đó, ví dụ "Hà Nội ↔ Hà Nội", "Cùng 1 tỉnh trong Miền Nam (Vùng 1)"), và Định nghĩa Nội thành/Ngoại thành.
 
 **AC6:** Modal "Bảng mô tả tuyến dịch vụ" KHÔNG có bất kỳ link hay nút điều hướng nào sang trang cấu hình khác — chỉ có dòng chú thích tĩnh "Cấu hình vùng & tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý."
 
@@ -64,3 +64,4 @@ chung 1 định nghĩa tuyến nhất quán, không cần sửa code khi thêm/b
 - ~~Trang "Kiểm tra tuyến" (`RouteCheck.tsx`) hiện CHƯA được nối vào cấu hình dùng chung này~~ — **đã fix**, `RouteCheck.tsx` giờ đọc `resolveRouteName()`/`listRouteNames()`/`regions` trực tiếp từ `routeConfig.ts`, đã verify bằng Playwright (đổi tên tuyến ở Super Admin thấy ngay ở Agency Admin, không cần reload).
 - Toàn bộ dữ liệu (miền, tuyến, Nội/Ngoại thành) lưu ở bộ nhớ trong phiên (module-level state trong `routeConfig.ts`), KHÔNG có backend/persistence thật — reload lại toàn trang (F5, tab mới) sẽ trả về đúng dữ liệu seed ban đầu.
 - Xem **GSA-ROUTE-6** để có bảng "Tác động đa nền tảng" đầy đủ từ góc nhìn Super Admin (bên cấu hình), bổ sung cho story này (bên tiêu thụ).
+- Trước đây "Nội Tỉnh" là 1 tên tuyến DUY NHẤT dùng chung cho mọi miền (`sameProvinceRoute`, hằng số toàn cục) — đã đổi thành mỗi miền tự đặt tên/giá nội tỉnh riêng (`sameProvinceRouteByRegion`, key theo `regionId`) để Super Admin (và qua đó Agency Admin) tính được giá nội tỉnh khác nhau theo từng miền, ví dụ Hà Nội khác Miền Nam (Vùng 1). Chi tiết xem GSA-ROUTE-4.

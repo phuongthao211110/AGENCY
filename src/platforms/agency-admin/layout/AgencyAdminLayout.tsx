@@ -14,6 +14,7 @@ import {
   RightOutlined,
   NodeIndexOutlined,
   RobotOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
@@ -22,6 +23,7 @@ import PlatformSwitcher from '../../../components/PlatformSwitcher'
 const SIDEBAR_WIDTH = 240
 
 const NAV_ITEMS = [
+  { key: '/agency-admin/report', icon: <BarChartOutlined />, label: 'Báo cáo' },
   { key: '/agency-admin/shops', icon: <ShopOutlined />, label: 'Shop' },
   {
     key: '/agency-admin/orders', icon: <OrderedListOutlined />, label: 'Đơn hàng',

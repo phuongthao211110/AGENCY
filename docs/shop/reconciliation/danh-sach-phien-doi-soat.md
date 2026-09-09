@@ -33,7 +33,7 @@ Là chủ shop, tôi muốn xem danh sách các phiên đối soát giữa tôi 
    - **Đơn lệch**: tổng đơn `MISMATCH` hoặc `NOT_FOUND` xuyên tất cả phiên; card này chỉ hiển thị khi giá trị > 0
 5. Ô tìm kiếm lọc theo Mã phiên/Phiên GHN — chi tiết công thức, empty-state, AC đầy đủ xem SHOP-RECON-6.
 6. Badge trạng thái mỗi dòng hiện hardcode "Chờ thanh toán" (cam) — không đọc field trạng thái thật nào từ dữ liệu.
-7. Cột "Nhận về" (`netAmount`) tô màu `C_ACTION` (`#FF5200`) in đậm để nổi bật số tiền sẽ nhận.
+7. Cột "Nhận về" (`netAmount`) in đậm, màu theo dấu — xanh `#16A34A` khi dương, đỏ `#DC2626` khi âm, xám `C_TEXT_SECONDARY` khi bằng 0 — cùng quy ước với cột "Lợi nhuận ĐL" bên Agency Admin (`AgencyReconciliation.tsx`) và với `ReconciliationDetail.tsx` (SHOP-RECON-3).
 8. `TRow` nhận `onView` gắn vào `onClick` của CẢ container dòng (`cursor: 'pointer'`) — không chỉ riêng nút "Xem". Nút "Xem" vẫn giữ `onClick` riêng nhưng gọi `e.stopPropagation()` trước để tránh bắn `onClick` 2 lần (1 từ nút, 1 từ bubble lên dòng cha).
 9. `onView` gọi `navigate('reconciliation/:id', { state: { session } })` — truyền toàn bộ object `session` qua `location.state`, không dùng query param hay refetch theo `:id`.
 
@@ -47,7 +47,7 @@ Là chủ shop, tôi muốn xem danh sách các phiên đối soát giữa tôi 
 
 **AC4:** Bảng hiển thị đủ các cột: Mã phiên, Phiên GHN, Thời gian, Ngày TT, Số đơn, Tổng COD, Tổng phí DV, Nhận về, Trạng thái, nút Xem.
 
-**AC5:** Cột "Nhận về" hiển thị màu `#FF5200` in đậm.
+**AC5:** Cột "Nhận về" in đậm, đổi màu theo dấu giá trị: `#16A34A` khi dương, `#DC2626` khi âm, `#6B7280` khi bằng 0 — không dùng 1 màu cố định bất kể dấu.
 
 **AC6:** Bấm vào bất kỳ đâu trên 1 dòng (không riêng nút "Xem") → điều hướng đúng sang trang chi tiết của đúng phiên đó, truyền đủ object `session` qua `location.state`.
 

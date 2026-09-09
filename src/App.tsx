@@ -29,6 +29,7 @@ import AgencyReconciliationDetail from './platforms/agency-admin/pages/AgencyRec
 import AgencyReconciliationShopDetail from './platforms/agency-admin/pages/AgencyReconciliationShopDetail'
 import AgencyAdminSettings from './platforms/agency-admin/pages/Settings'
 import RouteCheck from './platforms/agency-admin/pages/RouteCheck'
+import AgencyReport from './platforms/agency-admin/pages/AgencyReport'
 import AccountInfoAgency from './platforms/agency-admin/pages/settings/AccountInfo'
 import UserManagementAgency from './platforms/agency-admin/pages/settings/UserManagement'
 import PermissionsAgency from './platforms/agency-admin/pages/settings/Permissions'
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="carrier-setup/services/new" element={<ServiceDetail />} />
           <Route path="carrier-setup/services/:id" element={<ServiceDetail />} />
           <Route path="route-check" element={<RouteCheck />} />
+          <Route path="report" element={<AgencyReport />} />
           <Route path="settings" element={<AgencyAdminSettings />}>
             <Route path="account" element={<AccountInfoAgency />} />
             <Route path="users" element={<UserManagementAgency />} />

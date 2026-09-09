@@ -6,8 +6,8 @@ import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import {
   regions,
   routeMatrix,
-  sameProvinceRoute,
-  setSameProvinceRoute,
+  sameProvinceRouteByRegion,
+  setSameProvinceRouteForRegion,
   pairKey,
   addRegion,
   renameRegion,
@@ -37,13 +37,77 @@ const C_BG_HEADER      = '#F3F4F6'
 const ALL_PROVINCES = VIETNAM_PROVINCES.map((p) => p.name)
 
 const cardStyle: React.CSSProperties = {
-  background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 12,
-  padding: 20, display: 'flex', flexDirection: 'column', gap: 14,
+  background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 10,
+  padding: 16, display: 'flex', flexDirection: 'column', gap: 10,
 }
 
 const inputStyle: React.CSSProperties = {
   border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 10px',
   fontSize: 14, color: C_TEXT_PRIMARY, outline: 'none',
+}
+
+// ── 1 cột "Nội thành" hoặc "Ngoại thành" trong khối Cấu hình nội & ngoại thành ──
+// Hiện TOÀN BỘ xã/phường của tỉnh đang chọn — checkbox tick đúng cột theo isUrban hiện tại;
+// tick vào ô đang bỏ trống = chuyển xã/phường đó sang loại của cột này (isUrban chỉ có 2 giá
+// trị nên "tick cột này" luôn tương đương "bỏ tick cột kia").
+function UrbanCategoryColumn({
+  label, dotColor, wards, search, onSearchChange, targetIsUrban, onToggleWard, onSelectAll, onRemoveWard,
+}: {
+  label: string
+  dotColor: string
+  wards: { ward: string; isUrban: boolean }[]
+  search: string
+  onSearchChange: (v: string) => void
+  targetIsUrban: boolean
+  onToggleWard: (ward: string) => void
+  onSelectAll: () => void
+  onRemoveWard: (ward: string) => void
+}) {
+  const categoryWards = wards.filter((w) => w.isUrban === targetIsUrban)
+  const q = search.trim().toLowerCase()
+  const visibleWards = wards.filter((w) => !q || w.ward.toLowerCase().includes(q))
+  const allChecked = categoryWards.length > 0 && categoryWards.length === wards.length
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 4, background: dotColor, flexShrink: 0 }} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>{label}</span>
+        <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{categoryWards.length} phường/xã</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '5px 8px' }}>
+        <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>🔍</span>
+        <input
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Tìm kiếm..."
+          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: C_TEXT_PRIMARY }}
+        />
+      </div>
+      <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, maxHeight: 280, overflowY: 'auto' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderBottom: `1px solid ${C_BORDER}`, background: C_BG_HEADER, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>
+          <input type="checkbox" checked={allChecked} onChange={onSelectAll} />
+          Tất cả
+        </label>
+        {visibleWards.length === 0 && (
+          <div style={{ padding: '10px 12px', fontSize: 12, color: C_TEXT_SECONDARY }}>Không tìm thấy xã/phường phù hợp.</div>
+        )}
+        {visibleWards.map((w) => (
+          <div key={w.ward} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderBottom: `1px solid ${C_BORDER}`, fontSize: 13, color: C_TEXT_PRIMARY }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1, minWidth: 0 }}>
+              <input type="checkbox" checked={w.isUrban === targetIsUrban} onChange={() => onToggleWard(w.ward)} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.ward}</span>
+            </label>
+            <CloseOutlined
+              style={{ fontSize: 10, color: '#EF4444', cursor: 'pointer', flexShrink: 0 }}
+              onClick={() => onRemoveWard(w.ward)}
+              title="Xoá xã/phường"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function RouteConfig() {
@@ -54,7 +118,7 @@ export default function RouteConfig() {
     regions.map((r) => ({ ...r, provinces: [...r.provinces] }))
   )
   const [localMatrix, setLocalMatrix] = useState<Record<string, string>>(() => ({ ...routeMatrix }))
-  const [localSameRoute, setLocalSameRoute] = useState(sameProvinceRoute)
+  const [localSameRouteByRegion, setLocalSameRouteByRegion] = useState<Record<string, string>>(() => ({ ...sameProvinceRouteByRegion }))
   // Danh sách tên tuyến (Bước 2) — độc lập với localMatrix để 1 tuyến mới thêm vẫn hiện
   // được dù chưa tick cặp miền nào (localMatrix chỉ lưu các cặp ĐÃ gán).
   const [routeNames, setRouteNames] = useState<string[]>(() =>
@@ -63,7 +127,6 @@ export default function RouteConfig() {
   const [localUrbanConfigs, setLocalUrbanConfigs] = useState<UrbanConfig[]>(() =>
     urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
   )
-  const [newProvinceName, setNewProvinceName] = useState('')
   // Điền nhanh theo khoảng tỉnh (Bước 1) — gán 1 dải tỉnh liên tiếp vào 1 miền cùng lúc,
   // dựa theo thứ tự Bắc → Nam đã có sẵn trong ALL_PROVINCES (3 TP đặc biệt trước, rồi
   // Miền Bắc → Miền Trung → Miền Nam). Không thay thế tick tay — chỉ giảm số lần bấm cho
@@ -71,11 +134,41 @@ export default function RouteConfig() {
   const [rangeRegionId, setRangeRegionId] = useState('')
   const [rangeFrom, setRangeFrom] = useState('')
   const [rangeTo, setRangeTo] = useState('')
-  // Ô nhập xã/phường mới — theo từng tỉnh (key = tên tỉnh)
-  const [newWardInputs, setNewWardInputs] = useState<Record<string, string>>({})
+
+  // ── Nội thành / Ngoại thành — chỉnh sửa trên DRAFT riêng, chỉ ghi vào store dùng chung khi
+  // bấm "Lưu thay đổi" (khác với Miền/Tuyến ở trên, ghi thẳng vào store mỗi lần đổi). ──
+  const [urbanDraft, setUrbanDraft] = useState<UrbanConfig[]>(() =>
+    urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
+  )
+  const [selectedUrbanProvince, setSelectedUrbanProvince] = useState<string | null>(
+    () => urbanConfigs[0]?.province ?? null
+  )
+  const [newUrbanProvinceName, setNewUrbanProvinceName] = useState('')
+  const [newUrbanWard, setNewUrbanWard] = useState('')
+  const [urbanSearchNoi, setUrbanSearchNoi] = useState('')
+  const [urbanSearchNgoai, setUrbanSearchNgoai] = useState('')
 
   const assignedSet    = new Set(localRegions.flatMap((r) => r.provinces))
   const unassignedList = ALL_PROVINCES.filter((p) => !assignedSet.has(p))
+
+  const urbanDraftAssignedSet    = new Set(urbanDraft.map((u) => u.province))
+  const availableUrbanProvinces  = ALL_PROVINCES.filter((p) => !urbanDraftAssignedSet.has(p))
+  const hasUrbanChanges          = JSON.stringify(urbanDraft) !== JSON.stringify(localUrbanConfigs)
+  const selectedUrbanConfig      = urbanDraft.find((u) => u.province === selectedUrbanProvince) ?? null
+
+  // Validate tên vùng miền: rỗng hoặc trùng tên (không phân biệt hoa/thường) với vùng miền khác.
+  const regionNameError = (region: RegionDef): string | null => {
+    const name = region.name.trim()
+    if (!name) return 'Vui lòng nhập tên vùng miền'
+    const isDuplicate = localRegions.some(
+      (r) => r.id !== region.id && r.name.trim().toLowerCase() === name.toLowerCase()
+    )
+    return isDuplicate ? 'Tên vùng miền đã tồn tại' : null
+  }
+
+  // Validate tên tuyến: tối thiểu 2 ký tự.
+  const tuyenNameError = (name: string): string | null =>
+    name.trim().length < 2 ? 'Ít nhất 2 ký tự' : null
 
   // Mọi cặp miền có thể có (kể cả đường chéo = cùng miền, khác tỉnh)
   const allRegionPairs = localRegions.flatMap((a, i) => localRegions.slice(i).map((b) => [a, b] as const))
@@ -84,9 +177,9 @@ export default function RouteConfig() {
   // ── Handlers — mutate store first, then setState ──────────────────────────
 
   const handleAddRegion = () => {
-    const newName   = `Miền mới ${localRegions.length + 1}`
-    const newRegion = addRegion(newName)
+    const newRegion = addRegion('')
     setLocalRegions((prev) => [...prev, { ...newRegion, provinces: [] }])
+    setLocalSameRouteByRegion((prev) => ({ ...prev, [newRegion.id]: sameProvinceRouteByRegion[newRegion.id] }))
   }
 
   const handleRenameRegion = (id: string, name: string) => {
@@ -98,6 +191,11 @@ export default function RouteConfig() {
     deleteRegion(id)
     setLocalRegions((prev) => prev.filter((r) => r.id !== id))
     setLocalMatrix(() => ({ ...routeMatrix }))
+    setLocalSameRouteByRegion((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
   }
 
   const handleAssignProvince = (province: string, regionId: string) => {
@@ -131,13 +229,19 @@ export default function RouteConfig() {
     )
   }
 
-  const handleSetSameProvinceRoute = (name: string) => {
-    setSameProvinceRoute(name)
-    setLocalSameRoute(name)
+  const handleSetSameProvinceRoute = (regionId: string, name: string) => {
+    setSameProvinceRouteForRegion(regionId, name)
+    setLocalSameRouteByRegion((prev) => ({ ...prev, [regionId]: name }))
   }
 
   const handleAddTuyen = () => {
-    setRouteNames((prev) => [...prev, `Tuyến mới ${prev.length + 1}`])
+    // routeNames dedupe qua Set (giữ nguyên hành vi cũ tránh hiện trùng tên) — nếu đã có dòng
+    // trống trước đó, thêm khoảng trắng để 2 dòng trống không bị Set gộp làm 1 (trim() vẫn coi
+    // là rỗng nên validate "Ít nhất 2 ký tự" không bị ảnh hưởng).
+    setRouteNames((prev) => {
+      const blankCount = prev.filter((n) => n.trim() === '').length
+      return [...prev, ' '.repeat(blankCount)]
+    })
   }
 
   const handleRenameTuyen = (oldName: string, newName: string) => {
@@ -162,59 +266,123 @@ export default function RouteConfig() {
     setLocalMatrix(() => ({ ...routeMatrix }))
   }
 
+  // ── Nội thành / Ngoại thành — mọi thao tác bên dưới chỉ sửa urbanDraft (state cục bộ),
+  // KHÔNG đụng tới store dùng chung cho tới khi bấm "Lưu thay đổi" (commitUrbanDraft). ──
   const syncUrbanConfigs = () => {
     setLocalUrbanConfigs(urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) })))
   }
 
-  const handleAddUrbanProvince = () => {
-    const name = newProvinceName.trim()
+  const cloneUrbanConfigs = (list: UrbanConfig[]): UrbanConfig[] =>
+    list.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
+
+  const handleAddUrbanProvinceDraft = () => {
+    const name = newUrbanProvinceName.trim()
     if (!name) return
-    addUrbanProvince(name)
-    syncUrbanConfigs()
-    setNewProvinceName('')
+    setUrbanDraft((prev) => (prev.some((u) => u.province === name) ? prev : [...prev, { province: name, wards: [] }]))
+    setSelectedUrbanProvince(name)
+    setNewUrbanProvinceName('')
   }
 
-  const handleRemoveUrbanProvince = (province: string) => {
-    removeUrbanProvince(province)
-    setLocalUrbanConfigs((prev) => prev.filter((u) => u.province !== province))
+  const handleRemoveUrbanProvinceDraft = (province: string) => {
+    setUrbanDraft((prev) => prev.filter((u) => u.province !== province))
+    setSelectedUrbanProvince((prev) => {
+      if (prev !== province) return prev
+      const remaining = urbanDraft.filter((u) => u.province !== province)
+      return remaining[0]?.province ?? null
+    })
   }
 
-  const handleAddUrbanWard = (province: string) => {
-    const ward = (newWardInputs[province] ?? '').trim()
-    if (!ward) return
-    addUrbanWard(province, ward, false)
-    syncUrbanConfigs()
-    setNewWardInputs((prev) => ({ ...prev, [province]: '' }))
+  const handleAddUrbanWardDraft = () => {
+    const ward = newUrbanWard.trim()
+    if (!ward || !selectedUrbanProvince) return
+    setUrbanDraft((prev) =>
+      prev.map((u) =>
+        u.province === selectedUrbanProvince
+          ? (u.wards.some((w) => w.ward === ward) ? u : { ...u, wards: [...u.wards, { ward, isUrban: false }] })
+          : u
+      )
+    )
+    setNewUrbanWard('')
   }
 
-  const handleRemoveUrbanWard = (province: string, ward: string) => {
-    removeUrbanWard(province, ward)
-    syncUrbanConfigs()
+  const handleRemoveUrbanWardDraft = (province: string, ward: string) => {
+    setUrbanDraft((prev) =>
+      prev.map((u) => (u.province === province ? { ...u, wards: u.wards.filter((w) => w.ward !== ward) } : u))
+    )
   }
 
-  const handleToggleUrbanWard = (province: string, ward: string) => {
-    toggleUrbanWardClassification(province, ward)
+  const handleToggleUrbanWardDraft = (province: string, ward: string) => {
+    setUrbanDraft((prev) =>
+      prev.map((u) =>
+        u.province === province
+          ? { ...u, wards: u.wards.map((w) => (w.ward === ward ? { ...w, isUrban: !w.isUrban } : w)) }
+          : u
+      )
+    )
+  }
+
+  const handleSelectAllUrbanWards = (province: string, isUrban: boolean) => {
+    setUrbanDraft((prev) =>
+      prev.map((u) => (u.province === province ? { ...u, wards: u.wards.map((w) => ({ ...w, isUrban })) } : u))
+    )
+  }
+
+  const cancelUrbanDraft = () => {
+    setUrbanDraft(cloneUrbanConfigs(localUrbanConfigs))
+  }
+
+  // Ghi draft vào store dùng chung — diff từng tỉnh/xã-phường rồi gọi đúng hàm mutate tương ứng
+  // (store không có hàm "ghi đè toàn bộ", chỉ có các hàm mutate rời theo từng thay đổi).
+  const commitUrbanDraft = () => {
+    localUrbanConfigs.forEach((saved) => {
+      if (!urbanDraft.some((d) => d.province === saved.province)) removeUrbanProvince(saved.province)
+    })
+    urbanDraft.forEach((draftCfg) => {
+      const saved = localUrbanConfigs.find((u) => u.province === draftCfg.province)
+      if (!saved) addUrbanProvince(draftCfg.province)
+
+      ;(saved?.wards ?? []).forEach((w) => {
+        if (!draftCfg.wards.some((dw) => dw.ward === w.ward)) removeUrbanWard(draftCfg.province, w.ward)
+      })
+      draftCfg.wards.forEach((dw) => {
+        const savedWard = saved?.wards.find((w) => w.ward === dw.ward)
+        if (!savedWard) addUrbanWard(draftCfg.province, dw.ward, dw.isUrban)
+        else if (savedWard.isUrban !== dw.isUrban) toggleUrbanWardClassification(draftCfg.province, dw.ward)
+      })
+    })
     syncUrbanConfigs()
+    setUrbanDraft(cloneUrbanConfigs(urbanConfigs))
   }
 
   return (
     <ConfigProvider theme={superAdminTheme}>
-      <div style={{ padding: 24, background: '#fff', minHeight: '100vh', maxWidth: 1100 }}>
+      <div style={{ padding: 20, background: '#fff', minHeight: '100vh' }}>
 
         {/* Page header */}
-        <div style={{ marginBottom: 8 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY, margin: 0 }}>
-            Cấu hình Vùng &amp; Tuyến
-          </h1>
-          <p style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginTop: 4 }}>
-            Định nghĩa 1 lần, dùng chung cho mọi đại lý — mọi bảng giá (GHN, 247Express, NVC khác)
-            khi được tạo ở Agency Admin sẽ đọc đúng danh sách miền/tuyến này, không cần cấu hình lại
-            theo từng đại lý.
-          </p>
+        <div style={{ marginBottom: 6, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: C_TEXT_PRIMARY, margin: 0 }}>
+              Vùng &amp; Tuyến
+            </h1>
+            <p style={{ fontSize: 12.5, color: C_TEXT_SECONDARY, margin: '2px 0 0' }}>
+              Cấu hình vùng, miền và tuyến dùng chung cho mọi đại lý.
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            title="Tải lại toàn bộ dữ liệu về trạng thái mẫu ban đầu (mất mọi thay đổi trong phiên này)"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', flexShrink: 0,
+              background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
+              cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: C_TEXT_PRIMARY,
+            }}
+          >
+            ↻ Thiết lập lại
+          </button>
         </div>
 
         {/* ── Giải thích khái niệm — miền / cặp miền / tuyến ── */}
-        <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+        <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <InfoCircleOutlined style={{ fontSize: 13, color: '#1D4ED8' }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8' }}>Cách tuyến được tính ra</span>
@@ -243,25 +411,13 @@ export default function RouteConfig() {
           </div>
         </div>
 
-        {/* ── Bước 1: Định nghĩa Miền/Vùng ── */}
-        <div style={{ ...cardStyle, marginTop: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Bước 1 — Định nghĩa Miền / Vùng</span>
-              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
-                Đã điền sẵn theo quy tắc GHN hiện tại — chỉ cần sửa khi có ngoại lệ.
-              </div>
+        {/* ── Cấu hình vùng miền ── */}
+        <div style={{ ...cardStyle, marginTop: 12 }}>
+          <div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>🗺️ Cấu hình vùng miền</span>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
+              Đã điền sẵn theo quy tắc GHN hiện tại — chỉ cần sửa khi có ngoại lệ.
             </div>
-            <button
-              onClick={handleAddRegion}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-                background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
-                cursor: 'pointer', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY,
-              }}
-            >
-              <PlusOutlined style={{ fontSize: 12 }} /> Thêm miền
-            </button>
           </div>
 
           {/* Điền nhanh theo khoảng tỉnh — gán 1 dải tỉnh liên tiếp (Bắc→Nam) vào 1 miền */}
@@ -310,45 +466,72 @@ export default function RouteConfig() {
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {localRegions.map((region) => (
-              <div
-                key={region.id}
-                style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    value={region.name}
-                    onChange={(e) => handleRenameRegion(region.id, e.target.value)}
-                    style={{ ...inputStyle, fontWeight: 700, flex: '0 0 260px' }}
-                  />
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
-                    {region.provinces.map((p) => (
-                      <span
-                        key={p}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 12,
-                          background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8', fontSize: 12, fontWeight: 600,
-                        }}
-                      >
-                        {p}
-                        <CloseOutlined
-                          style={{ fontSize: 10, cursor: 'pointer' }}
-                          onClick={() => handleRemoveProvince(p, region.id)}
-                        />
-                      </span>
-                    ))}
+          <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            {/* Header bảng */}
+            <div style={{ display: 'flex', background: C_BG_HEADER }}>
+              <div style={{ flex: '0 0 220px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Tên vùng miền</div>
+              <div style={{ flex: 1, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Tỉnh/Thành phố</div>
+              <div style={{ flex: '0 0 40px' }} />
+            </div>
+
+            {localRegions.map((region, i) => {
+              const nameError = regionNameError(region)
+              const provinceError = region.provinces.length === 0 ? 'Vui lòng chọn Tỉnh/Thành' : null
+              return (
+                <div
+                  key={region.id}
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', padding: '8px 12px', gap: 8,
+                    borderTop: i === 0 ? 'none' : `1px solid ${C_BORDER}`,
+                  }}
+                >
+                  <div style={{ flex: '0 0 220px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <input
+                      value={region.name}
+                      onChange={(e) => handleRenameRegion(region.id, e.target.value)}
+                      placeholder="Tên vùng miền"
+                      style={{
+                        ...inputStyle, fontWeight: 700, width: '100%',
+                        borderColor: nameError ? '#EF4444' : C_BORDER,
+                      }}
+                    />
+                    {nameError && <span style={{ fontSize: 11, color: '#EF4444' }}>{nameError}</span>}
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {region.provinces.map((p) => (
+                        <span
+                          key={p}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 12,
+                            background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8', fontSize: 12, fontWeight: 600,
+                          }}
+                        >
+                          {p}
+                          <CloseOutlined
+                            style={{ fontSize: 10, cursor: 'pointer' }}
+                            onClick={() => handleRemoveProvince(p, region.id)}
+                          />
+                        </span>
+                      ))}
+                    </div>
                     {unassignedList.length > 0 && (
                       <select
                         value=""
                         onChange={(e) => { if (e.target.value) handleAssignProvince(e.target.value, region.id) }}
-                        style={{ ...inputStyle, fontSize: 12, padding: '3px 6px', cursor: 'pointer', color: C_TEXT_SECONDARY }}
+                        style={{
+                          ...inputStyle, fontSize: 12, padding: '4px 8px', cursor: 'pointer', color: C_TEXT_SECONDARY,
+                          width: 180, borderColor: provinceError ? '#EF4444' : C_BORDER,
+                        }}
                       >
-                        <option value="">+ Thêm tỉnh</option>
+                        <option value="">Chọn Tỉnh/Thành</option>
                         {unassignedList.map((p) => <option key={p} value={p}>{p}</option>)}
                       </select>
                     )}
+                    {provinceError && <span style={{ fontSize: 11, color: '#EF4444' }}>{provinceError}</span>}
                   </div>
+
                   <button
                     onClick={() => handleDeleteRegion(region.id)}
                     style={{ border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', flexShrink: 0 }}
@@ -357,185 +540,272 @@ export default function RouteConfig() {
                     <CloseOutlined />
                   </button>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
+          <button
+            onClick={handleAddRegion}
+            style={{
+              alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+              background: '#111827', border: 'none', borderRadius: 6,
+              cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff',
+            }}
+          >
+            <PlusOutlined style={{ fontSize: 12 }} /> Thêm vùng miền
+          </button>
+
           {unassignedList.length > 0 && (
-            <div style={{ fontSize: 12, color: '#B45309', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 6, padding: '6px 10px' }}>
-              {unassignedList.length} tỉnh chưa được gán miền: {unassignedList.slice(0, 10).join(', ')}{unassignedList.length > 10 ? ` và ${unassignedList.length - 10} tỉnh khác` : ''} — chưa tra được tuyến cho các tỉnh này.
-            </div>
+            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
+              {unassignedList.length} tỉnh chưa được gán vùng miền: {unassignedList.slice(0, 10).join(', ')}{unassignedList.length > 10 ? ` và ${unassignedList.length - 10} tỉnh khác` : ''}
+            </span>
           )}
         </div>
 
-        {/* ── Bước 2: Đặt tên tuyến & phạm vi áp dụng ── */}
-        <div style={{ ...cardStyle, marginTop: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Bước 2 — Đặt tên tuyến &amp; phạm vi áp dụng</span>
-            <button
-              onClick={handleAddTuyen}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-                background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
-                cursor: 'pointer', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY,
-              }}
-            >
-              <PlusOutlined style={{ fontSize: 12 }} /> Thêm tuyến
-            </button>
-          </div>
-          <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: -8 }}>
-            Mỗi dòng dưới đây = 1 tuyến: đặt tên, rồi tick những cặp miền mà tuyến đó áp dụng. 1 cặp miền chỉ thuộc đúng 1 tuyến; nhiều cặp có thể dùng chung 1 tên nếu muốn tính cùng 1 mức giá.
-          </span>
-
-          {/* Nội tỉnh — luật cố định, không nằm trong danh sách tuyến bên dưới */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C_BG_HEADER, borderRadius: 8, padding: '10px 14px' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: C_TEXT_SECONDARY, background: '#E5E7EB', borderRadius: 4, padding: '2px 6px', flexShrink: 0 }}>CỐ ĐỊNH</span>
-            <input
-              value={localSameRoute}
-              onChange={(e) => handleSetSameProvinceRoute(e.target.value)}
-              style={{ ...inputStyle, fontWeight: 700, width: 160 }}
-            />
-            <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>Phạm vi: cùng 1 tỉnh, bất kỳ miền nào — không cần tick, luôn áp dụng.</span>
+        {/* ── Cấu hình tuyến ── */}
+        <div style={{ ...cardStyle, marginTop: 12 }}>
+          <div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>🔀 Cấu hình tuyến</span>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
+              Nhiều dòng có thể dùng chung 1 tuyến nếu muốn tính cùng 1 mức giá
+            </div>
           </div>
 
           {localRegions.length === 0 ? (
-            <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, padding: 8 }}>Chưa có miền nào — thêm miền ở Bước 1 trước.</div>
+            <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, padding: 8 }}>Chưa có vùng miền nào — thêm ở khối "Cấu hình vùng miền" trước.</div>
           ) : (
-            Array.from(new Set(routeNames)).map((name) => (
-              <div key={name} style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input
-                    value={name}
-                    onChange={(e) => handleRenameTuyen(name, e.target.value)}
-                    style={{ ...inputStyle, fontWeight: 700, flex: '0 0 220px' }}
-                  />
-                  <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, flex: 1 }}>Phạm vi áp dụng — tick cặp miền:</span>
-                  <button
-                    onClick={() => handleDeleteTuyen(name)}
-                    style={{ border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', flexShrink: 0 }}
-                    title="Xoá tuyến"
-                  >
-                    <CloseOutlined />
-                  </button>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {allRegionPairs.map(([a, b]) => {
-                    const checked = localMatrix[pairKey(a.id, b.id)] === name
-                    return (
-                      <button
-                        key={pairKey(a.id, b.id)}
-                        onClick={() => handleToggleChip(name, a.id, b.id)}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 14,
-                          fontSize: 12, fontWeight: checked ? 600 : 400, cursor: 'pointer',
-                          background: checked ? '#FFF4ED' : '#F9FAFB',
-                          border: `1px solid ${checked ? '#FDBA74' : C_BORDER}`,
-                          color: checked ? '#FF5200' : '#9CA3AF',
-                        }}
-                      >
-                        {a.id === b.id ? a.name : `${a.name} ↔ ${b.name}`}
-                      </button>
-                    )
-                  })}
-                </div>
+            <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+              {/* Header bảng */}
+              <div style={{ display: 'flex', background: C_BG_HEADER }}>
+                <div style={{ flex: '0 0 220px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Tên tuyến</div>
+                <div style={{ flex: 1, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Cặp vùng miền</div>
+                <div style={{ flex: '0 0 40px' }} />
               </div>
-            ))
-          )}
 
-          {unconfiguredPairs.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 6, padding: '8px 12px' }}>
-              <span style={{ fontSize: 12, color: '#B45309' }}>
-                {unconfiguredPairs.length} cặp miền chưa thuộc tuyến nào:{' '}
-                {unconfiguredPairs.slice(0, 6).map(([a, b]) => (a.id === b.id ? a.name : `${a.name} ↔ ${b.name}`)).join(', ')}
-                {unconfiguredPairs.length > 6 ? ` và ${unconfiguredPairs.length - 6} cặp khác` : ''} — chưa tra được tuyến cho các cặp này.
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* ── Nội thành / Ngoại thành — tách biệt với vùng/tuyến ở trên, chỉ vài thành phố cần ── */}
-        <div style={{ ...cardStyle, marginTop: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Nội thành / Ngoại thành</span>
-              <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
-                Theo xã/phường (địa giới mới sau sáp nhập 2025, cấp quận/huyện không còn) — chỉ vài
-                thành phố có phân biệt giá Nội/Ngoại thành, dùng cho toggle "Tách khu vực" khi tạo
-                bảng giá. Dữ liệu demo minh hoạ, chưa đầy đủ toàn bộ xã/phường thật.
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <input
-                value={newProvinceName}
-                onChange={(e) => setNewProvinceName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAddUrbanProvince() }}
-                placeholder="Tên tỉnh/thành mới..."
-                style={{ ...inputStyle, fontSize: 13, width: 200 }}
-              />
-              <button
-                onClick={handleAddUrbanProvince}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}
-              >
-                <PlusOutlined style={{ fontSize: 12 }} /> Thêm tỉnh
-              </button>
-            </div>
-          </div>
-
-          {localUrbanConfigs.length === 0 ? (
-            <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, padding: 8 }}>Chưa có tỉnh nào cấu hình Nội/Ngoại thành.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {localUrbanConfigs.map((config) => (
-                <div
-                  key={config.province}
-                  style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: C_TEXT_PRIMARY, flex: '0 0 180px' }}>{config.province}</span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
-                      {config.wards.map((w) => (
-                        <span
-                          key={w.ward}
-                          onClick={() => handleToggleUrbanWard(config.province, w.ward)}
-                          title="Bấm để đổi Nội thành ↔ Ngoại thành"
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 12, cursor: 'pointer',
-                            background: w.isUrban ? '#FFF4ED' : '#F9FAFB',
-                            border: `1px solid ${w.isUrban ? '#FDBA74' : C_BORDER}`,
-                            color: w.isUrban ? '#FF5200' : C_TEXT_SECONDARY,
-                            fontSize: 12, fontWeight: 600,
-                          }}
-                        >
-                          {w.ward}
-                          <CloseOutlined
-                            style={{ fontSize: 10, cursor: 'pointer' }}
-                            onClick={(e) => { e.stopPropagation(); handleRemoveUrbanWard(config.province, w.ward) }}
-                          />
-                        </span>
-                      ))}
+              {/* Nội tỉnh — luật cố định theo TỪNG miền, không tick cặp — luôn hiện làm dòng đầu, không xoá được */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', padding: '8px 12px', gap: 8, background: '#FFF4ED' }}>
+                <div style={{ flex: '0 0 220px' }}>
+                  <span style={{ fontWeight: 700, fontSize: 14, color: C_TEXT_PRIMARY }}>Nội tỉnh</span>
+                  <div style={{ fontSize: 11, color: C_TEXT_SECONDARY, marginTop: 2 }}>Cố định — không cần tick, luôn áp dụng</div>
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {localRegions.map((region) => (
+                    <div key={region.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '4px 8px' }}>
+                      <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>{region.name}:</span>
                       <input
-                        value={newWardInputs[config.province] ?? ''}
-                        onChange={(e) => setNewWardInputs((prev) => ({ ...prev, [config.province]: e.target.value }))}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddUrbanWard(config.province) }}
-                        placeholder="+ Thêm xã/phường (Enter)"
-                        style={{ ...inputStyle, fontSize: 12, padding: '3px 6px', width: 190, color: C_TEXT_SECONDARY }}
+                        value={localSameRouteByRegion[region.id] ?? ''}
+                        onChange={(e) => handleSetSameProvinceRoute(region.id, e.target.value)}
+                        style={{ ...inputStyle, fontSize: 12, fontWeight: 700, padding: '3px 6px', width: 110 }}
                       />
                     </div>
+                  ))}
+                </div>
+                <div style={{ flex: '0 0 40px' }} />
+              </div>
+
+              {Array.from(new Set(routeNames)).map((name, i) => {
+                const nameError = tuyenNameError(name)
+                return (
+                  <div
+                    key={`${name}__${i}`}
+                    style={{ display: 'flex', alignItems: 'flex-start', padding: '8px 12px', gap: 8, borderTop: `1px solid ${C_BORDER}` }}
+                  >
+                    <div style={{ flex: '0 0 220px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <input
+                        value={name}
+                        onChange={(e) => handleRenameTuyen(name, e.target.value)}
+                        placeholder="Tên tuyến"
+                        style={{ ...inputStyle, fontWeight: 700, width: '100%', borderColor: nameError ? '#EF4444' : C_BORDER }}
+                      />
+                      {nameError && <span style={{ fontSize: 11, color: '#EF4444' }}>{nameError}</span>}
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {allRegionPairs.map(([a, b]) => {
+                        const checked = localMatrix[pairKey(a.id, b.id)] === name
+                        return (
+                          <button
+                            key={pairKey(a.id, b.id)}
+                            onClick={() => handleToggleChip(name, a.id, b.id)}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 14,
+                              fontSize: 12, fontWeight: checked ? 600 : 400, cursor: 'pointer',
+                              background: checked ? '#FFF4ED' : '#F9FAFB',
+                              border: `1px solid ${checked ? '#FDBA74' : C_BORDER}`,
+                              color: checked ? '#FF5200' : '#9CA3AF',
+                            }}
+                          >
+                            {a.id === b.id ? a.name : `${a.name} ↔ ${b.name}`}
+                          </button>
+                        )
+                      })}
+                    </div>
                     <button
-                      onClick={() => handleRemoveUrbanProvince(config.province)}
+                      onClick={() => handleDeleteTuyen(name)}
                       style={{ border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', flexShrink: 0 }}
-                      title="Bỏ phân biệt Nội/Ngoại thành"
+                      title="Xoá tuyến"
                     >
                       <CloseOutlined />
                     </button>
                   </div>
-                  <span style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>
-                    Cam = Nội thành, xám = Ngoại thành — bấm vào chip để đổi.
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
+
+          <button
+            onClick={handleAddTuyen}
+            style={{
+              alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+              background: '#111827', border: 'none', borderRadius: 6,
+              cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff',
+            }}
+          >
+            <PlusOutlined style={{ fontSize: 12 }} /> Thêm tuyến
+          </button>
+
+          {unconfiguredPairs.length > 0 && (
+            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
+              {unconfiguredPairs.length} cặp vùng miền chưa được gán tuyến: {unconfiguredPairs.slice(0, 6).map(([a, b]) => (a.id === b.id ? a.name : `${a.name} ↔ ${b.name}`)).join(', ')}{unconfiguredPairs.length > 6 ? ` và ${unconfiguredPairs.length - 6} cặp khác` : ''}
+            </span>
+          )}
+        </div>
+
+        {/* ── Cấu hình nội & ngoại thành — sidebar chọn tỉnh + 2 cột checklist, sửa trên draft
+            riêng (urbanDraft), chỉ ghi vào store dùng chung khi bấm "Lưu thay đổi". ── */}
+        <div style={{ ...cardStyle, marginTop: 12, padding: 0, gap: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '20px 20px 12px' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>🏙️ Cấu hình nội &amp; ngoại thành</span>
+            <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
+              Theo xã/phường (địa giới mới sau sáp nhập 2025, cấp quận/huyện không còn) — chỉ vài
+              thành phố có phân biệt giá Nội/Ngoại thành, dùng cho toggle "Tách khu vực" khi tạo
+              bảng giá. Dữ liệu demo minh hoạ, chưa đầy đủ toàn bộ xã/phường thật.
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', borderTop: `1px solid ${C_BORDER}`, minHeight: 360 }}>
+            {/* Sidebar chọn tỉnh */}
+            <div style={{ flex: '0 0 200px', borderRight: `1px solid ${C_BORDER}`, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 10, borderBottom: `1px solid ${C_BORDER}`, display: 'flex', gap: 6 }}>
+                <select
+                  value={newUrbanProvinceName}
+                  onChange={(e) => setNewUrbanProvinceName(e.target.value)}
+                  style={{ ...inputStyle, fontSize: 12, padding: '4px 6px', flex: 1, cursor: 'pointer' }}
+                >
+                  <option value="">+ Thêm tỉnh</option>
+                  {availableUrbanProvinces.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <button
+                  onClick={handleAddUrbanProvinceDraft}
+                  disabled={!newUrbanProvinceName}
+                  style={{
+                    padding: '4px 8px', borderRadius: 6, border: `1px solid ${C_BORDER}`, fontSize: 12, fontWeight: 600,
+                    cursor: newUrbanProvinceName ? 'pointer' : 'default',
+                    background: newUrbanProvinceName ? '#111827' : '#F3F4F6',
+                    color: newUrbanProvinceName ? '#fff' : C_TEXT_SECONDARY,
+                  }}
+                >
+                  <PlusOutlined style={{ fontSize: 11 }} />
+                </button>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {urbanDraft.length === 0 && (
+                  <div style={{ padding: 12, fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa có tỉnh nào.</div>
+                )}
+                {urbanDraft.map((cfg) => {
+                  const selected = cfg.province === selectedUrbanProvince
+                  return (
+                    <div
+                      key={cfg.province}
+                      onClick={() => setSelectedUrbanProvince(cfg.province)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
+                        padding: '8px 12px', cursor: 'pointer',
+                        background: selected ? '#FFF4ED' : 'transparent',
+                        color: selected ? '#FF5200' : C_TEXT_PRIMARY,
+                        fontWeight: selected ? 700 : 400, fontSize: 13,
+                        borderLeft: `3px solid ${selected ? '#FF5200' : 'transparent'}`,
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cfg.province}</span>
+                      <CloseOutlined
+                        style={{ fontSize: 10, color: '#EF4444', flexShrink: 0 }}
+                        onClick={(e) => { e.stopPropagation(); handleRemoveUrbanProvinceDraft(cfg.province) }}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Panel chính — checklist Nội/Ngoại thành của tỉnh đang chọn */}
+            <div style={{ flex: 1, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+              {!selectedUrbanConfig ? (
+                <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, padding: 8 }}>Chọn 1 tỉnh/thành ở danh sách bên trái, hoặc thêm tỉnh mới.</div>
+              ) : (
+                <>
+                  <input
+                    value={newUrbanWard}
+                    onChange={(e) => setNewUrbanWard(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddUrbanWardDraft() }}
+                    placeholder="+ Thêm xã/phường mới (Enter) — mặc định Ngoại thành"
+                    style={{ ...inputStyle, fontSize: 13 }}
+                  />
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <UrbanCategoryColumn
+                      label="Nội thành" dotColor="#16A34A"
+                      wards={selectedUrbanConfig.wards}
+                      search={urbanSearchNoi} onSearchChange={setUrbanSearchNoi}
+                      targetIsUrban={true}
+                      onToggleWard={(ward) => handleToggleUrbanWardDraft(selectedUrbanConfig.province, ward)}
+                      onSelectAll={() => handleSelectAllUrbanWards(selectedUrbanConfig.province, true)}
+                      onRemoveWard={(ward) => handleRemoveUrbanWardDraft(selectedUrbanConfig.province, ward)}
+                    />
+                    <UrbanCategoryColumn
+                      label="Ngoại thành" dotColor="#7C3AED"
+                      wards={selectedUrbanConfig.wards}
+                      search={urbanSearchNgoai} onSearchChange={setUrbanSearchNgoai}
+                      targetIsUrban={false}
+                      onToggleWard={(ward) => handleToggleUrbanWardDraft(selectedUrbanConfig.province, ward)}
+                      onSelectAll={() => handleSelectAllUrbanWards(selectedUrbanConfig.province, false)}
+                      onRemoveWard={(ward) => handleRemoveUrbanWardDraft(selectedUrbanConfig.province, ward)}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Thanh hành động — luôn hiện, Huỷ bỏ/Lưu thay đổi disable khi chưa có thay đổi nào */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C_BORDER}`, background: C_BG_HEADER }}>
+            <button
+              onClick={cancelUrbanDraft}
+              disabled={!hasUrbanChanges}
+              style={{
+                padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, fontSize: 13, fontWeight: 600,
+                background: '#fff', color: hasUrbanChanges ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                cursor: hasUrbanChanges ? 'pointer' : 'default', opacity: hasUrbanChanges ? 1 : 0.6,
+              }}
+            >
+              ✕ Huỷ bỏ
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              title="Tải lại toàn bộ dữ liệu về trạng thái mẫu ban đầu (mất mọi thay đổi trong phiên này)"
+              style={{ padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, fontSize: 13, fontWeight: 600, background: '#fff', color: C_TEXT_PRIMARY, cursor: 'pointer' }}
+            >
+              ↻ Thiết lập lại
+            </button>
+            <button
+              onClick={commitUrbanDraft}
+              disabled={!hasUrbanChanges}
+              style={{
+                padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, color: '#fff',
+                background: hasUrbanChanges ? '#FF5200' : '#D1D5DB', cursor: hasUrbanChanges ? 'pointer' : 'default',
+              }}
+            >
+              💾 Lưu thay đổi
+            </button>
+          </div>
         </div>
 
       </div>

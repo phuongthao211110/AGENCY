@@ -170,7 +170,12 @@ function TRow({ session, onView }: { session: ShopSession; onView: () => void })
         <span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>{fmt(session.feeShop)}</span>
       </div>
       <div style={{ flex: '0 0 130px', minWidth: 130, padding: '10px 8px', textAlign: 'right' }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: C_ACTION }}>{fmt(session.netAmount)}</span>
+        <span style={{
+          fontSize: 14, fontWeight: 700,
+          color: session.netAmount > 0 ? '#16A34A' : session.netAmount < 0 ? '#DC2626' : C_TEXT_SECONDARY,
+        }}>
+          {fmt(session.netAmount)}
+        </span>
       </div>
       <div style={{ flex: '0 0 140px', minWidth: 140, padding: '10px 8px' }}>
         <span style={{

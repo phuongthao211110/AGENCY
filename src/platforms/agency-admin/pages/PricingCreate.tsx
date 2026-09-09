@@ -4,7 +4,8 @@ import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined, InfoCircleOutlined, Cl
 import {
   regions as routeRegions,
   routeMatrix,
-  sameProvinceRoute,
+  isSameProvinceRouteName,
+  describeSameProvinceRoutePairs,
   listRouteNames,
   urbanConfigs,
   type RegionDef,
@@ -45,6 +46,16 @@ type FeeTier = {
 type InsuranceTier = FeeTier
 type CodFeeTier    = FeeTier
 
+// Phụ phí đổi địa chỉ — 3 mức cố định theo địa giới hành chính (không phải tier tự thêm/bớt
+// như FeeTier): cùng phường/xã = 1 mức phí/lần (để trống = miễn phí), cùng tỉnh/thành nhưng
+// khác phường/xã hoặc khác huyện = 1 mức phí cố định/lần khác, khác tỉnh/thành = % cước phí
+// tuyến/lần (tính trên cước phí từ địa chỉ lấy hàng đến địa chỉ giao mới sau khi đổi).
+type AddressChangeFee = {
+  sameWardFee:           string  // VNĐ/lần — cùng Phường/Xã
+  sameProvinceFee:       string  // VNĐ/lần — cùng Tỉnh/Thành phố, khác Phường/Xã hoặc khác Huyện
+  interProvincePercent:  string  // % cước phí tuyến/lần — khác Tỉnh/Thành phố
+}
+
 type Surcharges = {
   partialDelivery:    SurchargeFee    // Giao trả 1 phần
   insurance:          InsuranceTier[] // Phí bảo hiểm (khai giá) — nhiều mức
@@ -52,12 +63,13 @@ type Surcharges = {
   deliveryFailFee:    SurchargeFee    // Phí giao thất bại thu tiền
   redeliveryFee:      FeeTier[]       // Phí kích hoạt giao lại — theo lần
   returnFee:          SurchargeFee    // Phí hoàn hàng — per order, fixed hoặc % cước phí tuyến
+  addressChange:      AddressChangeFee // Phụ phí đổi địa chỉ — theo địa giới hành chính
 }
 
 type RouteConfig = {
   id: string
   routeName: string
-  // Chỉ dùng khi routeName !== sameProvinceRoute
+  // Chỉ dùng khi !isSameProvinceRouteName(routeName)
   fromRegion: string
   fromProvince: string
   fromDistrict: string
@@ -87,6 +99,7 @@ const makeEmptySurcharges = (): Surcharges => ({
   deliveryFailFee:  { value: '', unit: 'vnd' },
   redeliveryFee:    [],
   returnFee:        { value: '', unit: 'vnd' },
+  addressChange:    { sameWardFee: '', sameProvinceFee: '', interProvincePercent: '' },
 })
 
 const makeEmptyRoute = (routeName: string, id: string): RouteConfig => ({
@@ -545,6 +558,10 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     onUpdateSurcharges({ ...surcharges, returnFee: fee })
   }
 
+  const updateAddressChange = (field: keyof AddressChangeFee, value: string) => {
+    onUpdateSurcharges({ ...surcharges, addressChange: { ...surcharges.addressChange, [field]: value } })
+  }
+
   // A fee is "configured" if it already has data
   const isConfigured = (key: keyof Surcharges): boolean => {
     if (key === 'partialDelivery')  return surcharges.partialDelivery.value.trim() !== ''
@@ -553,6 +570,7 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     if (key === 'deliveryFailFee')  return surcharges.deliveryFailFee.value.trim() !== ''
     if (key === 'redeliveryFee')    return surcharges.redeliveryFee.length > 0
     if (key === 'returnFee')        return surcharges.returnFee.value.trim() !== ''
+    if (key === 'addressChange')    return surcharges.addressChange.sameWardFee.trim() !== '' || surcharges.addressChange.sameProvinceFee.trim() !== '' || surcharges.addressChange.interProvincePercent.trim() !== ''
     return false
   }
 
@@ -576,6 +594,7 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     if (key === 'deliveryFailFee')  onUpdateSurcharges({ ...surcharges, deliveryFailFee: { value: '', unit: 'vnd' } })
     if (key === 'redeliveryFee')    onUpdateSurcharges({ ...surcharges, redeliveryFee: [] })
     if (key === 'returnFee')        onUpdateSurcharges({ ...surcharges, returnFee: { value: '', unit: 'vnd' } })
+    if (key === 'addressChange')    onUpdateSurcharges({ ...surcharges, addressChange: { sameWardFee: '', sameProvinceFee: '', interProvincePercent: '' } })
     setManualOpen((s) => { const n = new Set(s); n.delete(key); return n })
     setConfirmDelete(null)
   }
@@ -587,6 +606,7 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     { key: 'codFee',           label: 'Phí thu hộ' },
     { key: 'redeliveryFee',    label: 'Phí kích hoạt giao lại' },
     { key: 'returnFee',        label: 'Phí hoàn hàng' },
+    { key: 'addressChange',    label: 'Phụ phí đổi địa chỉ' },
   ]
 
   return (
@@ -738,6 +758,72 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
                     )
                   })}
                 </div>
+              ) : key === 'addressChange' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {/* Mức 1 — cùng phường/xã: để trống = miễn phí, có thể nhập phí nếu muốn tính */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
+                      Địa chỉ ban đầu và địa chỉ thay đổi cùng Phường/Xã
+                    </span>
+                    <div style={{ position: 'relative', width: 150 }}>
+                      <input
+                        type="number"
+                        value={surcharges.addressChange.sameWardFee}
+                        onChange={(e) => updateAddressChange('sameWardFee', e.target.value)}
+                        placeholder="Trống = miễn phí"
+                        style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+                      />
+                      <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+                    </div>
+                    <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>/ lần thay đổi</span>
+                  </div>
+
+                  {/* Mức 2 — cùng tỉnh, khác phường/xã hoặc khác huyện: phí cố định/lần */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
+                      Cùng Tỉnh/Thành phố, khác Phường/Xã hoặc khác Huyện
+                    </span>
+                    <div style={{ position: 'relative', width: 150 }}>
+                      <input
+                        type="number"
+                        value={surcharges.addressChange.sameProvinceFee}
+                        onChange={(e) => updateAddressChange('sameProvinceFee', e.target.value)}
+                        placeholder="VD: 11000"
+                        style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+                      />
+                      <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+                    </div>
+                    <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>/ lần thay đổi</span>
+                  </div>
+
+                  {/* Mức 3 — khác tỉnh/thành: % cước phí tuyến/lần */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
+                      Khác Tỉnh/Thành phố (đơn giao hàng hoặc đơn hoàn hàng)
+                    </span>
+                    <div style={{ position: 'relative', width: 150 }}>
+                      <input
+                        type="number"
+                        value={surcharges.addressChange.interProvincePercent}
+                        onChange={(e) => updateAddressChange('interProvincePercent', e.target.value)}
+                        placeholder="VD: 100"
+                        style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+                      />
+                      <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>%</span>
+                    </div>
+                    <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>cước phí tuyến / lần</span>
+                  </div>
+
+                  <span style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>
+                    Phân loại tuyến theo địa giới hành chính 63 tỉnh/thành phố trước thời điểm sáp nhập. Cước phí ở mức "Khác Tỉnh/Thành phố" tính từ địa chỉ lấy hàng đến địa chỉ giao hàng mới sau khi thay đổi.
+                  </span>
+                </div>
               ) : null}
             </div>
           )}
@@ -770,7 +856,7 @@ function RouteBlock({
 
   const toggleSection = (sec: 'overweight' | 'surcharge') =>
     setActiveSection((v) => (v === sec ? null : sec))
-  const showLocationScoping = route.routeName !== sameProvinceRoute
+  const showLocationScoping = !isSameProvinceRouteName(route.routeName)
   const updateSurcharges = (updated: Surcharges) => {
     onChange({ ...route, surcharges: updated })
   }
@@ -779,7 +865,8 @@ function RouteBlock({
     (route.surcharges.partialDelivery.value.trim() !== '' ? 1 : 0) +
     route.surcharges.insurance.length +
     route.surcharges.codFee.length +
-    (route.surcharges.deliveryFailFee.value.trim() !== '' ? 1 : 0)
+    (route.surcharges.deliveryFailFee.value.trim() !== '' ? 1 : 0) +
+    (route.surcharges.addressChange.sameWardFee.trim() !== '' || route.surcharges.addressChange.sameProvinceFee.trim() !== '' || route.surcharges.addressChange.interProvincePercent.trim() !== '' ? 1 : 0)
   )
 
   const updateField = <K extends keyof RouteConfig>(key: K, value: RouteConfig[K]) => {
@@ -1065,8 +1152,8 @@ function ZoneGuideModal({ onClose }: { onClose: () => void }) {
 
   type GuideRow = { name: string; pairs: string[] }
   const guideRows: GuideRow[] = routeNames.map((routeName) => {
-    if (routeName === sameProvinceRoute) {
-      return { name: routeName, pairs: ['Cùng tỉnh, bất kỳ miền nào'] }
+    if (isSameProvinceRouteName(routeName)) {
+      return { name: routeName, pairs: describeSameProvinceRoutePairs(routeName) }
     }
     // Collect region pairs that map to this route name
     const pairs: string[] = []
@@ -1213,7 +1300,7 @@ export default function PricingCreate() {
   const canSubmit = name.trim().length > 0
 
   const addRoute = () => {
-    setRoutes((prev) => [...prev, makeEmptyRoute(sameProvinceRoute, Date.now().toString())])
+    setRoutes((prev) => [...prev, makeEmptyRoute(listRouteNames()[0] ?? '', Date.now().toString())])
   }
 
   const updateRoute = (id: string, updated: RouteConfig) => {
