@@ -7,7 +7,7 @@ import { loadOrders, addOrder, cancelOrder, updateOrder, type Order } from '../.
 import { printSettings, updatePrintSetting, type PrintKindConfig } from '../../../mock-data/printSettingsStore'
 import allPricing from '../../../mock-data/pricing.json'
 import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
-import { clientHubs247 } from '../../super-admin/agencyStore'
+import { clientHubs247, agenciesList, DEFAULT_ORDER_FORM_COMPONENTS } from '../../super-admin/agencyStore'
 
 // ── Design tokens (hoisted above module-scope consts that reference them) ──
 const C_TEXT_PRIMARY   = '#111827'
@@ -1023,6 +1023,10 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const [collectOnFailAmt, setCollectOnFailAmt] = useState(0)
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
+  // Super Admin bật/tắt từng thành phần trong form tạo đơn theo TỪNG đại lý (agencyStore.ts,
+  // AgencyDetail.tsx) — mặc định bật hết để không phá vỡ shop cũ chưa có field này. Chỉ áp cho
+  // đơn Hàng hoá, đơn Thư vốn đã không có các field này nên không cần gate ở CreateLetterDrawer.
+  const formComponents = agenciesList.find(a => a.id === currentShop.agencyId)?.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
   const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
   const weightGram = Number(convertedWeight) * 1000
   const fromProvince = parseProvince(currentShop.address)
@@ -1367,52 +1371,61 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                       />
                     </div>
                   </InfoRow>
-                  {/* COD */}
-                  <InfoRow label="COD">
-                    <NumericWithUnit value={cod} onChange={setCod} unit="đ" />
-                  </InfoRow>
-                  {/* Giảm giá */}
-                  <InfoRow label="Giảm giá">
-                    <NumericWithUnit value={discount} onChange={setDiscount} unit="đ" />
-                  </InfoRow>
-                  {/* Thu ship khách hàng */}
-                  <InfoRow label="Thu ship khách hàng" hint>
-                    <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" disabled={feePayer === 'receiver'} />
-                  </InfoRow>
-                  {/* Giá trị hàng */}
-                  <InfoRow label="Giá trị hàng">
-                    <NumericWithUnit value={goodsValue} onChange={setGoodsValue} unit="đ" />
-                  </InfoRow>
+                  {/* Các field dưới đây đều là "thành phần đơn hàng" — Super Admin bật/tắt riêng
+                      từng cái theo đại lý (AgencyDetail.tsx), ẩn hẳn khỏi form nếu tắt. */}
+                  {formComponents.cod && (
+                    <InfoRow label="COD">
+                      <NumericWithUnit value={cod} onChange={setCod} unit="đ" />
+                    </InfoRow>
+                  )}
+                  {formComponents.discount && (
+                    <InfoRow label="Giảm giá">
+                      <NumericWithUnit value={discount} onChange={setDiscount} unit="đ" />
+                    </InfoRow>
+                  )}
+                  {formComponents.shipCollect && (
+                    <InfoRow label="Thu ship khách hàng" hint>
+                      <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" disabled={feePayer === 'receiver'} />
+                    </InfoRow>
+                  )}
+                  {formComponents.goodsValue && (
+                    <InfoRow label="Giá trị hàng">
+                      <NumericWithUnit value={goodsValue} onChange={setGoodsValue} unit="đ" />
+                    </InfoRow>
+                  )}
 
-                  {/* Checkbox: Khai giá trị hàng */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 32 }}>
-                    <CheckboxBlue checked={declareValue} onChange={() => setDeclareValue(!declareValue)} />
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Khai giá trị hàng</span>
-                  </div>
-                  {/* Checkbox: Giao / Trả 1 phần */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 32 }}>
-                    <CheckboxBlue checked={partialDeliver} onChange={() => setPartialDeliver(!partialDeliver)} />
-                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Giao / Trả 1 phần</span>
-                  </div>
-                  {/* Checkbox: Giao thất bại thu tiền */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <CheckboxBlue checked={collectOnFail} onChange={() => setCollectOnFail(!collectOnFail)} />
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Giao thất bại thu tiền</span>
-                      <IcHelp />
+                  {formComponents.declareValue && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 32 }}>
+                      <CheckboxBlue checked={declareValue} onChange={() => setDeclareValue(!declareValue)} />
+                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Khai giá trị hàng</span>
                     </div>
-                    {/* amount input with bordered đ badge (per Figma) */}
-                    <div style={{ background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 12, height: 32, width: 180, flexShrink: 0 }}>
-                      <input
-                        value={collectOnFailAmt === 0 ? '0' : collectOnFailAmt.toLocaleString('en-US')}
-                        onChange={(e) => setCollectOnFailAmt(parseFloat(e.target.value.replace(/,/g, '')) || 0)} type="text"
-                        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
-                      />
-                      <div style={{ background: '#F3F4F6', border: `1px solid ${C_BORDER}`, width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>đ</span>
+                  )}
+                  {formComponents.partialDeliver && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 32 }}>
+                      <CheckboxBlue checked={partialDeliver} onChange={() => setPartialDeliver(!partialDeliver)} />
+                      <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Giao / Trả 1 phần</span>
+                    </div>
+                  )}
+                  {formComponents.collectOnFail && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <CheckboxBlue checked={collectOnFail} onChange={() => setCollectOnFail(!collectOnFail)} />
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                        <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', whiteSpace: 'nowrap' }}>Giao thất bại thu tiền</span>
+                        <IcHelp />
+                      </div>
+                      {/* amount input with bordered đ badge (per Figma) */}
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, display: 'flex', alignItems: 'center', paddingLeft: 12, height: 32, width: 180, flexShrink: 0 }}>
+                        <input
+                          value={collectOnFailAmt === 0 ? '0' : collectOnFailAmt.toLocaleString('en-US')}
+                          onChange={(e) => setCollectOnFailAmt(parseFloat(e.target.value.replace(/,/g, '')) || 0)} type="text"
+                          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'right', background: 'transparent', lineHeight: '20px', minWidth: 0 }}
+                        />
+                        <div style={{ background: '#F3F4F6', border: `1px solid ${C_BORDER}`, width: 32, height: 32, borderRadius: '0 6px 6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>đ</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
@@ -1422,7 +1435,8 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   {[
                     { label: 'Ghi chú nội bộ',    link: 'Thêm ghi chú' },
                     { label: 'Ghi chú đơn hàng',   link: 'Thêm ghi chú' },
-                    { label: 'Ghi chú xem hàng',   link: 'Cho xem hàng không thử' },
+                    // Thành phần bật/tắt được — Super Admin tắt thì bỏ khỏi mảng, không render dòng này.
+                    ...(formComponents.viewGoodsNote ? [{ label: 'Ghi chú xem hàng', link: 'Cho xem hàng không thử' }] : []),
                     { label: 'Thanh toán',          link: 'Thanh toán Tiền mặt (Thu hộ COD)' },
                     { label: 'Nguồn tạo',           link: 'Facebook' },
                   ].map(({ label, link }) => (
@@ -1579,6 +1593,9 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
   const [viewGoodsPickerOpen, setViewGoodsPickerOpen] = useState(false)
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
+  // Super Admin bật/tắt từng thành phần trong form tạo đơn theo đại lý — dùng chung 1 nguồn với
+  // CreateOrderDrawer, một số key áp dụng cho cả Hàng hoá lẫn Thư (goodsValue, viewGoodsNote).
+  const formComponents = agenciesList.find(a => a.id === currentShop.agencyId)?.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
   // 247Express: lấy hàng tại hub cố định của dịch vụ đại lý (không phải địa chỉ shop)
   const primary247Service = servicesList.find(
     s => s.agencyId === currentShop.agencyId && s.carrier === '247Express' && s.enabled && (s.hubIds?.length ?? 0) > 0
@@ -1793,69 +1810,75 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
                       />
                     </div>
                   </InfoRow>
-                  <InfoRow label="Giá trị hàng">
-                    <NumericWithUnit value={goodsValue} onChange={setGoodsValue} unit="đ" />
-                  </InfoRow>
+                  {formComponents.goodsValue && (
+                    <InfoRow label="Giá trị hàng">
+                      <NumericWithUnit value={goodsValue} onChange={setGoodsValue} unit="đ" />
+                    </InfoRow>
+                  )}
                 </div>
 
                 <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0' }}>
-                    <span style={{ color: C_TEXT_PRIMARY }}>Nội dung thư, tài liệu</span>
-                    <div style={{ background: '#F9FAFB', borderRadius: 6, border: `1px solid ${C_BORDER}`, padding: '6px 12px' }}>
-                      <textarea
-                        value={letterContent} onChange={(e) => setLetterContent(e.target.value)}
-                        placeholder="Nội dung thư, tài liệu"
-                        style={{ width: '100%', minHeight: 60, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }}
-                      />
+                  {formComponents.letterContent && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY }}>Nội dung thư, tài liệu</span>
+                      <div style={{ background: '#F9FAFB', borderRadius: 6, border: `1px solid ${C_BORDER}`, padding: '6px 12px' }}>
+                        <textarea
+                          value={letterContent} onChange={(e) => setLetterContent(e.target.value)}
+                          placeholder="Nội dung thư, tài liệu"
+                          style={{ width: '100%', minHeight: 60, border: 'none', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', background: 'transparent', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {[{ label: 'Ghi chú thu khác', link: 'Thêm ghi chú' }].map(({ label, link }) => (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
                       <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
                       <LinkText>{link}</LinkText>
                     </div>
                   ))}
-                  <div style={{ position: 'relative' }} data-view-goods-menu>
-                    <div
-                      onClick={() => setViewGoodsPickerOpen(v => !v)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0', cursor: 'pointer' }}
-                    >
-                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Ghi chú xem hàng</span>
-                      <LinkText>{VIEW_GOODS_OPTIONS.find(o => o.value === viewGoodsPolicy)?.label}</LinkText>
-                    </div>
-                    {viewGoodsPickerOpen && (
-                      <div style={{
-                        position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 240,
-                        background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 8,
-                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden', padding: 4,
-                      }}>
-                        {VIEW_GOODS_OPTIONS.map(opt => {
-                          const active = opt.value === viewGoodsPolicy
-                          return (
-                            <div
-                              key={opt.value}
-                              onClick={() => { setViewGoodsPolicy(opt.value); setViewGoodsPickerOpen(false) }}
-                              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 6, cursor: 'pointer' }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                            >
-                              <div style={{
-                                width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                                border: `2px solid ${active ? '#111827' : C_BORDER}`,
-                                background: active ? '#111827' : '#fff',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              }}>
-                                {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
-                              </div>
-                              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{opt.label}</span>
-                            </div>
-                          )
-                        })}
+                  {formComponents.viewGoodsNote && (
+                    <div style={{ position: 'relative' }} data-view-goods-menu>
+                      <div
+                        onClick={() => setViewGoodsPickerOpen(v => !v)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0', cursor: 'pointer' }}
+                      >
+                        <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Ghi chú xem hàng</span>
+                        <LinkText>{VIEW_GOODS_OPTIONS.find(o => o.value === viewGoodsPolicy)?.label}</LinkText>
                       </div>
-                    )}
-                  </div>
+                      {viewGoodsPickerOpen && (
+                        <div style={{
+                          position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 240,
+                          background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 8,
+                          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden', padding: 4,
+                        }}>
+                          {VIEW_GOODS_OPTIONS.map(opt => {
+                            const active = opt.value === viewGoodsPolicy
+                            return (
+                              <div
+                                key={opt.value}
+                                onClick={() => { setViewGoodsPolicy(opt.value); setViewGoodsPickerOpen(false) }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 6, cursor: 'pointer' }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                              >
+                                <div style={{
+                                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                                  border: `2px solid ${active ? '#111827' : C_BORDER}`,
+                                  background: active ? '#111827' : '#fff',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                  {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
+                                </div>
+                                <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{opt.label}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {[{ label: 'Nguồn tạo', link: 'Facebook' }].map(({ label, link }) => (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
                       <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>

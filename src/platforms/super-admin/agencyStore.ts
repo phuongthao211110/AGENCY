@@ -20,6 +20,54 @@ export interface Agency {
   // Mã dịch vụ 247Express (xem SERVICE_TYPES_247) mà đại lý được phép sử dụng —
   // do Super Admin duyệt khi kích hoạt/cấp thêm hub 247Express
   allowedServices247?: string[]
+  // Các thành phần được phép hiện trong form tạo đơn — do Super Admin cấp/thu hồi theo TỪNG đại
+  // lý. Field trong form đọc theo đây để ẩn/hiện, KHÔNG xoá dữ liệu nếu đơn cũ đã có (chỉ gate
+  // lúc tạo mới) — xem CreateOrderDrawer + CreateLetterDrawer trong Orders.tsx (Web Shop) và
+  // AgencyOrders.tsx (Agency Admin). Một số key áp dụng cho CẢ Hàng hoá lẫn Thư (goodsValue,
+  // viewGoodsNote) — xem ORDER_FORM_COMPONENT_SCOPE.
+  orderFormComponents?: OrderFormComponents
+}
+
+// Danh sách thành phần trong form tạo đơn mà Super Admin bật/tắt được theo từng đại lý. Không
+// gồm field lõi bắt buộc (Bên gửi/nhận, Sản phẩm, Khối lượng, Dịch vụ...) — chỉ những field phụ,
+// có thể tắt mà đơn vẫn tạo được bình thường.
+export interface OrderFormComponents {
+  cod:            boolean // Tiền thu hộ (COD) — chỉ Hàng hoá
+  discount:       boolean // Giảm giá — chỉ Hàng hoá
+  shipCollect:    boolean // Thu ship khách hàng — chỉ Hàng hoá
+  goodsValue:     boolean // Giá trị hàng — Hàng hoá & Thư
+  declareValue:   boolean // Khai giá trị hàng — chỉ Hàng hoá
+  partialDeliver: boolean // Giao / Trả 1 phần — chỉ Hàng hoá
+  collectOnFail:  boolean // Giao thất bại thu tiền — chỉ Hàng hoá
+  viewGoodsNote:  boolean // Ghi chú xem hàng — Hàng hoá & Thư
+  letterContent:  boolean // Nội dung thư, tài liệu — chỉ Thư
+}
+
+export const ORDER_FORM_COMPONENT_LABELS: Record<keyof OrderFormComponents, string> = {
+  cod:            'COD (thu hộ)',
+  discount:       'Giảm giá',
+  shipCollect:    'Thu ship khách hàng',
+  goodsValue:     'Giá trị hàng',
+  declareValue:   'Khai giá trị hàng',
+  partialDeliver: 'Giao / Trả 1 phần',
+  collectOnFail:  'Giao thất bại thu tiền',
+  viewGoodsNote:  'Ghi chú xem hàng',
+  letterContent:  'Nội dung thư, tài liệu',
+}
+
+// Loại đơn mà mỗi thành phần áp dụng — hiển thị làm nhãn phụ trong UI Super Admin để tránh nhầm
+// tưởng field nào cũng chỉ áp cho 1 loại đơn.
+export const ORDER_FORM_COMPONENT_SCOPE: Record<keyof OrderFormComponents, 'goods' | 'letter' | 'both'> = {
+  cod: 'goods', discount: 'goods', shipCollect: 'goods', goodsValue: 'both',
+  declareValue: 'goods', partialDeliver: 'goods', collectOnFail: 'goods',
+  viewGoodsNote: 'both', letterContent: 'letter',
+}
+
+// Mặc định TẤT CẢ bật — đại lý cũ chưa có field này trong data vẫn thấy đủ form như trước.
+export const DEFAULT_ORDER_FORM_COMPONENTS: OrderFormComponents = {
+  cod: true, discount: true, shipCollect: true, goodsValue: true,
+  declareValue: true, partialDeliver: true, collectOnFail: true, viewGoodsNote: true,
+  letterContent: true,
 }
 
 // Mã dịch vụ chính 247Express (ServiceTypeID) — dùng để gọi GetPriceForCustomerAPI,
@@ -36,6 +84,7 @@ export const SERVICE_TYPES_247 = [
 export const agenciesList: Agency[] = (rawData as any[]).map(a => ({
   ...a,
   allowedCarriers: a.allowedCarriers ?? ['GHN'],
+  orderFormComponents: { ...DEFAULT_ORDER_FORM_COMPONENTS, ...(a.orderFormComponents ?? {}) },
 }))
 
 export function addAgency(a: Agency) {
@@ -45,6 +94,12 @@ export function addAgency(a: Agency) {
 export function setAllowedCarriers(agencyId: string, carriers: string[]) {
   const agency = agenciesList.find(a => a.id === agencyId)
   if (agency) agency.allowedCarriers = carriers
+}
+
+export function setOrderFormComponent(agencyId: string, key: keyof OrderFormComponents, value: boolean) {
+  const agency = agenciesList.find(a => a.id === agencyId)
+  if (!agency) return
+  agency.orderFormComponents = { ...(agency.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS), [key]: value }
 }
 
 // ─── Shop connection requests ─────────────────────────────────────────────────

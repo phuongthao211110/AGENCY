@@ -14,6 +14,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons'
 import { loadShops } from '../../../mock-data/shopStore'
+import { getShopMargin } from '../../../mock-data/reconciliationLedger'
 import allServices from '../../../mock-data/services.json'
 import allPriceTables from '../../../mock-data/pricing.json'
 import allBankAccounts from '../../../mock-data/bank-accounts.json'
@@ -273,7 +274,9 @@ export default function ShopDetail() {
 
   const totalOrders = shop.totalOrders
   const totalCOD    = totalOrders * 35_000
-  const revenue     = totalCOD * 0.028
+  // Doanh thu = chênh lệch phí vận chuyển (phí bán cho shop - phí NVC) từ dữ liệu đối soát
+  // thật, KHÔNG phải % trên COD — xem getShopMargin() trong reconciliationLedger.ts.
+  const revenue     = getShopMargin(shop.id)
 
   const isInactive       = shop.status === 'inactive'
   const isSelfDeleted    = isInactive && Boolean((shop as any).selfDeletedAt)

@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import allOrders from '../../../mock-data/orders.json'
 import { loadShops, updateShop } from '../../../mock-data/shopStore'
+import { getShopMargin } from '../../../mock-data/reconciliationLedger'
 
 // ── Design tokens (from Figma) ──────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -35,7 +36,9 @@ function buildShops() {
     ...s,
     ownerName: OWNER_NAMES[i % OWNER_NAMES.length],
     cod:     s.totalOrders * 35_000,
-    revenue: Math.round(s.totalOrders * 35_000 * 0.028),
+    // Doanh thu = chênh lệch phí vận chuyển (phí bán cho shop - phí NVC), tính từ dữ liệu đối
+    // soát thật của shop, KHÔNG phải % trên COD — xem getShopMargin() để biết lý do.
+    revenue: getShopMargin(s.id),
   }))
 }
 

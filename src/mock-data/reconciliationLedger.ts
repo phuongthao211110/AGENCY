@@ -23,6 +23,11 @@ export type ItemRecord = {
   systemCOD: number
   ghnFee: number
   systemFee: number
+  // Phí dịch vụ đại lý BÁN CHO SHOP (giá trên bảng giá đại lý tự đặt ra) — khác với systemFee
+  // (số hệ thống nội bộ đại lý GHI NHẬN để đối soát/audit với ghnFee, phải bằng ghnFee khi
+  // "khớp"). 2 khái niệm tách biệt cố ý: nếu dùng chung 1 field, thêm markup vào để tính doanh
+  // thu sẽ khiến toàn bộ item chuyển từ MATCH sang MISMATCH trên trang Đối soát.
+  shopServiceFee: number
   status: 'MATCH' | 'MISMATCH' | 'NOT_FOUND'
   customerOrderCode: string
   ghnStatus: string
@@ -96,4 +101,35 @@ export function getReconciliationItems(): ItemRecord[] {
     // ghnStatus chưa phân loại được — giữ nguyên field status tĩnh làm fallback.
     return item
   })
+}
+
+/**
+ * Doanh thu thật của 1 shop (theo đúng bản chất — chênh lệch phí vận chuyển, KHÔNG phải %
+ * trên COD): phí dịch vụ đại lý BÁN CHO SHOP (shopServiceFee) trừ phí NVC tính cho đại lý
+ * (ghnFee), cộng dồn trên mọi đơn đã có dữ liệu đối soát của shop đó. Dùng hàm này ở mọi nơi
+ * cần "doanh thu đại lý" theo shop (Shops.tsx, ShopDetail.tsx, báo cáo). Lưu ý: KHÔNG dùng
+ * systemFee ở đây — systemFee là số ghi nhận nội bộ để audit với ghnFee (MATCH khi 2 số này
+ * bằng nhau), khác hoàn toàn với giá bán cho shop.
+ * Shop chưa có đơn nào được đối soát → trả về 0 (chưa có dữ liệu, không phải chưa có doanh thu).
+ */
+export function getShopMargin(shopId: string): number {
+  return getReconciliationItems()
+    .filter((item) => item.shopId === shopId)
+    .reduce((sum, item) => sum + (item.shopServiceFee - item.ghnFee), 0)
+}
+
+/** Tổng COD thật đã đối soát của 1 shop (Σ ghnCOD) — cùng cách tính "Tổng COD (shop)" ở
+ * AgencyReconciliation.tsx, KHÔNG phải công thức demo totalOrders × 35.000đ. */
+export function getShopCodTotal(shopId: string): number {
+  return getReconciliationItems()
+    .filter((item) => item.shopId === shopId)
+    .reduce((sum, item) => sum + item.ghnCOD, 0)
+}
+
+/** Tổng phí dịch vụ đại lý bán cho shop (Σ shopServiceFee) — phí GỘP (chưa trừ phí NVC),
+ * khác với getShopMargin() (đã trừ phí NVC, ra lời thật). */
+export function getShopServiceFeeTotal(shopId: string): number {
+  return getReconciliationItems()
+    .filter((item) => item.shopId === shopId)
+    .reduce((sum, item) => sum + item.shopServiceFee, 0)
 }

@@ -14,7 +14,9 @@ import {
   BarChartOutlined,
   LockOutlined,
 } from '@ant-design/icons'
-import { agenciesList, setAllowedCarriers, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub, findPastHubRejection } from '../agencyStore'
+import { agenciesList, setAllowedCarriers, setOrderFormComponent, ORDER_FORM_COMPONENT_LABELS, ORDER_FORM_COMPONENT_SCOPE, DEFAULT_ORDER_FORM_COMPONENTS, type OrderFormComponents, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub, findPastHubRejection } from '../agencyStore'
+import allShops from '../../../mock-data/shops.json'
+import { getShopServiceFeeTotal } from '../../../mock-data/reconciliationLedger'
 import AgencyRequestsView from '../components/AgencyRequestsView'
 import { HubGrantList } from '../components/ApprovalWidgets'
 
@@ -241,6 +243,13 @@ export default function AgencyDetail() {
     forceRender(n => n + 1)
   }
 
+  const toggleOrderFormComponent = (key: keyof OrderFormComponents) => {
+    if (!agency) return
+    const current = agency.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
+    setOrderFormComponent(agency.id, key, !current[key])
+    forceRender(n => n + 1)
+  }
+
   const copyText = (text: string) => {
     navigator.clipboard.writeText(text).catch(() => {})
     setToastVisible(true)
@@ -262,7 +271,12 @@ export default function AgencyDetail() {
   }
 
   const cod = agency.totalOrders * 35_000
-  const revenue = cod * 0.028
+  // Tổng phí ship = Σ phí dịch vụ đại lý bán cho shop, tính từ dữ liệu đối soát THẬT của từng
+  // shop trực thuộc đại lý — cùng nguồn với "Tổng phí" ở Agency Admin (AgencyReport.tsx), không
+  // phải công thức demo cũ (cod × 2.8%). Shop chưa có đơn nào được đối soát sẽ đóng góp 0.
+  const totalFeeShip = (allShops as { id: string; agencyId: string }[])
+    .filter(s => s.agencyId === agency.id)
+    .reduce((sum, s) => sum + getShopServiceFeeTotal(s.id), 0)
 
   const pendingRequestCount =
     shopConnections.filter(s => s.agencyId === agency.id && s.status === 'pending' && s.carrier === 'GHN').length +
@@ -344,8 +358,8 @@ export default function AgencyDetail() {
             />
             <KpiCard
               icon={<BarChartOutlined />}
-              label="Doanh thu (₫)"
-              value={fmtVND(revenue)}
+              label="Tổng phí ship (₫)"
+              value={fmtVND(totalFeeShip)}
               iconColor="#8B5CF6"
             />
           </div>
@@ -818,17 +832,73 @@ export default function AgencyDetail() {
         )}
 
         {activeTab === 'orders' && (
-          <div
-            style={{
-              background: '#fff',
-              border: `1px solid ${C_BORDER}`,
-              borderRadius: 12,
-              padding: 24,
-              color: C_TEXT_SECONDARY,
-              textAlign: 'center',
-            }}
-          >
-            Đơn hàng — sẽ implement ở sprint tiếp theo
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Thành phần đơn hàng — Super Admin bật/tắt riêng từng field phụ trong form tạo đơn
+                theo TỪNG đại lý. Field lõi (Bên gửi/nhận, Sản phẩm, Dịch vụ...) không tắt được.
+                Tắt 1 thành phần sẽ ẩn field đó khi tạo đơn mới ở cả Agency Admin và Web Shop của
+                đại lý này — không ảnh hưởng đơn đã tạo trước đó. Nhãn nhỏ bên cạnh mỗi field cho
+                biết field đó áp dụng cho loại đơn nào (Hàng hoá / Thư / cả 2).
+                Field thuộc phạm vi "Thư" CHỈ hiện nếu đại lý ĐÃ đăng ký 247Express (allowedCarriers)
+                VÀ đã được cấp ít nhất 1 hub (clientHubIds) — bật carrier thôi chưa đủ, thiếu hub
+                thì CreateLetterDrawerAgency không có "Bên gửi" để chọn, chưa tạo được đơn Thư
+                thật sự nên chưa có gì để cấu hình. */}
+            {(() => {
+              const has247 = (agency.allowedCarriers ?? ['GHN']).includes('247Express')
+              const hasHub = (agency.clientHubIds ?? []).length > 0
+              const letterReady = has247 && hasHub
+              const visibleKeys = (Object.keys(ORDER_FORM_COMPONENT_LABELS) as (keyof OrderFormComponents)[])
+                .filter((key) => letterReady || ORDER_FORM_COMPONENT_SCOPE[key] !== 'letter')
+              return (
+                <InfoCard title="Thành phần đơn hàng">
+                  {!letterReady && (
+                    <div style={{ fontSize: 12, color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 6, padding: '8px 10px', marginBottom: 8 }}>
+                      {!has247
+                        ? 'Đại lý chưa dùng 247Express nên chưa có đơn Thư. Bật 247Express bên dưới để thấy đủ.'
+                        : 'Đại lý chưa có hub gửi hàng nên chưa có đơn Thư. Cấp hub bên dưới để thấy đủ.'}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {visibleKeys.map((key, i) => {
+                      const current = agency.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
+                      const on = current[key]
+                      const scope = ORDER_FORM_COMPONENT_SCOPE[key]
+                      // Thư chưa sẵn sàng (thiếu 247Express hoặc thiếu hub) thì field "cả 2" chỉ
+                      // còn thật sự áp dụng cho Hàng hoá — bỏ "& Thư" khỏi nhãn để khỏi gây hiểu lầm.
+                      const scopeLabel = scope === 'both'
+                        ? (letterReady ? 'Hàng hoá & Thư' : 'Hàng hoá')
+                        : scope === 'goods' ? 'Hàng hoá' : 'Thư'
+                      return (
+                        <div
+                          key={key}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '8px 0', borderTop: i === 0 ? 'none' : `1px solid ${C_BORDER}`,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{ORDER_FORM_COMPONENT_LABELS[key]}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: C_TEXT_SECONDARY, background: '#F3F4F6', borderRadius: 10, padding: '2px 8px' }}>
+                              {scopeLabel}
+                            </span>
+                          </div>
+                          <div
+                            onClick={() => toggleOrderFormComponent(key)}
+                            title={on ? 'Tắt' : 'Bật'}
+                            style={{
+                              width: 36, height: 20, borderRadius: 10, cursor: 'pointer', flexShrink: 0,
+                              background: on ? '#16A34A' : '#D1D5DB',
+                              position: 'relative', transition: 'background 0.2s',
+                            }}
+                          >
+                            <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, transition: 'left 0.2s', left: on ? 18 : 2, boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </InfoCard>
+              )
+            })()}
           </div>
         )}
       </div>
