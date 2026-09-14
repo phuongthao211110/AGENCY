@@ -2,7 +2,7 @@
 
 **Platform:** Web Shop (Chủ shop)  
 **Figma:** [WS Design File](https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW)  
-**Version:** 0.2.0 | **Cập nhật:** 2026-05-08
+**Version:** 0.3.0 | **Cập nhật:** 2026-09-13
 
 ---
 
@@ -50,6 +50,7 @@
 | SHOP-ORDER-30 | [In đơn hàng - Thư/tài liệu: Khổ giấy & checklist áp dụng lên vận đơn thật](orders/in-don-hang-thu-cau-hinh-ap-dung-van-don-that.md) | draft |
 | SHOP-ORDER-35 | [Chi tiết: Câu xác nhận hoàn hàng dùng sai chủ ngữ cho đơn Thư](orders/xac-nhan-hoan-hang-cau-xac-nhan-sai-voi-don-thu.md) | draft |
 | SHOP-ORDER-36 | [Cài đặt đơn hàng - Trả hàng: Địa chỉ trả hàng — field tĩnh chưa implement, áp dụng cho cả 2 loại đơn qua 2 cơ chế khác nhau](orders/dia-chi-tra-hang-chua-implement-ap-dung-ca-2-loai-don.md) | draft |
+| SHOP-ORDER-37 | [Tạo mới: Thêm phụ phí đổi địa chỉ](orders/them-phu-phi-doi-dia-chi.md) | draft |
 
 ## Đối soát
 

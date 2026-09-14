@@ -46,6 +46,7 @@ type ShopPricingSurcharges = {
   insurance?:       ShopFeeTier[]
   deliveryFailFee?: { value: string; unit: string }
   codFee?:          ShopFeeTier[]
+  addressChange?:   { sameWardFee: string; sameProvinceFee: string; interProvincePercent: string }
 }
 function shopCalcTierFee(amount: number, tiers: ShopFeeTier[]): number {
   if (!tiers || tiers.length === 0 || amount <= 0) return 0
@@ -1052,6 +1053,13 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
 
   const [selectedServiceName, setSelectedServiceName] = useState<string>(serviceGroups[0]?.[0]?.name ?? '')
   const [feePayer, setFeePayer] = useState<'sender' | 'receiver'>('sender')
+  // "Khách trả ship" (feePayer='receiver') khiến GHN thu hộ CHÍNH phí ship từ người nhận khi giao
+  // (totalCollect = cod + feeShipping bên dưới) — về bản chất đây CŨNG LÀ 1 hình thức thu hộ khi
+  // giao hàng, dù không đi qua ô "COD" nhập tay. Nếu Super Admin đã tắt thành phần "COD" cho đại
+  // lý này (formComponents.cod === false), đơn không được phép có BẤT KỲ khoản thu hộ nào khi giao
+  // — nên phải ép effectiveFeePayer luôn là 'sender', bất kể feePayer đang lưu giá trị gì trong
+  // state (phòng trường hợp state cũ còn sót lại 'receiver' từ trước khi bị tắt).
+  const effectiveFeePayer = formComponents.cod ? feePayer : 'sender'
 
   const now = new Date()
   const createdAt = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} - ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`
@@ -1078,7 +1086,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     ? shopCalcTierFee(cod, surcharges.codFee ?? [])
     : 0
   const totalShipping    = feeShipping + feeInsurance + feePartial + feeDeliveryFail + feeCod
-  const totalCollect     = feePayer === 'sender'
+  const totalCollect     = effectiveFeePayer === 'sender'
     ? cod + (shipCollect > 0 ? shipCollect : 0)
     : cod + feeShipping
 
@@ -1097,7 +1105,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       weight: weightGram,
       cod,
       fee: totalShipping,
-      feePayer,
+      feePayer: effectiveFeePayer,
       status: 'pickup',
       createdAt: now.toISOString().split('T')[0],
       actionHistory: [],
@@ -1385,7 +1393,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   )}
                   {formComponents.shipCollect && (
                     <InfoRow label="Thu ship khách hàng" hint>
-                      <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" disabled={feePayer === 'receiver'} />
+                      <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" disabled={effectiveFeePayer === 'receiver'} />
                     </InfoRow>
                   )}
                   {formComponents.goodsValue && (
@@ -1455,12 +1463,15 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <IcTruck />
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
                 <div style={{ display: 'flex', gap: 1, flexShrink: 0, background: '#F3F4F6', borderRadius: 6, padding: 2 }}>
-                  {(['sender', 'receiver'] as const).map((p) => (
+                  {/* "Khách trả ship" ẩn hẳn khi đại lý bị tắt thành phần COD — chọn tuỳ chọn này
+                      khiến phí ship bị GHN thu hộ từ người nhận khi giao (xem effectiveFeePayer),
+                      tương đương phát sinh thu hộ dù không qua ô COD nhập tay. */}
+                  {(['sender', 'receiver'] as const).filter((p) => p === 'sender' || formComponents.cod).map((p) => (
                     <button key={p} onClick={() => { setFeePayer(p); if (p === 'receiver') setShipCollect(0) }}
                       style={{ padding: '3px 8px', borderRadius: 5, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap',
-                        background: feePayer === p ? '#fff' : 'transparent',
-                        color: feePayer === p ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
-                        boxShadow: feePayer === p ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                        background: effectiveFeePayer === p ? '#fff' : 'transparent',
+                        color: effectiveFeePayer === p ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                        boxShadow: effectiveFeePayer === p ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
                       }}>
                       {p === 'sender' ? 'Shop trả ship' : 'Khách trả ship'}
                     </button>
@@ -1530,6 +1541,35 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                     </span>
                   </div>
                 ))}
+                {/* Phụ phí đổi địa chỉ — mặc định LUÔN hiện 0đ giống các dòng phụ phí khác vì
+                    tại thời điểm tạo đơn CHƯA có yêu cầu đổi địa chỉ nào xảy ra; phí thật (theo
+                    đúng mức Cùng Phường/Xã · Cùng Tỉnh/Thành · Khác Tỉnh/Thành) chỉ phát sinh khi
+                    người nhận thực sự yêu cầu đổi địa chỉ sau khi đơn đã tạo — xem tooltip hover
+                    để biết trước các mức sẽ áp dụng. Ẩn hẳn dòng này nếu bảng giá của dịch vụ đang
+                    chọn chưa cấu hình phụ phí này. */}
+                {(() => {
+                  const tooltipParts = [
+                    surcharges.addressChange?.sameWardFee?.trim()
+                      ? `Cùng Phường/Xã: ${parseInt(surcharges.addressChange.sameWardFee, 10).toLocaleString('vi-VN')}đ`
+                      : null,
+                    surcharges.addressChange?.sameProvinceFee?.trim()
+                      ? `Cùng Tỉnh/Thành: ${parseInt(surcharges.addressChange.sameProvinceFee, 10).toLocaleString('vi-VN')}đ`
+                      : null,
+                    surcharges.addressChange?.interProvincePercent?.trim()
+                      ? `Khác Tỉnh/Thành: ${surcharges.addressChange.interProvincePercent}%`
+                      : null,
+                  ].filter((p): p is string => p !== null)
+                  if (tooltipParts.length === 0) return null
+                  return (
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', padding: '5px 10px' }}
+                      title={`${tooltipParts.join(' · ')} — chỉ áp dụng khi người nhận đổi địa chỉ sau khi đơn đã tạo`}
+                    >
+                      <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Phụ phí đổi địa chỉ</span>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>0đ</span>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
 

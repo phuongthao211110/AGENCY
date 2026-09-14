@@ -833,70 +833,87 @@ export default function AgencyDetail() {
 
         {activeTab === 'orders' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Thành phần đơn hàng — Super Admin bật/tắt riêng từng field phụ trong form tạo đơn
-                theo TỪNG đại lý. Field lõi (Bên gửi/nhận, Sản phẩm, Dịch vụ...) không tắt được.
-                Tắt 1 thành phần sẽ ẩn field đó khi tạo đơn mới ở cả Agency Admin và Web Shop của
-                đại lý này — không ảnh hưởng đơn đã tạo trước đó. Nhãn nhỏ bên cạnh mỗi field cho
-                biết field đó áp dụng cho loại đơn nào (Hàng hoá / Thư / cả 2).
-                Field thuộc phạm vi "Thư" CHỈ hiện nếu đại lý ĐÃ đăng ký 247Express (allowedCarriers)
-                VÀ đã được cấp ít nhất 1 hub (clientHubIds) — bật carrier thôi chưa đủ, thiếu hub
-                thì CreateLetterDrawerAgency không có "Bên gửi" để chọn, chưa tạo được đơn Thư
-                thật sự nên chưa có gì để cấu hình. */}
+            {/* Thành phần đơn hàng — tách thành 2 card riêng theo loại đơn (Hàng hoá / Thư, tài
+                liệu) thay vì 1 danh sách chung có nhãn phạm vi trên từng dòng — bản thân card đã
+                nói rõ phạm vi nên không cần nhãn nữa. Super Admin bật/tắt riêng từng field phụ
+                trong form tạo đơn theo TỪNG đại lý — field lõi (Bên gửi/nhận, Sản phẩm, Dịch
+                vụ...) không tắt được. Tắt 1 thành phần sẽ ẩn field đó khi tạo đơn mới ở cả Agency
+                Admin và Web Shop của đại lý này — không ảnh hưởng đơn đã tạo trước đó.
+                "Ghi chú xem hàng" áp dụng cho CẢ 2 loại đơn nên xuất hiện ở CẢ 2 card (cùng 1 giá
+                trị orderFormComponents.viewGoodsNote — bật/tắt ở card nào cũng ảnh hưởng card
+                kia). "Giá trị hàng" tuy cũng áp dụng kỹ thuật cho cả 2 loại đơn (CreateLetterDrawer
+                vẫn đọc formComponents.goodsValue) nhưng CHỈ hiện toggle ở card Hàng hoá — card Thư
+                không có toggle riêng cho field này, đơn giản hoá theo đúng thiết kế.
+                Card "Thư, tài liệu" LUÔN hiện đủ 2 dòng toggle, nhưng CHỈ bấm chọn được khi đại
+                lý ĐÃ đăng ký 247Express VÀ đã được cấp ít nhất 1 hub — thiếu 1 trong 2 thì toggle
+                hiện mờ, không bấm được (disabled), kèm banner cảnh báo giải thích lý do phía trên,
+                vì CreateLetterDrawerAgency chưa có "Bên gửi" để chọn, chưa tạo được đơn Thư thật
+                sự nên chưa có gì để cấu hình. */}
             {(() => {
               const has247 = (agency.allowedCarriers ?? ['GHN']).includes('247Express')
               const hasHub = (agency.clientHubIds ?? []).length > 0
               const letterReady = has247 && hasHub
-              const visibleKeys = (Object.keys(ORDER_FORM_COMPONENT_LABELS) as (keyof OrderFormComponents)[])
-                .filter((key) => letterReady || ORDER_FORM_COMPONENT_SCOPE[key] !== 'letter')
-              return (
-                <InfoCard title="Thành phần đơn hàng">
-                  {!letterReady && (
-                    <div style={{ fontSize: 12, color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 6, padding: '8px 10px', marginBottom: 8 }}>
-                      {!has247
-                        ? 'Đại lý chưa dùng 247Express nên chưa có đơn Thư. Bật 247Express bên dưới để thấy đủ.'
-                        : 'Đại lý chưa có hub gửi hàng nên chưa có đơn Thư. Cấp hub bên dưới để thấy đủ.'}
+              const current = agency.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
+
+              const goodsKeys = (Object.keys(ORDER_FORM_COMPONENT_LABELS) as (keyof OrderFormComponents)[])
+                .filter((key) => ORDER_FORM_COMPONENT_SCOPE[key] !== 'letter')
+              const letterKeys: (keyof OrderFormComponents)[] = ['letterContent', 'viewGoodsNote']
+
+              const renderRow = (key: keyof OrderFormComponents, i: number, disabled = false) => {
+                const on = current[key]
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '8px 0', borderTop: i === 0 ? 'none' : `1px solid ${C_BORDER}`,
+                      opacity: disabled ? 0.5 : 1,
+                    }}
+                  >
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{ORDER_FORM_COMPONENT_LABELS[key]}</span>
+                    <div
+                      onClick={disabled ? undefined : () => toggleOrderFormComponent(key)}
+                      title={disabled ? 'Đại lý chưa đủ điều kiện đơn Thư — xem banner phía trên' : (on ? 'Tắt' : 'Bật')}
+                      style={{
+                        width: 36, height: 20, borderRadius: 10, flexShrink: 0,
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        background: disabled ? '#D1D5DB' : (on ? '#16A34A' : '#D1D5DB'),
+                        position: 'relative', transition: 'background 0.2s',
+                      }}
+                    >
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, transition: 'left 0.2s', left: on ? 18 : 2, boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }} />
                     </div>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {visibleKeys.map((key, i) => {
-                      const current = agency.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
-                      const on = current[key]
-                      const scope = ORDER_FORM_COMPONENT_SCOPE[key]
-                      // Thư chưa sẵn sàng (thiếu 247Express hoặc thiếu hub) thì field "cả 2" chỉ
-                      // còn thật sự áp dụng cho Hàng hoá — bỏ "& Thư" khỏi nhãn để khỏi gây hiểu lầm.
-                      const scopeLabel = scope === 'both'
-                        ? (letterReady ? 'Hàng hoá & Thư' : 'Hàng hoá')
-                        : scope === 'goods' ? 'Hàng hoá' : 'Thư'
-                      return (
-                        <div
-                          key={key}
-                          style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '8px 0', borderTop: i === 0 ? 'none' : `1px solid ${C_BORDER}`,
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{ORDER_FORM_COMPONENT_LABELS[key]}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: C_TEXT_SECONDARY, background: '#F3F4F6', borderRadius: 10, padding: '2px 8px' }}>
-                              {scopeLabel}
-                            </span>
-                          </div>
-                          <div
-                            onClick={() => toggleOrderFormComponent(key)}
-                            title={on ? 'Tắt' : 'Bật'}
-                            style={{
-                              width: 36, height: 20, borderRadius: 10, cursor: 'pointer', flexShrink: 0,
-                              background: on ? '#16A34A' : '#D1D5DB',
-                              position: 'relative', transition: 'background 0.2s',
-                            }}
-                          >
-                            <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, transition: 'left 0.2s', left: on ? 18 : 2, boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }} />
-                          </div>
-                        </div>
-                      )
-                    })}
                   </div>
-                </InfoCard>
+                )
+              }
+
+              return (
+                <>
+                  <InfoCard title="📦 Hàng hoá">
+                    <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, fontStyle: 'italic', marginBottom: 8 }}>
+                      Chọn các trường mà đại lý được phép thiết lập khi tạo đơn hàng hoá
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {goodsKeys.map((key, i) => renderRow(key, i))}
+                    </div>
+                  </InfoCard>
+
+                  <InfoCard title="✉️ Thư, tài liệu">
+                    <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, fontStyle: 'italic', marginBottom: 8 }}>
+                      Chọn các trường mà đại lý được phép thiết lập khi tạo đơn thư, tài liệu
+                    </div>
+                    {!letterReady && (
+                      <div style={{ fontSize: 12, color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 6, padding: '8px 10px', marginBottom: 8 }}>
+                        {!has247
+                          ? 'Đại lý chưa dùng 247Express nên chưa có đơn Thư. Bật 247Express bên dưới để thấy đủ.'
+                          : 'Đại lý chưa có hub gửi hàng nên chưa có đơn Thư. Cấp hub bên dưới để thấy đủ.'}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {letterKeys.map((key, i) => renderRow(key, i, !letterReady))}
+                    </div>
+                  </InfoCard>
+                </>
               )
             })()}
           </div>

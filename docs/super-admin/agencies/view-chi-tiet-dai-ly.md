@@ -23,7 +23,7 @@ Là GHN Super Admin, tôi muốn xem thông tin chi tiết của một đại l�
 
 ## Acceptance Criteria
 
-**AC1:** Trang hiển thị 4 KPI tổng quan: Số shop, Số đơn hàng, Tổng COD (₫), Doanh thu (₫).
+**AC1:** Trang hiển thị 4 KPI tổng quan: Số shop, Đơn hàng, Tổng COD (₫), Tổng phí ship (₫) (xem GSA-DL-12 cho chi tiết công thức từng KPI).
 
 **AC2:** Trang có 3 tab: "Thông tin đại lý", "Danh sách shop", "Đơn hàng".
 

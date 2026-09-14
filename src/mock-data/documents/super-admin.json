@@ -207,7 +207,7 @@
             "Tại tab Thông tin đại lý: Super Admin có thể copy username, ẩn/hiện và copy mật khẩu"
           ],
           "acceptanceCriteria": [
-            "AC1: Trang hiển thị 4 KPI tổng quan: Số shop, Số đơn hàng, Tổng COD (₫), Doanh thu (₫).",
+            "AC1: Trang hiển thị 4 KPI tổng quan: Số shop, Đơn hàng, Tổng COD (₫), Tổng phí ship (₫) (xem GSA-DL-12 cho chi tiết công thức từng KPI).",
             "AC2: Trang có 3 tab: \"Thông tin đại lý\", \"Danh sách shop\", \"Đơn hàng\".",
             "AC3: Tab \"Thông tin đại lý\" — section Thông tin cơ bản hiển thị: Tên đại lý, Mã đại lý, Họ tên chủ đại lý, Số điện thoại, Địa chỉ.",
             "AC4: Tab \"Thông tin đại lý\" — section Cấu hình trang hiển thị URL trang Agency Admin (https://admin-[slug].chotdon.ai) và URL Web/App shop (https://shop-[slug].chotdon.ai).",
@@ -216,6 +216,174 @@
             "AC7: Tab \"Đơn hàng\" hiển thị danh sách đơn hàng của các shop thuộc đại lý.",
             "AC8: Khi copy text (username hoặc password), hệ thống hiển thị toast \"Sao chép thành công\" tự ẩn sau 2 giây.",
             "AC9: Khi không tìm thấy đại lý (ID không hợp lệ), hệ thống hiển thị thông báo lỗi và link quay lại danh sách đại lý."
+          ]
+        },
+        {
+          "id": "GSA-DL-9",
+          "jiraKey": "",
+          "title": "[GSA] Đại lý - Chi tiết - Đơn hàng: Bật/tắt thành phần đơn hàng",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn bật/tắt riêng từng thành phần phụ trong form tạo đơn hàng THEO TỪNG ĐẠI LÝ — tách rõ theo 2 nhóm \"Hàng hoá\" và \"Thư, tài liệu\" — để kiểm soát đại lý nào được dùng field nào mà không cần sửa code hay áp dụng chung cho toàn hệ thống.",
+          "userFlow": [
+            "Vào Chi tiết đại lý → tab \"Đơn hàng\".",
+            "Trang hiển thị 2 card riêng biệt: \"📦 Hàng hoá\" và \"✉️ Thư, tài liệu\" — mỗi card có dòng phụ đề in nghiêng giải thích phạm vi (\"Chọn các trường mà đại lý được phép thiết lập khi tạo đơn hàng hoá\" / \"...khi tạo đơn thư, tài liệu\").",
+            "Card \"Hàng hoá\" liệt kê 8 dòng: COD (Thu hộ), Giảm giá, Thu ship khách hàng, Giá trị hàng, Khai giá trị hàng, Giao / Trả 1 phần, Giao thất bại thu tiền, Ghi chú xem hàng — mỗi dòng chỉ gồm tên field + 1 toggle switch (không còn nhãn phạm vi nhỏ bên cạnh như bản trước).",
+            "Card \"Thư, tài liệu\" luôn liệt kê 2 dòng: Nội dung thư, tài liệu và Ghi chú xem hàng — bấm chọn được khi đại lý đã sẵn sàng đơn Thư, hoặc hiện mờ/khoá kèm banner cảnh báo nếu chưa (xem GSA-DL-10).",
+            "Bấm vào toggle ở BẤT KỲ card nào để bật/tắt ngay lập tức — không cần nút Lưu riêng.",
+            "Tắt 1 thành phần sẽ ẩn field đó khỏi form tạo đơn mới của đại lý này (ở cả Web Shop và Agency Admin) — không ảnh hưởng tới đơn ĐÃ tạo trước đó (chỉ gate lúc tạo mới)."
+          ],
+          "systemFlow": [
+            "AgencyDetail.tsx tab \"orders\" render 2 InfoCard riêng: \"📦 Hàng hoá\" và \"✉️ Thư, tài liệu\" (redesign từ 1 InfoCard title=\"Thành phần đơn hàng\" duy nhất trước đây).",
+            "goodsKeys = (Object.keys(ORDER_FORM_COMPONENT_LABELS) as (keyof OrderFormComponents)[]).filter((key) => ORDER_FORM_COMPONENT_SCOPE[key] !== 'letter') — lấy toàn bộ 8 field scope 'goods' hoặc 'both', giữ đúng thứ tự khai báo (cod, discount, shipCollect, goodsValue, declareValue, partialDeliver, collectOnFail, viewGoodsNote).",
+            "letterKeys: (keyof OrderFormComponents)[] = ['letterContent', 'viewGoodsNote'] — khai báo TƯỜNG MINH (không suy ra từ ORDER_FORM_COMPONENT_SCOPE) vì goodsValue cũng có scope 'both' nhưng KHÔNG hiện toggle ở card này (xem GSA-DL-10 cho lý do).",
+            "renderRow(key, i) là hàm render dùng chung cho cả 2 card — chỉ còn tên field (ORDER_FORM_COMPONENT_LABELS[key]) + toggle switch, KHÔNG còn badge phạm vi nhỏ (scopeLabel) như bản trước — vì bản thân card (Hàng hoá / Thư, tài liệu) đã nói rõ phạm vi, badge trên từng dòng trở thành thừa.",
+            "ORDER_FORM_COMPONENT_LABELS, DEFAULT_ORDER_FORM_COMPONENTS, toggleOrderFormComponent(key) (gọi setOrderFormComponent(agency.id, key, !current[key]), ghi thẳng vào agenciesList) giữ nguyên không đổi so với bản trước.",
+            "Toggle switch vẫn render bằng <div> tự vẽ (không dùng antd Switch) — nền xanh lá #16A34A khi bật, xám #D1D5DB khi tắt."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Đơn hàng\" của Chi tiết đại lý hiển thị 2 card riêng: \"📦 Hàng hoá\" và \"✉️ Thư, tài liệu\" — không còn 1 card gộp chung như bản trước.",
+            "AC2: Card \"Hàng hoá\" luôn hiển thị đủ 8 dòng theo đúng thứ tự: COD (Thu hộ), Giảm giá, Thu ship khách hàng, Giá trị hàng, Khai giá trị hàng, Giao / Trả 1 phần, Giao thất bại thu tiền, Ghi chú xem hàng — mỗi dòng chỉ gồm tên field + toggle, không có nhãn phạm vi nhỏ bên cạnh.",
+            "AC3: Mỗi card có 1 dòng phụ đề in nghiêng ngay dưới tiêu đề, đúng nguyên văn: \"Chọn các trường mà đại lý được phép thiết lập khi tạo đơn hàng hoá\" (card Hàng hoá) / \"Chọn các trường mà đại lý được phép thiết lập khi tạo đơn thư, tài liệu\" (card Thư, tài liệu).",
+            "AC4: Bấm vào toggle ở card bất kỳ → đổi trạng thái bật/tắt NGAY LẬP TỨC, không cần nút Lưu riêng, không có bước xác nhận.",
+            "AC5: Đại lý mới (seed cũ chưa có orderFormComponents) mặc định TẤT CẢ thành phần ở cả 2 card đều BẬT.",
+            "AC6: Tắt 1 thành phần → field tương ứng biến mất khỏi form tạo đơn MỚI của đại lý đó (không ảnh hưởng đơn đã tạo trước khi tắt).",
+            "AC7: Cấu hình này áp dụng riêng theo TỪNG đại lý — bật/tắt ở đại lý A không ảnh hưởng đại lý B."
+          ],
+          "notes": [
+            "Redesign theo mockup người dùng cung cấp: bản trước hiển thị 1 card \"Thành phần đơn hàng\" duy nhất, mỗi dòng kèm 1 badge nhỏ ghi phạm vi (Hàng hoá / Thư / Hàng hoá & Thư). Bản này tách thành 2 card riêng theo đúng loại đơn, bỏ hẳn badge phạm vi vì bản thân card đã nói rõ.",
+            "\"Ghi chú xem hàng\" (viewGoodsNote) xuất hiện Ở CẢ 2 CARD vì áp dụng cho cả 2 loại đơn — cùng chung 1 giá trị orderFormComponents.viewGoodsNote, bật/tắt ở card nào cũng ảnh hưởng card kia (đổi ở \"Hàng hoá\" thì \"Thư, tài liệu\" cũng đổi theo và ngược lại).",
+            "\"Giá trị hàng\" (goodsValue) tuy về mặt kỹ thuật cũng áp dụng cho cả 2 loại đơn (CreateLetterDrawer vẫn đọc formComponents.goodsValue để hiện field \"Giá trị hàng\" ở form Thư — xem GSA-DL-11) nhưng CHỈ có toggle ở card \"Hàng hoá\" — card \"Thư, tài liệu\" không hiện toggle riêng cho field này. Đây là lựa chọn đơn giản hoá theo đúng mockup, không phải do field này thực sự không áp dụng cho đơn Thư.",
+            "Đặt ở Super Admin (không phải Agency Admin hay Web Shop) theo quyết định rõ ràng của Super Admin trong phiên trước: \"sẽ cho phép đại lý nào được dùng field nào\" — giống mô hình cấp quyền carrier/hub đã có.",
+            "Xem GSA-DL-10 cho ràng buộc riêng của card \"Thư, tài liệu\" (điều kiện 247Express + hub), và GSA-DL-11 cho chi tiết cách 2 platform (Web Shop, Agency Admin) đọc và áp dụng cấu hình này."
+          ]
+        },
+        {
+          "id": "GSA-DL-10",
+          "jiraKey": "",
+          "title": "[GSA] Đại lý - Chi tiết - Đơn hàng: Ràng buộc thành phần Thư theo 247Express & Hub",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn LUÔN thấy đủ danh sách thành phần của đơn Thư trong card \"Thư, tài liệu\", nhưng CHỈ bấm chọn (bật/tắt) được khi đại lý ĐÃ sẵn sàng tạo đơn Thư (đã dùng 247Express VÀ đã có hub gửi hàng), để biết trước đơn Thư sẽ cấu hình được những gì mà không bấm nhầm khi đại lý chưa dùng được.",
+          "userFlow": [
+            "Vào Chi tiết đại lý → tab \"Đơn hàng\" của 1 đại lý CHƯA kích hoạt 247Express.",
+            "Card \"✉️ Thư, tài liệu\" hiện banner cảnh báo màu vàng: \"Đại lý chưa dùng 247Express nên chưa có đơn Thư. Bật 247Express bên dưới để thấy đủ.\" — NGAY BÊN DƯỚI banner, 2 dòng toggle (Nội dung thư/tài liệu, Ghi chú xem hàng) VẪN HIỂN THỊ nhưng mờ đi và KHÔNG bấm chọn được (con trỏ \"not-allowed\").",
+            "Với đại lý ĐÃ kích hoạt 247Express nhưng CHƯA được cấp hub gửi hàng nào: banner đổi thành \"Đại lý chưa có hub gửi hàng nên chưa có đơn Thư. Cấp hub bên dưới để thấy đủ.\" — 2 dòng toggle vẫn hiện mờ, vẫn không bấm chọn được.",
+            "Với đại lý ĐÃ có cả 247Express VÀ ít nhất 1 hub: không còn banner, 2 dòng toggle trở lại bình thường (rõ, bấm chọn được).",
+            "Card \"📦 Hàng hoá\" KHÔNG bị ảnh hưởng bởi điều kiện 247Express/hub — 8 dòng trong card này luôn rõ và bấm chọn được, bất kể đại lý đã sẵn sàng đơn Thư hay chưa (kể cả dòng \"Ghi chú xem hàng\" — chỉ bản sao của dòng này bên card \"Thư, tài liệu\" mới bị mờ/khoá khi chưa sẵn sàng)."
+          ],
+          "systemFlow": [
+            "has247 = (agency.allowedCarriers ?? ['GHN']).includes('247Express'), hasHub = (agency.clientHubIds ?? []).length > 0, letterReady = has247 && hasHub (AgencyDetail.tsx) — CẢ 2 điều kiện đều cần, chỉ bật carrier thôi CHƯA đủ vì thiếu hub thì CreateLetterDrawerAgency không có \"Bên gửi\" để chọn, chưa tạo được đơn Thư thật sự.",
+            "renderRow(key, i, disabled = false) nhận thêm tham số disabled — khi true: cả dòng giảm opacity: 0.5, toggle đổi cursor: 'not-allowed', nền toggle LUÔN xám #D1D5DB (bỏ qua trạng thái bật/tắt thật để tránh gây cảm giác \"vẫn đang bật\" dù không chỉnh được), onClick={undefined} (không gọi toggleOrderFormComponent), title đổi thành \"Đại lý chưa đủ điều kiện đơn Thư — xem banner phía trên\".",
+            "Card \"Thư, tài liệu\": banner (!letterReady &&) và danh sách toggle (letterKeys.map((key, i) => renderRow(key, i, !letterReady))) giờ LUÔN RENDER CẢ HAI — khác bản trước đó (chặn hẳn phần toggle bằng !letterReady ? banner : toggles, chỉ hiện 1 trong 2). Bản này hiện banner NHƯ MỘT CẢNH BÁO BỔ SUNG phía trên, danh sách toggle vẫn luôn ở đó (chỉ đổi trạng thái disabled).",
+            "Card \"Hàng hoá\" (goodsKeys) KHÔNG truyền disabled khi gọi renderRow (mặc định false) — không phụ thuộc letterReady dưới bất kỳ hình thức nào.",
+            "Giá trị lưu trong orderFormComponents (current[key]) KHÔNG bị xoá hay reset khi disabled — nếu đại lý từng được bật letterContent/viewGoodsNote trước khi mất điều kiện (ví dụ Super Admin thu hồi hub), giá trị true vẫn giữ nguyên trong dữ liệu, chỉ UI hiện disabled; khi đại lý đủ điều kiện trở lại, toggle hiện đúng lại trạng thái đã lưu trước đó (không tự động về false)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Đại lý CHƯA kích hoạt 247Express → card \"Thư, tài liệu\" hiện banner vàng \"Đại lý chưa dùng 247Express nên chưa có đơn Thư. Bật 247Express bên dưới để thấy đủ.\" VÀ vẫn hiện đủ 2 dòng toggle bên dưới, nhưng cả 2 dòng đều mờ (opacity 0.5) và không bấm chọn được.",
+            "AC2: Đại lý ĐÃ kích hoạt 247Express nhưng CHƯA có hub gửi hàng nào (clientHubIds rỗng) → banner đổi thành \"Đại lý chưa có hub gửi hàng nên chưa có đơn Thư. Cấp hub bên dưới để thấy đủ.\"; 2 dòng toggle vẫn mờ và không bấm chọn được.",
+            "AC3: Đại lý có ĐỦ CẢ 2 điều kiện (đã kích hoạt 247Express VÀ có ít nhất 1 hub) → card \"Thư, tài liệu\" không còn banner, 2 dòng toggle trở lại rõ và bấm chọn được bình thường.",
+            "AC4: Khi 2 dòng toggle của card \"Thư, tài liệu\" đang ở trạng thái disabled, bấm vào toggle KHÔNG có tác dụng gì (không gọi hàm bật/tắt); hover vào hiện tooltip \"Đại lý chưa đủ điều kiện đơn Thư — xem banner phía trên\".",
+            "AC5: Card \"📦 Hàng hoá\" luôn hiển thị đủ 8 dòng RÕ và bấm chọn được, KHÔNG phụ thuộc letterReady — kể cả khi đại lý hoàn toàn chưa sẵn sàng đơn Thư.",
+            "AC6: Bật 247Express + cấp hub cho 1 đại lý đang ở trạng thái disabled → 2 dòng toggle của card \"Thư, tài liệu\" cập nhật NGAY LẬP TỨC về trạng thái rõ, bấm chọn được (không cần reload trang), giữ nguyên đúng giá trị bật/tắt đã lưu trước đó (không bị reset về mặc định)."
+          ],
+          "notes": [
+            "Thay đổi hành vi theo phản hồi trực tiếp của user: bản trước (!letterReady ? banner : toggles) ẨN HẲN 2 dòng toggle khi chưa đủ điều kiện — chỉ còn banner, không thấy được 2 field này tồn tại. Bản này đổi sang LUÔN HIỆN 2 dòng (kèm banner ở trên), chỉ khoá tương tác (disabled) — đúng yêu cầu \"chỉ khi nào đại lý bật thì mới được chọn các option liên quan đến thư\" (tức là option vẫn hiện diện, chỉ không chọn được, chứ không phải ẩn biến mất).",
+            "Card \"Hàng hoá\" không có khái niệm disabled tương tự — 6 field phạm vi Hàng hoá thuần tuý và cả field \"cả 2\" (goodsValue, viewGoodsNote) ở card này LUÔN bấm chọn được vì không phụ thuộc điều kiện 247Express/hub.",
+            "Do bỏ hẳn badge phạm vi (xem GSA-DL-9), KHÔNG còn khái niệm scopeLabel động (\"Hàng hoá\" ↔ \"Hàng hoá & Thư\") như bản thiết kế cũ hơn — thay vào đó trạng thái sẵn sàng của Thư giờ thể hiện qua disabled/opacity trên chính 2 dòng toggle của card \"Thư, tài liệu\".",
+            "Câu banner giữ nguyên nội dung đơn giản, gần gũi đã chốt trước đó — không dùng thuật ngữ kỹ thuật (ClientHubID, 247Express API...)."
+          ]
+        },
+        {
+          "id": "GSA-DL-11",
+          "jiraKey": "",
+          "title": "[GSA] Đại lý - Chi tiết - Đơn hàng: Áp dụng thành phần đơn hàng ở Web Shop & Agency Admin",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn cấu hình \"Thành phần đơn hàng\" tôi thiết lập cho 1 đại lý được áp dụng THỰC SỰ vào form tạo đơn ở CẢ Web Shop lẫn Agency Admin của đại lý đó, để không phải cấu hình lặp lại ở từng platform.",
+          "userFlow": [
+            "Super Admin tắt 1 thành phần (ví dụ \"COD (thu hộ)\") cho 1 đại lý ở Chi tiết đại lý (xem GSA-DL-9).",
+            "Chủ shop thuộc đại lý đó mở \"Tạo đơn hàng\" ở Web Shop → field \"COD\" biến mất khỏi form, không cần đăng nhập lại hay refresh gì đặc biệt (chỉ cần điều hướng lại trang trong cùng phiên SPA).",
+            "Nhân viên đại lý mở \"Tạo đơn hàng\" ở Agency Admin (tạo đơn hộ shop) → field \"COD\" cũng biến mất tương tự, đồng bộ với Web Shop.",
+            "Với đơn Thư (CreateLetterDrawer/CreateLetterDrawerAgency): chỉ 3 trong 9 thành phần áp dụng (Giá trị hàng, Nội dung thư/tài liệu, Ghi chú xem hàng) — các thành phần thuộc phạm vi \"Hàng hoá\" (COD, Giảm giá, Thu ship khách hàng, Khai giá trị hàng, Giao/Trả 1 phần, Giao thất bại thu tiền) không hiện ở form Thư dù có bật hay tắt.",
+            "Bật lại thành phần đó → field xuất hiện trở lại ở cả 2 platform, cả loại đơn tương ứng.",
+            "Riêng \"COD\" có 1 ràng buộc BỔ SUNG: khi tắt \"COD\", nút \"Khách trả ship\" (trong toggle \"Ai trả phí ship\" ở card \"Phí vận chuyển\") biến mất khỏi form, CHỈ còn \"Shop trả ship\" — vì chọn \"Khách trả ship\" khiến GHN thu hộ CHÍNH phí ship từ người nhận khi giao, tương đương phát sinh 1 khoản thu hộ khi giao hàng dù không đi qua ô \"COD\" nhập tay. Nếu vẫn cho chọn \"Khách trả ship\" trong khi COD đã bị tắt, đơn hàng vẫn phát sinh thu hộ trên thực tế — sai với ý định \"đại lý này không dùng COD\" của Super Admin."
+          ],
+          "systemFlow": [
+            "Orders.tsx (Web Shop) — CreateOrderDrawer: formComponents = agenciesList.find(a => a.id === currentShop.agencyId)?.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS — tra theo agencyId của SHOP hiện tại (không phải theo shop). Bọc 7 field Hàng hoá bằng formComponents.X && và 1 dòng trong mảng ghi chú bằng spread có điều kiện (formComponents.viewGoodsNote ? [...] : []).",
+            "Orders.tsx — CreateLetterDrawer (đơn Thư): cùng biến formComponents (tính lại theo agencyId), chỉ bọc 3 field áp dụng cho Thư: goodsValue, letterContent, viewGoodsNote — 6 field còn lại (phạm vi thuần Hàng hoá) không tồn tại trong JSX của CreateLetterDrawer nên không cần gate.",
+            "AgencyOrders.tsx (Agency Admin) — CreateOrderDrawer: formComponents = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)?.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS — tra theo agency đang đăng nhập (CURRENT_AGENCY_ID, hằng số demo). Bọc cùng 7 field y hệt cấu trúc Web Shop.",
+            "AgencyOrders.tsx — CreateLetterDrawerAgency: formComponents = agency?.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS, bọc goodsValue, letterContent, viewGoodsNote.",
+            "Vì agenciesList là module-level mutable store dùng chung (không phải API riêng từng platform), thay đổi từ Super Admin có hiệu lực NGAY khi Web Shop/Agency Admin đọc lại agenciesList ở lần render kế tiếp — không cần bước đồng bộ/deploy riêng, miễn còn trong cùng phiên trình duyệt (SPA).",
+            "Trước khi thêm tính năng này, CreateLetterDrawerAgency (Agency Admin, đơn Thư) THIẾU HẲN field \"Ghi chú xem hàng\" — đây là bug có thật được phát hiện khi build tính năng (khác biệt với Web Shop vốn đã có field này), đã được bổ sung đầy đủ (state, effect đóng khi click ra ngoài, UI) để 2 platform khớp nhau trước khi gate theo formComponents.viewGoodsNote.",
+            "Ràng buộc \"COD\" ↔ \"Khách trả ship\" (cả 2 platform, Orders.tsx và AgencyOrders.tsx): thêm biến effectiveFeePayer = formComponents.cod ? feePayer : 'sender' — dùng biến này (thay vì feePayer thô) ở MỌI nơi tính tiền thu hộ (totalCollect = effectiveFeePayer === 'sender' ? cod + shipCollect : cod + feeShipping) và khi lưu đơn (feePayer: effectiveFeePayer trong newOrder, chỉ áp dụng ở Web Shop vì CreateOrderDrawer của Agency Admin hiện CHƯA thực sự gọi addOrder() khi bấm \"Tạo đơn\" — giới hạn có sẵn của prototype, không liên quan tới fix này). Nút \"Khách trả ship\" trong toggle \"Ai trả phí ship\" bị LỌC BỎ khỏi UI (.filter((p) => p === 'sender' || formComponents.cod)) khi formComponents.cod là false — không chỉ disable mà ẩn hẳn, tránh Super Admin/shop hiểu nhầm vẫn chọn được. Field \"Thu ship khách hàng\" (shipCollect) cũng đổi điều kiện disabled từ feePayer === 'receiver' sang effectiveFeePayer === 'receiver' để nhất quán."
+          ],
+          "crossPlatformImpact": [
+            "Web Shop — Tạo đơn Hàng hoá (CreateOrderDrawer, Orders.tsx): Đọc orderFormComponents theo currentShop.agencyId; ẩn/hiện 7 field phạm vi Hàng hoá theo đúng cấu hình Super Admin đã thiết lập cho đại lý của shop.",
+            "Web Shop — Tạo đơn Thư (CreateLetterDrawer, Orders.tsx): Đọc cùng orderFormComponents; chỉ ẩn/hiện 3 field áp dụng cho Thư (Giá trị hàng, Nội dung thư/tài liệu, Ghi chú xem hàng).",
+            "Agency Admin — Tạo đơn Hàng hoá (CreateOrderDrawer, AgencyOrders.tsx): Đọc orderFormComponents theo agency đang đăng nhập; cấu trúc gate y hệt Web Shop, đảm bảo 2 platform luôn đồng bộ hành vi ẩn/hiện field.",
+            "Agency Admin — Tạo đơn Thư (CreateLetterDrawerAgency, AgencyOrders.tsx): Bổ sung field \"Ghi chú xem hàng\" (trước đây thiếu so với Web Shop) rồi gate theo formComponents.viewGoodsNote, cùng goodsValue/letterContent."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Tắt 1 thành phần phạm vi \"Hàng hoá\" (ví dụ COD) cho 1 đại lý → field đó biến mất khỏi CreateOrderDrawer ở CẢ Web Shop (theo currentShop.agencyId) lẫn Agency Admin (theo CURRENT_AGENCY_ID) của đại lý đó.",
+            "AC2: Tắt 1 thành phần phạm vi \"cả 2\" hoặc \"Thư\" (Giá trị hàng / Nội dung thư, tài liệu / Ghi chú xem hàng) → field tương ứng biến mất khỏi CreateLetterDrawer (Web Shop) VÀ CreateLetterDrawerAgency (Agency Admin) đồng thời.",
+            "AC3: 6 thành phần phạm vi thuần \"Hàng hoá\" (COD, Giảm giá, Thu ship khách hàng, Khai giá trị hàng, Giao/Trả 1 phần, Giao thất bại thu tiền) không xuất hiện ở form tạo đơn Thư (CreateLetterDrawer/CreateLetterDrawerAgency) dù bật hay tắt ở Super Admin — không có gate nào cho các field này trong 2 component đó vì chúng vốn không tồn tại ở form Thư.",
+            "AC4: Thay đổi từ Super Admin có hiệu lực ngay khi platform khác điều hướng lại trang (không cần reload F5, không cần đợi deploy) trong cùng phiên trình duyệt.",
+            "AC5: CreateLetterDrawerAgency (Agency Admin, đơn Thư) có đủ field \"Ghi chú xem hàng\" tương đương Web Shop — bao gồm dropdown chọn chính sách xem hàng, đóng khi click ra ngoài — gate đúng theo formComponents.viewGoodsNote giống Web Shop.",
+            "AC6: Đại lý khác nhau có cấu hình orderFormComponents độc lập — form tạo đơn của đại lý A không bị ảnh hưởng bởi cấu hình của đại lý B.",
+            "AC7: Khi formComponents.cod là false, nút \"Khách trả ship\" biến mất khỏi toggle \"Ai trả phí ship\" ở CẢ Web Shop lẫn Agency Admin — chỉ còn \"Shop trả ship\" hiển thị (không phải dạng disabled còn nhìn thấy, mà ẩn hẳn khỏi UI).",
+            "AC8: Với formComponents.cod = false, tổng tiền thu hộ khi giao (totalCollect) KHÔNG được cộng thêm phí ship vào cho dù state feePayer cũ (nếu có) từng là 'receiver' — hệ thống luôn tính theo effectiveFeePayer = 'sender' bất kể giá trị feePayer thô đang lưu là gì.",
+            "AC9: Đơn hàng lưu lại (Web Shop) khi formComponents.cod = false phải ghi nhận feePayer: 'sender' — không được lưu 'receiver' dù bằng cách nào đó UI cũ còn cho phép chọn (phòng hờ dữ liệu cũ/race condition)."
+          ],
+          "notes": [
+            "2 nơi tra formComponents theo agency khác cách nhau: Web Shop tra qua currentShop.agencyId (vì Web Shop không biết trực tiếp mình thuộc đại lý nào ngoài qua shop), Agency Admin tra trực tiếp qua agency đang đăng nhập — cùng đọc từ 1 nguồn agenciesList.orderFormComponents.",
+            "Phát hiện và sửa 1 bug thật trong lúc build tính năng: CreateLetterDrawerAgency (Agency Admin) thiếu field \"Ghi chú xem hàng\" so với Web Shop — đã bổ sung để đồng bộ trước khi gate theo cấu hình Super Admin (nếu không sửa, dù Super Admin bật viewGoodsNote, Agency Admin vẫn không có field này để hiện).",
+            "Xem GSA-DL-9 cho UI bật/tắt trên Super Admin, GSA-DL-10 cho ràng buộc riêng của các field phạm vi Thư.",
+            "Sửa bug nghiệp vụ thật (phát hiện sau khi feature đã lên demo): tắt \"COD\" trước đó CHỈ ẩn ô nhập \"COD\" — không ngăn được việc chọn \"Khách trả ship\", khiến GHN vẫn thu hộ phí ship từ người nhận khi giao (totalCollect = cod + feeShipping khi feePayer === 'receiver', với cod = 0 thì vẫn còn feeShipping > 0). Đã vá bằng effectiveFeePayer — ép về 'sender' và ẩn hẳn nút \"Khách trả ship\" khi COD bị tắt, áp dụng đồng thời ở cả Orders.tsx (Web Shop) và AgencyOrders.tsx (Agency Admin).",
+            "Giới hạn đã biết, KHÔNG liên quan tới fix này: CreateOrderDrawer (đơn Hàng hoá) ở Agency Admin hiện chưa thực sự gọi addOrder() khi bấm \"Tạo đơn\" (nút chỉ đóng drawer) — nên feePayer: effectiveFeePayer mới chỉ áp dụng khi LƯU đơn ở Web Shop; ở Agency Admin, fix chỉ có tác dụng trên UI (ẩn nút, tính đúng totalCollect hiển thị) vì chưa có bước lưu thật để kiểm chứng."
+          ]
+        },
+        {
+          "id": "GSA-DL-12",
+          "jiraKey": "",
+          "title": "[GSA] Đại lý - Chi tiết: Thống kê tổng quan",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn xem nhanh 4 chỉ số tổng quan (số shop, số đơn hàng, tổng COD, tổng phí ship) ngay đầu trang Chi tiết đại lý — với công thức tính RÕ RÀNG, áp dụng ĐÚNG NHƯ NHAU cho MỌI đại lý (không riêng đại lý nào) — để nắm được quy mô hoạt động của bất kỳ đại lý nào mà không cần vào từng tab.",
+          "userFlow": [
+            "Vào Chi tiết đại lý bất kỳ (bấm tên đại lý từ danh sách đại lý).",
+            "Ngay dưới tiêu đề \"Xem chi tiết\", trước phần tab (Thông tin đại lý / Danh sách shop / Đơn hàng), hiện tiêu đề nhỏ \"Thống kê tổng quan\" và 4 thẻ KPI xếp ngang: Số shop, Đơn hàng, Tổng COD (đ), Tổng phí ship (đ).",
+            "Mỗi thẻ gồm: icon màu riêng + nhãn xám nhỏ ở trên, số liệu lớn đậm bên dưới.",
+            "Cả 4 công thức đều tính TRỰC TIẾP từ dữ liệu của CHÍNH đại lý đang xem (không hardcode theo 1 đại lý cụ thể nào) — đổi sang xem đại lý khác thì cả 4 số đổi theo đúng dữ liệu đại lý đó.",
+            "Số liệu lớn của \"Đơn hàng\", \"Tổng COD\", \"Tổng phí ship\" được rút gọn nếu đủ lớn (ví dụ \"15.8k\" đơn, \"553.7M\" đồng, \"308K\" đồng) — riêng \"Số shop\" luôn hiện số nguyên đầy đủ, không rút gọn."
+          ],
+          "systemFlow": [
+            "AgencyDetail.tsx render khối \"KPI section\" ngay sau header trang, trước tab bar — dùng chung component KpiCard (icon, label, value, iconColor). Cả 4 công thức nhận agency (đại lý đang xem trang Chi tiết) làm đầu vào — thay agency bằng bất kỳ đại lý nào, công thức áp dụng y hệt.",
+            "Bảng công thức: \"Số shop\" = agency.totalShops (1 con số đếm sẵn trong dữ liệu đại lý — tổng số shop có agencyId bằng đại lý này). \"Đơn hàng\" = agency.totalOrders (đếm sẵn — tổng số đơn cộng dồn từ mọi shop thuộc đại lý này). \"Tổng COD (₫)\" = agency.totalOrders × 35.000 — 2 thành phần: (1) totalOrders (dùng lại số ở trên), (2) hằng số giả định 35.000 (COD trung bình/đơn), cố định cho mọi đại lý, không lấy từ COD thật từng đơn. \"Tổng phí ship (₫)\" = Σ (với mỗi shop s có s.agencyId = agency.id) getShopServiceFeeTotal(s.id) — 2 bước: (1) lọc danh sách shop thuộc đại lý này, (2) với từng shop gọi getShopServiceFeeTotal(shopId) cộng dồn trường shopServiceFee (phí dịch vụ gộp, chưa trừ phí NVC) của mọi dòng đối soát có shopId khớp, rồi cộng tổng tất cả shop lại.",
+            "cod và totalFeeShip được tính lại (const cod = ..., const totalFeeShip = ...) ngay trong AgencyDetail.tsx mỗi khi trang render — dùng đúng agency đang xem, không có biến toàn cục hay hardcode theo agency ID cụ thể nào.",
+            "getShopServiceFeeTotal() (định nghĩa tại reconciliationLedger.ts) là hàm DÙNG CHUNG — cùng hàm này cũng được AgencyReport.tsx (Agency Admin, cột \"Tổng phí\" theo shop) gọi, đảm bảo con số ở Super Admin và Agency Admin luôn khớp nhau cho cùng 1 shop.",
+            "Lưu ý phân biệt: getShopServiceFeeTotal() trả về phí GỘP (shopServiceFee), KHÁC với getShopMargin() (đã trừ ghnFee, ra lời thật của đại lý) — \"Tổng phí ship\" ở đây là DOANH SỐ dịch vụ đại lý bán ra, không phải lợi nhuận ròng.",
+            "Shop chưa có dòng đối soát nào (mới tạo, chưa phát sinh đơn) → đóng góp 0 vào tổng — không gây lỗi hay NaN.",
+            "fmtVND(n): rút gọn theo ngưỡng — ≥ 1 tỷ → \"X.XB\", ≥ 1 triệu → \"X.XM\", ≥ 1 nghìn → \"XK\" (làm tròn, không thập phân), dưới 1 nghìn → số nguyên định dạng vi-VN. Dùng cho \"Tổng COD\" và \"Tổng phí ship\".",
+            "fmtNum(n): chỉ có 1 ngưỡng — ≥ 1000 → \"X.Xk\" (chữ \"k\" thường, khác chữ \"K\" hoa của fmtVND), dưới 1000 → số nguyên. Dùng cho \"Đơn hàng\".",
+            "Icon + màu cố định theo thứ tự: \"Số shop\" → ShopOutlined xanh dương #3B82F6; \"Đơn hàng\" → InboxOutlined xanh lá #10B981; \"Tổng COD (₫)\" → DollarOutlined cam #F59E0B; \"Tổng phí ship (₫)\" → BarChartOutlined tím #8B5CF6."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Khối \"Thống kê tổng quan\" hiện ngay dưới header trang, TRƯỚC tab bar — không phụ thuộc tab đang chọn, luôn hiển thị, cho MỌI đại lý (không riêng đại lý nào).",
+            "AC2: Hiện đúng 4 thẻ theo thứ tự: \"Số shop\", \"Đơn hàng\", \"Tổng COD (₫)\", \"Tổng phí ship (₫)\" — mỗi thẻ có icon riêng, màu khác nhau (xanh dương, xanh lá, cam, tím).",
+            "AC3: \"Số shop\" = agency.totalShops của ĐÚNG đại lý đang xem — luôn hiện số nguyên đầy đủ, không rút gọn K/M/B.",
+            "AC4: \"Đơn hàng\" = agency.totalOrders của ĐÚNG đại lý đang xem, rút gọn theo fmtNum (ví dụ 15.800 đơn hiện \"15.8k\").",
+            "AC5: \"Tổng COD (₫)\" = agency.totalOrders × 35.000 — LUÔN dùng đúng totalOrders của đại lý đang xem (không phải số cố định), nhân với hằng số 35.000 giống nhau cho mọi đại lý; kết quả rút gọn theo fmtVND.",
+            "AC6: \"Tổng phí ship (₫)\" = tổng getShopServiceFeeTotal(shopId) của TẤT CẢ shop có agencyId bằng đại lý đang xem — đổi đại lý thì danh sách shop lọc ra khác, kết quả khác theo đúng dữ liệu thật; KHÔNG được suy ra từ COD hay từ bất kỳ hằng số cố định nào.",
+            "AC7: Với 1 đại lý cụ thể có N shop, tổng \"Tổng phí ship\" của đại lý đó phải BẰNG đúng tổng cộng \"Tổng phí\" của N shop đó khi xem riêng từng shop ở Agency Admin (AgencyReport.tsx) — 2 nơi dùng chung 1 hàm getShopServiceFeeTotal() nên không được lệch nhau.",
+            "AC8: Đại lý không có shop nào, hoặc các shop chưa có dòng đối soát nào → \"Tổng phí ship (₫)\" hiện \"0\" (không lỗi, không NaN).",
+            "AC9: Đại lý có 0 đơn hàng (totalOrders = 0) → \"Đơn hàng\" hiện \"0\" và \"Tổng COD (₫)\" hiện \"0\" (không phải hiện trống hay lỗi)."
+          ],
+          "notes": [
+            "Story tách riêng khối \"Thống kê tổng quan\" khỏi GSA-DL-8 (\"View thông tin chi tiết đại lý\") để mô tả sâu chi tiết công thức/thành phần của từng KPI theo cách TỔNG QUÁT (áp dụng mọi đại lý) thay vì chỉ minh hoạ bằng số của 1 đại lý cụ thể.",
+            "Đã đồng bộ sửa AC1 của GSA-DL-8 (trước đây ghi \"Doanh thu (₫)\" — tên cũ) thành \"Tổng phí ship (₫)\" cho khớp code hiện tại.",
+            "\"Tổng phí ship (₫)\" từng mang tên \"Doanh thu (₫)\" với công thức demo cod × 2.8% — đã đổi tên + công thức thật (dựa trên dữ liệu đối soát, tổng hợp theo TỪNG shop rồi cộng dồn) ở 1 lần sửa trước đó trong phiên, theo đúng bản chất nghiệp vụ: doanh số dịch vụ đại lý = tổng phí dịch vụ đã bán cho shop, không phải % COD.",
+            "Known inconsistency (đã biết, chưa xử lý): \"Tổng COD (₫)\" VẪN dùng công thức demo cố định (totalOrders × 35.000, hằng số giả định cho MỌI đại lý) — chưa đổi sang cộng dồn COD thật từng shop (getShopCodTotal(), hàm đã có sẵn trong reconciliationLedger.ts nhưng CHƯA được gọi ở đây) như đã làm cho \"Tổng phí ship\". Nếu muốn \"Tổng COD\" cũng chính xác theo TỪNG đại lý dựa trên dữ liệu thật, chỉ cần đổi công thức sang Σ getShopCodTotal(shopId) tương tự \"Tổng phí ship\" — đây là việc cần làm ở sprint sau, chưa nằm trong phạm vi story này.",
+            "Ví dụ minh hoạ cụ thể (1 đại lý mẫu, KHÔNG phải công thức riêng cho đại lý đó): Số shop = 24, Đơn hàng = 15.8k, Tổng COD (₫) = 553.7M, Tổng phí ship (₫) = 308K — cùng 4 công thức trên áp dụng cho đại lý khác sẽ ra 4 số khác tương ứng với dữ liệu thật của đại lý đó."
           ]
         }
       ]
@@ -303,212 +471,415 @@
     },
     {
       "key": "route-config",
-      "title": "Cấu hình Vùng & Tuyến",
+      "title": "Vùng & Tuyến",
       "stories": [
         {
           "id": "GSA-ROUTE-1",
           "jiraKey": "",
-          "title": "[GSA] Cấu hình Vùng & Tuyến: Tổng quan và giải thích khái niệm",
+          "title": "[GSA] Vùng & Tuyến: Tổng quan và giải thích khái niệm",
           "status": "draft",
-          "userStory": "Là GHN Super Admin, tôi muốn truy cập trang Cấu hình Vùng & Tuyến và đọc phần giải thích khái niệm để hiểu rõ cách hệ thống tính ra tên tuyến trước khi bắt đầu cấu hình.",
-          "notes": [],
+          "userStory": "Là GHN Super Admin, tôi muốn hiểu rõ mối quan hệ giữa Miền, Cặp miền và Tuyến ngay trên trang cấu hình, để không cấu hình sai khi thêm/sửa miền hoặc tuyến ở các khối bên dưới.",
+          "notes": [
+            "Đây là story mô tả phần giới thiệu/khái niệm tĩnh của trang — các thao tác cấu hình thật (thêm/sửa/xoá miền, tuyến, nội/ngoại thành) xem GSA-ROUTE-2 đến GSA-ROUTE-4.",
+            "Cập nhật lại từ bản cũ: tên trang rút gọn (\"Vùng & Tuyến\" thay vì \"Cấu hình Vùng & Tuyến\"), thêm nút \"Thiết lập lại\" ở cấp trang (trước đây không có)."
+          ],
           "userFlow": [
-            "Super Admin truy cập menu \"Cấu hình Vùng & Tuyến\" (route /super-admin/route-config)",
-            "Hệ thống hiển thị tiêu đề trang và mô tả ngắn về mục đích",
-            "Super Admin đọc panel xanh dương \"Cách tuyến được tính ra\" gồm 3 khái niệm theo thứ tự: Miền → Cặp miền → Tuyến",
-            "Super Admin đọc ví dụ minh hoạ cụ thể đính kèm trong panel"
+            "Vào trang \"Vùng & Tuyến\" (/super-admin/route-config)",
+            "Ngay dưới tiêu đề trang là khối giải thích màu xanh nhạt \"Cách tuyến được tính ra\", gồm 3 khái niệm theo thứ tự: Miền → Cặp miền → Tuyến",
+            "Cuối khối có 1 ví dụ trực quan: đơn gửi từ Hà Nội đến TP. Hồ Chí Minh → cặp miền \"Hà Nội (Đặc biệt)\" ↔ \"TP. Hồ Chí Minh (Đặc biệt)\" → tuyến \"Liên Vùng Đặc Biệt\"",
+            "Ở góc phải tiêu đề trang có nút \"↻ Thiết lập lại\" — tải lại toàn bộ trang"
           ],
           "systemFlow": [
-            "Route /super-admin/route-config render component RouteConfig.tsx (src/platforms/super-admin/pages/RouteConfig.tsx, dòng 200–244)",
-            "Trang hiển thị tiêu đề và mô tả tổng quan: \"Định nghĩa 1 lần, dùng chung cho mọi đại lý — mọi bảng giá (GHN, 247Express, NVC khác) khi được tạo ở Agency Admin sẽ đọc đúng danh sách miền/tuyến này, không cần cấu hình lại theo từng đại lý.\"",
-            "Panel giải thích render 3 khái niệm tĩnh (không phụ thuộc dữ liệu động) kèm ví dụ minh hoạ cụ thể — không có API call hay side effect nào ở bước này"
+            "RouteConfig.tsx — tiêu đề trang \"Vùng & Tuyến\" (rút gọn từ \"Cấu hình Vùng & Tuyến\"), mô tả 1 dòng \"Cấu hình vùng, miền và tuyến dùng chung cho mọi đại lý.\"",
+            "Khối giải thích là nội dung tĩnh (không đọc dữ liệu động), gồm 3 card: \"1. Miền\" (nhóm các tỉnh lại — mỗi tỉnh thuộc đúng 1 miền), \"2. Cặp miền\" (2 miền ghép lại khi có đơn gửi từ tỉnh miền này đến tỉnh miền kia — kể cả gửi trong cùng 1 miền), \"3. Tuyến\" (tên đặt cho 1 hoặc nhiều cặp miền, dùng để tính giá — nhiều cặp có thể chung 1 tên nếu muốn tính cùng giá)",
+            "Ví dụ minh hoạ cuối khối cũng là chuỗi tĩnh, không đổi theo dữ liệu thật đang cấu hình",
+            "Nút \"Thiết lập lại\" gọi window.location.reload() — tải lại toàn bộ trang, reset MỌI thay đổi trong phiên (Cấu hình vùng miền, Cấu hình tuyến, Nội/Ngoại thành) về dữ liệu mẫu gốc vì store chỉ là module-level in-memory, không có backend/localStorage"
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Trang hiển thị tiêu đề \"Cấu hình Vùng & Tuyến\" và mô tả: \"Định nghĩa 1 lần, dùng chung cho mọi đại lý — mọi bảng giá (GHN, 247Express, NVC khác) khi được tạo ở Agency Admin sẽ đọc đúng danh sách miền/tuyến này, không cần cấu hình lại theo từng đại lý.\"",
-            "AC2: Panel xanh dương \"Cách tuyến được tính ra\" giải thích đúng 3 khái niệm theo thứ tự: Miền (nhóm tỉnh, mỗi tỉnh thuộc đúng 1 miền), Cặp miền (2 miền ghép lại khi có đơn gửi từ tỉnh miền này đến tỉnh miền kia, kể cả cùng 1 miền), Tuyến (tên đặt cho 1 hoặc nhiều cặp miền, dùng tính giá, nhiều cặp có thể chung 1 tên).",
-            "AC3: Panel kèm ví dụ minh hoạ cụ thể: Hà Nội → TP. Hồ Chí Minh → cặp miền \"Hà Nội (Đặc biệt)\" ↔ \"TP. Hồ Chí Minh (Đặc biệt)\" → tuyến \"Liên Vùng Đặc Biệt\"."
+            "AC1: Khối giải thích luôn hiển thị ngay dưới tiêu đề trang, trước mọi khối cấu hình khác.",
+            "AC2: Đúng thứ tự và nội dung 3 khái niệm: Miền, Cặp miền, Tuyến — kèm mô tả 1 dòng cho mỗi khái niệm.",
+            "AC3: Ví dụ minh hoạ hiển thị đúng chuỗi: Hà Nội → TP. Hồ Chí Minh ⇒ cặp miền \"Hà Nội (Đặc biệt)\" ↔ \"TP. Hồ Chí Minh (Đặc biệt)\" ⇒ tuyến \"Liên Vùng Đặc Biệt\".",
+            "AC4: Nút \"Thiết lập lại\" luôn hiển thị ở góc phải tiêu đề trang, bấm vào tải lại toàn bộ trang (không chỉ riêng 1 khối)."
           ]
         },
         {
           "id": "GSA-ROUTE-2",
           "jiraKey": "",
-          "title": "[GSA] Cấu hình Vùng & Tuyến: Bước 1 — Định nghĩa Miền/Vùng",
+          "title": "[GSA] Vùng & Tuyến: Cấu hình vùng miền",
           "status": "draft",
-          "userStory": "Là GHN Super Admin, tôi muốn định nghĩa và quản lý các miền/vùng địa lý (thêm miền mới, đổi tên, xoá miền; gán và gỡ tỉnh) để xây dựng cơ sở phân vùng cho hệ thống tính tuyến dùng chung cho mọi đại lý.",
-          "notes": [],
+          "userStory": "Là GHN Super Admin, tôi muốn định nghĩa các miền và gán tỉnh/thành vào từng miền theo dạng bảng, có validate tên trùng và tỉnh trống, để hệ thống có nền tảng đúng trước khi đặt tên tuyến.",
+          "notes": [
+            "Đổi tên story từ \"Bước 1 — Định nghĩa Miền/Vùng\" thành \"Cấu hình vùng miền\", khớp đúng tên khối trên UI hiện tại.",
+            "Bỏ hẳn công cụ \"Điền nhanh theo khoảng tỉnh\" (trước đây là 1 thanh công cụ nằm trong khối này, cho phép chọn khoảng tỉnh Bắc→Nam rồi gán hàng loạt vào 1 miền) theo yêu cầu đơn giản hoá — story riêng cho tính năng này (GSA-ROUTE-3 cũ) đã bị xoá. Gán tỉnh giờ chỉ còn 1 cách: chọn từng tỉnh qua dropdown \"Chọn Tỉnh/Thành\" hoặc gỡ qua chip X.",
+            "Thay đổi validate quan trọng: trước đây dòng miền mới thêm (tên rỗng, chưa có tỉnh) báo lỗi NGAY LẬP TỨC cho cả 2 điều kiện. Nay đã đổi thành: mọi validate chỉ áp dụng SAU KHI miền đã có tên — một dòng hoàn toàn trống (chưa gõ gì) sẽ không hiện lỗi nào."
+          ],
           "userFlow": [
-            "Super Admin ở trang Cấu hình Vùng & Tuyến, cuộn đến khối \"Bước 1: Định nghĩa Miền/Vùng\"",
-            "Hệ thống hiển thị 6 miền seed sẵn theo quy tắc GHN thật",
-            "Super Admin đổi tên miền bằng cách nhập trực tiếp vào ô input trên card miền",
-            "Super Admin gỡ tỉnh khỏi miền bằng cách bấm nút X trên chip tỉnh",
-            "Super Admin gán thêm tỉnh vào miền qua dropdown \"+Thêm tỉnh\" (chỉ liệt kê tỉnh chưa thuộc miền nào)",
-            "Super Admin xoá cả miền bằng nút X đầu card",
-            "Super Admin tạo miền mới bằng nút \"+ Thêm miền\""
+            "Vào khối \"🗺️ Cấu hình vùng miền\" trong trang \"Vùng & Tuyến\"",
+            "Bảng 2 cột \"Tên vùng miền | Tỉnh/Thành phố\" — mỗi dòng là 1 miền, đã điền sẵn 6 miền theo quy tắc GHN (Hà Nội, Đà Nẵng, TP. Hồ Chí Minh, Miền Nam/Trung/Bắc theo Vùng 1/2/3)",
+            "Sửa tên miền bằng cách gõ trực tiếp vào ô tên — gõ trùng tên miền khác sẽ hiện lỗi đỏ ngay dưới ô; để tên trống thì KHÔNG báo lỗi",
+            "Gỡ 1 tỉnh khỏi miền bằng nút X trên chip tỉnh; gán thêm tỉnh bằng dropdown \"Chọn Tỉnh/Thành\" cuối danh sách chip (chỉ hiện khi còn tỉnh chưa được gán miền nào)",
+            "Miền ĐÃ ĐẶT TÊN nhưng chưa có tỉnh nào sẽ hiện lỗi đỏ \"Vui lòng chọn Tỉnh/Thành\" dưới dropdown; miền CHƯA đặt tên thì không báo lỗi này dù cũng chưa có tỉnh",
+            "Bấm nút \"+ Thêm vùng miền\" ở cuối bảng → thêm 1 dòng miền mới, tên và danh sách tỉnh đều trống, KHÔNG báo lỗi gì cho tới khi Super Admin bắt đầu gõ tên",
+            "Xoá hẳn 1 miền bằng nút X cuối dòng",
+            "Nếu còn tỉnh chưa được gán miền nào, cuối bảng hiện dòng chữ xám liệt kê tối đa 10 tỉnh đầu + số tỉnh còn lại"
           ],
           "systemFlow": [
-            "RouteConfig.tsx dòng 246–369 render khối Bước 1 — đọc danh sách miền từ store routeConfig.ts",
-            "Seed sẵn 6 miền: 3 miền đặc biệt (Hà Nội, Đà Nẵng, TP. Hồ Chí Minh — mỗi miền chỉ 1 tỉnh/thành) + 3 vùng số (Miền Nam/Vùng 1, Miền Trung/Vùng 2, Miền Bắc/Vùng 3 — gộp nhiều tỉnh)",
-            "handleRenameRegion — đổi tên miền inline trên card, cập nhật store ngay lập tức",
-            "handleRemoveProvince — gỡ tỉnh khỏi miền khi bấm X trên chip; tỉnh trở thành \"chưa gán\"",
-            "handleAssignProvince — gán tỉnh từ dropdown (chỉ liệt kê tỉnh chưa thuộc miền nào); khi gán vào miền mới, hệ thống tự động gỡ tỉnh khỏi miền cũ — không cảnh báo thêm",
-            "handleDeleteRegion — xoá cả miền khỏi store; kéo theo xoá toàn bộ cặp miền trong ma trận Bước 2 có nhắc tới miền đó",
-            "Cảnh báo vàng cuối khối xuất hiện nếu có tỉnh chưa gán miền nào: liệt kê tối đa 10 tỉnh đầu + đếm số còn lại, kèm câu \"chưa tra được tuyến cho các tỉnh này\""
+            "RouteConfig.tsx — khối \"Cấu hình vùng miền\" render bảng từ localRegions (đồng bộ 2 chiều với regions trong routeConfig.ts)",
+            "regionNameError(region): nếu tên (sau trim) rỗng → trả null (không báo lỗi, dòng coi như chưa bắt đầu); nếu tên trùng (không phân biệt hoa/thường) với miền khác → trả \"Tên vùng miền đã tồn tại\"; ngược lại null",
+            "provinceError tính inline tại nơi render: chỉ trả \"Vui lòng chọn Tỉnh/Thành\" khi region.name.trim() khác rỗng VÀ region.provinces.length === 0 — tức là chỉ validate tỉnh sau khi miền đã có tên",
+            "Dropdown \"Chọn Tỉnh/Thành\" chỉ render khi unassignedList.length > 0 (còn tỉnh chưa gán miền nào) — chọn 1 tỉnh gọi assignProvinceToRegion(), tự động gỡ tỉnh đó khỏi miền cũ nếu đang thuộc miền khác (đảm bảo 1 tỉnh ∈ đúng 1 miền)",
+            "handleAddRegion() gọi addRegion('') — tên miền mới luôn là chuỗi rỗng, không tự đặt \"Miền mới N\"; vì cả 2 lỗi validate đều gate theo \"đã có tên\", dòng mới thêm hiển thị hoàn toàn im lặng cho tới khi Super Admin gõ tên",
+            "handleDeleteRegion(id) — xoá miền khỏi localRegions, xoá mọi cặp miền trong routeMatrix có tham chiếu tới miền đó (chuyển các cặp này về \"chưa cấu hình\"), bao gồm cả cặp \"đường chéo\" (cùng miền) mà miền đó đang đóng góp cho tuyến \"Nội Tỉnh\" hoặc tuyến khác (xem GSA-ROUTE-3)",
+            "Thêm miền mới cũng tự động seed 1 cặp \"đường chéo\" (cùng miền) gán sẵn cho tuyến \"Nội Tỉnh\" — không cần thao tác gì thêm ở khối Cấu hình tuyến",
+            "Footer \"N tỉnh chưa được gán vùng miền\" là dòng chữ xám đơn giản, chỉ hiện khi unassignedList.length > 0"
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Khối \"Bước 1: Định nghĩa Miền/Vùng\" hiển thị đúng 6 miền seed sẵn: 3 miền đặc biệt (Hà Nội, Đà Nẵng, TP. Hồ Chí Minh — mỗi miền chỉ 1 tỉnh/thành) và 3 vùng số (Miền Nam/Vùng 1, Miền Trung/Vùng 2, Miền Bắc/Vùng 3 — mỗi vùng gộp nhiều tỉnh).",
-            "AC2: Mỗi card miền gồm: ô input đổi tên miền inline, dải chip tỉnh thuộc miền (mỗi chip có nút X để gỡ tỉnh), dropdown \"+ Thêm tỉnh\" chỉ liệt kê tỉnh chưa thuộc miền nào, và nút X đầu card để xoá cả miền.",
-            "AC3: Một tỉnh chỉ thuộc đúng 1 miền tại 1 thời điểm — khi gán tỉnh vào miền mới qua dropdown, hệ thống tự động gỡ tỉnh đó khỏi miền cũ mà không yêu cầu xác nhận thêm.",
-            "AC4: Xoá miền (bấm X đầu card) kéo theo xoá toàn bộ cặp miền trong ma trận Bước 2 có nhắc tới miền đó — chip cặp miền tương ứng ở các tuyến Bước 2 biến mất.",
-            "AC5: Nút \"+ Thêm miền\" tạo 1 card miền mới rỗng với tên mặc định \"Miền mới N\".",
-            "AC6: Nếu có tỉnh chưa được gán vào miền nào, hiển thị cảnh báo vàng cuối khối: liệt kê tối đa 10 tỉnh đầu và đếm số tỉnh còn lại, kèm thông báo \"chưa tra được tuyến cho các tỉnh này\".",
-            "AC7: Khi tất cả 63 tỉnh đã được gán miền, cảnh báo vàng không hiển thị."
+            "AC1: Bảng hiển thị đúng 2 cột \"Tên vùng miền\" và \"Tỉnh/Thành phố\", mỗi dòng 1 miền.",
+            "AC2: Miền CHƯA đặt tên (tên rỗng) không hiện bất kỳ lỗi nào — kể cả khi cũng chưa có tỉnh nào. Miền ĐÃ đặt tên và trùng với miền khác (không phân biệt hoa/thường) → lỗi đỏ \"Tên vùng miền đã tồn tại\".",
+            "AC3: Miền ĐÃ đặt tên nhưng không có tỉnh nào → lỗi đỏ \"Vui lòng chọn Tỉnh/Thành\" hiện dưới dropdown chọn tỉnh; miền chưa đặt tên thì không hiện lỗi này.",
+            "AC4: Gán 1 tỉnh đang thuộc miền A sang miền B → tỉnh đó tự động biến mất khỏi miền A, chỉ còn ở miền B (1 tỉnh luôn thuộc đúng 1 miền).",
+            "AC5: Bấm \"+ Thêm vùng miền\" → thêm 1 dòng miền mới với tên rỗng và không có tỉnh nào — KHÔNG hiện lỗi gì ngay lúc này; lỗi chỉ xuất hiện sau khi Super Admin gõ tên (nếu trùng) hoặc gõ tên mà chưa chọn tỉnh.",
+            "AC6: Xoá 1 miền → miền biến mất khỏi bảng, mọi cặp miền liên quan trong Cấu hình tuyến chuyển về \"chưa cấu hình\", bao gồm cả cặp \"đường chéo\" của miền đó.",
+            "AC7: Dropdown \"Chọn Tỉnh/Thành\" chỉ hiện khi còn tỉnh chưa được gán miền nào trong toàn hệ thống — hết tỉnh trống thì ẩn hẳn dropdown ở mọi dòng.",
+            "AC8: Footer liệt kê tỉnh chưa gán miền chỉ hiện khi có ít nhất 1 tỉnh chưa gán, dạng chữ xám đơn giản (không phải khung cảnh báo)."
           ]
         },
         {
           "id": "GSA-ROUTE-3",
           "jiraKey": "",
-          "title": "[GSA] Cấu hình Vùng & Tuyến: Điền nhanh theo khoảng tỉnh",
+          "title": "[GSA] Vùng & Tuyến: Cấu hình tuyến",
           "status": "draft",
-          "userStory": "Là GHN Super Admin, tôi muốn gán hàng loạt tỉnh vào một miền theo khoảng địa lý Bắc → Nam để tiết kiệm thời gian so với việc gán từng tỉnh một qua chip.",
+          "userStory": "Là GHN Super Admin, tôi muốn đặt tên tuyến theo dạng bảng và tick các cặp miền thuộc từng tuyến — bao gồm cả cặp \"cùng miền\" (Nội Tỉnh) qua đúng 1 cơ chế chip duy nhất — để hệ thống có thể tra cứu ra đúng tên tuyến khi tính giá cho đơn hàng giữa 2 tỉnh bất kỳ.",
           "notes": [
-            "Tính năng được thêm sau khi thảo luận về cách tham chiếu bảng định nghĩa miền theo ranh giới (\"từ tỉnh X trở vào/ra\"). Quyết định cuối: KHÔNG thay thế cơ chế chip, chỉ thêm công cụ điền nhanh hàng loạt bổ trợ."
+            "Redesign quan trọng: bản trước có 1 dòng \"Nội tỉnh\" ĐẶC BIỆT với ô input riêng cho TỪNG miền. Bản này bỏ hẳn cách đó — \"Nội Tỉnh\" giờ CHỈ LÀ 1 TÊN TUYẾN BÌNH THƯỜNG được seed sẵn cho mọi cặp đường chéo, dùng chung đúng 1 cơ chế chip với mọi tuyến khác. Muốn đặt giá \"cùng tỉnh\" riêng cho 1 miền, Super Admin chỉ cần bỏ tick chip miền đó khỏi \"Nội Tỉnh\" rồi tick vào 1 dòng tuyến khác.",
+            "Tên tuyến được lưu làm KHOÁ tra cứu trong routeMatrix (không phải ID bất biến riêng) — đổi tên cần đồng bộ ở mọi cặp miền đang dùng tên đó. Đây là ràng buộc thiết kế hiện tại của prototype; production cần ID bất biến cho tuyến.",
+            "\"Nội Tỉnh\" không xoá/đổi tên được nhằm bảo vệ khái niệm mặc định luôn tồn tại trên UI — nhưng không có gì ngăn Super Admin di chuyển TẤT CẢ 6 chip cùng miền sang tuyến khác, khiến dòng \"Nội Tỉnh\" hiển thị không còn chip nào được tick (vẫn hợp lệ).",
+            "Đổi tên story từ \"Bước 2 — Đặt tên tuyến và phạm vi áp dụng\" thành \"Cấu hình tuyến\"; đổi số từ GSA-ROUTE-4 (cũ) thành GSA-ROUTE-3 sau khi xoá story \"Điền nhanh theo khoảng tỉnh\" (GSA-ROUTE-3 cũ, tính năng đã bị gỡ khỏi UI)."
           ],
           "userFlow": [
-            "Trong khối Bước 1, Super Admin thấy khu vực \"Điền nhanh theo khoảng tỉnh\" phía trên dải chip",
-            "Chọn \"Từ tỉnh\" từ dropdown 63 tỉnh (thứ tự Bắc → Nam)",
-            "Chọn \"Đến tỉnh\" từ cùng dropdown",
-            "Chọn miền đích từ dropdown miền hiện có",
-            "Bấm nút \"Áp dụng\"",
-            "Toàn bộ tỉnh trong khoảng (bao gồm 2 đầu) được gán vào miền đích; tỉnh đang thuộc miền khác trong khoảng tự động chuyển sang miền mới"
+            "Cuộn đến khối \"🔀 Cấu hình tuyến\" trong trang \"Vùng & Tuyến\"",
+            "Nếu chưa có miền nào (ở khối \"Cấu hình vùng miền\"), khối này chỉ hiện dòng chữ \"Chưa có vùng miền nào — thêm ở khối 'Cấu hình vùng miền' trước.\" thay vì bảng",
+            "Bảng 2 cột \"Tên tuyến | Cặp vùng miền\" — dòng đầu tiên LUÔN là \"Nội Tỉnh\" (hiển thị dạng nhãn/pill màu cam, KHÔNG sửa tên được, KHÔNG xoá được), nền dòng cam nhạt",
+            "Các dòng tuyến bên dưới: sửa tên tuyến bằng cách gõ trực tiếp vào ô tên (tối thiểu 2 ký tự, gõ ngắn hơn hiện lỗi đỏ)",
+            "Mỗi dòng tuyến (kể cả dòng \"Nội Tỉnh\") hiển thị ĐẦY ĐỦ chip cho MỌI cặp vùng miền có thể có — bao gồm cả chip \"cùng miền\" (ví dụ \"Hà Nội\", \"Đà Nẵng\", \"TP. Hồ Chí Minh\", \"Miền Nam (Vùng 1)\"...) lẫn chip \"khác miền\" (ví dụ \"Hà Nội (Đặc biệt) ↔ Đà Nẵng (Đặc biệt)\")",
+            "Bấm 1 chip trong dòng tuyến bất kỳ để tick/bỏ tick cặp đó vào tuyến hiện tại — kể cả chip \"cùng miền\" trong dòng \"Nội Tỉnh\": bỏ tick 1 miền khỏi \"Nội Tỉnh\" rồi tick vào 1 dòng tuyến khác để đặt giá riêng cho miền đó khi gửi trong cùng tỉnh",
+            "Bấm nút \"+ Thêm tuyến\" ở cuối bảng để thêm 1 dòng tuyến trống, chưa tick cặp nào",
+            "Xoá hẳn 1 dòng tuyến bằng nút X cuối dòng (không áp dụng cho dòng \"Nội Tỉnh\" — dòng này không có nút X)",
+            "Nếu còn cặp vùng miền chưa được gán tuyến nào, cuối bảng hiện dòng chữ xám liệt kê tối đa 6 cặp đầu + số cặp còn lại"
           ],
           "systemFlow": [
-            "RouteConfig.tsx dòng 267–311 render khu vực điền nhanh nằm trong khối Bước 1",
-            "handleApplyRange (dòng 111–123): lấy index của tỉnh \"từ\" và \"đến\" trong mảng ALL_PROVINCES (63 tỉnh, thứ tự file vietnam-provinces.ts — Bắc → Nam), tự động xác định minIndex/maxIndex không phụ thuộc thứ tự người dùng chọn trước/sau",
-            "Vòng lặp gọi assignProvinceToRegion cho từng tỉnh trong khoảng [minIndex, maxIndex] (gồm 2 đầu) — tỉnh đang thuộc miền khác tự động chuyển sang miền đích mà không cảnh báo thêm",
-            "Nút \"Áp dụng\" bị disable khi chưa chọn đủ cả 3 giá trị (từ tỉnh, đến tỉnh, miền đích)"
+            "RouteConfig.tsx render khối \"Cấu hình tuyến\". allRegionPairs là mọi tổ hợp 2 miền có thể có, KỂ CẢ cặp \"đường chéo\" (a.id === b.id, 1 miền ghép với chính nó — đại diện cho MỌI đơn hàng trong phạm vi 1 miền, cả cùng tỉnh lẫn khác tỉnh cùng miền)",
+            "routeMatrix trong routeConfig.ts seed sẵn TẤT CẢ 6 cặp đường chéo (HN|HN, DN|DN, HCM|HCM, V1|V1, V2|V2, V3|V3) đều mặc định = 'Nội Tỉnh'. Đây chỉ là giá trị khởi tạo, KHÔNG phải hằng số đặc biệt — về bản chất 'Nội Tỉnh' chỉ là 1 tên tuyến bình thường như bất kỳ tên nào khác",
+            "Trong component, dòng có name === 'Nội Tỉnh' (biến isNoiTinh) được ĐẨY LÊN ĐẦU danh sách hiển thị (orderedNames) và render nhãn tên dưới dạng <span> pill cam cố định thay vì <input>, ẩn nút xoá X — đây là 2 ĐIỂM KHÁC BIỆT DUY NHẤT so với 1 dòng tuyến bình thường; toàn bộ phần chip vẫn dùng chung đúng 1 đoạn code allRegionPairs.map(...) với handleToggleChip như mọi dòng khác",
+            "Nhãn chip \"đường chéo\" (a.id === b.id) hiển thị rút gọn: a.name.replace(' (Đặc biệt)', '') — ví dụ \"Hà Nội (Đặc biệt)\" hiện thành \"Hà Nội\"; miền nhiều tỉnh (ví dụ \"Miền Nam (Vùng 1)\") không có hậu tố này nên giữ nguyên. Chip \"khác miền\" vẫn hiển thị đầy đủ dạng A ↔ B",
+            "tuyenNameError(name): trả \"Ít nhất 2 ký tự\" nếu tên (sau trim) ngắn hơn 2 ký tự — CHỈ áp dụng cho dòng KHÔNG PHẢI \"Nội Tỉnh\" (isNoiTinh ? null : tuyenNameError(name))",
+            "handleRenameTuyen và handleDeleteTuyen đều có guard if (name === 'Nội Tỉnh') return ở đầu hàm — chặn đổi tên/xoá dòng này dù có cách nào gọi tới cũng không có tác dụng",
+            "handleToggleChip(routeName, regionIdA, regionIdB) — nếu cặp đang gán đúng routeName này thì gọi clearRouteName (bỏ tick), ngược lại gọi setRouteName (tick, ghi đè tuyến cũ nếu cặp đang thuộc tuyến khác) — áp dụng ĐỒNG NHẤT cho mọi loại chip (cùng miền lẫn khác miền), không có nhánh xử lý riêng",
+            "resolveRouteName(fromProvince, toProvince) trong routeConfig.ts: khi 2 tỉnh giống nhau, tra miền của tỉnh đó rồi đọc trực tiếp routeMatrix[pairKey(regionId, regionId)] — không còn dict riêng lưu tên theo từng miền như bản thiết kế trước",
+            "unconfiguredPairs là allRegionPairs lọc ra các cặp chưa có key trong localMatrix — hiển thị ở footer cảnh báo; mặc định luôn rỗng cho các cặp đường chéo vì đã seed sẵn \"Nội Tỉnh\""
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Khu vực điền nhanh trong Bước 1 gồm: dropdown \"Từ tỉnh\", dropdown \"Đến tỉnh\" (mỗi dropdown liệt kê đủ 63 tỉnh theo thứ tự Bắc → Nam của vietnam-provinces.ts), dropdown chọn miền đích, và nút \"Áp dụng\".",
-            "AC2: Nút \"Áp dụng\" bị disable cho đến khi chọn đủ cả 3 giá trị (từ tỉnh, đến tỉnh, miền đích).",
-            "AC3: Khi bấm \"Áp dụng\", hệ thống xác định khoảng theo index trong ALL_PROVINCES — không phụ thuộc thứ tự người dùng chọn \"từ tỉnh\" hay \"đến tỉnh\" trước — rồi gán toàn bộ tỉnh trong khoảng (gồm cả 2 đầu) vào miền đích.",
-            "AC4: Tỉnh trong khoảng đang thuộc miền khác sẽ tự động chuyển sang miền đích — không có cảnh báo hay bước xác nhận thêm.",
-            "AC5: Ghi chú nhỏ dưới khu vực điền nhanh: \"Dựa theo thứ tự Bắc → Nam có sẵn — tỉnh đang thuộc miền khác sẽ bị chuyển sang miền vừa chọn. Chỉ để điền nhanh hàng loạt; vẫn sửa tay từng tỉnh bằng chip bên dưới cho các ngoại lệ.\"",
-            "AC6: Công cụ điền nhanh là lối tắt bổ trợ, không thay thế cơ chế gán tỉnh bằng chip — chip vẫn là cách xử lý ngoại lệ (ví dụ: 3 TP đặc biệt có ranh giới miền không trùng với thứ tự địa lý liên tục)."
+            "AC1: Nếu chưa có miền nào, khối hiện đúng dòng \"Chưa có vùng miền nào — thêm ở khối 'Cấu hình vùng miền' trước.\" thay vì bảng.",
+            "AC2: Dòng đầu tiên của bảng luôn là \"Nội Tỉnh\" (nhãn pill cam #FFEAD9/viền #FDBA74/chữ #FF5200, nền dòng cam nhạt #FFF4ED) — không sửa được tên (không phải ô input), không có nút xoá.",
+            "AC3: MỌI dòng tuyến (kể cả \"Nội Tỉnh\") hiển thị đủ chip cho MỌI cặp vùng miền có thể có, bao gồm cả chip \"cùng miền\" (đường chéo) và chip \"khác miền\" — dùng chung 1 cơ chế toggle chip duy nhất, không có input riêng theo từng miền.",
+            "AC4: Chip \"cùng miền\" hiển thị tên rút gọn (bỏ hậu tố \"(Đặc biệt)\", ví dụ \"Hà Nội\" thay vì \"Hà Nội (Đặc biệt)\"); chip \"khác miền\" hiển thị đầy đủ dạng \"A ↔ B\".",
+            "AC5: Mặc định, mọi chip \"cùng miền\" (6 miền) đều đang tick ở dòng \"Nội Tỉnh\"; Super Admin bấm chip đó ở dòng khác để CHUYỂN miền đó sang tuyến khác — chip tự động bỏ tick ở \"Nội Tỉnh\" và tick ở dòng vừa bấm, không cảnh báo.",
+            "AC6: Tên tuyến (dòng thường, KHÔNG áp dụng cho \"Nội Tỉnh\") ngắn hơn 2 ký tự (sau khi trim) → lỗi đỏ \"Ít nhất 2 ký tự\" hiện ngay dưới ô tên.",
+            "AC7: Bấm chip đang tick ở tuyến hiện tại → bỏ tick (cặp về \"chưa cấu hình\"); bấm chip đang tick ở tuyến KHÁC → tự chuyển cặp đó sang tuyến hiện tại, không cảnh báo.",
+            "AC8: Đổi tên 1 dòng tuyến thường → cập nhật tên hiển thị cho MỌI cặp miền đang gán tuyến đó; thao tác này KHÔNG áp dụng được cho dòng \"Nội Tỉnh\" (không có ô input để đổi).",
+            "AC9: Bấm \"+ Thêm tuyến\" → thêm 1 dòng tuyến mới ở cuối bảng, tên rỗng (lỗi AC6 hiện ngay), chưa tick cặp miền nào.",
+            "AC10: Bấm X cuối dòng tuyến thường → xoá dòng tuyến; mọi cặp miền đang gán tuyến đó (kể cả cặp cùng miền nếu có) chuyển về \"chưa cấu hình\". Dòng \"Nội Tỉnh\" không có nút X nên không xoá được bằng thao tác này.",
+            "AC11: Nếu có cặp vùng miền chưa được gán tuyến nào, footer hiện dòng chữ xám: liệt kê tối đa 6 cặp đầu và đếm số cặp còn lại; hết cặp trống thì ẩn dòng này."
           ]
         },
         {
           "id": "GSA-ROUTE-4",
           "jiraKey": "",
-          "title": "[GSA] Cấu hình Vùng & Tuyến: Bước 2 — Đặt tên tuyến và phạm vi áp dụng",
+          "title": "[GSA] Vùng & Tuyến: Cấu hình nội & ngoại thành",
           "status": "draft",
-          "userStory": "Là GHN Super Admin, tôi muốn đặt tên tuyến và tick các cặp miền thuộc từng tuyến để hệ thống có thể tra cứu ra đúng tên tuyến khi tính giá cho đơn hàng giữa 2 tỉnh bất kỳ.",
+          "userStory": "Là GHN Super Admin, tôi muốn phân loại xã/phường Nội thành và Ngoại thành cho từng tỉnh/thành phố theo dạng sidebar + checklist 2 cột, với cơ chế nháp/lưu rõ ràng, để các đại lý có thể tách giá Nội/Ngoại thành khi tạo bảng giá mà không sợ mỗi lần tick nhầm là ảnh hưởng ngay dữ liệu dùng chung.",
           "notes": [
-            "Tên tuyến được lưu làm khoá tra cứu trong store (không phải UUID riêng biệt) — nên khi đổi tên tuyến cần đổi đồng bộ ở mọi cặp miền đang dùng tên đó. Đây là ràng buộc thiết kế hiện tại của prototype; production cần ID bất biến cho tuyến.",
-            "Thêm miền mới ở Bước 1 (addRegion) tự động seed thêm 1 dòng \"Nội Tỉnh\" mặc định cho miền đó ở Bước 2; xoá miền (deleteRegion) cũng xoá luôn dòng tương ứng — không cần thao tác thêm ở Bước 2.",
-            "Trước đây (bản cũ hơn) chỉ có 1 dòng \"Nội Tỉnh\" DÙNG CHUNG cho mọi miền — đã đổi thành mỗi miền 1 dòng riêng để hỗ trợ tính giá khác nhau cho nội tỉnh theo từng miền (vd Hà Nội có thể tính giá nội tỉnh khác Miền Nam (Vùng 1))."
+            "Redesign hoàn toàn so với bản trước (danh sách card theo chiều dọc, mỗi card 1 tỉnh với dải chip xã/phường + ô nhập tự do) — chuyển sang layout sidebar (danh sách tỉnh) + panel 2 cột checklist, theo đúng mockup người dùng cung cấp.",
+            "Thay đổi hành vi quan trọng: xã/phường không còn thêm/xoá tự do được qua UI nữa — chỉ tick chọn phân loại Nội/Ngoại thành cho các xã/phường ĐÃ có sẵn trong dữ liệu seed. Đây là quyết định rõ ràng của Super Admin: \"các dòng phường xã đều không có nút huỷ, không được tự ý thêm vào\".",
+            "Hệ quả đã biết, chưa xử lý: tỉnh mới thêm qua \"+ Thêm tỉnh\" sẽ có danh sách xã/phường rỗng vĩnh viễn — hiện chưa có cơ chế nào (kể cả nháp) để nạp xã/phường cho tỉnh mới. Cần bổ sung ở sprint sau nếu muốn tỉnh mới thêm hữu dụng thật sự.",
+            "Ghi chú khác biệt ranh giới hành chính (đã biết, chưa cần xử lý): \"Cấu hình vùng miền\" (GSA-ROUTE-2) dùng danh sách 63 tỉnh theo ranh giới CŨ (trước sáp nhập 2025), trong khi khối này dùng tên tỉnh/xã theo ranh giới MỚI (sau sáp nhập 2025) — 2 khối hiện không tham chiếu chéo lẫn nhau nên không phát sinh lỗi, nhưng là điểm cần đồng bộ khi có dữ liệu hành chính chính thức.",
+            "Cơ chế nháp/lưu (urbanDraft vs localUrbanConfigs/store) khác với 2 khối Miền và Tuyến ở trên — 2 khối đó ghi thẳng vào store dùng chung ngay khi thao tác, không có bước \"Lưu thay đổi\" riêng."
           ],
           "userFlow": [
-            "Super Admin cuộn đến khối \"Bước 2: Đặt tên tuyến & phạm vi áp dụng\" trong trang Cấu hình Vùng & Tuyến",
-            "Hệ thống hiển thị 1 dòng cố định \"Nội Tỉnh\" cho MỖI miền đang có (không có nút xoá, mỗi miền đổi tên độc lập) + danh sách các tuyến do Super Admin tạo",
-            "Super Admin đổi tên tuyến bằng cách nhập trực tiếp vào ô input trên card tuyến",
-            "Super Admin bấm chip cặp miền để tick/bỏ tick cặp đó vào tuyến hiện tại",
-            "Super Admin tạo tuyến mới bằng nút \"+ Thêm tuyến\"",
-            "Super Admin xoá tuyến bằng nút X trên card tuyến"
+            "Cuộn đến khối \"🏙️ Cấu hình nội & ngoại thành\" trong trang \"Vùng & Tuyến\"",
+            "Sidebar bên trái liệt kê các tỉnh/thành đã cấu hình; bấm 1 tỉnh để chọn (dòng chọn tô cam, có viền trái cam)",
+            "Panel bên phải hiện 2 cột \"Nội thành\" và \"Ngoại thành\" của tỉnh đang chọn — mỗi cột là 1 checklist TOÀN BỘ xã/phường của tỉnh đó, có ô tìm kiếm riêng và checkbox \"Tất cả\" ở đầu danh sách",
+            "Tick checkbox 1 xã/phường ở cột \"Nội thành\" → xã/phường đó chuyển sang Nội thành (tự động bỏ tick ở cột \"Ngoại thành\")",
+            "Tick \"Tất cả\" ở 1 cột → toàn bộ xã/phường của tỉnh chuyển về cột đó",
+            "Gõ vào ô tìm kiếm của 1 cột để lọc xã/phường theo tên (không ảnh hưởng tick chọn, chỉ ẩn/hiện dòng)",
+            "Bấm \"+ Thêm tỉnh\" ở cuối sidebar → mở danh sách thả lên (phía trên nút) gồm các tỉnh chưa có trong sidebar — bấm chọn 1 tỉnh để thêm (tỉnh mới chưa có xã/phường nào)",
+            "Bấm X trên 1 dòng tỉnh trong sidebar để bỏ tỉnh đó khỏi danh sách phân biệt Nội/Ngoại thành",
+            "Mọi thao tác chỉ sửa bản nháp — thanh hành động cuối khối có 3 nút: \"✕ Huỷ bỏ\" (bỏ hết thay đổi nháp, disable khi chưa có gì thay đổi), \"↻ Thiết lập lại\" (tải lại toàn bộ trang, luôn bấm được), \"💾 Lưu thay đổi\" (ghi nháp vào dữ liệu dùng chung thật, disable khi chưa có gì thay đổi)"
           ],
           "systemFlow": [
-            "RouteConfig.tsx render khối Bước 2 — nếu Bước 1 chưa có miền nào, hiển thị \"Chưa có miền nào — thêm miền ở Bước 1 trước.\" thay vì danh sách tuyến",
-            "Mỗi miền có 1 dòng \"Nội Tỉnh\" riêng (sameProvinceRouteByRegion[regionId]) — 2 tỉnh giống nhau map vào tên tuyến của ĐÚNG miền chứa tỉnh đó (không còn 1 tên chung cho mọi miền); mỗi dòng không có nút X để xoá, tên đổi được qua ô input riêng của từng miền",
-            "handleRenameTuyen — đổi tên tuyến: vì hệ thống lưu tên chuỗi làm khoá, đổi tên 1 chỗ áp dụng cho mọi cặp miền đang gán tên tuyến đó",
-            "handleToggleChip — tick/bỏ tick cặp miền vào tuyến hiện tại: 1 cặp miền chỉ thuộc đúng 1 tuyến tại 1 thời điểm; tick cặp đang thuộc tuyến khác sẽ tự chuyển tuyến mà không cảnh báo",
-            "handleDeleteTuyen — xoá tuyến: các cặp miền đang gán tuyến đó chuyển thành \"chưa cấu hình\"; cặp miền không bị xoá, chỉ mất tên tuyến",
-            "Cảnh báo vàng cuối khối xuất hiện nếu có cặp miền chưa thuộc tuyến nào: liệt kê tối đa 6 cặp đầu + đếm số còn lại"
+            "RouteConfig.tsx render khối \"Cấu hình nội & ngoại thành\" — khối này độc lập với phần Miền/Tuyến ở trên, và dùng cơ chế DRAFT riêng (urbanDraft) thay vì ghi thẳng vào store như 2 khối kia",
+            "UrbanCategoryColumn — nhận toàn bộ wards của tỉnh đang chọn, tự lọc categoryWards = wards.filter(w => w.isUrban === targetIsUrban) để đếm số lượng, và visibleWards theo ô tìm kiếm cục bộ. Mỗi dòng xã/phường là 1 checkbox — KHÔNG có nút xoá, KHÔNG có ô thêm xã/phường tự do; danh sách xã/phường là cố định theo địa giới, Super Admin chỉ đổi phân loại",
+            "handleToggleUrbanWardDraft(province, ward) lật isUrban của đúng 1 xã/phường trong urbanDraft — vì isUrban chỉ có 2 giá trị, tick vào cột này luôn tương đương bỏ tick ở cột kia",
+            "handleSelectAllUrbanWards(province, isUrban) — set toàn bộ wards của tỉnh về 1 giá trị isUrban (checkbox \"Tất cả\")",
+            "\"+ Thêm tỉnh\" — nút nằm Ở CUỐI sidebar, bấm mở danh sách thả LÊN TRÊN liệt kê availableUrbanProvinces (63 tỉnh trừ các tỉnh đã có trong urbanDraft); chọn 1 tỉnh gọi handleAddUrbanProvinceDraft(name) — thêm vào urbanDraft với wards: [] (KHÔNG có cơ chế nào để thêm xã/phường cho tỉnh mới này sau đó), auto-chọn tỉnh vừa thêm, đóng menu. Nút disable khi hết tỉnh khả dụng",
+            "hasUrbanChanges = JSON.stringify(urbanDraft) !== JSON.stringify(localUrbanConfigs) — gate cho nút \"Huỷ bỏ\" và \"Lưu thay đổi\"",
+            "commitUrbanDraft — diff từng tỉnh và từng xã/phường giữa urbanDraft và localUrbanConfigs, gọi đúng hàm mutate tương ứng của store dùng chung (addUrbanProvince/removeUrbanProvince/addUrbanWard/removeUrbanWard/toggleUrbanWardClassification trong routeConfig.ts) vì store không có hàm \"ghi đè toàn bộ\"",
+            "Nút \"↻ Thiết lập lại\" trong thanh hành động gọi window.location.reload() — giống nút ở đầu trang, luôn bấm được kể cả khi chưa có thay đổi nháp"
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Mỗi miền đang có hiển thị 1 dòng \"Nội Tỉnh\" riêng, cố định ở đầu danh sách (trên các card tuyến), không có nút xoá, kèm mô tả \"Phạm vi: các tỉnh trong {tên miền}, gửi trong cùng 1 tỉnh — không cần tick, luôn áp dụng.\" Tên mỗi dòng đổi được độc lập qua ô input riêng — đổi tên miền này không ảnh hưởng tên của miền khác.",
-            "AC2: Mỗi card tuyến gồm: ô input đổi tên tuyến inline, dải chip cặp miền (mỗi chip là 1 cặp miền có thể có — gồm cả cùng miền, ví dụ \"Miền Nam (Vùng 1)\" ↔ \"Miền Nam (Vùng 1)\" nghĩa là 2 tỉnh khác nhau cùng thuộc Miền Nam), và nút X để xoá tuyến.",
-            "AC3: Bấm chip để tick/bỏ tick cặp miền vào tuyến — 1 cặp miền chỉ thuộc đúng 1 tuyến tại 1 thời điểm; tick cặp đang thuộc tuyến khác sẽ tự chuyển tuyến mà không cảnh báo.",
-            "AC4: Đổi tên tuyến cập nhật tên cho mọi cặp miền đang gán tuyến đó (vì hệ thống lưu tên tuyến làm khoá).",
-            "AC5: Xoá tuyến (bấm X) khiến các cặp miền đang thuộc tuyến đó chuyển thành \"chưa cấu hình\" — cặp miền không bị xoá khỏi ma trận, chỉ mất tên tuyến.",
-            "AC6: Nút \"+ Thêm tuyến\" tạo 1 card tuyến mới rỗng tên mặc định \"Tuyến mới N\", chưa tick cặp miền nào.",
-            "AC7: Nếu Bước 1 chưa có miền nào, khối Bước 2 hiển thị thông báo \"Chưa có miền nào — thêm miền ở Bước 1 trước.\" thay vì danh sách tuyến.",
-            "AC8: Nếu có cặp miền chưa được gán tuyến nào, hiển thị cảnh báo vàng cuối khối: liệt kê tối đa 6 cặp đầu và đếm số còn lại."
+            "AC1: Sidebar liệt kê các tỉnh trong urbanDraft; chưa có tỉnh nào → hiện \"Chưa có tỉnh nào.\" trong sidebar và \"Chọn 1 tỉnh/thành ở danh sách bên trái, hoặc thêm tỉnh mới.\" ở panel chính.",
+            "AC2: Chọn 1 tỉnh trong sidebar → panel chính hiện đúng 2 cột \"Nội thành\" (chấm xanh lá) và \"Ngoại thành\" (chấm tím), mỗi cột hiện đúng số lượng xã/phường thuộc phân loại đó và checklist toàn bộ xã/phường của tỉnh.",
+            "AC3: Tick checkbox 1 xã/phường ở cột A → xã/phường đó chuyển sang phân loại của cột A, tự động bỏ tick ở cột kia (không cần 2 thao tác).",
+            "AC4: Tick checkbox \"Tất cả\" ở đầu 1 cột → toàn bộ xã/phường của tỉnh đang chọn chuyển về phân loại của cột đó.",
+            "AC5: Gõ vào ô tìm kiếm của 1 cột → chỉ lọc hiển thị theo tên, không thay đổi phân loại của bất kỳ xã/phường nào.",
+            "AC6: Xã/phường KHÔNG có nút xoá và KHÔNG có ô nhập để thêm xã/phường mới tự do — danh sách xã/phường của 1 tỉnh chỉ có thể được xác lập khi tỉnh đó được thêm (hiện tại luôn rỗng, chưa có cơ chế nạp thêm qua UI).",
+            "AC7: Nút \"+ Thêm tỉnh\" ở CUỐI sidebar, bấm mở danh sách các tỉnh chưa có (thả lên trên) — chọn 1 tỉnh sẽ thêm tỉnh đó (với danh sách xã/phường rỗng) vào sidebar và tự động chọn tỉnh đó; nút disable khi mọi tỉnh đã được thêm hết.",
+            "AC8: Bấm X trên 1 dòng tỉnh trong sidebar → bỏ tỉnh đó khỏi bản nháp; nếu tỉnh đang bị xoá đang được chọn, tự động chuyển sang chọn tỉnh đầu tiên còn lại (hoặc không chọn tỉnh nào nếu hết).",
+            "AC9: Mọi thay đổi ở AC3, AC4, AC7, AC8 chỉ ảnh hưởng bản nháp — dữ liệu dùng chung (đọc bởi Agency Admin) không đổi cho đến khi bấm \"Lưu thay đổi\".",
+            "AC10: Nút \"✕ Huỷ bỏ\" và \"💾 Lưu thay đổi\" disable khi bản nháp giống hệt dữ liệu đã lưu; \"Huỷ bỏ\" khôi phục nháp về dữ liệu đã lưu, \"Lưu thay đổi\" ghi nháp vào dữ liệu dùng chung thật.",
+            "AC11: Nút \"↻ Thiết lập lại\" trong thanh hành động luôn bấm được (không phụ thuộc hasUrbanChanges), tải lại toàn bộ trang và reset mọi thay đổi trong phiên về dữ liệu mẫu gốc.",
+            "AC12: Khối này hoàn toàn độc lập với phần Miền/Tuyến — thay đổi Nội/Ngoại thành không ảnh hưởng đến miền hay tuyến, và ngược lại.",
+            "AC13: Agency Admin không có trang cấu hình Nội/Ngoại thành riêng — chỉ xem qua modal hướng dẫn trong trang tạo bảng giá khi bật toggle \"Tách Nội thành/Ngoại thành\" (xem GSA-ROUTE-5)."
           ]
         },
         {
           "id": "GSA-ROUTE-5",
           "jiraKey": "",
-          "title": "[GSA] Cấu hình Vùng & Tuyến: Nội thành / Ngoại thành",
+          "title": "[GSA] Vùng & Tuyến: Dữ liệu dùng chung cho Agency Admin",
           "status": "draft",
-          "userStory": "Là GHN Super Admin, tôi muốn cấu hình danh sách xã/phường Nội thành và Ngoại thành theo từng tỉnh/thành phố để các đại lý có thể tách giá Nội/Ngoại thành khi tạo bảng giá.",
-          "notes": [],
+          "userStory": "Là GHN Super Admin, tôi muốn đảm bảo cấu hình Vùng & Tuyến tôi định nghĩa tại /super-admin/route-config được tiêu thụ đúng đắn trên Agency Admin — dropdown tuyến khi tạo bảng giá phản ánh danh sách tuyến hiện tại, công cụ kiểm tra tuyến trả ra đúng kết quả, và modal \"Bảng mô tả tuyến dịch vụ\" hiển thị đúng dữ liệu miền/tuyến/Nội-Ngoại thành — để đại lý không cần cấu hình lại vùng, tuyến hay Nội/Ngoại thành cho từng bảng giá.",
+          "notes": [
+            "Store routeConfig.ts là module-level mutable object (không phải localStorage hay API) — điều hướng client-side (SPA, PlatformSwitcher) giữa Super Admin và Agency Admin trong cùng phiên trình duyệt sẽ thấy thay đổi Miền/Tuyến ngay lập tức; Nội/Ngoại thành cần Super Admin bấm \"Lưu thay đổi\" trước (cơ chế draft riêng, xem GSA-ROUTE-4). Reload trang thật (F5) reset về seed ban đầu vì không có backend thật.",
+            "Cập nhật theo redesign \"Nội Tỉnh\" (xem GSA-ROUTE-3): trước đây mỗi miền có 1 tên \"cùng tỉnh\" lưu riêng trong 1 dict (sameProvinceRouteByRegion), tách biệt hoàn toàn với ma trận cặp miền. Nay đã gộp lại — cặp \"đường chéo\" (cùng miền) của mỗi miền chính là 1 entry bình thường trong routeMatrix (seed mặc định 'Nội Tỉnh'), tra cứu qua đúng 1 hàm resolveRouteName() duy nhất. Hành vi Agency Admin nhìn thấy (dropdown, kiểm tra tuyến, modal hướng dẫn) không đổi — đây là thay đổi nội bộ ở tầng dữ liệu Super Admin.",
+            "Bảng tuyến trong ZoneGuideModal và bảng \"N Tuyến hiện tại\" ở RouteCheck.tsx đều gọi isSameProvinceRouteName() + describeSameProvinceRoutePairs() để tách dòng \"cùng miền\" thành nhiều dòng con — mỗi miền đang dùng 1 tên cho cặp đường chéo của nó liệt kê 1 dòng riêng (vd \"Hà Nội ↔ Hà Nội\", \"Cùng 1 tỉnh trong Miền Nam (Vùng 1)\"); nếu 2 miền đang dùng tên khác nhau cho cặp đường chéo của chúng, chúng tách thành 2 mục riêng trong danh sách tuyến thay vì gộp chung 1 dòng.",
+            "Đổi số từ GSA-ROUTE-6 (cũ) thành GSA-ROUTE-5 sau khi xoá story \"Điền nhanh theo khoảng tỉnh\" (GSA-ROUTE-3 cũ)."
+          ],
           "userFlow": [
-            "Super Admin cuộn đến khối \"Nội thành / Ngoại thành\" trong trang Cấu hình Vùng & Tuyến",
-            "Nhập tên tỉnh/thành mới vào ô input + bấm \"Thêm tỉnh\"",
-            "Card tỉnh mới xuất hiện, ban đầu chưa có xã/phường nào",
-            "Super Admin nhập tên xã/phường vào ô \"+ Thêm xã/phường (Enter)\" → nhấn Enter (xã/phường mới mặc định là Ngoại thành)",
-            "Bấm chip xã/phường để đổi phân loại Nội ↔ Ngoại thành",
-            "Bấm X trên chip để xoá xã/phường khỏi tỉnh",
-            "Bấm X đầu card để xoá cả tỉnh khỏi danh sách phân biệt"
+            "Super Admin cấu hình miền, tuyến (bao gồm cả \"Nội Tỉnh\" — xem GSA-ROUTE-3), Nội/Ngoại thành tại trang \"Vùng & Tuyến\"",
+            "(Không cần bước lưu hay deploy riêng cho Miền/Tuyến — riêng Nội/Ngoại thành cần bấm \"Lưu thay đổi\", xem GSA-ROUTE-4) Agency Admin chuyển sang trang tạo bảng giá hoặc công cụ kiểm tra tuyến trong cùng phiên trình duyệt",
+            "Dropdown \"Tuyến\" trong form tạo bảng giá hiển thị đúng danh sách tên tuyến Super Admin vừa cấu hình (bao gồm cả \"Nội Tỉnh\" nếu còn miền nào đang dùng tên đó)",
+            "Công cụ \"Kiểm tra tuyến\" (RouteCheck.tsx) của Agency Admin tra ra đúng tên tuyến cho cặp tỉnh đi/đến",
+            "Bấm \"Xem bảng mô tả tuyến dịch vụ\" trong trang tạo bảng giá → modal hiện đủ 3 phần: định nghĩa miền/vùng, bảng tuyến theo cặp miền, và định nghĩa Nội thành/Ngoại thành theo từng tỉnh Super Admin đã cấu hình"
           ],
           "systemFlow": [
-            "RouteConfig.tsx dòng 456–539 render khối Nội thành / Ngoại thành — khối này độc lập với phần Miền/Tuyến ở trên",
-            "handleAddUrbanProvince — thêm tỉnh mới vào urbanConfigs trong routeConfig.ts, ban đầu chưa có xã/phường nào",
-            "handleAddUrbanWard — thêm xã/phường mới vào tỉnh, mặc định isUrban: false (Ngoại thành)",
-            "handleToggleUrbanWard — bấm chip để đổi phân loại: chip cam = Nội thành (isUrban: true), chip xám = Ngoại thành (isUrban: false)",
-            "handleRemoveUrbanWard — xoá xã/phường khỏi tỉnh (bấm X trên chip)",
-            "handleRemoveUrbanProvince — xoá cả tỉnh khỏi urbanConfigs",
-            "Dữ liệu urbanConfigs được đọc bởi Agency Admin qua resolveUrbanArea() khi tạo bảng giá có toggle \"Tách khu vực\", và xem qua UrbanGuideModal trong PricingCreate.tsx"
+            "Toàn bộ dữ liệu Vùng & Tuyến lưu trong module-level mutable object routeConfig.ts — không có backend, không có localStorage; thay đổi Miền/Tuyến có hiệu lực ngay trong phiên SPA hiện tại mà không cần reload trang (Nội/Ngoại thành cần bấm \"Lưu thay đổi\" ở RouteConfig.tsx trước khi Agency Admin thấy được, vì khối đó sửa trên draft riêng — xem GSA-ROUTE-4)",
+            "Dropdown tuyến khi tạo bảng giá (PricingCreate.tsx, Agency Admin): gọi listRouteNames() từ routeConfig.ts để lấy danh sách tên tuyến duy nhất hiện có — Super Admin thêm/xoá/đổi tên tuyến sẽ phản ánh ngay trong dropdown này mà không cần đại lý cấu hình lại. Toggle \"Tách Nội thành/Ngoại thành\" chỉ hiện khi !isSameProvinceRouteName(route.routeName) — không áp dụng cho tuyến \"Nội Tỉnh\"",
+            "Công cụ kiểm tra tuyến (RouteCheck.tsx, Agency Admin): gọi resolveRouteName() — logic tra cứu: 2 tỉnh giống nhau → tra miền của tỉnh đó → đọc trực tiếp routeMatrix[pairKey(regionId, regionId)] (mặc định 'Nội Tỉnh', nhưng Super Admin có thể tách riêng từng miền sang tên khác qua chip — xem GSA-ROUTE-3); khác tỉnh → tra miền của mỗi tỉnh → tra cặp miền trong routeMatrix → ra tên tuyến; trả null nếu tỉnh chưa gán miền hoặc cặp miền chưa có tên tuyến",
+            "Modal \"Bảng mô tả tuyến dịch vụ\" (ZoneGuideModal trong PricingCreate.tsx) — 1 modal DUY NHẤT gồm 3 khối: \"Định nghĩa miền/vùng\" (đếm số tỉnh mỗi miền), bảng \"Tuyến | Cặp miền áp dụng\" (dùng listRouteNames() + isSameProvinceRouteName()/describeSameProvinceRoutePairs() để gom các cặp \"cùng miền\" đang dùng chung 1 tên vào cùng 1 dòng, còn lại duyệt routeMatrix để gom cặp khác-miền theo tên tuyến), và \"Định nghĩa Nội thành/Ngoại thành\" (duyệt trực tiếp urbanConfigs). Agency Admin chỉ xem, không cấu hình được ở đây",
+            "Reload trang thật (F5) sẽ reset toàn bộ về dữ liệu seed ban đầu vì không có backend thật"
           ],
-          "crossPlatformImpact": [],
+          "crossPlatformImpact": [
+            "Agency Admin — Tạo bảng giá (PricingCreate.tsx): Dropdown \"Tuyến\" đọc listRouteNames() từ routeConfig.ts — danh sách tuyến phản ánh đúng cấu hình Super Admin hiện tại, không hardcode. Toggle \"Tách Nội thành/Ngoại thành\" trên 1 tuyến (ẩn với tuyến \"Nội Tỉnh\") cho phép nhập 2 mức giá basePriceUrban/basePriceRural.",
+            "Agency Admin — Kiểm tra tuyến (RouteCheck.tsx): Công cụ tra cứu tuyến gọi resolveRouteName() — kết quả phụ thuộc trực tiếp vào miền và tuyến Super Admin đã cấu hình, bao gồm cả tên tuyến \"cùng miền\" mà Super Admin có thể tách riêng theo từng miền qua chip. Tỉnh chưa gán miền hoặc cặp miền chưa có tuyến → công cụ báo đúng nguyên văn \"Không thể xác định tuyến. Vui lòng kiểm tra lại thông tin địa điểm — có thể tỉnh này chưa được Super Admin gán vào miền nào, hoặc cặp miền này chưa được đặt tên tuyến.\" (RouteCheck.tsx dòng 422).",
+            "Agency Admin — Modal \"Bảng mô tả tuyến dịch vụ\" (ZoneGuideModal): Hiển thị định nghĩa miền, bảng tuyến theo cặp miền (gồm cả cặp cùng miền), và danh sách xã/phường Nội/Ngoại thành Super Admin cấu hình để đại lý tham chiếu khi thiết lập bảng giá. Agency Admin không có trang cấu hình riêng cho dữ liệu này."
+          ],
           "acceptanceCriteria": [
-            "AC1: Khối \"Nội thành / Ngoại thành\" có ô nhập tên tỉnh/thành và nút \"Thêm tỉnh\"; nếu chưa thêm tỉnh nào, hiển thị \"Chưa có tỉnh nào cấu hình Nội/Ngoại thành.\"",
-            "AC2: Mỗi card tỉnh gồm: tên tỉnh, dải chip xã/phường (chip cam = Nội thành, chip xám = Ngoại thành), ô input \"+ Thêm xã/phường (Enter)\" cuối dải chip, và nút X đầu card để xoá cả tỉnh.",
-            "AC3: Xã/phường mới thêm vào mặc định là Ngoại thành (chip xám) — phải bấm chip để đổi thành Nội thành (chip cam) sau.",
-            "AC4: Bấm chip xã/phường để đổi phân loại Nội ↔ Ngoại thành; bấm X trên chip để xoá hẳn xã/phường đó.",
-            "AC5: Mô tả trong giao diện: \"Theo xã/phường (địa giới mới sau sáp nhập 2025, cấp quận/huyện không còn) — chỉ vài thành phố có phân biệt giá Nội/Ngoại thành, dùng cho toggle 'Tách khu vực' khi tạo bảng giá. Dữ liệu demo minh hoạ, chưa đầy đủ toàn bộ xã/phường thật.\"",
-            "AC6: Khối này hoàn toàn độc lập với phần Miền/Tuyến — thay đổi Nội/Ngoại thành không ảnh hưởng đến miền hay tuyến, và ngược lại.",
-            "AC7: Agency Admin không có trang cấu hình Nội/Ngoại thành riêng — chỉ xem qua modal UrbanGuideModal trong trang tạo bảng giá (PricingCreate.tsx) khi bật toggle \"Tách khu vực\"."
+            "AC1: Sau khi Super Admin thêm hoặc đổi tên tuyến tại \"Vùng & Tuyến\", chuyển sang Agency Admin (không reload trang) → dropdown \"Tuyến\" trong form tạo bảng giá hiển thị đúng tên tuyến mới ngay lập tức.",
+            "AC2: Sau khi Super Admin xoá tuyến, tên tuyến đó không còn xuất hiện trong dropdown \"Tuyến\" của Agency Admin.",
+            "AC3: Công cụ \"Kiểm tra tuyến\" của Agency Admin (RouteCheck.tsx) tra ra đúng tên tuyến cho cặp tỉnh đi/đến theo miền và ma trận cặp miền Super Admin đã cấu hình, bao gồm đúng tên \"cùng miền\" khi 2 tỉnh giống nhau — kể cả khi Super Admin đã tách 1 miền cụ thể sang 1 tên tuyến khác \"Nội Tỉnh\".",
+            "AC4: Nếu tỉnh đi hoặc đến chưa được gán miền, hoặc cặp miền tương ứng chưa có tên tuyến, công cụ kiểm tra tuyến báo đúng nguyên văn \"Không thể xác định tuyến. Vui lòng kiểm tra lại thông tin địa điểm — có thể tỉnh này chưa được Super Admin gán vào miền nào, hoặc cặp miền này chưa được đặt tên tuyến.\" thay vì trả về tuyến sai.",
+            "AC5: Modal \"Bảng mô tả tuyến dịch vụ\" trong trang tạo bảng giá hiển thị đúng: số tỉnh mỗi miền, bảng cặp miền theo từng tuyến (gồm cả cặp cùng miền), và danh sách xã/phường + phân loại Nội/Ngoại thành Super Admin đã lưu (chỉ phản ánh dữ liệu đã \"Lưu thay đổi\", không phản ánh draft chưa lưu).",
+            "AC6: Toggle \"Tách Nội thành/Ngoại thành\" trong form tạo bảng giá chỉ hiện với tuyến KHÔNG PHẢI \"Nội Tỉnh\" — tuyến nội tỉnh luôn dùng 1 mức giá.",
+            "AC7: Agency Admin không có giao diện để sửa danh sách miền, tuyến, hoặc xã/phường Nội/Ngoại thành — chỉ đọc dữ liệu do Super Admin định nghĩa."
           ]
         },
         {
           "id": "GSA-ROUTE-6",
           "jiraKey": "",
-          "title": "[GSA] Cấu hình Vùng & Tuyến: Dữ liệu dùng chung cho Agency Admin",
+          "title": "[GSA] Vùng & Tuyến: Thêm vùng",
           "status": "draft",
-          "userStory": "Là GHN Super Admin, tôi muốn đảm bảo cấu hình Vùng & Tuyến tôi định nghĩa tại Super Admin được tiêu thụ đúng đắn trên Agency Admin — dropdown tuyến khi tạo bảng giá phản ánh danh sách tuyến hiện tại, công cụ kiểm tra tuyến trả ra đúng kết quả, và modal hướng dẫn Nội/Ngoại thành hiển thị đúng dữ liệu — để đại lý không cần cấu hình tuyến riêng cho từng bảng giá.",
+          "userStory": "Là GHN Super Admin, tôi muốn thêm 1 vùng miền mới từ khối \"Cấu hình vùng miền\" và có ngay giá \"cùng tỉnh\" mặc định cho vùng đó (không cần thao tác thêm ở khối Tuyến), để vùng mới có thể dùng để tính giá càng sớm càng tốt sau khi tạo.",
           "notes": [
-            "Store routeConfig.ts là module-level mutable object (không phải localStorage hay API) — điều hướng client-side (SPA, PlatformSwitcher) giữa Super Admin và Agency Admin trong cùng phiên trình duyệt sẽ thấy thay đổi ngay; reload trang thật (F5) reset về seed ban đầu vì không có backend thật.",
-            "Bảng \"N Tuyến hiện tại\" ở RouteCheck.tsx và bảng tuyến trong ZoneGuideModal (PricingCreate.tsx) đều gọi isSameProvinceRouteName() + describeSameProvinceRoutePairs() để tách dòng \"Nội Tỉnh\" thành nhiều dòng con — mỗi miền đang dùng tên đó liệt kê 1 dòng riêng (vd \"Hà Nội ↔ Hà Nội\", \"Cùng 1 tỉnh trong Miền Nam (Vùng 1)\"); nếu 2 miền đổi sang 2 tên khác nhau, chúng tách thành 2 mục riêng trong danh sách tuyến thay vì gộp chung 1 dòng \"Nội Tỉnh\" như trước."
+            "Story này tách riêng phần \"Thêm vùng\" (nút \"+ Thêm vùng miền\") ra khỏi GSA-ROUTE-2 để mô tả sâu hơn tác động DÂY CHUYỀN của thao tác này sang khối \"Cấu hình tuyến\" (GSA-ROUTE-3) — điều mà GSA-ROUTE-2 chỉ nhắc ngắn gọn ở 1 dòng System Flow.",
+            "Điểm quan trọng nhất: thêm vùng mới KHÔNG chỉ là 1 thao tác cục bộ trong bảng \"Cấu hình vùng miền\" — nó tự động sinh thêm N cặp mới trong ma trận tuyến (1 cặp đã có sẵn tên \"Nội Tỉnh\", N cặp còn lại ở trạng thái \"chưa cấu hình\"), nên Super Admin luôn cần ghé qua khối \"Cấu hình tuyến\" sau khi thêm vùng để xử lý các cặp chéo còn thiếu, nếu không muốn hệ thống báo \"không thể xác định tuyến\" khi tính giá giữa vùng mới và vùng cũ (xem GSA-ROUTE-5, AC4).",
+            "Vùng mới không có tên mặc định (khác hành vi cũ đặt sẵn \"Miền mới N\") — xem lý do ở GSA-ROUTE-2."
           ],
           "userFlow": [
-            "Super Admin cấu hình miền, tuyến, Nội/Ngoại thành tại /super-admin/route-config",
-            "(Không cần bước lưu hay deploy riêng) Agency Admin chuyển sang trang tạo bảng giá hoặc công cụ kiểm tra tuyến trong cùng phiên trình duyệt",
-            "Dropdown \"Tuyến\" trong form tạo bảng giá hiển thị đúng danh sách tên tuyến Super Admin vừa cấu hình",
-            "Công cụ \"Kiểm tra tuyến\" của Agency Admin tra ra đúng tên tuyến cho cặp tỉnh đi/đến",
-            "Modal \"Hướng dẫn Nội/Ngoại thành\" trong tạo bảng giá hiển thị đúng danh sách xã/phường Super Admin cấu hình"
+            "Trong khối \"🗺️ Cấu hình vùng miền\", bấm nút \"+ Thêm vùng miền\" ở cuối bảng",
+            "Một dòng vùng mới xuất hiện ở cuối bảng — tên trống, chưa có tỉnh nào, KHÔNG hiện lỗi gì (theo hành vi validate của GSA-ROUTE-2: chỉ báo lỗi sau khi đã đặt tên)",
+            "Gõ tên vào ô tên — nếu trùng với tên 1 vùng khác (không phân biệt hoa/thường), lỗi đỏ \"Tên vùng miền đã tồn tại\" hiện ngay; nếu hợp lệ thì hết lỗi",
+            "Chọn tỉnh từ dropdown \"Chọn Tỉnh/Thành\" (chỉ liệt kê tỉnh chưa thuộc vùng nào) để gán vào vùng mới — có thể chọn nhiều tỉnh liên tiếp, mỗi lần 1 tỉnh",
+            "Nếu đã đặt tên nhưng chưa chọn tỉnh nào, lỗi đỏ \"Vui lòng chọn Tỉnh/Thành\" hiện dưới dropdown",
+            "Chuyển sang khối \"🔀 Cấu hình tuyến\": vùng mới đã tự động có mặt trong dòng \"Nội Tỉnh\" — cặp \"cùng vùng\" của vùng mới đã được tick sẵn vào tuyến này, không cần thao tác gì thêm để vùng mới có giá \"gửi trong cùng tỉnh\"",
+            "Vẫn trong khối \"Cấu hình tuyến\": mọi cặp GIỮA vùng mới và các vùng đã có từ trước đều ở trạng thái \"chưa cấu hình\" — Super Admin cần chủ động bấm chip để gán các cặp này vào 1 tuyến phù hợp, nếu không chúng sẽ hiện trong dòng cảnh báo cuối khối"
           ],
           "systemFlow": [
-            "Toàn bộ dữ liệu Vùng & Tuyến lưu trong module-level mutable object routeConfig.ts — không có backend, không có localStorage; thay đổi có hiệu lực ngay trong phiên SPA hiện tại mà không cần reload trang",
-            "Dropdown tuyến khi tạo bảng giá (PricingCreate.tsx, Agency Admin): gọi listRouteNames() từ routeConfig.ts để lấy danh sách tên tuyến duy nhất hiện có — Super Admin thêm/xoá/đổi tên tuyến sẽ phản ánh ngay trong dropdown này",
-            "Công cụ kiểm tra tuyến (RouteCheck.tsx, Agency Admin): gọi resolveRouteName() và listRouteNames() từ cùng store — logic: 2 tỉnh giống nhau → tra miền của tỉnh đó → trả tên \"Nội Tỉnh\" RIÊNG của miền đó (sameProvinceRouteByRegion[regionId], mỗi miền có thể đặt tên/giá khác nhau); khác tỉnh → tra miền → tra cặp miền → ra tên tuyến; trả null nếu tỉnh chưa gán miền hoặc cặp miền chưa có tên tuyến",
-            "Modal Nội/Ngoại thành (UrbanGuideModal trong PricingCreate.tsx, Agency Admin): đọc urbanConfigs và resolveUrbanArea() từ routeConfig.ts — Agency Admin chỉ xem, không cấu hình"
+            "handleAddRegion() trong RouteConfig.tsx gọi addRegion('') từ routeConfig.ts — tạo RegionDef mới với id: region_${Date.now()}, name: '', provinces: []; đồng thời addRegion() tự động seed routeMatrix[pairKey(newId, newId)] = 'Nội Tỉnh' (xem GSA-ROUTE-3) — đây là bước duy nhất khiến vùng mới có ngay giá \"cùng tỉnh\" mặc định",
+            "Sau khi gọi addRegion, component setLocalRegions thêm vùng mới vào state cục bộ và setLocalMatrix(() => ({ ...routeMatrix })) để đồng bộ lại, lấy luôn entry \"Nội Tỉnh\" vừa seed cho vùng mới",
+            "Vùng mới ngay lập tức được tính vào allRegionPairs (dùng chung bởi khối \"Cấu hình tuyến\") — với N vùng đã có từ trước, vùng mới sinh ra N cặp CHÉO (khác vùng) + 1 cặp đường chéo (cùng vùng, đã seed \"Nội Tỉnh\"). N cặp chéo này đều CHƯA có key trong routeMatrix nên được tính vào unconfiguredPairs",
+            "handleRenameRegion(id, name) gọi renameRegion(id, name) — cập nhật tên ngay theo từng ký tự gõ (không debounce), regionNameError(region) (xem GSA-ROUTE-2) chạy lại mỗi lần render để xác định có lỗi trùng tên hay không",
+            "handleAssignProvince(province, regionId) gọi assignProvinceToRegion(province, regionId) — dropdown \"Chọn Tỉnh/Thành\" chỉ liệt kê tỉnh có trong unassignedList; provinceError (xem GSA-ROUTE-2) chỉ hiện khi vùng đã có tên nhưng provinces.length === 0",
+            "Vì routeNames (danh sách tên tuyến hiển thị ở khối Cấu hình tuyến) không đổi khi thêm vùng (chỉ routeMatrix/allRegionPairs đổi), dòng \"Nội Tỉnh\" và mọi dòng tuyến khác hiển thị NGAY chip mới cho vùng vừa thêm mà không cần thao tác refresh nào"
           ],
-          "crossPlatformImpact": [
-            "Agency Admin — Tạo bảng giá (PricingCreate.tsx): Dropdown \"Tuyến\" đọc listRouteNames() từ routeConfig.ts — danh sách tuyến phản ánh đúng cấu hình Super Admin hiện tại, không hardcode. Toggle \"Tách khu vực\" dùng urbanConfigs để hiện 2 mức giá Nội/Ngoại thành theo xã/phường.",
-            "Agency Admin — Kiểm tra tuyến (RouteCheck.tsx): Công cụ tra cứu tuyến gọi resolveRouteName() và đọc regions từ cùng store — kết quả phụ thuộc trực tiếp vào miền và tuyến Super Admin đã cấu hình. Tỉnh chưa gán miền hoặc cặp miền chưa có tuyến → công cụ báo đúng nguyên văn \"Không thể xác định tuyến. Vui lòng kiểm tra lại thông tin địa điểm — có thể tỉnh này chưa được Super Admin gán vào miền nào, hoặc cặp miền này chưa được đặt tên tuyến.\" (RouteCheck.tsx dòng 421).",
-            "Agency Admin — Modal hướng dẫn Nội/Ngoại thành (UrbanGuideModal): Hiển thị danh sách xã/phường Nội/Ngoại thành Super Admin cấu hình để đại lý tham chiếu khi thiết lập bảng giá. Agency Admin không có trang cấu hình riêng cho dữ liệu này."
-          ],
+          "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Sau khi Super Admin thêm hoặc đổi tên tuyến tại /super-admin/route-config, chuyển sang Agency Admin (không reload trang) → dropdown \"Tuyến\" trong form tạo bảng giá hiển thị đúng tên tuyến mới ngay lập tức.",
-            "AC2: Sau khi Super Admin xoá tuyến, tên tuyến đó không còn xuất hiện trong dropdown \"Tuyến\" của Agency Admin.",
-            "AC3: Công cụ \"Kiểm tra tuyến\" của Agency Admin (RouteCheck.tsx) tra ra đúng tên tuyến cho cặp tỉnh đi/đến theo miền và ma trận cặp miền Super Admin đã cấu hình.",
-            "AC4: Nếu tỉnh đi hoặc đến chưa được gán miền, hoặc cặp miền tương ứng chưa có tên tuyến, công cụ kiểm tra tuyến báo đúng nguyên văn \"Không thể xác định tuyến. Vui lòng kiểm tra lại thông tin địa điểm — có thể tỉnh này chưa được Super Admin gán vào miền nào, hoặc cặp miền này chưa được đặt tên tuyến.\" (RouteCheck.tsx dòng 421) thay vì trả về tuyến sai.",
-            "AC5: Modal hướng dẫn Nội/Ngoại thành trong trang tạo bảng giá hiển thị đúng danh sách xã/phường và phân loại Nội/Ngoại thành Super Admin đã cấu hình.",
-            "AC6: Agency Admin không có giao diện để sửa danh sách miền, tuyến, hoặc xã/phường Nội/Ngoại thành — chỉ đọc dữ liệu do Super Admin định nghĩa."
+            "AC1: Bấm \"+ Thêm vùng miền\" → thêm 1 dòng vùng mới ở cuối bảng \"Cấu hình vùng miền\" — tên rỗng, chưa có tỉnh nào, KHÔNG hiện lỗi gì ngay lúc này.",
+            "AC2: Ngay khi vùng mới được tạo (trước cả khi đặt tên), cặp \"cùng vùng\" (đường chéo) của vùng đó đã được gán sẵn vào tuyến \"Nội Tỉnh\" ở khối \"Cấu hình tuyến\" — hiện dưới dạng chip đã tick (cam đậm) trong dòng \"Nội Tỉnh\", không cần Super Admin thao tác gì thêm.",
+            "AC3: Mọi cặp GIỮA vùng mới và các vùng đã có từ trước đều ở trạng thái \"chưa cấu hình\" ngay sau khi tạo — các cặp này được cộng thêm vào số đếm ở dòng cảnh báo cuối khối \"Cấu hình tuyến\" (\"N cặp vùng miền chưa được gán tuyến\").",
+            "AC4: Gõ tên trùng với 1 vùng khác (không phân biệt hoa/thường) → lỗi đỏ \"Tên vùng miền đã tồn tại\" hiện ngay dưới ô tên; sửa thành tên không trùng → lỗi biến mất ngay, không cần submit hay rời focus khỏi ô.",
+            "AC5: Vùng đã đặt tên nhưng chưa chọn tỉnh nào → lỗi đỏ \"Vui lòng chọn Tỉnh/Thành\" hiện dưới dropdown chọn tỉnh; vùng chưa đặt tên thì không hiện lỗi này (theo GSA-ROUTE-2).",
+            "AC6: Chọn 1 tỉnh từ dropdown \"Chọn Tỉnh/Thành\" → tỉnh đó được gán vào vùng mới và biến mất khỏi danh sách tỉnh khả dụng ở MỌI dòng khác trong bảng (không chỉ dòng vừa thêm).",
+            "AC7: Sau khi tạo vùng mới, chip đại diện cho vùng đó (cả chip \"cùng vùng\" lẫn chip \"khác vùng\" với các vùng có sẵn) xuất hiện ngay trong TẤT CẢ các dòng tuyến ở khối \"Cấu hình tuyến\" (kể cả các tuyến do Super Admin tự tạo trước đó) mà không cần reload trang.",
+            "AC8: Xoá vùng vừa thêm (bấm X cuối dòng) trước khi đặt tên/gán tỉnh → vùng biến mất khỏi bảng, cặp \"Nội Tỉnh\" đã seed cho vùng đó cũng bị xoá khỏi routeMatrix, không để lại dữ liệu mồ côi."
+          ]
+        },
+        {
+          "id": "GSA-ROUTE-7",
+          "jiraKey": "",
+          "title": "[GSA] Vùng & Tuyến: Thêm tuyến",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn tạo 1 tuyến mới hoàn toàn trống (chưa gán cặp vùng miền nào) từ khối \"Cấu hình tuyến\" để tự đặt tên và tick các cặp vùng miền muốn tính chung 1 mức giá.",
+          "notes": [
+            "Story tách riêng khỏi GSA-ROUTE-3 (Cấu hình tuyến) để tập trung mô tả riêng nút \"+ Thêm tuyến\", tương tự cách GSA-ROUTE-6 tách \"Thêm vùng\" khỏi GSA-ROUTE-2.",
+            "Known inconsistency (đã biết, chưa xử lý): khác với \"Thêm vùng miền\" (GSA-ROUTE-6) — nơi dòng mới hoàn toàn im lặng cho tới khi gõ tên — \"Thêm tuyến\" báo lỗi \"Ít nhất 2 ký tự\" NGAY LẬP TỨC dù chưa gõ gì. Đây là 2 hành vi validate khác nhau giữa 2 bảng tương tự nhau trên cùng 1 trang; cần cân nhắc đồng bộ ở sprint sau nếu muốn trải nghiệm nhất quán giữa \"Cấu hình vùng miền\" và \"Cấu hình tuyến\".",
+            "Tuyến mới không tự động seed cặp nào (khác vùng miền mới luôn tự seed sẵn cặp \"Nội Tỉnh\") — vì tuyến không có khái niệm \"mặc định áp dụng\" tương tự khái niệm \"cùng vùng\" của vùng miền.",
+            "Đặt tên trùng với 1 tuyến đã có (kể cả \"Nội Tỉnh\") hiện KHÔNG bị chặn bởi tuyenNameError (hàm này chỉ kiểm tra độ dài, không kiểm tra trùng tên) — đây là hành vi hiện tại, chưa có validate chống trùng tên tuyến giống như đã có cho tên vùng miền (GSA-ROUTE-2)."
+          ],
+          "userFlow": [
+            "Trong khối \"🔀 Cấu hình tuyến\", bấm nút \"+ Thêm tuyến\" ở cuối bảng",
+            "Một dòng tuyến mới xuất hiện ở CUỐI bảng (dưới mọi tuyến hiện có, kể cả các tuyến do Super Admin tự tạo trước đó — dòng \"Nội Tỉnh\" vẫn luôn ở đầu) — tên trống, CHƯA tick cặp vùng miền nào",
+            "Ngay khi vừa thêm, ô tên đã hiện lỗi đỏ \"Ít nhất 2 ký tự\" — khác với hành vi thêm vùng miền (xem GSA-ROUTE-6), nơi dòng mới không báo lỗi cho tới khi gõ tên",
+            "Gõ tên tuyến (tối thiểu 2 ký tự sau khi trim) để hết lỗi",
+            "Bấm các chip cặp vùng miền muốn gán vào tuyến mới — nếu 1 cặp đang thuộc tuyến khác, nó tự động chuyển sang tuyến mới, không cảnh báo",
+            "Nếu bấm \"+ Thêm tuyến\" nhiều lần liên tiếp mà chưa đặt tên cho dòng trước, mỗi lần vẫn tạo ra 1 dòng riêng biệt (không bị gộp lại), mỗi dòng đều báo lỗi \"Ít nhất 2 ký tự\" độc lập cho tới khi được đặt tên khác nhau",
+            "Xoá dòng tuyến vừa thêm (nếu đổi ý) bằng nút X cuối dòng — không có cặp vùng miền nào bị ảnh hưởng vì tuyến mới chưa tick cặp nào"
+          ],
+          "systemFlow": [
+            "handleAddTuyen() (RouteConfig.tsx): thêm 1 tên rỗng vào state routeNames — nếu đã có N dòng tên rỗng khác, tên mới được đệm N dấu cách (' '.repeat(blankCount)) để mỗi dòng trống là 1 giá trị string riêng biệt, tránh bị Set() (dùng khi dedupe hiển thị) gộp làm 1 dòng",
+            "Dòng mới KHÔNG ghi gì vào routeMatrix (khác với addRegion() tự seed cặp \"Nội Tỉnh\" cho vùng mới — xem GSA-ROUTE-6) — tuyến mới hoàn toàn trống, không có cặp vùng miền nào cho tới khi Super Admin chủ động bấm chip",
+            "tuyenNameError(name): trả \"Ít nhất 2 ký tự\" khi name.trim().length < 2 — ÁP DỤNG NGAY cho dòng vừa thêm, không gate theo \"đã có tên\" như regionNameError/provinceError ở bảng Vùng miền (GSA-ROUTE-2/6). Đây là 2 hành vi validate KHÁC NHAU giữa 2 bảng tương tự nhau trên cùng 1 trang",
+            "orderedNames (logic hiển thị) luôn đẩy 'Nội Tỉnh' lên đầu, phần còn lại giữ nguyên thứ tự xuất hiện trong routeNames; vì tên mới luôn được push vào CUỐI mảng, dòng mới luôn hiện ở CUỐI bảng, dưới mọi tuyến khác",
+            "handleToggleChip(routeName, regionIdA, regionIdB) hoạt động y hệt cho tuyến mới như mọi tuyến khác — không có nhánh xử lý riêng cho tuyến vừa tạo",
+            "handleRenameTuyen(oldName, newName) đổi tên tuyến mới giống bất kỳ tuyến thường nào (không phải 'Nội Tỉnh') — cập nhật cả routeNames và mọi entry routeMatrix đang trỏ tới oldName (ban đầu rỗng vì chưa có cặp nào được tick)",
+            "handleDeleteTuyen(name) xoá dòng khỏi routeNames và mọi cặp đang gán tên đó trong routeMatrix (rỗng nếu tuyến chưa được tick cặp nào)"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bấm \"+ Thêm tuyến\" → thêm 1 dòng tuyến mới ở CUỐI bảng \"Cấu hình tuyến\" (dưới mọi tuyến hiện có) — tên rỗng, chưa tick cặp vùng miền nào.",
+            "AC2: Ngay sau khi thêm, dòng mới hiện lỗi đỏ \"Ít nhất 2 ký tự\" dưới ô tên — khác với hành vi thêm vùng miền (GSA-ROUTE-6), nơi dòng mới không báo lỗi cho tới khi gõ tên.",
+            "AC3: Gõ tên hợp lệ (≥2 ký tự sau khi trim) → lỗi biến mất ngay lập tức, không cần rời focus khỏi ô.",
+            "AC4: Bấm \"+ Thêm tuyến\" nhiều lần liên tiếp mà không đặt tên cho các dòng trước → mỗi lần tạo ra 1 dòng RIÊNG BIỆT (không gộp lại thành 1), mỗi dòng đều báo lỗi \"Ít nhất 2 ký tự\" độc lập.",
+            "AC5: Tuyến mới hiển thị đủ chip cho MỌI cặp vùng miền có thể có (giống mọi tuyến khác, bao gồm cả chip \"cùng vùng\") — ban đầu KHÔNG chip nào được tick.",
+            "AC6: Bấm 1 chip đang thuộc tuyến khác trong dòng tuyến mới → cặp đó tự động chuyển sang tuyến mới (bỏ tick ở tuyến cũ, tick ở tuyến mới), không cảnh báo.",
+            "AC7: Xoá dòng tuyến mới (bấm X) trước khi tick chip nào → dòng biến mất khỏi bảng, không có cặp vùng miền nào bị ảnh hưởng vì chưa có cặp nào được gán cho tuyến đó.",
+            "AC8: Sau khi đặt tên hợp lệ, tuyến mới xuất hiện ngay trong dropdown \"Tuyến\" khi tạo bảng giá ở Agency Admin (qua listRouteNames(), xem GSA-ROUTE-5) mà không cần đại lý làm gì thêm — kể cả khi tuyến đó chưa tick cặp vùng miền nào."
+          ]
+        },
+        {
+          "id": "GSA-ROUTE-8",
+          "jiraKey": "",
+          "title": "[GSA] Vùng & Tuyến: Thêm tỉnh",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn thêm 1 tỉnh/thành mới vào danh sách phân biệt Nội thành/Ngoại thành (trong khối \"Cấu hình nội & ngoại thành\"), để tỉnh đó có mặt trong hệ thống và sẵn sàng được phân loại xã/phường khi có dữ liệu.",
+          "notes": [
+            "Story tách riêng khỏi GSA-ROUTE-4 (Cấu hình nội & ngoại thành) để tập trung mô tả riêng nút \"+ Thêm tỉnh\", tương tự cách GSA-ROUTE-6/7 tách \"Thêm vùng\"/\"Thêm tuyến\" khỏi story cha.",
+            "Nhắc lại hệ quả đã biết (từ GSA-ROUTE-4): tỉnh mới thêm sẽ có danh sách xã/phường rỗng VĨNH VIỄN qua UI hiện tại. Khác với \"Thêm vùng\" (GSA-ROUTE-6) hay \"Thêm tuyến\" (GSA-ROUTE-7) — nơi đối tượng vừa tạo đã có thể dùng ngay (dù cần cấu hình thêm) — \"Thêm tỉnh\" tạo ra 1 tỉnh KHÔNG THỂ dùng được cho tới khi có cơ chế nạp danh sách xã/phường chuẩn theo tỉnh; cần bổ sung ở sprint sau.",
+            "Khác biệt cơ chế lưu: \"Thêm vùng\"/\"Thêm tuyến\" ghi thẳng vào store dùng chung ngay lập tức khi bấm nút. \"Thêm tỉnh\" thì KHÔNG — nó đi qua cơ chế nháp/lưu riêng của khối Nội & Ngoại thành (xem GSA-ROUTE-4): phải bấm \"💾 Lưu thay đổi\" thì Agency Admin mới thấy được tỉnh mới.",
+            "Không có validate chống trùng tỉnh qua UI (không cần thiết) — vì danh sách chọn availableUrbanProvinces đã tự loại các tỉnh đang có trong urbanDraft, nên về mặt kỹ thuật không thể chọn trùng."
+          ],
+          "userFlow": [
+            "Trong khối \"🏙️ Cấu hình nội & ngoại thành\", cuộn tới cuối sidebar bên trái",
+            "Bấm nút \"+ Thêm tỉnh\" — nếu cả 63 tỉnh đã có trong sidebar, nút bị mờ và không bấm được",
+            "Danh sách các tỉnh CHƯA có trong sidebar thả LÊN TRÊN (phía trên nút \"+ Thêm tỉnh\")",
+            "Bấm chọn 1 tỉnh trong danh sách → tỉnh đó được thêm vào CUỐI sidebar, tự động được chọn (tô cam, viền trái cam) để xem ngay, và danh sách thả đóng lại",
+            "Panel chính hiện 2 cột \"Nội thành\"/\"Ngoại thành\" của tỉnh mới — cả 2 cột đều RỖNG vì tỉnh mới chưa có xã/phường nào",
+            "Thao tác này chỉ ảnh hưởng bản NHÁP — tỉnh mới chưa xuất hiện cho Agency Admin cho tới khi Super Admin bấm \"💾 Lưu thay đổi\"",
+            "Có thể huỷ việc thêm tỉnh bằng nút \"✕ Huỷ bỏ\" (quay lại đúng danh sách đã lưu trước đó), hoặc bấm X trên dòng tỉnh trong sidebar để gỡ riêng tỉnh đó khỏi bản nháp trước khi lưu"
+          ],
+          "systemFlow": [
+            "handleAddUrbanProvinceDraft(name) (RouteConfig.tsx): guard if (!name) return; thêm { province: name, wards: [] } vào urbanDraft (chỉ khi chưa tồn tại), setSelectedUrbanProvince(name), setAddProvinceMenuOpen(false)",
+            "availableUrbanProvinces = ALL_PROVINCES.filter(p => !urbanDraftAssignedSet.has(p)) — 63 tỉnh trừ các tỉnh đã có trong urbanDraft (so với urbanDraft, không phải localUrbanConfigs đã lưu — nên tỉnh vừa thêm trong phiên nháp hiện tại cũng bị loại khỏi danh sách chọn thêm lần nữa, tránh trùng)",
+            "Nút \"+ Thêm tỉnh\" disable khi availableUrbanProvinces.length === 0",
+            "Dropdown addProvinceMenuOpen render danh sách tỉnh khả dụng, position: absolute; bottom: 100% (thả lên trên nút, không che khuất phần sidebar phía trên)",
+            "Tỉnh mới có wards: [] — component UrbanCategoryColumn (2 cột Nội/Ngoại thành) hiện 0 phường/xã ở cả 2 cột, ô tìm kiếm luôn trả về rỗng, checkbox \"Tất cả\" luôn unchecked vì categoryWards.length === 0",
+            "Vì không có cơ chế thêm ward qua UI (xem GSA-ROUTE-4, AC6), tỉnh mới thêm sẽ trống mãi mãi cho tới khi có cơ chế seed dữ liệu ward bằng code",
+            "commitUrbanDraft() (khi bấm \"Lưu thay đổi\"): với mỗi tỉnh trong urbanDraft chưa có trong localUrbanConfigs, gọi addUrbanProvince(draftCfg.province) từ routeConfig.ts — hàm này chỉ push({ province, wards: [] }) vào urbanConfigs (store dùng chung) nếu tỉnh đó chưa tồn tại",
+            "cancelUrbanDraft() reset urbanDraft về bản sao sâu của localUrbanConfigs — bỏ hết tỉnh mới thêm chưa lưu, cùng mọi thay đổi nháp khác (nếu có)"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Nút \"+ Thêm tỉnh\" nằm ở CUỐI sidebar (dưới danh sách tỉnh hiện có); disable (mờ, không bấm được) khi cả 63 tỉnh đã có mặt trong sidebar.",
+            "AC2: Bấm nút mở danh sách thả LÊN TRÊN (phía trên nút) liệt kê CHỈ các tỉnh chưa có trong sidebar — bao gồm cả những tỉnh vừa thêm trong phiên nháp hiện tại dù chưa bấm \"Lưu thay đổi\".",
+            "AC3: Chọn 1 tỉnh trong danh sách → tỉnh đó được thêm vào cuối sidebar, TỰ ĐỘNG được chọn (tô cam, viền trái cam) để xem ngay ở panel chính, và danh sách thả đóng lại.",
+            "AC4: Tỉnh mới thêm có 0 xã/phường ở cả 2 cột \"Nội thành\"/\"Ngoại thành\" — không có cách nào qua UI để thêm xã/phường cho tỉnh này (xem GSA-ROUTE-4, AC6).",
+            "AC5: Thao tác thêm tỉnh chỉ sửa bản nháp (urbanDraft) — dữ liệu dùng chung (đọc bởi Agency Admin) không đổi cho đến khi bấm \"💾 Lưu thay đổi\"; nút \"✕ Huỷ bỏ\" và \"💾 Lưu thay đổi\" hết disable ngay sau khi thêm tỉnh (vì hasUrbanChanges chuyển true).",
+            "AC6: Bấm \"✕ Huỷ bỏ\" trước khi lưu → tỉnh vừa thêm biến mất khỏi sidebar, quay về đúng danh sách đã lưu trước đó.",
+            "AC7: Bấm X trên dòng tỉnh mới thêm (trong sidebar) trước khi lưu → gỡ ngay tỉnh đó khỏi bản nháp, không cần chờ tới bước \"Huỷ bỏ\"/\"Lưu thay đổi\" ở cấp toàn khối.",
+            "AC8: Sau khi bấm \"Lưu thay đổi\", tỉnh mới (với danh sách xã/phường rỗng) được ghi vào store dùng chung (urbanConfigs) — xuất hiện trong modal \"Bảng mô tả tuyến dịch vụ\" ở Agency Admin (phần \"Định nghĩa Nội thành/Ngoại thành\") với dòng \"Chưa có xã/phường nào.\" (xem GSA-ROUTE-5)."
+          ]
+        },
+        {
+          "id": "GSA-ROUTE-9",
+          "jiraKey": "",
+          "title": "[GSA] Vùng & Tuyến: Thiết lập lại",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn có nút \"Thiết lập lại\" ở nhiều vị trí thuận tiện trên trang \"Vùng & Tuyến\" để nhanh chóng quay về dữ liệu mẫu gốc khi đang thử nghiệm cấu hình mà không muốn giữ lại thay đổi.",
+          "notes": [
+            "Story tách riêng nút \"Thiết lập lại\" (xuất hiện Ở 2 VỊ TRÍ trên trang: đầu trang và cuối khối Nội & Ngoại thành) ra khỏi GSA-ROUTE-1 (chỉ nhắc gọn ở AC4) và GSA-ROUTE-4 (chỉ nhắc gọn ở System Flow) — để làm rõ đây là CÙNG 1 hành động duy nhất, không phải 2 tính năng riêng biệt.",
+            "Vì prototype không có backend/localStorage thật (xem GSA-ROUTE-5), \"Thiết lập lại\" là cách DUY NHẤT để quay về dữ liệu mẫu gốc trong phiên hiện tại — không có cơ chế \"hoàn tác\" (undo) từng bước cho các thao tác Vùng miền/Tuyến (những thao tác đó ghi thẳng vào store ngay lập tức, không qua nháp, khác với khối Nội & Ngoại thành).",
+            "Rủi ro đã biết: vì không có bước xác nhận, đây là 1 hành động CÓ RỦI RO MẤT DỮ LIỆU — nếu Super Admin đã cấu hình nhiều thay đổi (kể cả đã \"Lưu thay đổi\" ở Nội & Ngoại thành) mà lỡ bấm nhầm nút này, mọi thứ mất ngay không hồi phục được. Đây là hành vi CHỦ Ý của prototype (môi trường demo/thử nghiệm); cần cân nhắc thêm bước xác nhận nếu đưa tính năng này lên production thật với dữ liệu có backend."
+          ],
+          "userFlow": [
+            "Bấm nút \"↻ Thiết lập lại\" ở góc phải tiêu đề trang (luôn hiển thị, không phụ thuộc trạng thái nào) → trang tải lại toàn bộ ngay lập tức",
+            "Hoặc bấm nút \"↻ Thiết lập lại\" thứ 2 trong thanh hành động cuối khối \"Cấu hình nội & ngoại thành\" (nằm giữa \"✕ Huỷ bỏ\" và \"💾 Lưu thay đổi\") → cùng hành vi y hệt, tải lại toàn bộ trang",
+            "Sau khi trang tải lại, MỌI thay đổi trong phiên hiện tại ở cả 3 khối (Cấu hình vùng miền, Cấu hình tuyến, Cấu hình nội & ngoại thành — kể cả phần Nội/Ngoại thành đã bấm \"Lưu thay đổi\") đều mất, trang trở về đúng dữ liệu mẫu gốc lúc mới mở ứng dụng",
+            "Không có bước xác nhận (\"Bạn có chắc chắn...?\") trước khi tải lại — bấm là mất ngay"
+          ],
+          "systemFlow": [
+            "Cả 2 nút gọi chung 1 hành động duy nhất: onClick={() => window.location.reload()} — không có logic riêng, không phân biệt vị trí bấm",
+            "Vì window.location.reload() tải lại toàn bộ trang (fresh page load), mọi state React (localRegions, localMatrix, routeNames, localUrbanConfigs, urbanDraft, v.v.) bị huỷ hoàn toàn; module routeConfig.ts được re-import từ đầu, khôi phục lại các hằng số seed ban đầu (regions, routeMatrix, urbanConfigs) — vì đây là module-level in-memory store, không phải localStorage/API, nên không có gì \"còn sót lại\" sau reload",
+            "Nút ở góc phải tiêu đề trang: title=\"Tải lại toàn bộ dữ liệu về trạng thái mẫu ban đầu (mất mọi thay đổi trong phiên này)\" — luôn enabled, không disable trong bất kỳ trường hợp nào (khác nút \"Huỷ bỏ\"/\"Lưu thay đổi\" chỉ enable khi hasUrbanChanges)",
+            "Nút trong thanh hành động Nội & Ngoại thành dùng cùng title, và cũng LUÔN enabled bất kể hasUrbanChanges — không có gate theo trạng thái nháp",
+            "Vì đây là reload TOÀN TRANG (không chỉ riêng khối Nội & Ngoại thành), bấm nút này ở đây vẫn xoá luôn cả thay đổi (nếu có) ở 2 khối Vùng miền/Tuyến phía trên, dù nút này nằm trong khối Nội & Ngoại thành"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Nút \"↻ Thiết lập lại\" ở góc phải tiêu đề trang luôn hiển thị và luôn bấm được (không phụ thuộc trạng thái bất kỳ khối nào).",
+            "AC2: Nút \"↻ Thiết lập lại\" thứ 2 nằm trong thanh hành động cuối khối \"Cấu hình nội & ngoại thành\" (giữa \"Huỷ bỏ\" và \"Lưu thay đổi\") — cũng luôn bấm được, không bị disable dù hasUrbanChanges là false.",
+            "AC3: Bấm 1 trong 2 nút → gọi window.location.reload() ngay lập tức, không có bước xác nhận, không có toast/thông báo trước khi reload.",
+            "AC4: Sau khi trang tải lại, TOÀN BỘ thay đổi trong phiên trước đó ở CẢ 3 khối (Cấu hình vùng miền, Cấu hình tuyến, Cấu hình nội & ngoại thành) đều mất — kể cả các thay đổi Nội/Ngoại thành ĐÃ bấm \"Lưu thay đổi\" trước đó, vì store chỉ tồn tại trong bộ nhớ của phiên trình duyệt hiện tại (không phải localStorage/API).",
+            "AC5: Hover vào nút hiện tooltip (thuộc tính title) đúng nguyên văn: \"Tải lại toàn bộ dữ liệu về trạng thái mẫu ban đầu (mất mọi thay đổi trong phiên này)\" — giống nhau ở cả 2 vị trí.",
+            "AC6: Bấm nút này KHÔNG chỉ reset riêng khối chứa nó — dù nút thứ 2 nằm trong khối \"Nội & Ngoại thành\", bấm nó vẫn xoá luôn thay đổi (nếu có) ở khối \"Vùng miền\"/\"Tuyến\" phía trên, vì hành động là reload TOÀN TRANG."
+          ]
+        },
+        {
+          "id": "GSA-ROUTE-10",
+          "jiraKey": "",
+          "title": "[GSA] Vùng & Tuyến: Chỉnh sửa vùng/ tuyến/ tỉnh",
+          "status": "draft",
+          "userStory": "Là GHN Super Admin, tôi muốn chỉnh sửa các vùng miền, tuyến và tỉnh/thành ĐÃ CÓ (đổi tên, gán lại tỉnh, tick/bỏ tick cặp miền, đổi phân loại Nội/Ngoại thành) trực tiếp trên trang \"Vùng & Tuyến\" mà không cần xoá đi tạo lại, để việc điều chỉnh cấu hình luôn nhanh và không làm gián đoạn dữ liệu đang dùng.",
+          "notes": [
+            "Story này KHÔNG lặp lại toàn bộ nội dung GSA-ROUTE-2/3/4 — chỉ tập trung vào góc nhìn \"chỉnh sửa\" (đổi tên, gán lại, đổi phân loại, gỡ) và làm rõ SỰ KHÁC BIỆT quan trọng nhất giữa 2 khối Vùng miền/Tuyến (ghi thẳng ngay lập tức, không có \"Huỷ bỏ\") và khối Nội & Ngoại thành (qua nháp, có \"Huỷ bỏ\"/\"Lưu thay đổi\"). Xem chi tiết đầy đủ từng khối tại GSA-ROUTE-2 (Cấu hình vùng miền), GSA-ROUTE-3 (Cấu hình tuyến), GSA-ROUTE-4 (Cấu hình nội & ngoại thành).",
+            "Đối lập với các story GSA-ROUTE-6/7/8 (\"Thêm vùng\"/\"Thêm tuyến\"/\"Thêm tỉnh\" — tạo MỚI 1 đối tượng), story này tập trung vào chỉnh sửa đối tượng ĐÃ TỒN TẠI.",
+            "\"Chỉnh sửa tỉnh\" ở đây nghĩa là chỉnh sửa PHÂN LOẠI (Nội/Ngoại thành) và DANH SÁCH tỉnh trong khối Nội & Ngoại thành — KHÔNG phải đổi tên tỉnh (tên tỉnh là dữ liệu địa lý cố định, không sửa được ở bất kỳ đâu trên trang này).",
+            "Vì Chỉnh sửa vùng/tuyến không có bước xác nhận và ghi thẳng ngay lập tức, đây cũng là 1 rủi ro tương tự \"Thiết lập lại\" (GSA-ROUTE-9) nhưng ở quy mô nhỏ hơn (từng thao tác đơn lẻ thay vì mất toàn bộ phiên) — không có cách \"hoàn tác 1 bước\" (Ctrl+Z) cho các thao tác này."
+          ],
+          "userFlow": [
+            "Chỉnh sửa vùng (khối \"Cấu hình vùng miền\"): gõ trực tiếp vào ô tên của 1 vùng đã có để đổi tên (validate trùng tên — xem GSA-ROUTE-2); bấm X trên chip tỉnh để gỡ tỉnh khỏi vùng; chọn tỉnh khác từ dropdown \"Chọn Tỉnh/Thành\" để gán thêm — tỉnh tự động chuyển từ vùng cũ sang vùng mới nếu đang thuộc vùng khác",
+            "Chỉnh sửa tuyến (khối \"Cấu hình tuyến\"): gõ trực tiếp vào ô tên của 1 tuyến thường (không áp dụng cho \"Nội Tỉnh\" — xem GSA-ROUTE-3) để đổi tên (validate tối thiểu 2 ký tự); bấm chip cặp vùng miền để tick vào tuyến này hoặc bỏ tick — cặp đang thuộc tuyến khác tự động chuyển sang, không cảnh báo",
+            "Chỉnh sửa tỉnh (khối \"Cấu hình nội & ngoại thành\"): chọn 1 tỉnh trong sidebar, tick checkbox 1 xã/phường ở cột \"Nội thành\" hoặc \"Ngoại thành\" để đổi phân loại (tự động bỏ tick ở cột kia); tick \"Tất cả\" để đổi cả tỉnh về 1 phân loại; bấm X trên dòng tỉnh trong sidebar để gỡ hẳn tỉnh đó khỏi danh sách phân biệt",
+            "Với khối \"Nội & Ngoại thành\", mọi chỉnh sửa chỉ ảnh hưởng bản nháp cho tới khi bấm \"Lưu thay đổi\"; với 2 khối \"Vùng miền\" và \"Tuyến\", chỉnh sửa có hiệu lực NGAY LẬP TỨC, không qua nháp"
+          ],
+          "systemFlow": [
+            "Chỉnh sửa vùng: handleRenameRegion(id, name) → renameRegion(id, name); handleRemoveProvince/handleAssignProvince → removeProvinceFromRegion/assignProvinceToRegion — tất cả ghi thẳng vào store dùng chung routeConfig.ts ngay khi gọi, không qua state nháp (xem GSA-ROUTE-2)",
+            "Chỉnh sửa tuyến: handleRenameTuyen(oldName, newName) → renameRouteName — cập nhật MỌI cặp miền đang dùng oldName vì tên tuyến là khoá lưu trữ duy nhất; handleToggleChip → setRouteName/clearRouteName — cũng ghi thẳng ngay lập tức (xem GSA-ROUTE-3). Riêng \"Nội Tỉnh\" không đổi tên được (if (name === 'Nội Tỉnh') return)",
+            "Chỉnh sửa tỉnh: handleToggleUrbanWardDraft/handleSelectAllUrbanWards/handleRemoveUrbanProvinceDraft chỉ sửa urbanDraft (state cục bộ) — không ghi vào store dùng chung urbanConfigs cho tới khi commitUrbanDraft() chạy (bấm \"Lưu thay đổi\", xem GSA-ROUTE-4). Đây là ĐIỂM KHÁC BIỆT quan trọng so với Chỉnh sửa vùng/tuyến (ghi thẳng ngay lập tức, không có bước lưu riêng)",
+            "Vì 2 khối Vùng miền/Tuyến chia sẻ chung 1 module-level store (không có nháp), chỉnh sửa ở khối này ảnh hưởng NGAY tới khối kia trong cùng lần render — ví dụ đổi tên 1 vùng cập nhật ngay nhãn chip hiển thị ở khối \"Cấu hình tuyến\" mà không cần thao tác gì thêm"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Đổi tên 1 vùng đã có (khối \"Cấu hình vùng miền\") → tên mới hiển thị NGAY LẬP TỨC ở mọi chip tham chiếu vùng đó trong khối \"Cấu hình tuyến\", không cần lưu hay thao tác gì thêm.",
+            "AC2: Gỡ 1 tỉnh khỏi vùng (bấm X trên chip) → tỉnh đó ngay lập tức xuất hiện trở lại trong dropdown \"Chọn Tỉnh/Thành\" ở MỌI dòng vùng khác (không chỉ dòng vừa gỡ).",
+            "AC3: Gán 1 tỉnh đang thuộc vùng A sang vùng B (qua dropdown) → tỉnh tự động biến mất khỏi vùng A ngay khi vừa chọn ở vùng B, không cần thao tác gỡ thủ công trước.",
+            "AC4: Đổi tên 1 tuyến thường (không phải \"Nội Tỉnh\") → cập nhật tên hiển thị cho MỌI cặp miền đang gán tuyến đó cùng lúc, vì tên tuyến là khoá lưu trữ duy nhất (không phải ID riêng).",
+            "AC5: Bấm chip 1 cặp miền đang thuộc tuyến X trong dòng tuyến Y (X ≠ Y) → cặp đó ngay lập tức CHUYỂN sang tuyến Y (mất tick ở X, có tick ở Y), không cảnh báo, không giới hạn số lần chuyển qua lại.",
+            "AC6: Trong khối \"Cấu hình nội & ngoại thành\", tick đổi phân loại 1 xã/phường → thay đổi CHỈ nằm trong bản nháp, KHÔNG ảnh hưởng dữ liệu Agency Admin đang đọc cho tới khi bấm \"Lưu thay đổi\" — khác hẳn hành vi tức thời của Chỉnh sửa vùng/tuyến.",
+            "AC7: Chỉnh sửa vùng và Chỉnh sửa tuyến KHÔNG có nút \"Huỷ bỏ\" hay bước xác nhận — mọi thay đổi có hiệu lực ngay khi thao tác; cách duy nhất để hoàn tác hàng loạt là bấm \"Thiết lập lại\" (reload toàn trang, xem GSA-ROUTE-9), khi đó MẤT TẤT CẢ thay đổi trong phiên (kể cả những phần không liên quan).",
+            "AC8: Xoá 1 tỉnh khỏi sidebar \"Nội & Ngoại thành\" (bấm X) trong lúc đang chọn xem tỉnh đó → panel chính tự động chuyển sang hiển thị tỉnh đầu tiên còn lại trong danh sách nháp (hoặc màn hình trống nếu hết tỉnh) — vẫn chỉ là thay đổi nháp, có thể hoàn tác bằng \"Huỷ bỏ\" trước khi lưu."
           ]
         }
       ]
@@ -529,6 +900,71 @@
       "version": "1.2.0",
       "date": "2026-09-06",
       "summary": "Thêm section Cấu hình Vùng & Tuyến (GSA-ROUTE-1 đến GSA-ROUTE-6) — định nghĩa Miền/Vùng, điền nhanh theo khoảng tỉnh, đặt tên tuyến, Nội/Ngoại thành, và tác động đa nền tảng Agency Admin"
+    },
+    {
+      "version": "1.3.0",
+      "date": "2026-09-13",
+      "summary": "Viết lại toàn bộ GSA-ROUTE-1 đến GSA-ROUTE-6 (đổi tên section thành \"Vùng & Tuyến\") theo redesign: bảng có validate cho Vùng miền và Tuyến, Nội tỉnh tách riêng theo từng miền, Cấu hình nội & ngoại thành chuyển sang sidebar + checklist 2 cột với cơ chế nháp/lưu, sửa mô tả sai lệch về modal hướng dẫn (ZoneGuideModal, không phải UrbanGuideModal)"
+    },
+    {
+      "version": "1.4.0",
+      "date": "2026-09-13",
+      "summary": "Bỏ công cụ \"Điền nhanh theo khoảng tỉnh\" (xoá GSA-ROUTE-3 cũ), đơn giản hoá validate Cấu hình vùng miền (chỉ báo lỗi sau khi đã đặt tên), gộp \"Nội Tỉnh\" vào cơ chế chip chung của Cấu hình tuyến thay vì input riêng theo từng miền — đánh số lại GSA-ROUTE-1 đến GSA-ROUTE-5"
+    },
+    {
+      "version": "1.5.0",
+      "date": "2026-09-13",
+      "summary": "Thêm GSA-ROUTE-6 \"Thêm vùng\" — tách riêng workflow tạo vùng miền mới và mô tả tác động dây chuyền sang Cấu hình tuyến (auto-seed Nội Tỉnh, phát sinh cặp chưa cấu hình)"
+    },
+    {
+      "version": "1.6.0",
+      "date": "2026-09-13",
+      "summary": "Thêm GSA-ROUTE-7 \"Thêm tuyến\" — tách riêng workflow tạo tuyến mới trống, ghi lại known inconsistency về validate so với \"Thêm vùng\" (GSA-ROUTE-6) và thiếu validate chống trùng tên tuyến"
+    },
+    {
+      "version": "1.7.0",
+      "date": "2026-09-13",
+      "summary": "Thêm GSA-ROUTE-8 \"Thêm tỉnh\" — tách riêng workflow thêm tỉnh vào Cấu hình nội & ngoại thành, làm rõ cơ chế nháp/lưu và hệ quả tỉnh mới không có xã/phường"
+    },
+    {
+      "version": "1.8.0",
+      "date": "2026-09-13",
+      "summary": "Thêm GSA-ROUTE-9 \"Thiết lập lại\" — làm rõ nút reload toàn trang xuất hiện ở 2 vị trí là cùng 1 hành động duy nhất, không có xác nhận, ghi lại rủi ro mất dữ liệu đã biết"
+    },
+    {
+      "version": "1.9.0",
+      "date": "2026-09-13",
+      "summary": "Thêm GSA-ROUTE-10 \"Chỉnh sửa vùng/ tuyến/ tỉnh\" — story cross-cutting tổng hợp góc nhìn chỉnh sửa (đổi tên, gán lại, đổi phân loại, gỡ) trên cả 3 khối, làm rõ khác biệt ghi ngay lập tức (Vùng miền/Tuyến) vs cơ chế nháp (Nội & Ngoại thành)"
+    },
+    {
+      "version": "1.10.0",
+      "date": "2026-09-13",
+      "summary": "Thêm GSA-DL-9/10/11 — user story cho tính năng \"Thành phần đơn hàng\" (bật/tắt field trong form tạo đơn theo từng đại lý), ràng buộc Thư theo 247Express+Hub, và áp dụng đa nền tảng (Web Shop, Agency Admin)"
+    },
+    {
+      "version": "1.11.0",
+      "date": "2026-09-13",
+      "summary": "Redesign GSA-DL-9/10 — tách \"Thành phần đơn hàng\" thành 2 card riêng (Hàng hoá / Thư, tài liệu) theo mockup, bỏ hẳn badge phạm vi trên từng dòng, card Thư hiện banner thay vì lọc từng field khi chưa sẵn sàng"
+    },
+    {
+      "version": "1.12.0",
+      "date": "2026-09-13",
+      "summary": "Sửa GSA-DL-10 — card \"Thư, tài liệu\" giờ luôn hiện đủ toggle nhưng disable/mờ khi đại lý chưa đủ điều kiện (247Express + hub), thay vì ẩn hẳn thay bằng banner như bản trước"
+    },
+    {
+      "version": "1.13.0",
+      "date": "2026-09-13",
+      "summary": "Thêm GSA-DL-12 \"Thống kê tổng quan\" (4 KPI card ở Chi tiết đại lý), sửa AC1 của GSA-DL-8 khớp tên KPI hiện tại (Tổng phí ship thay vì Doanh thu)"
+    },
+    {
+      "version": "1.14.0",
+      "date": "2026-09-13",
+      "summary": "Bổ sung GSA-DL-12 với bảng công thức chi tiết cho từng KPI (Số shop, Đơn hàng, Tổng COD, Tổng phí ship), giải thích tổng quát áp dụng cho mọi đại lý thay vì chỉ minh hoạ số liệu 1 đại lý"
+    },
+    {
+      "version": "1.15.0",
+      "date": "2026-09-14",
+      "summary": "Sửa bug nghiệp vụ: tắt thành phần COD giờ cũng ẩn nút \"Khách trả ship\" và ép tổng thu hộ về 0 phí ship (effectiveFeePayer), tránh đại lý bị tắt COD vẫn phát sinh thu hộ qua đường phí ship — áp dụng cả Web Shop và Agency Admin"
     }
   ]
 }

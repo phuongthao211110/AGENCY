@@ -2,9 +2,17 @@
 
 **Platform:** Agency Admin (Đại lý)  
 **Figma:** [AGA Design File](https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449)  
-**Version:** 1.0.0 | **Cập nhật:** 2026-04-16
+**Version:** 1.3.0 | **Cập nhật:** 2026-09-14
 
 ---
+
+## Báo cáo
+
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [AGA] Báo cáo: KPI tổng quan | [kpi-tong-quan.md](./bao-cao/kpi-tong-quan.md) | — | [Draft] |
+| [AGA] Báo cáo: Xu hướng tổng phí ship theo shop | [xu-huong-tong-phi-ship-theo-shop.md](./bao-cao/xu-huong-tong-phi-ship-theo-shop.md) | — | [Draft] |
+| [AGA] Báo cáo: Bảng "COD & phí theo shop" | [bang-cod-phi-theo-shop.md](./bao-cao/bang-cod-phi-theo-shop.md) | — | [Draft] |
 
 ## Login / Logout
 
@@ -26,6 +34,7 @@
 | [AGA] Danh sách shop: Hiển thị link đăng nhập shop portal | [hien-thi-link-dang-nhap-shop.md](./shops/hien-thi-link-dang-nhap-shop.md) | AGENCY-608 | [Draft] |
 | [AGENCY] Shop - Danh sách shop: Nhận diện shop tự đăng ký | [nhan-dien-shop-tu-dang-ky.md](./shops/nhan-dien-shop-tu-dang-ky.md) | — | [Draft] |
 | [AGENCY] Shop - Tạo mới shop: Không có dịch vụ khả dụng | [tao-moi-shop-khong-co-dich-vu-kha-dung.md](./shops/tao-moi-shop-khong-co-dich-vu-kha-dung.md) | — | [Draft] |
+| [AGA] Shop - Chi tiết shop: Thống kê tổng quan | [thong-ke-tong-quan.md](./shops/thong-ke-tong-quan.md) | — | [Draft] |
 
 ## Quản lý đơn hàng
 

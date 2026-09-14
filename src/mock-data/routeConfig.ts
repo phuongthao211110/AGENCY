@@ -50,14 +50,22 @@ export const regions: RegionDef[] = ZONE_ORDER.map((zone) => ({
   provinces: VIETNAM_PROVINCES.filter((p) => p.zone === zone).map((p) => p.name),
 }))
 
-/** Route name for same-province pairs, theo từng miền — mỗi miền có 1 tên tuyến "nội tỉnh" riêng
- * (vd Hà Nội ⇔ Hà Nội có thể khác giá với Miền Nam (Vùng 1) nội tỉnh). Key = regionId. */
-export const sameProvinceRouteByRegion: Record<string, string> = Object.fromEntries(
-  ZONE_ORDER.map((zone) => [zone, 'Nội Tỉnh'])
-)
-
-/** Matrix: pairKey(regionIdA, regionIdB) → route name. */
+/**
+ * Matrix: pairKey(regionIdA, regionIdB) → route name. Cặp "đường chéo" (pairKey(id, id)) đại diện
+ * cho MỌI đơn hàng trong phạm vi 1 miền — cả trường hợp cùng 1 tỉnh lẫn khác tỉnh cùng miền — nên
+ * mặc định TẤT CẢ đường chéo đều dùng chung tên 'Nội Tỉnh'. Đây là tên gợi ý ban đầu, không phải
+ * hằng số đặc biệt: Super Admin có thể bấm chip để tách riêng 1 miền sang tên tuyến khác bất kỳ lúc
+ * nào, y hệt cách tick/bỏ tick các cặp miền khác — không còn cơ chế lưu tên riêng theo từng miền.
+ */
 export const routeMatrix: Record<string, string> = {
+  // Nội Tỉnh — mặc định mọi miền dùng chung 1 tên (đường chéo = cùng miền)
+  [pairKey('HN',  'HN')]:  'Nội Tỉnh',
+  [pairKey('DN',  'DN')]:  'Nội Tỉnh',
+  [pairKey('HCM', 'HCM')]: 'Nội Tỉnh',
+  [pairKey('V1',  'V1')]:  'Nội Tỉnh',
+  [pairKey('V2',  'V2')]:  'Nội Tỉnh',
+  [pairKey('V3',  'V3')]:  'Nội Tỉnh',
+
   // Nội Vùng — TP đặc biệt ↔ vùng tương ứng
   [pairKey('HN',  'V3')]: 'Nội Vùng',
   [pairKey('DN',  'V2')]: 'Nội Vùng',
@@ -80,11 +88,6 @@ export const routeMatrix: Record<string, string> = {
   [pairKey('V1', 'V2')]: 'Liên Vùng Tỉnh',
   [pairKey('V1', 'V3')]: 'Liên Vùng Tỉnh',
   [pairKey('V2', 'V3')]: 'Liên Vùng Tỉnh',
-
-  // Nội Vùng Tỉnh — 2 tỉnh khác nhau cùng vùng
-  [pairKey('V1', 'V1')]: 'Nội Vùng Tỉnh',
-  [pairKey('V2', 'V2')]: 'Nội Vùng Tỉnh',
-  [pairKey('V3', 'V3')]: 'Nội Vùng Tỉnh',
 }
 
 // Demo — 1 phần xã/phường tiêu biểu theo địa giới MỚI sau sáp nhập 2025 (không phải danh sách
@@ -138,26 +141,17 @@ export const urbanConfigs: UrbanConfig[] = [
   },
 ]
 
-// ─── Setters ──────────────────────────────────────────────────────────────────
-
-export function getSameProvinceRouteName(regionId: string): string {
-  return sameProvinceRouteByRegion[regionId] ?? 'Nội Tỉnh'
-}
-
-export function setSameProvinceRouteForRegion(regionId: string, name: string): void {
-  sameProvinceRouteByRegion[regionId] = name
-}
-
-/** true nếu `name` là tên tuyến "nội tỉnh" của ít nhất 1 miền — dùng để nhận diện hàng
- * "nội tỉnh" (không cần chọn tỉnh) khi tên tuyến không còn là 1 hằng số duy nhất. */
+/** true nếu `name` hiện đang được gán cho ÍT NHẤT 1 cặp "đường chéo" (pairKey(id, id)) — dùng để
+ * nhận diện những tên tuyến đang đóng vai trò "nội tỉnh" cho 1 hay nhiều miền, dù tên tuyến không
+ * còn là 1 hằng số cố định nữa (Super Admin có thể tách 1 miền sang tên khác qua chip bất kỳ lúc nào). */
 export function isSameProvinceRouteName(name: string): boolean {
-  return Object.values(sameProvinceRouteByRegion).includes(name)
+  return regions.some((r) => routeMatrix[pairKey(r.id, r.id)] === name)
 }
 
-/** Mô tả phạm vi áp dụng của 1 tên tuyến "nội tỉnh" — liệt kê từng miền đang dùng tên này. */
+/** Mô tả phạm vi áp dụng của 1 tên tuyến "nội tỉnh" — liệt kê từng miền đang dùng tên này cho cặp đường chéo. */
 export function describeSameProvinceRoutePairs(routeName: string): string[] {
   return regions
-    .filter((r) => getSameProvinceRouteName(r.id) === routeName)
+    .filter((r) => routeMatrix[pairKey(r.id, r.id)] === routeName)
     .map((r) => (r.provinces.length === 1 ? `${r.provinces[0]} ↔ ${r.provinces[0]}` : `Cùng 1 tỉnh trong ${r.name}`))
 }
 
@@ -175,7 +169,7 @@ export function findRegionOf(province: string): RegionDef | undefined {
 export function resolveRouteName(fromProvince: string, toProvince: string): string | null {
   if (fromProvince === toProvince) {
     const reg = findRegionOf(fromProvince)
-    return reg ? getSameProvinceRouteName(reg.id) : null
+    return reg ? (routeMatrix[pairKey(reg.id, reg.id)] ?? null) : null
   }
   const fromReg = findRegionOf(fromProvince)
   const toReg   = findRegionOf(toProvince)
@@ -199,13 +193,13 @@ export function resolveUrbanArea(province: string, ward: string): boolean | null
 }
 
 /**
- * List of all unique route names currently defined,
- * in order of first appearance (sameProvinceRouteByRegion values first, then matrix values).
+ * List of all unique route names currently defined, in order of first appearance in routeMatrix
+ * (đường chéo 'Nội Tỉnh' được khai báo đầu tiên trong routeMatrix nên luôn đứng đầu danh sách).
  */
 export function listRouteNames(): string[] {
   const seen = new Set<string>()
   const result: string[] = []
-  for (const name of [...Object.values(sameProvinceRouteByRegion), ...Object.values(routeMatrix)]) {
+  for (const name of Object.values(routeMatrix)) {
     if (!seen.has(name)) {
       seen.add(name)
       result.push(name)
@@ -219,7 +213,7 @@ export function listRouteNames(): string[] {
 export function addRegion(name: string): RegionDef {
   const newRegion: RegionDef = { id: `region_${Date.now()}`, name, provinces: [] }
   regions.push(newRegion)
-  sameProvinceRouteByRegion[newRegion.id] = 'Nội Tỉnh'
+  routeMatrix[pairKey(newRegion.id, newRegion.id)] = 'Nội Tỉnh'
   return newRegion
 }
 
@@ -231,8 +225,7 @@ export function renameRegion(id: string, name: string): void {
 export function deleteRegion(id: string): void {
   const idx = regions.findIndex((r) => r.id === id)
   if (idx !== -1) regions.splice(idx, 1)
-  delete sameProvinceRouteByRegion[id]
-  // Remove all matrix entries that reference this region id
+  // Remove all matrix entries that reference this region id (bao gồm cả cặp đường chéo "Nội Tỉnh")
   for (const key of Object.keys(routeMatrix)) {
     if (key.split('|').includes(id)) delete routeMatrix[key]
   }

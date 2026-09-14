@@ -40,7 +40,8 @@
         { "id": "c1", "fromValue": "0", "toValue": "1000000", "fixedFee": "0", "percentFee": "1" },
         { "id": "c2", "fromValue": "1000001", "toValue": "10000000", "fixedFee": "0", "percentFee": "1.5" },
         { "id": "c3", "fromValue": "10000001", "toValue": "999999999", "fixedFee": "0", "percentFee": "2" }
-      ]
+      ],
+      "addressChange": { "sameWardFee": "0", "sameProvinceFee": "10000", "interProvincePercent": "50" }
     }
   },
   {

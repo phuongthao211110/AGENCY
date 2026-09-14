@@ -1,7 +1,7 @@
 {
   "platform": "agency-admin",
-  "currentVersion": "1.1.0",
-  "lastUpdated": "2026-08-07",
+  "currentVersion": "1.3.0",
+  "lastUpdated": "2026-09-14",
   "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
@@ -325,6 +325,43 @@
             "Nút \"Chỉnh sửa\" trong ShopDetail.tsx hiện chưa có onClick handler — bấm vào không làm gì. Story này là spec cho dev implement, chưa phản ánh hành vi thật của prototype.",
             "Chỉnh sửa thông tin cơ bản không ảnh hưởng đến tài khoản đăng nhập của shop (username/password — nếu cần sửa riêng thì thuộc story khác).",
             "Phần chỉnh sửa cấu hình dịch vụ/bảng giá khi ở chế độ edit đã được cover ở AGA-SHOP-7."
+          ]
+        },
+        {
+          "id": "AGA-SHOP-12",
+          "jiraKey": "",
+          "title": "[AGA] Shop - Chi tiết shop: Thống kê tổng quan",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem nhanh 3 chỉ số tổng quan (Đơn hàng, Tổng COD, Doanh thu) ngay đầu trang Chi tiết shop — với công thức tính rõ ràng, áp dụng như nhau cho MỌI shop — để nắm được hiệu quả kinh doanh của bất kỳ shop nào mà không cần vào từng tab.",
+          "userFlow": [
+            "Vào \"Quản lý Shop\" → bấm 1 shop bất kỳ để mở trang \"Thông tin shop\" (Chi tiết shop).",
+            "Ngay dưới tiêu đề \"Thông tin shop\", trước tab bar, hiện tiêu đề nhỏ \"Thống kê tổng quan\" và 3 thẻ KPI xếp ngang: Đơn hàng, Tổng COD, Doanh thu.",
+            "Mỗi thẻ gồm icon màu riêng + nhãn xám nhỏ ở trên, số liệu lớn đậm bên dưới.",
+            "Cả 3 số đều tính trực tiếp theo ĐÚNG shop đang xem — chuyển sang xem shop khác thì cả 3 số đổi theo dữ liệu shop đó."
+          ],
+          "systemFlow": [
+            "ShopDetail.tsx render khối KPI ngay dưới header \"Thông tin shop\", trước tab bar — dùng KpiCard (icon, label, value, iconColor) ĐỊNH NGHĨA RIÊNG trong file này (không phải import chung với AgencyDetail.tsx bên Super Admin, dù cùng tên component/layout).",
+            "Bảng công thức: \"Đơn hàng\" = fmtNum(shop.totalOrders), với totalOrders = shop.totalOrders (1 field đếm sẵn của chính shop đang xem). \"Tổng COD\" = fmtVND(totalOrders × 35.000) — hằng số giả định 35.000 (COD trung bình/đơn, demo — giống hệt công thức \"Tổng COD\" ở Super Admin AgencyDetail.tsx và AgencyReport.tsx cấp đại lý) nhân với totalOrders của shop này, không lấy từ COD thật đã đối soát. \"Doanh thu\" = fmtVND(getShopMargin(shop.id)) — getShopMargin(shopId) (reconciliationLedger.ts) = Σ (shopServiceFee − ghnFee) trên mọi dòng đối soát của shop này, là chênh lệch phí vận chuyển thật, không phải % trên COD.",
+            "fmtNum/fmtVND ở ShopDetail.tsx là 2 HÀM KHÁC HẲN với fmtNum/fmtVND ở AgencyDetail.tsx (Super Admin) dù trùng tên: fmtNum (ShopDetail) = n.toLocaleString('vi-VN') — KHÔNG rút gọn thành \"k\" như bản Super Admin, chỉ thêm dấu chấm ngăn cách hàng nghìn. fmtVND (ShopDetail): ≥ 1 tỷ → \"X tỷ\", ≥ 1 triệu → \"X tr\" (chữ Việt, bỏ .0 nếu tròn số), còn lại → số đầy đủ + \" ₫\" — khác hẳn cách viết \"X.XB\"/\"X.XM\"/\"XK\" (chữ cái tiếng Anh, không có ₫) của bản Super Admin.",
+            "\"Doanh thu\" ở đây dùng ĐÚNG tên gọi khớp với bản chất phép tính (getShopMargin = chênh lệch phí, đúng nghĩa doanh thu/lợi nhuận gộp của đại lý từ shop này) — KHÁC với \"Tổng phí ship\" ở Super Admin AgencyDetail.tsx (dùng getShopServiceFeeTotal, tổng phí gộp CHƯA trừ phí NVC). 2 khái niệm này KHÔNG PHẢI cùng 1 con số dù cùng dựa trên dữ liệu đối soát của shop.",
+            "\"Tổng COD\" vẫn dùng công thức demo cố định (totalOrders × 35.000), CHƯA đổi sang COD thật đã đối soát (getShopCodTotal(shopId), hàm có sẵn trong reconciliationLedger.ts nhưng chưa được gọi ở đây) — cùng khoảng trống đã ghi nhận ở GSA-DL-12 (Super Admin)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Khối \"Thống kê tổng quan\" hiện ngay dưới header \"Thông tin shop\", TRƯỚC tab bar — luôn hiển thị cho MỌI shop, không phụ thuộc tab đang chọn.",
+            "AC2: Hiện đúng 3 thẻ theo thứ tự: \"Đơn hàng\" (icon InboxOutlined, #10B981), \"Tổng COD\" (icon DollarOutlined, #F59E0B), \"Doanh thu\" (icon BarChartOutlined, #8B5CF6).",
+            "AC3: \"Đơn hàng\" = shop.totalOrders của ĐÚNG shop đang xem, hiển thị dạng số nguyên có dấu chấm ngăn cách hàng nghìn (KHÔNG rút gọn \"k\" như bên Super Admin).",
+            "AC4: \"Tổng COD\" = shop.totalOrders × 35.000 — LUÔN dùng đúng totalOrders của shop đang xem, hiển thị dạng \"X tỷ\" / \"X tr\" / số đầy đủ kèm \"₫\" tuỳ độ lớn.",
+            "AC5: \"Doanh thu\" = getShopMargin(shop.id) — tổng chênh lệch (shopServiceFee − ghnFee) trên mọi dòng đối soát của shop này; KHÔNG được tính bằng % của COD hay bất kỳ hằng số cố định nào.",
+            "AC6: Đổi sang xem shop khác → cả 3 số cập nhật đúng theo dữ liệu shop mới, không giữ lại số của shop trước.",
+            "AC7: Shop chưa có dòng đối soát nào → \"Doanh thu\" hiện \"0 ₫\" (không lỗi, không NaN).",
+            "AC8: Shop có 0 đơn hàng (totalOrders = 0) → \"Đơn hàng\" hiện \"0\", \"Tổng COD\" hiện \"0 ₫\"."
+          ],
+          "notes": [
+            "Story mô tả khối \"Thống kê tổng quan\" ở trang Chi tiết shop (Agency Admin) — CÙNG TÊN TIÊU ĐỀ với khối tương tự ở Chi tiết đại lý (Super Admin, xem GSA-DL-12), nhưng đây là 2 trang/2 platform khác nhau, dùng 2 bộ hàm format RIÊNG BIỆT — không dùng chung code.",
+            "KHÔNG NHẦM LẪN: \"Doanh thu\" ở đây (getShopMargin — phí gộp ĐÃ trừ phí NVC, tức lợi nhuận) khác với \"Tổng phí ship\" ở Super Admin AgencyDetail.tsx (getShopServiceFeeTotal — phí gộp CHƯA trừ). 2 con số này sẽ KHÁC NHAU cho cùng 1 shop, đừng nhầm là cùng 1 chỉ số hiển thị ở 2 nơi.",
+            "Agency Admin còn 1 khối thống kê KHÁC ở trang \"Báo cáo\" (AgencyReport.tsx) — không có tiêu đề \"Thống kê tổng quan\" (chỉ có subtitle \"Tổng quan số lượng shop, COD và sản lượng đơn của đại lý\"), với 4 KPI card ở CẤP CẢ ĐẠI LÝ (không phải từng shop): \"Số lượng shop\", \"COD\", \"Sản lượng đơn\", \"Đơn TB / shop\" — CHƯA được viết thành story riêng, cần xác nhận thêm nếu muốn tài liệu hoá luôn khối này.",
+            "Known inconsistency (đã biết, chưa xử lý): \"Tổng COD\" vẫn dùng công thức demo cố định — chưa đổi sang getShopCodTotal(shopId) (COD thật đã đối soát) như đã làm cho \"Doanh thu\" — cùng khoảng trống đã ghi nhận ở GSA-DL-12 phía Super Admin."
           ]
         }
       ]
@@ -2221,9 +2258,143 @@
           ]
         }
       ]
+    },
+    {
+      "key": "bao-cao",
+      "title": "Báo cáo",
+      "stories": [
+        {
+          "id": "AGA-REPORT-1",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: KPI tổng quan",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem 4 chỉ số tổng quan hoạt động của TOÀN đại lý (không phải từng shop) ngay đầu trang \"Báo cáo\", để nắm được quy mô kinh doanh chung mà không cần cộng dồn thủ công từ từng shop.",
+          "userFlow": [
+            "Vào menu \"Báo cáo\" (Agency Admin).",
+            "Ngay dưới tiêu đề \"Báo cáo\" và mô tả \"Tổng quan số lượng shop, COD và sản lượng đơn của đại lý\", hiện 4 thẻ KPI: Số lượng shop, COD, Sản lượng đơn, Đơn TB / shop.",
+            "\"Số lượng shop\" hiện kèm số shop đang hoạt động trong ngoặc, ví dụ \"7 (6 hoạt động)\".",
+            "3 số còn lại đều CỘNG DỒN từ TẤT CẢ shop thuộc đại lý (không phải chỉ shop đang hoạt động)."
+          ],
+          "systemFlow": [
+            "AgencyReport.tsx — buildShopStats() lọc loadShops() theo agencyId === CURRENT_AGENCY_ID, với mỗi shop gọi getShopCodTotal(s.id) và getShopServiceFeeTotal(s.id) (từ reconciliationLedger.ts) để lấy COD/phí THẬT theo dữ liệu đối soát.",
+            "Bảng công thức: \"Số lượng shop\" = `${totalShops} (${activeShops} hoạt động)` với totalShops = shops.length (đếm tất cả shop, kể cả ngừng hoạt động), activeShops = shops.filter(s => s.status !== 'inactive').length. \"COD\" = fmtVND(totalCod), totalCod = Σ shops.cod với cod mỗi shop = getShopCodTotal(shopId) (Σ ghnCOD trên mọi dòng đối soát) — dữ liệu THẬT, không phải totalOrders × 35.000. \"Sản lượng đơn\" = fmtNum(totalOrders), totalOrders = Σ shops.totalOrders (cộng dồn field đếm sẵn của từng shop). \"Đơn TB / shop\" = fmtNum(avgOrdersPerShop), avgOrdersPerShop = totalOrders / totalShops (làm tròn, chia cho tổng số shop kể cả ngừng hoạt động; totalShops = 0 → trả 0).",
+            "fmtNum(n) = n.toLocaleString('vi-VN') — chỉ thêm dấu chấm ngăn cách hàng nghìn, KHÔNG rút gọn \"k\"/\"K\" như bên Super Admin.",
+            "fmtVND(n): ≥ 1 tỷ → \"X tỷ\", ≥ 1 triệu → \"X tr\" (bỏ .0 nếu tròn số), còn lại → số đầy đủ + \" ₫\" — CÙNG CÔNG THỨC với ShopDetail.tsx (xem AGA-SHOP-12), khác hẳn fmtVND bên Super Admin (dùng B/M/K tiếng Anh, không có ₫).",
+            "CURRENT_AGENCY_ID = 'AGN001' là hằng số demo (giả lập agency đang đăng nhập) — không đọc từ session/auth thật.",
+            "\"COD\" ở trang Báo cáo này khác cách tính với \"Tổng COD\" ở ShopDetail.tsx (AGA-SHOP-12): trang Báo cáo dùng getShopCodTotal (COD thật đã đối soát), còn ShopDetail.tsx vẫn dùng công thức demo totalOrders × 35.000 — 2 nơi tính COD theo 2 cách KHÁC NHAU cho cùng 1 shop."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Khối KPI hiện ngay dưới tiêu đề trang \"Báo cáo\", trước phần \"Xu hướng tổng phí ship theo shop\" (xem AGA-REPORT-2).",
+            "AC2: Đủ 4 thẻ đúng thứ tự: \"Số lượng shop\", \"COD\", \"Sản lượng đơn\", \"Đơn TB / shop\".",
+            "AC3: \"Số lượng shop\" hiện dạng \"N (M hoạt động)\" — N = tổng số shop (mọi trạng thái), M = số shop đang hoạt động (status !== 'inactive').",
+            "AC4: \"COD\" = tổng COD THẬT (getShopCodTotal) cộng dồn từ mọi shop thuộc đại lý — không phải công thức demo totalOrders × 35.000.",
+            "AC5: \"Sản lượng đơn\" = tổng totalOrders cộng dồn từ mọi shop thuộc đại lý.",
+            "AC6: \"Đơn TB / shop\" = Sản lượng đơn ÷ Số lượng shop (làm tròn) — chia cho TỔNG số shop kể cả ngừng hoạt động; đại lý có 0 shop → hiện \"0\", không lỗi chia 0.",
+            "AC7: Shop chưa từng phát sinh đơn đối soát → shop đó đóng góp 0 vào \"COD\" nhưng vẫn được tính vào \"Số lượng shop\" và mẫu số của \"Đơn TB / shop\"."
+          ],
+          "notes": [
+            "Story tách từ trang \"Báo cáo\" (AgencyReport.tsx) — trang này CHƯA có mục nào trong hệ thống Document trước đây. Viết 3 story mới cho 3 khối của trang: KPI (story này), \"Xu hướng tổng phí ship theo shop\" (AGA-REPORT-2), \"COD & phí theo shop\" (AGA-REPORT-3).",
+            "Phân biệt với AGA-SHOP-12 (Chi tiết shop): trang này là KPI CẤP ĐẠI LÝ (cộng dồn nhiều shop), còn AGA-SHOP-12 là KPI CẤP 1 SHOP — cùng tên \"COD\"/\"Đơn hàng\" nhưng phạm vi tính khác nhau.",
+            "Known inconsistency (đã biết, chưa xử lý): \"COD\" ở đây dùng dữ liệu đối soát thật, trong khi \"Tổng COD\" ở ShopDetail.tsx (AGA-SHOP-12) và \"Tổng COD (₫)\" ở Super Admin AgencyDetail.tsx (GSA-DL-12) đều dùng công thức demo cố định — 3 nơi tính COD theo 3 cách khác nhau trong cùng hệ thống, cần thống nhất nếu đưa lên production."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-2",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Xu hướng tổng phí ship theo shop",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem biểu đồ xu hướng TỔNG PHÍ SHIP theo Ngày/Tuần/Tháng, tách theo TỪNG SHOP, so sánh với cùng kỳ liền trước, để biết shop nào đang tăng/giảm đóng góp vào tổng phí ship theo thời gian.",
+          "userFlow": [
+            "Trong trang \"Báo cáo\", cuộn tới khối \"Xu hướng tổng phí ship theo shop\".",
+            "Chọn 1 trong 3 tab thời gian: \"Ngày\" / \"Tuần\" / \"Tháng\" (mặc định \"Tuần\").",
+            "3 ô tổng hợp hiện ngay dưới: \"Kỳ này\" (khoảng ngày, tổng phí kỳ hiện tại); \"Cùng kỳ trước\" (khoảng ngày, tổng phí kỳ liền trước); \"So với cùng kỳ\" (% tăng/giảm kèm icon mũi tên lên/xuống màu xanh/đỏ, hoặc chữ \"Mới\" màu xanh dương nếu kỳ trước = 0).",
+            "Bên dưới là biểu đồ cột CHỒNG (stacked bar) — mỗi cột là 1 kỳ (6 kỳ gần nhất), mỗi lát màu trong cột là 1 shop.",
+            "Di chuột vào 1 cột bất kỳ (không cần trúng đúng lát mỏng) → hiện tooltip liệt kê TỪNG SHOP có phát sinh phí trong kỳ đó kèm số tiền, và tổng cả kỳ ở đầu tooltip.",
+            "Cột cuối cùng (kỳ hiện tại) luôn hiện số tổng ngay trên đỉnh cột, không cần hover.",
+            "Dưới biểu đồ có legend liệt kê tên + màu từng shop.",
+            "Bấm \"Xem dạng bảng\" → chuyển hiển thị số liệu dạng bảng (cột: Kỳ, từng shop, Tổng) thay cho biểu đồ; bấm lại (\"Ẩn dạng bảng\") để quay về chỉ biểu đồ."
+          ],
+          "systemFlow": [
+            "getAgencyOrders() lấy toàn bộ đơn của mọi shop thuộc CURRENT_AGENCY_ID.",
+            "Vì dữ liệu đơn hàng demo là NGÀY CỐ ĐỊNH trong quá khứ (không tự cập nhật theo ngày hệ thống thật), anchorDate (mốc \"hiện tại\") lấy theo NGÀY CÓ ĐƠN GẦN NHẤT của đại lý (Math.max(...agencyOrders.map(...))), KHÔNG dùng new Date() thật — nếu dùng ngày thật, mọi kỳ sẽ luôn rơi vào lúc chưa có dữ liệu demo.",
+            "Dùng PHÍ SHIP (order.fee) làm số liệu chính, KHÔNG dùng COD — vì không phải đơn nào cũng có COD (đơn khách trả trước/chuyển khoản thì COD = 0), nhưng đơn nào cũng phát sinh phí ship.",
+            "PERIOD_DAYS = { day: 1, week: 7, month: 30 } — độ dài 1 kỳ theo tab đang chọn.",
+            "computePeriodComparison(): curEnd = endOfDay(anchor), curStart = startOfDay(anchor − (days−1) ngày), prevEnd = endOfDay(curStart − 1 ngày), prevStart = startOfDay(prevEnd − (days−1) ngày) — kỳ trước LUÔN liền kề ngay trước kỳ này, không chồng lấn. deltaPct = previous > 0 ? (current−previous)/previous×100 : (current > 0 ? null : 0) — previous = 0 VÀ current > 0 → trả null (hiển thị \"Mới\") thay vì % tăng vô hạn.",
+            "buildShopTrendSeries() vẽ TREND_BAR_COUNT = 6 kỳ liên tiếp gần nhất (kỳ cuối trùng \"Kỳ này\"), mỗi kỳ tính riêng phí ship của TỪNG shop trong danh sách shops (đã lọc theo đại lý).",
+            "SHOP_CHART_COLORS — bảng màu categorical 8 màu ĐÃ VALIDATE (theo skill dataviz, đảm bảo phân biệt được dưới mù màu/CVD khi nhiều lát xếp chồng); quá 8 shop thì các shop từ thứ 9 trở đi LẶP LẠI màu theo idx % 8 (chưa có cơ chế gộp \"Khác\" thật sự dù comment trong code có nhắc tới ý tưởng này).",
+            "ShopTrendStackedChart — hover CẢ CỘT (không phải riêng 1 lát) để hiện tooltip liệt kê đủ mọi shop có value > 0 trong kỳ đó; cột hiện tại (isCurrent) luôn có nhãn tổng hiện trực tiếp trên đỉnh, không cần hover.",
+            "Nút \"Xem dạng bảng\" (showTable) chuyển sang bảng: cột \"Kỳ\" + 1 cột/shop + cột \"Tổng\" — dùng đúng shopLegend (danh sách shop lấy từ points[0].slices) làm tiêu đề cột."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: 3 tab \"Ngày\"/\"Tuần\"/\"Tháng\" — mặc định chọn \"Tuần\"; đổi tab → toàn bộ 3 ô tổng hợp + biểu đồ + bảng cập nhật lại theo độ dài kỳ mới.",
+            "AC2: Mốc \"hiện tại\" dùng NGÀY CÓ ĐƠN GẦN NHẤT của đại lý (không phải ngày hệ thống thật) — caption dưới tiêu đề khối nêu rõ điều này kèm ngày cụ thể.",
+            "AC3: 3 ô tổng hợp hiện đúng khoảng ngày của \"Kỳ này\" và \"Cùng kỳ trước\" (không chồng lấn, liền kề nhau), và số liệu tổng phí ship tương ứng.",
+            "AC4: \"So với cùng kỳ\" hiện % tăng (xanh lá, icon mũi tên lên) hoặc % giảm (đỏ, mũi tên xuống); nếu kỳ trước = 0 và kỳ này > 0 → hiện chữ \"Mới\" (xanh dương, không có %); nếu cả 2 kỳ đều = 0 → hiện \"0.0%\" (không mũi tên).",
+            "AC5: Biểu đồ hiện đúng 6 cột (kỳ), mỗi cột chồng nhiều lát màu — mỗi màu ứng với 1 shop, thứ tự màu CỐ ĐỊNH theo shop (không đổi màu ngẫu nhiên giữa các lần render).",
+            "AC6: Hover vào bất kỳ đâu trên 1 cột (không cần trúng đúng lát) → hiện tooltip liệt kê từng shop có phát sinh phí (value > 0) trong kỳ đó kèm số tiền, cộng tổng kỳ ở đầu tooltip; shop có value = 0 trong kỳ đó KHÔNG xuất hiện trong tooltip.",
+            "AC7: Cột cuối cùng (kỳ hiện tại) luôn hiện nhãn tổng số tiền ngay trên đỉnh cột mà không cần hover; các cột khác chỉ hiện số khi hover.",
+            "AC8: Legend liệt kê đủ tên + màu của mọi shop (kể cả shop có value = 0 ở TẤT CẢ 6 kỳ) — lấy theo danh sách shop tại kỳ đầu tiên (points[0].slices), không lọc theo shop có phát sinh hay không.",
+            "AC9: Bấm \"Xem dạng bảng\" → hiện bảng cùng số liệu (Kỳ | từng shop | Tổng); bấm lại (nay hiện \"Ẩn dạng bảng\") → ẩn bảng, quay về chỉ hiện biểu đồ."
+          ],
+          "notes": [
+            "Bảng màu categorical 8 màu đã chạy qua script validate của skill dataviz (đảm bảo phân biệt dưới mù màu) trước khi đưa vào code — không tự ý đổi thứ tự hay thêm màu tuỳ ý nếu sau này có > 8 shop.",
+            "Known gap: với đại lý có > 8 shop, các shop từ thứ 9 trở đi sẽ LẶP LẠI màu của shop thứ 1, 2... (idx % 8) — 2 shop khác nhau có thể trùng màu trên biểu đồ, gây nhầm lẫn. Code hiện tại KHÔNG có cơ chế gộp shop dư vào 1 lát \"Khác\" như comment gợi ý — cần bổ sung nếu đại lý mẫu vượt quá 8 shop.",
+            "Vì anchorDate neo theo dữ liệu demo cố định (không phải ngày hệ thống thật), khi xem lại demo này ở BẤT KỲ THỜI ĐIỂM NÀO trong tương lai, \"hiện tại\" vẫn luôn là cùng 1 ngày cố định — đây là hành vi CHỦ Ý cho môi trường demo, không phải bug.",
+            "Dùng order.fee (phí ship) thay vì COD làm số liệu chính — quyết định rõ ràng của user trong phiên trước (\"vì có thể tôi sẽ không có cod\")."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-3",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Bảng \"COD & phí theo shop\"",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem bảng xếp hạng các shop theo tổng phí dịch vụ, gồm số đơn/COD/tổng phí/% đóng góp của từng shop, để biết shop nào đang đóng góp nhiều nhất vào doanh số đại lý và bấm vào để xem chi tiết ngay.",
+          "userFlow": [
+            "Cuộn xuống cuối trang \"Báo cáo\" tới khối \"COD & phí theo shop\".",
+            "Bảng liệt kê MỌI shop thuộc đại lý, SẮP XẾP theo \"Tổng phí\" giảm dần.",
+            "Mỗi dòng gồm: Tên shop (link xanh), Trạng thái (Đang hoạt động/Ngừng hoạt động), Số đơn, COD, Tổng phí, thanh % đóng góp (thanh cam + số %).",
+            "Bấm vào 1 dòng bất kỳ (không chỉ riêng tên shop) → điều hướng sang trang Chi tiết shop tương ứng.",
+            "Đại lý chưa có shop nào → bảng hiện \"Chưa có shop nào.\" thay vì header + hàng trống."
+          ],
+          "systemFlow": [
+            "ranked = [...shops].sort((a,b) => b.totalFee - a.totalFee) — sắp xếp giảm dần theo totalFee (= getShopServiceFeeTotal(shopId), phí dịch vụ GỘP, KHÔNG phải margin/lợi nhuận).",
+            "pct = totalFeeAll > 0 ? (s.totalFee / totalFeeAll) * 100 : 0 — % đóng góp của shop = tổng phí shop đó ÷ tổng phí TOÀN đại lý; nếu tổng đại lý = 0 thì mọi shop hiện 0%.",
+            "Cột \"Trạng thái\": isInactive = s.status === 'inactive' → \"Ngừng hoạt động\" (đỏ) hoặc \"Đang hoạt động\" (xanh lá).",
+            "Toàn bộ dòng (onClick) điều hướng navigate(/agency-admin/shops/${s.id}) — bấm vào BẤT KỲ ĐÂU trên dòng đều chuyển trang, không chỉ riêng tên shop.",
+            "Thanh % đóng góp: width: Math.min(100, pct)% — chặn tối đa 100% dù về lý thuyết pct luôn ≤ 100 (vì tử số ≤ mẫu số).",
+            "Không có phân trang — hiện TOÀN BỘ shop của đại lý trong 1 bảng cuộn dọc theo trang."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bảng có 6 cột: Shop, Trạng thái, Số đơn, COD, Tổng phí, % đóng góp.",
+            "AC2: Dòng shop sắp xếp theo \"Tổng phí\" GIẢM DẦN (shop đóng góp nhiều nhất luôn ở trên).",
+            "AC3: Bấm vào bất kỳ đâu trên 1 dòng → điều hướng sang trang Chi tiết shop (/agency-admin/shops/:id) của đúng shop đó.",
+            "AC4: \"% đóng góp\" = tổng phí của shop ÷ tổng phí của TOÀN đại lý — tổng % của mọi shop cộng lại xấp xỉ 100% (làm tròn).",
+            "AC5: Đại lý không có shop nào → bảng hiện dòng \"Chưa có shop nào.\" thay vì header trống.",
+            "AC6: Shop chưa phát sinh đơn nào (COD, Tổng phí = 0) vẫn xuất hiện trong bảng với dòng đầy đủ (0 đơn, 0đ COD, 0đ phí, 0.0% đóng góp) — không bị ẩn khỏi bảng.",
+            "AC7: \"Tổng phí\" hiển thị ở đây là phí GỘP (getShopServiceFeeTotal), KHÔNG phải doanh thu/lợi nhuận ròng (khác getShopMargin dùng ở \"Doanh thu\" tại ShopDetail.tsx, AGA-SHOP-12)."
+          ],
+          "notes": [
+            "Cùng nguồn dữ liệu (getShopCodTotal, getShopServiceFeeTotal) với KPI \"COD\" ở AGA-REPORT-1 — tổng COD/tổng phí của mọi dòng trong bảng này CỘNG LẠI phải đúng bằng 2 KPI tương ứng ở đầu trang.",
+            "Không có ô tìm kiếm/lọc riêng cho bảng này — chỉ có sắp xếp cố định theo Tổng phí giảm dần, không đổi được tiêu chí sắp xếp qua UI."
+          ]
+        }
+      ]
     }
   ],
   "history": [
+    {
+      "version": "1.3.0",
+      "date": "2026-09-14",
+      "summary": "Thêm section \"Báo cáo\" mới (AGA-REPORT-1/2/3) — KPI tổng quan, Xu hướng tổng phí ship theo shop (biểu đồ stacked bar + so cùng kỳ), và bảng COD & phí theo shop của trang AgencyReport.tsx (Agency Admin)"
+    },
+    {
+      "version": "1.2.0",
+      "date": "2026-09-14",
+      "summary": "Thêm AGA-SHOP-12 \"Thống kê tổng quan\" (3 KPI card ở Chi tiết shop: Đơn hàng, Tổng COD, Doanh thu) với bảng công thức chi tiết áp dụng cho mọi shop"
+    },
     {
       "version": "0.1.0",
       "date": "2026-04-15",

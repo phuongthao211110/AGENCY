@@ -384,6 +384,12 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   // Super Admin bật/tắt từng thành phần trong form tạo đơn theo đại lý (agencyStore.ts,
   // AgencyDetail.tsx) — mặc định bật hết để không phá vỡ đại lý cũ chưa có field này.
   const formComponents = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)?.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
+  // "Khách trả ship" (feePayer='receiver') khiến GHN thu hộ CHÍNH phí ship từ người nhận khi giao
+  // (totalCollect = cod + feeShipping bên dưới) — về bản chất đây CŨNG LÀ 1 hình thức thu hộ khi
+  // giao hàng, dù không đi qua ô "COD" nhập tay. Nếu Super Admin đã tắt thành phần "COD" cho đại
+  // lý này, đơn không được phép có bất kỳ khoản thu hộ nào khi giao — ép effectiveFeePayer luôn
+  // là 'sender' bất kể feePayer đang lưu giá trị gì trong state.
+  const effectiveFeePayer = formComponents.cod ? feePayer : 'sender'
 
   const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
 
@@ -409,7 +415,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     ? calcTierFee(cod, surcharges.codFee ?? [])
     : 0
   const totalShipping    = feeShipping + feeInsurance + feePartial + feeDeliveryFail + feeCod
-  const totalCollect     = feePayer === 'sender'
+  const totalCollect     = effectiveFeePayer === 'sender'
     ? cod + (shipCollect > 0 ? shipCollect : 0)
     : cod + feeShipping
   const now = new Date()
@@ -720,7 +726,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   )}
                   {formComponents.shipCollect && (
                     <InfoRow label="Thu ship khách hàng" hint>
-                      <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" disabled={feePayer === 'receiver'} />
+                      <NumericWithUnit value={shipCollect} onChange={setShipCollect} unit="đ" disabled={effectiveFeePayer === 'receiver'} />
                     </InfoRow>
                   )}
                   {formComponents.goodsValue && (
@@ -787,12 +793,15 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <IcTruck />
                 <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>Phí vận chuyển</span>
                 <div style={{ display: 'flex', gap: 1, flexShrink: 0, background: '#F3F4F6', borderRadius: 6, padding: 2 }}>
-                  {(['sender', 'receiver'] as const).map((p) => (
+                  {/* "Khách trả ship" ẩn hẳn khi đại lý bị tắt thành phần COD — chọn tuỳ chọn này
+                      khiến phí ship bị GHN thu hộ từ người nhận khi giao (xem effectiveFeePayer),
+                      tương đương phát sinh thu hộ dù không qua ô COD nhập tay. */}
+                  {(['sender', 'receiver'] as const).filter((p) => p === 'sender' || formComponents.cod).map((p) => (
                     <button key={p} onClick={() => { setFeePayer(p); if (p === 'receiver') setShipCollect(0) }}
                       style={{ padding: '3px 8px', borderRadius: 5, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, lineHeight: '18px', whiteSpace: 'nowrap',
-                        background: feePayer === p ? '#fff' : 'transparent',
-                        color: feePayer === p ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
-                        boxShadow: feePayer === p ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                        background: effectiveFeePayer === p ? '#fff' : 'transparent',
+                        color: effectiveFeePayer === p ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                        boxShadow: effectiveFeePayer === p ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
                       }}>
                       {p === 'sender' ? 'Shop trả ship' : 'Khách trả ship'}
                     </button>
