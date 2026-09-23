@@ -9,7 +9,7 @@ import {
   DisconnectOutlined,
   CloseOutlined,
 } from '@ant-design/icons'
-import allPriceTables from '../../../mock-data/pricing.json'
+import { loadPricing } from '../../../mock-data/pricingStore'
 import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, type ClientHub247 } from '../../super-admin/agencyStore'
 import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import AgencyServices from './AgencyServices'
@@ -584,8 +584,9 @@ function TabPricingMerged() {
   const [hovered, setHovered] = useState<string | null>(null)
   const [search, setSearch]   = useState('')
 
-  // Both GHN and 247Express price tables in one list
-  const filtered = (allPriceTables as any[]).filter(
+  // Both GHN and 247Express price tables in one list — đọc động qua pricingStore để bảng giá
+  // vừa tạo ở "Tạo bảng giá" (PricingCreate.tsx) hiện ra ngay, không chỉ liệt kê dữ liệu seed tĩnh.
+  const filtered = (loadPricing() as any[]).filter(
     (pt) => (pt.nvc === 'GHN' || pt.nvc === '247Express') &&
       (pt.name.toLowerCase().includes(search.toLowerCase()) || (pt.description ?? '').toLowerCase().includes(search.toLowerCase()))
   )

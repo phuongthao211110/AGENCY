@@ -5,7 +5,7 @@ import { shopTheme } from '../../../theme/platforms'
 import allShops from '../../../mock-data/shops.json'
 import { loadOrders, addOrder, cancelOrder, updateOrder, type Order } from '../../../mock-data/orderStore'
 import { printSettings, updatePrintSetting, type PrintKindConfig } from '../../../mock-data/printSettingsStore'
-import allPricing from '../../../mock-data/pricing.json'
+import { loadPricing } from '../../../mock-data/pricingStore'
 import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
 import { clientHubs247, agenciesList, DEFAULT_ORDER_FORM_COMPONENTS } from '../../super-admin/agencyStore'
 
@@ -104,7 +104,7 @@ function resolveZoneIndex(priceTable: any, fromProvince: string, toProvince: str
 
 // Phí ship = tra theo bảng giá (zones × weight) của dịch vụ, đúng theo tuyến gửi → nhận.
 function shopFeeFromPriceTable(service: AgencyService, weightGram: number, fromProvince: string, toProvince: string): number {
-  const priceTable = service.priceTableId ? (allPricing as any[]).find(p => p.id === service.priceTableId) : null
+  const priceTable = service.priceTableId ? (loadPricing() as any[]).find(p => p.id === service.priceTableId) : null
   if (!priceTable) return 0
   const weights: { max: number }[] = priceTable.weights ?? []
   const weightIndex = weights.findIndex(w => weightGram <= w.max)
@@ -1068,7 +1068,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const selectedGroup   = serviceGroups.find(g => g[0]?.name === selectedServiceName)
   const selectedService = selectedGroup ? cheapestInGroup(selectedGroup) : undefined
   const priceTable       = selectedService?.priceTableId
-    ? (allPricing as any[]).find(p => p.id === selectedService.priceTableId)
+    ? (loadPricing() as any[]).find(p => p.id === selectedService.priceTableId)
     : null
   const surcharges       = (priceTable?.surcharges ?? {}) as ShopPricingSurcharges
 

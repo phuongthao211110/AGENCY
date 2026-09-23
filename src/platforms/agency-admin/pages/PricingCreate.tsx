@@ -10,6 +10,7 @@ import {
   urbanConfigs,
   type RegionDef,
 } from '../../../mock-data/routeConfig'
+import { addPricingTable, type PriceTable, type PriceZone } from '../../../mock-data/pricingStore'
 
 const C_ACTION        = '#FF5200'
 const C_LINK          = '#3B82F6'
@@ -63,7 +64,6 @@ type Surcharges = {
   deliveryFailFee:    SurchargeFee    // Phí giao thất bại thu tiền
   redeliveryFee:      FeeTier[]       // Phí kích hoạt giao lại — theo lần
   returnFee:          SurchargeFee    // Phí hoàn hàng — per order, fixed hoặc % cước phí tuyến
-  addressChange:      AddressChangeFee // Phụ phí đổi địa chỉ — theo địa giới hành chính
 }
 
 type RouteConfig = {
@@ -99,7 +99,10 @@ const makeEmptySurcharges = (): Surcharges => ({
   deliveryFailFee:  { value: '', unit: 'vnd' },
   redeliveryFee:    [],
   returnFee:        { value: '', unit: 'vnd' },
-  addressChange:    { sameWardFee: '', sameProvinceFee: '', interProvincePercent: '' },
+})
+
+const makeEmptyAddressChangeFee = (): AddressChangeFee => ({
+  sameWardFee: '', sameProvinceFee: '', interProvincePercent: '',
 })
 
 const makeEmptyRoute = (routeName: string, id: string): RouteConfig => ({
@@ -558,10 +561,6 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     onUpdateSurcharges({ ...surcharges, returnFee: fee })
   }
 
-  const updateAddressChange = (field: keyof AddressChangeFee, value: string) => {
-    onUpdateSurcharges({ ...surcharges, addressChange: { ...surcharges.addressChange, [field]: value } })
-  }
-
   // A fee is "configured" if it already has data
   const isConfigured = (key: keyof Surcharges): boolean => {
     if (key === 'partialDelivery')  return surcharges.partialDelivery.value.trim() !== ''
@@ -570,7 +569,6 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     if (key === 'deliveryFailFee')  return surcharges.deliveryFailFee.value.trim() !== ''
     if (key === 'redeliveryFee')    return surcharges.redeliveryFee.length > 0
     if (key === 'returnFee')        return surcharges.returnFee.value.trim() !== ''
-    if (key === 'addressChange')    return surcharges.addressChange.sameWardFee.trim() !== '' || surcharges.addressChange.sameProvinceFee.trim() !== '' || surcharges.addressChange.interProvincePercent.trim() !== ''
     return false
   }
 
@@ -594,7 +592,6 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     if (key === 'deliveryFailFee')  onUpdateSurcharges({ ...surcharges, deliveryFailFee: { value: '', unit: 'vnd' } })
     if (key === 'redeliveryFee')    onUpdateSurcharges({ ...surcharges, redeliveryFee: [] })
     if (key === 'returnFee')        onUpdateSurcharges({ ...surcharges, returnFee: { value: '', unit: 'vnd' } })
-    if (key === 'addressChange')    onUpdateSurcharges({ ...surcharges, addressChange: { sameWardFee: '', sameProvinceFee: '', interProvincePercent: '' } })
     setManualOpen((s) => { const n = new Set(s); n.delete(key); return n })
     setConfirmDelete(null)
   }
@@ -606,7 +603,6 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
     { key: 'codFee',           label: 'Phí thu hộ' },
     { key: 'redeliveryFee',    label: 'Phí kích hoạt giao lại' },
     { key: 'returnFee',        label: 'Phí hoàn hàng' },
-    { key: 'addressChange',    label: 'Phụ phí đổi địa chỉ' },
   ]
 
   return (
@@ -758,72 +754,6 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
                     )
                   })}
                 </div>
-              ) : key === 'addressChange' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {/* Mức 1 — cùng phường/xã: để trống = miễn phí, có thể nhập phí nếu muốn tính */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
-                      Địa chỉ ban đầu và địa chỉ thay đổi cùng Phường/Xã
-                    </span>
-                    <div style={{ position: 'relative', width: 150 }}>
-                      <input
-                        type="number"
-                        value={surcharges.addressChange.sameWardFee}
-                        onChange={(e) => updateAddressChange('sameWardFee', e.target.value)}
-                        placeholder="Trống = miễn phí"
-                        style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
-                        onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                        onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-                      />
-                      <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
-                    </div>
-                    <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>/ lần thay đổi</span>
-                  </div>
-
-                  {/* Mức 2 — cùng tỉnh, khác phường/xã hoặc khác huyện: phí cố định/lần */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
-                      Cùng Tỉnh/Thành phố, khác Phường/Xã hoặc khác Huyện
-                    </span>
-                    <div style={{ position: 'relative', width: 150 }}>
-                      <input
-                        type="number"
-                        value={surcharges.addressChange.sameProvinceFee}
-                        onChange={(e) => updateAddressChange('sameProvinceFee', e.target.value)}
-                        placeholder="VD: 11000"
-                        style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
-                        onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                        onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-                      />
-                      <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
-                    </div>
-                    <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>/ lần thay đổi</span>
-                  </div>
-
-                  {/* Mức 3 — khác tỉnh/thành: % cước phí tuyến/lần */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
-                      Khác Tỉnh/Thành phố (đơn giao hàng hoặc đơn hoàn hàng)
-                    </span>
-                    <div style={{ position: 'relative', width: 150 }}>
-                      <input
-                        type="number"
-                        value={surcharges.addressChange.interProvincePercent}
-                        onChange={(e) => updateAddressChange('interProvincePercent', e.target.value)}
-                        placeholder="VD: 100"
-                        style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
-                        onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-                        onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-                      />
-                      <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>%</span>
-                    </div>
-                    <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>cước phí tuyến / lần</span>
-                  </div>
-
-                  <span style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>
-                    Phân loại tuyến theo địa giới hành chính 63 tỉnh/thành phố trước thời điểm sáp nhập. Cước phí ở mức "Khác Tỉnh/Thành phố" tính từ địa chỉ lấy hàng đến địa chỉ giao hàng mới sau khi thay đổi.
-                  </span>
-                </div>
               ) : null}
             </div>
           )}
@@ -835,6 +765,86 @@ function SurchargeList({ surcharges, onUpdateSurcharges }: {
       ))}
     </div>
     </>
+  )
+}
+
+// ─── Phụ phí đổi địa chỉ — dùng chung cho toàn bộ bảng giá, không phụ thuộc tuyến ─────────
+
+function AddressChangeFeeBlock({ value, onChange }: {
+  value: AddressChangeFee
+  onChange: (updated: AddressChangeFee) => void
+}) {
+  const updateField = (field: keyof AddressChangeFee, fieldValue: string) => {
+    onChange({ ...value, [field]: fieldValue })
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Mức 1 — cùng phường/xã: để trống = miễn phí, có thể nhập phí nếu muốn tính */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
+          Địa chỉ ban đầu và địa chỉ thay đổi cùng Phường/Xã
+        </span>
+        <div style={{ position: 'relative', width: 150 }}>
+          <input
+            type="number"
+            value={value.sameWardFee}
+            onChange={(e) => updateField('sameWardFee', e.target.value)}
+            placeholder="Trống = miễn phí"
+            style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+          />
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+        </div>
+        <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>/ lần thay đổi</span>
+      </div>
+
+      {/* Mức 2 — cùng tỉnh, khác phường/xã hoặc khác huyện: phí cố định/lần */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
+          Cùng Tỉnh/Thành phố, khác Phường/Xã hoặc khác Huyện
+        </span>
+        <div style={{ position: 'relative', width: 150 }}>
+          <input
+            type="number"
+            value={value.sameProvinceFee}
+            onChange={(e) => updateField('sameProvinceFee', e.target.value)}
+            placeholder="VD: 11000"
+            style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+          />
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>đ</span>
+        </div>
+        <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>/ lần thay đổi</span>
+      </div>
+
+      {/* Mức 3 — khác tỉnh/thành: % cước phí tuyến/lần — tự nhạy theo tuyến vì tính trên cước
+          phí thực tế của đúng tuyến đơn đang dùng, không cần cấu hình riêng theo từng tuyến. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, width: 320, flexShrink: 0 }}>
+          Khác Tỉnh/Thành phố (đơn giao hàng hoặc đơn hoàn hàng)
+        </span>
+        <div style={{ position: 'relative', width: 150 }}>
+          <input
+            type="number"
+            value={value.interProvincePercent}
+            onChange={(e) => updateField('interProvincePercent', e.target.value)}
+            placeholder="VD: 100"
+            style={{ ...inputStyle, width: '100%', paddingRight: 26, boxSizing: 'border-box' }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+          />
+          <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: C_TEXT_SECONDARY, pointerEvents: 'none' }}>%</span>
+        </div>
+        <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, whiteSpace: 'nowrap' }}>cước phí tuyến / lần</span>
+      </div>
+
+      <span style={{ fontSize: 11, color: C_TEXT_SECONDARY, fontStyle: 'italic' }}>
+        Phân loại tuyến theo địa giới hành chính 63 tỉnh/thành phố trước thời điểm sáp nhập. Cước phí ở mức "Khác Tỉnh/Thành phố" tính từ địa chỉ lấy hàng đến địa chỉ giao hàng mới sau khi thay đổi.
+      </span>
+    </div>
   )
 }
 
@@ -865,8 +875,7 @@ function RouteBlock({
     (route.surcharges.partialDelivery.value.trim() !== '' ? 1 : 0) +
     route.surcharges.insurance.length +
     route.surcharges.codFee.length +
-    (route.surcharges.deliveryFailFee.value.trim() !== '' ? 1 : 0) +
-    (route.surcharges.addressChange.sameWardFee.trim() !== '' || route.surcharges.addressChange.sameProvinceFee.trim() !== '' || route.surcharges.addressChange.interProvincePercent.trim() !== '' ? 1 : 0)
+    (route.surcharges.deliveryFailFee.value.trim() !== '' ? 1 : 0)
   )
 
   const updateField = <K extends keyof RouteConfig>(key: K, value: RouteConfig[K]) => {
@@ -1296,6 +1305,9 @@ export default function PricingCreate() {
   const [routes, setRoutes] = useState<RouteConfig[]>(() =>
     listRouteNames().map((name, i) => makeEmptyRoute(name, String(i + 1)))
   )
+  // Phụ phí đổi địa chỉ dùng chung cho toàn bộ bảng giá, không phụ thuộc tuyến — mức "khác
+  // Tỉnh/Thành" đã tự nhạy theo tuyến vì tính theo % cước phí thực tế của đúng tuyến đơn đó.
+  const [addressChangeFee, setAddressChangeFee] = useState<AddressChangeFee>(makeEmptyAddressChangeFee())
 
   const canSubmit = name.trim().length > 0
 
@@ -1327,8 +1339,70 @@ export default function PricingCreate() {
     })))
   }
 
+  // Tên hiển thị cho 1 tuyến khi build zone — ưu tiên tỉnh cụ thể (Thu hẹp phạm vi) nếu có, sau
+  // đó tới tên vùng/miền, cuối cùng "Tất cả" nếu không thu hẹp gì (tuyến nội tỉnh, hoặc tuyến
+  // thường nhưng chưa chọn thu hẹp) — luôn có giá trị, không để trống gây khó hiểu trên bảng giá.
+  const zoneEndpointLabel = (province: string, regionId: string): string => {
+    if (province.trim()) return province.trim()
+    const region = routeRegions.find((r) => r.id === regionId)
+    return region?.name ?? 'Tất cả'
+  }
+
   const handleSubmit = () => {
     if (!canSubmit) return
+
+    // Mỗi dòng "Danh sách tuyến" → 1 zone của bảng giá thật. routeName lấy TRỰC TIẾP tên tuyến
+    // Super Admin đang quản lý (routeConfig.ts) — đây là cầu nối để Web Shop/Agency Admin nhận
+    // diện đúng 1 tuyến duy nhất xuyên suốt 3 platform, thay vì mỗi nơi tự bịa nhãn riêng.
+    const zones: PriceZone[] = routes.map((r) => ({
+      from: zoneEndpointLabel(r.fromProvince, r.fromRegion),
+      to: zoneEndpointLabel(r.toProvince, r.toRegion),
+      label: r.routeName,
+      routeName: r.routeName,
+    }))
+
+    // Bậc cân: form hiện cho phép MỖI tuyến tự đặt "Khối lượng chuẩn" + nhiều mức "Vượt cân"
+    // riêng, trong khi bảng giá thật (pricing.json) chỉ có 1 lưới bậc cân DÙNG CHUNG cho mọi
+    // tuyến (weights[] × zones). Đây là 2 mô hình khác nhau — bản lưu này CHỈ giữ lại đúng 1 mức
+    // giá cơ bản/tuyến tại đúng 1 bậc cân chung (khối lượng chuẩn LỚN NHẤT trong các tuyến, hoặc
+    // 500g nếu không tuyến nào nhập), CHƯA lưu được công thức "Vượt cân" theo từng nấc hay 2 giá
+    // Nội thành/Ngoại thành riêng — đây là giới hạn đã biết, cần mở rộng schema pricing.json
+    // (thêm field overweightTiers/basePriceUrban-Rural per zone) nếu muốn lưu đầy đủ.
+    const standardWeights = routes.map((r) => Number(r.standardWeight) || 0).filter((n) => n > 0)
+    const weightMax = standardWeights.length > 0 ? Math.max(...standardWeights) : 500
+    const weights = [{ max: weightMax, label: `≤ ${weightMax}g` }]
+    const prices = [routes.map((r) => {
+      if (r.splitUrbanRural) return Number(r.basePriceUrban) || Number(r.basePriceRural) || 0
+      return Number(r.basePrice) || 0
+    })]
+
+    const newTable: PriceTable = {
+      id: `PRC${Date.now()}`,
+      name: name.trim(),
+      agencyId: 'AGN001',
+      nvc: 'GHN',
+      isDefault: false,
+      description: desc.trim() || undefined,
+      status: 'active',
+      createdAt: new Date().toISOString().slice(0, 10),
+      zones,
+      weights,
+      prices,
+      // "Phụ phí đổi địa chỉ" là cấu hình DÙNG CHUNG cho cả bảng giá (đúng 1 state addressChangeFee
+      // ở cấp trang) nên map thẳng, không mất gì. Các phụ phí còn lại (Giao trả 1 phần/Bảo
+      // hiểm/Thu hộ/Giao thất bại) vẫn cấu hình RIÊNG theo từng tuyến trong form (routes[i].surcharges)
+      // — nhưng pricing.json chỉ có 1 object surcharges DÙNG CHUNG cho cả bảng (không tách theo
+      // zone) — nên bản lưu này CHỈ giữ lại đúng cấu hình của TUYẾN ĐẦU TIÊN cho các phụ phí này,
+      // là giới hạn đã biết cần mở rộng schema nếu muốn lưu đúng phụ phí riêng từng tuyến.
+      surcharges: {
+        partialDelivery: routes[0]?.surcharges.partialDelivery ?? { value: '', unit: 'vnd' },
+        insurance: routes[0]?.surcharges.insurance ?? [],
+        codFee: routes[0]?.surcharges.codFee ?? [],
+        deliveryFailFee: routes[0]?.surcharges.deliveryFailFee ?? { value: '', unit: 'vnd' },
+        addressChange: addressChangeFee,
+      },
+    }
+    addPricingTable(newTable)
     navigate('/agency-admin/carrier-setup', { state: { tab: 'pricing' } })
   }
 
@@ -1492,6 +1566,22 @@ export default function PricingCreate() {
               Thêm tuyến
             </button>
           </div>
+        </div>
+
+        {/* Section 3: Phụ phí đổi địa chỉ — dùng chung cho toàn bộ bảng giá, không phụ thuộc tuyến */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>
+              Phụ phí đổi địa chỉ
+            </span>
+            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
+              Áp dụng chung cho mọi tuyến trong bảng giá này — các phụ phí khác vẫn cấu hình riêng theo từng tuyến ở mục "Phụ phí" trong Danh sách tuyến.
+            </span>
+          </div>
+          <AddressChangeFeeBlock
+            value={addressChangeFee}
+            onChange={setAddressChangeFee}
+          />
         </div>
 
         {/* Footer */}

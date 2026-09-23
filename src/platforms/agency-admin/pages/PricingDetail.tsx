@@ -6,7 +6,8 @@ import {
   HistoryOutlined,
   SwapRightOutlined,
 } from '@ant-design/icons'
-import allPriceTables from '../../../mock-data/pricing.json'
+import { loadPricing } from '../../../mock-data/pricingStore'
+import { listRouteNames } from '../../../mock-data/routeConfig'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -49,7 +50,7 @@ export default function PricingDetail() {
   const navigate  = useNavigate()
   const [activeTab, setActiveTab] = useState<Tab>('info')
 
-  const pt = allPriceTables.find((p) => p.id === id)
+  const pt = loadPricing().find((p) => p.id === id)
   if (!pt) return <div style={{ padding: 32, color: C_TEXT_PRIMARY }}>Không tìm thấy bảng giá</div>
 
   const centeredBox: React.CSSProperties = {
@@ -137,16 +138,35 @@ export default function PricingDetail() {
                 <div style={{ flex: '2 0 0', padding: '8px 16px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Nhãn</div>
               </div>
               <div style={{ height: 1, background: C_BORDER }} />
-              {(pt.zones as { from?: string; to?: string; label: string }[]).map((zone, idx) => (
-                <div key={idx}>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ flex: '1 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY }}>{zone.from ?? '—'}</div>
-                    <div style={{ flex: '1 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY }}>{zone.to ?? '—'}</div>
-                    <div style={{ flex: '2 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_SECONDARY }}>{zone.label}</div>
-                  </div>
-                  {idx < pt.zones.length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
-                </div>
-              ))}
+              {(() => {
+                const liveRouteNames = listRouteNames()
+                return (pt.zones as { from?: string; to?: string; label: string; routeName?: string }[]).map((zone, idx) => {
+                  // routeName chỉ có ở zone tạo qua PricingCreate.tsx sau khi nối vào routeConfig.ts
+                  // (xem pricingStore.ts) — zone seed cũ (không có field này) luôn coi là còn hợp lệ,
+                  // vì chưa từng được gắn với 1 tuyến Super Admin cụ thể nào để mà "mất" được.
+                  const routeDeleted = !!zone.routeName && !liveRouteNames.includes(zone.routeName)
+                  return (
+                    <div key={idx}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ flex: '1 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY }}>{zone.from ?? '—'}</div>
+                        <div style={{ flex: '1 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY }}>{zone.to ?? '—'}</div>
+                        <div style={{ flex: '2 0 0', padding: '10px 16px', fontSize: 14, color: C_TEXT_SECONDARY, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {zone.label}
+                          {routeDeleted && (
+                            <span
+                              title={`Tuyến "${zone.routeName}" đã bị Super Admin xoá khỏi Cấu hình vùng & tuyến — bảng giá này đang dùng 1 tuyến không còn tồn tại.`}
+                              style={{ fontSize: 11, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '2px 8px' }}
+                            >
+                              ⚠ Tuyến đã bị xoá
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {idx < pt.zones.length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
+                    </div>
+                  )
+                })
+              })()}
             </div>
 
             {/* Pricing summary card */}

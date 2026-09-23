@@ -2,7 +2,7 @@
 
 **Platform:** Agency Admin (Đại lý)  
 **Figma:** [AGA Design File](https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449)  
-**Version:** 1.3.0 | **Cập nhật:** 2026-09-14
+**Version:** 1.8.0 | **Cập nhật:** 2026-09-23
 
 ---
 
@@ -13,6 +13,9 @@
 | [AGA] Báo cáo: KPI tổng quan | [kpi-tong-quan.md](./bao-cao/kpi-tong-quan.md) | — | [Draft] |
 | [AGA] Báo cáo: Xu hướng tổng phí ship theo shop | [xu-huong-tong-phi-ship-theo-shop.md](./bao-cao/xu-huong-tong-phi-ship-theo-shop.md) | — | [Draft] |
 | [AGA] Báo cáo: Bảng "COD & phí theo shop" | [bang-cod-phi-theo-shop.md](./bao-cao/bang-cod-phi-theo-shop.md) | — | [Draft] |
+| [AGA] Báo cáo: Gộp shop dư vào "Khác" khi biểu đồ nhiều shop | [gop-shop-du-vao-khac.md](./bao-cao/gop-shop-du-vao-khac.md) | — | [Draft] |
+| [AGA] Báo cáo: Tìm kiếm shop trong bộ lọc dropdown | [tim-kiem-shop-trong-bo-loc.md](./bao-cao/tim-kiem-shop-trong-bo-loc.md) | — | [Draft] |
+| [AGA] Báo cáo: Chỉ số hoạt động theo kỳ (AOV, KH Onboard, KH Re-active) | [chi-so-hoat-dong-theo-ky.md](./bao-cao/chi-so-hoat-dong-theo-ky.md) | — | [Draft] |
 
 ## Login / Logout
 
@@ -111,3 +114,6 @@
 | [AGENCY] Thiết lập NVC - Chi tiết dịch vụ: Thêm phân loại hàng hoá | [chi-tiet-dich-vu-them-phan-loai-hang-hoa.md](./carrier-setup/chi-tiet-dich-vu-them-phan-loai-hang-hoa.md) | — | [Draft] |
 | [AGENCY] Thiết lập NVC - Danh sách dịch vụ: Thêm phân loại hàng hoá | [danh-sach-dich-vu-them-phan-loai-hang-hoa.md](./carrier-setup/danh-sach-dich-vu-them-phan-loai-hang-hoa.md) | — | [Draft] |
 | [AGENCY] Thiết lập NVC - Chi tiết dịch vụ: chỉnh sửa | [chi-tiet-dich-vu-chinh-sua.md](./carrier-setup/chi-tiet-dich-vu-chinh-sua.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Tạo bảng giá: Định nghĩa tuyến theo cấu hình Super Admin | [tao-bang-gia-dinh-nghia-tuyen-theo-sa.md](./carrier-setup/tao-bang-gia-dinh-nghia-tuyen-theo-sa.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Tạo bảng giá: Thêm tuyến theo cấu hình Super Admin | [tao-bang-gia-them-tuyen-theo-sa.md](./carrier-setup/tao-bang-gia-them-tuyen-theo-sa.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Tạo bảng giá: Lưu bảng giá thật, đồng bộ tuyến với Super Admin & Web Shop | [tao-bang-gia-luu-that-dong-bo-tuyen.md](./carrier-setup/tao-bang-gia-luu-that-dong-bo-tuyen.md) | — | [Draft] |

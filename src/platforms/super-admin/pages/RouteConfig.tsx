@@ -499,19 +499,14 @@ export default function RouteConfig() {
                     >
                       <div style={{ flex: '0 0 220px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {isNoiTinh ? (
-                          <>
-                            <span
-                              style={{
-                                alignSelf: 'flex-start', padding: '4px 10px', borderRadius: 12,
-                                fontSize: 13, fontWeight: 700, background: '#FFEAD9', border: '1px solid #FDBA74', color: '#FF5200',
-                              }}
-                            >
-                              Nội Tỉnh
-                            </span>
-                            <span style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>
-                              Mặc định cho mọi miền — bỏ tick 1 miền rồi tick vào tuyến khác nếu muốn tính giá riêng
-                            </span>
-                          </>
+                          <span
+                            style={{
+                              alignSelf: 'flex-start', padding: '4px 10px', borderRadius: 12,
+                              fontSize: 13, fontWeight: 700, background: '#FFEAD9', border: '1px solid #FDBA74', color: '#FF5200',
+                            }}
+                          >
+                            Nội Tỉnh
+                          </span>
                         ) : (
                           <>
                             <input
@@ -525,24 +520,38 @@ export default function RouteConfig() {
                         )}
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {allRegionPairs.map(([a, b]) => {
-                          const checked = localMatrix[pairKey(a.id, b.id)] === name
-                          return (
-                            <button
-                              key={pairKey(a.id, b.id)}
-                              onClick={() => handleToggleChip(name, a.id, b.id)}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 14,
-                                fontSize: 12, fontWeight: checked ? 600 : 400, cursor: 'pointer',
-                                background: checked ? '#FFF4ED' : '#F9FAFB',
-                                border: `1px solid ${checked ? '#FDBA74' : C_BORDER}`,
-                                color: checked ? '#FF5200' : '#9CA3AF',
-                              }}
-                            >
-                              {a.id === b.id ? a.name.replace(' (Đặc biệt)', '') : `${a.name} ↔ ${b.name}`}
-                            </button>
+                        {isNoiTinh ? (
+                          /* "Nội Tỉnh" không còn chip bấm được — chỉ hiện 1 CHÚ THÍCH chung DUY NHẤT
+                             nêu rõ phạm vi áp dụng ("chỉ phạm vi trong cùng 1 tỉnh"), không liệt kê
+                             tên từng miền/tỉnh. Chỉ hiện khi còn ít nhất 1 miền đang gán tuyến này —
+                             Super Admin tick hết mọi miền sang tuyến khác thì chú thích tự ẩn. Muốn
+                             tách 1 miền ra khỏi đây, tick miền đó vào tuyến khác — routeMatrix chỉ
+                             giữ 1 tên/cặp nên miền đó tự động rời khỏi "Nội Tỉnh". */
+                          allRegionPairs.some(([a, b]) => a.id === b.id && localMatrix[pairKey(a.id, b.id)] === name) && (
+                            <span style={{ fontSize: 11, color: C_TEXT_SECONDARY }}>
+                              Chỉ phạm vi trong cùng 1 tỉnh
+                            </span>
                           )
-                        })}
+                        ) : (
+                          allRegionPairs.map(([a, b]) => {
+                            const checked = localMatrix[pairKey(a.id, b.id)] === name
+                            return (
+                              <button
+                                key={pairKey(a.id, b.id)}
+                                onClick={() => handleToggleChip(name, a.id, b.id)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 14,
+                                  fontSize: 12, fontWeight: checked ? 600 : 400, cursor: 'pointer',
+                                  background: checked ? '#FFF4ED' : '#F9FAFB',
+                                  border: `1px solid ${checked ? '#FDBA74' : C_BORDER}`,
+                                  color: checked ? '#FF5200' : '#9CA3AF',
+                                }}
+                              >
+                                {a.id === b.id ? a.name.replace(' (Đặc biệt)', '') : `${a.name} ↔ ${b.name}`}
+                              </button>
+                            )
+                          })
+                        )}
                       </div>
                       {isNoiTinh ? (
                         <div style={{ flex: '0 0 40px' }} />

@@ -2,7 +2,7 @@
 
 **Platform:** GHN Super Admin  
 **Figma:** [GSA Design File](https://www.figma.com/design/G33IlXebyXXGxZbbYbKECr/-GSA--GHN-SUPER-ADMIN?node-id=2-449)  
-**Version:** 1.0.0 | **Cập nhật:** 2026-04-15
+**Version:** 1.16.11 | **Cập nhật:** 2026-09-17
 
 ---
 

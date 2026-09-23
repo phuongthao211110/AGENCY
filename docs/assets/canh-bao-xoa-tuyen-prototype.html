@@ -1,0 +1,260 @@
+<title>Cảnh Báo Xoá Tuyến</title>
+<style>
+  :root{
+    --canvas:#F3F4F6; --canvas-2:#E9EBEF;
+    --ink:#111827; --muted:#6B7280; --line:#E5E7EB;
+    --accent:#FF5200; --accent-soft:#FFF4ED;
+    --surface:#FFFFFF;
+    --eyebrow:#9AA1AC;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --canvas:#15171B; --canvas-2:#1C1F24;
+      --ink:#F3F4F6; --muted:#9AA3AF; --line:#2A2E35;
+      --accent:#FF6A24; --accent-soft:#2A1D14;
+      --surface:#1B1E23;
+      --eyebrow:#6B7280;
+    }
+  }
+  :root[data-theme="dark"]{
+    --canvas:#15171B; --canvas-2:#1C1F24;
+    --ink:#F3F4F6; --muted:#9AA3AF; --line:#2A2E35;
+    --accent:#FF6A24; --accent-soft:#2A1D14;
+    --surface:#1B1E23;
+    --eyebrow:#6B7280;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:0 20px;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding-block:40px 64px;display:flex;flex-direction:column;gap:28px}
+
+  /* ── Artifact-level header ───────────────────────────────── */
+  .eyebrow{
+    font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--eyebrow);
+  }
+  h1{
+    font-size:clamp(22px,4vw,28px);font-weight:700;margin:6px 0 4px;letter-spacing:-.01em;
+    text-wrap:balance;
+  }
+  .lede{color:var(--muted);font-size:14.5px;line-height:1.6;max-width:62ch}
+  .lede code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12.5px;background:var(--canvas-2);border:1px solid var(--line);
+    padding:1px 6px;border-radius:5px;color:var(--ink);
+  }
+
+  /* ── Legend row ───────────────────────────────────────────── */
+  .legend{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+
+  /* ══════════════════════════════════════════════════════════
+     Simulated app screen — fixed light chrome, matches the
+     REAL Agency Admin tokens verbatim (this app has no dark
+     mode of its own: page bg #fff, header #F3F4F6, action
+     #FF5200, link #3B82F6, border #E5E7EB).
+  ═══════════════════════════════════════════════════════════ */
+  .device{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 1px 3px rgba(0,0,0,.06), 0 12px 32px -16px rgba(0,0,0,.28);
+  }
+  .platform-bar{
+    background:#111827;color:#fff;
+    padding:9px 20px;
+    font-size:12px;font-weight:600;letter-spacing:.04em;
+    display:flex;align-items:center;gap:8px;
+  }
+  .platform-bar b{color:#FF5200}
+  .platform-bar .sep{color:#4B5563}
+
+  .screen{background:#fff;color:#111827;padding:22px 28px 30px}
+  .crumb{
+    display:flex;align-items:center;gap:12px;margin-bottom:18px;
+  }
+  .back{
+    width:30px;height:30px;border-radius:8px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    color:#111827;font-size:16px;border:1px solid #E5E7EB;background:#fff;
+  }
+  .crumb-title{font-size:20px;font-weight:700;color:#111827;flex:1;min-width:0}
+  .status-pill{
+    font-size:12px;font-weight:600;padding:4px 11px;border-radius:14px;flex:none;
+    background:#ECFDF3;color:#16A34A;border:1px solid #BBF7D0;
+  }
+
+  .tabs{display:flex;gap:22px;border-bottom:1px solid #E5E7EB;margin-bottom:20px}
+  .tab{
+    font-size:13.5px;font-weight:600;color:#6B7280;padding:0 2px 11px;
+    border-bottom:2px solid transparent;
+  }
+  .tab.active{color:#FF5200;border-bottom-color:#FF5200}
+
+  .card{
+    border:1px solid #E5E7EB;border-radius:12px;background:#fff;
+    box-shadow:0 1px 2px rgba(0,0,0,.05);
+    margin-bottom:16px;overflow:hidden;
+  }
+  .card-title{
+    padding:12px 20px;border-bottom:1px solid #E5E7EB;
+    font-size:14px;font-weight:700;color:#111827;
+  }
+  .info-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px 32px;padding:16px 20px;
+  }
+  .lv-label{font-size:13px;color:#4B5563;display:block;margin-bottom:4px}
+  .lv-value{font-size:14px;font-weight:500;color:#111827;line-height:1.4}
+  .lv-value.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+
+  .zone-head{display:flex;background:#F3F4F6}
+  .zone-head div{padding:8px 16px;font-size:13px;font-weight:600;color:#6B7280}
+  .zc-from,.zc-to{flex:1 0 0}
+  .zc-label{flex:2 0 0}
+
+  .zone-row{display:flex;align-items:center;border-top:1px solid #E5E7EB;position:relative}
+  .zone-row.flagged{background:#FFFBFA}
+  .zone-row div{padding:11px 16px;font-size:14px}
+  .zc-from div, .zc-to div{color:#111827}
+  .zc-label{color:#374151;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+
+  .warn-badge{
+    font-size:11px;font-weight:700;color:#DC2626;background:#FEF2F2;
+    border:1px solid #FCA5A5;border-radius:10px;padding:2px 9px;
+    display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+  }
+
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 32px;padding:16px 20px}
+
+  /* ── Callout pointing at the new badge ───────────────────── */
+  .callout-wrap{position:relative}
+  .callout{
+    position:absolute;
+    top:-14px; right:18px;
+    transform:translateY(-100%);
+    background:var(--ink);color:var(--surface);
+    font-size:12.5px;line-height:1.5;
+    padding:10px 14px;border-radius:10px;
+    max-width:250px;
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.35);
+  }
+  .callout b{color:var(--accent)}
+  .callout::after{
+    content:"";position:absolute;bottom:-6px;right:34px;
+    width:12px;height:12px;background:var(--ink);
+    transform:rotate(45deg);border-radius:2px;
+  }
+
+  @media (max-width:640px){
+    .info-grid,.summary-grid{grid-template-columns:1fr}
+    .zone-head .zc-from,.zone-head .zc-to{display:none}
+    .zone-row .zc-from,.zone-row .zc-to{display:none}
+    .zc-label{flex:1}
+    .screen{padding:18px 16px 24px}
+    .callout{position:static;transform:none;margin:10px 16px 0;max-width:none}
+    .callout::after{display:none}
+  }
+
+  footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="wrap">
+
+  <div>
+    <div class="eyebrow">GHN Agency Prototype · Agency Admin · Thiết lập NVC</div>
+    <h1>Cảnh báo khi tuyến vận chuyển đã bị Super Admin xoá</h1>
+    <p class="lede">
+      Xem trước tính năng vừa thêm ở trang <b>Chi tiết bảng giá</b>: mỗi zone giờ mang theo tên tuyến
+      gốc từ <code>routeConfig.ts</code> — nếu Super Admin xoá đúng tuyến đó khỏi "Cấu hình vùng &amp; tuyến",
+      badge đỏ tự hiện ra ngay tại đây, không cần dò tìm.
+    </p>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:#16A34A"></span> Tuyến còn tồn tại — hiển thị bình thường</span>
+    <span><span class="dot" style="background:#DC2626"></span> Tuyến đã bị xoá — badge cảnh báo tự động</span>
+  </div>
+
+  <div class="device">
+    <div class="platform-bar">AGENCY ADMIN <span class="sep">/</span> Thiết lập NVC <span class="sep">/</span> Bảng giá</div>
+
+    <div class="screen">
+
+      <div class="crumb">
+        <div class="back">←</div>
+        <div class="crumb-title">Bảng giá Liên Vùng 2026</div>
+        <div class="status-pill">Đang hoạt động</div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Thông tin</div>
+        <div class="tab">Lịch sử chỉnh sửa</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Thông tin cơ bản</div>
+        <div class="info-grid">
+          <div><span class="lv-label">Tên bảng giá</span><span class="lv-value">Bảng giá Liên Vùng 2026</span></div>
+          <div><span class="lv-label">Ngày tạo</span><span class="lv-value">22/09/2026</span></div>
+          <div><span class="lv-label">Mô tả</span><span class="lv-value">Áp dụng cho đơn liên vùng và nội vùng của đại lý AGN001</span></div>
+          <div><span class="lv-label">Mã bảng giá</span><span class="lv-value mono">PRC1758... (sinh tự động)</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tuyến vận chuyển</div>
+
+        <div class="zone-head">
+          <div class="zc-from">Từ</div>
+          <div class="zc-to">Đến</div>
+          <div class="zc-label">Nhãn</div>
+        </div>
+
+        <div class="zone-row">
+          <div class="zc-from"><div>Hà Nội</div></div>
+          <div class="zc-to"><div>Đà Nẵng</div></div>
+          <div class="zc-label">Liên Vùng Đặc Biệt</div>
+        </div>
+
+        <div class="zone-row flagged callout-wrap">
+          <div class="zc-from"><div>Miền Trung (Vùng 2)</div></div>
+          <div class="zc-to"><div>Miền Trung (Vùng 2)</div></div>
+          <div class="zc-label">
+            Nội Vùng
+            <span class="warn-badge" title="Tuyến &quot;Nội Vùng&quot; đã bị Super Admin xoá khỏi Cấu hình vùng &amp; tuyến — bảng giá này đang dùng 1 tuyến không còn tồn tại.">⚠ Tuyến đã bị xoá</span>
+          </div>
+          <div class="callout">
+            <b>Mới:</b> so <code style="background:rgba(255,255,255,.12);border:none;color:inherit">routeName</code> của zone với <code style="background:rgba(255,255,255,.12);border:none;color:inherit">listRouteNames()</code> sống — khớp thì ẩn, lệch thì hiện badge này.
+          </div>
+        </div>
+
+        <div class="zone-row">
+          <div class="zc-from"><div>Miền Nam (Vùng 1)</div></div>
+          <div class="zc-to"><div>Miền Bắc (Vùng 3)</div></div>
+          <div class="zc-label">Liên Vùng Tỉnh</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Bảng giá cước</div>
+        <div class="summary-grid">
+          <div><span class="lv-label">Số tuyến</span><span class="lv-value">3 tuyến</span></div>
+          <div><span class="lv-label">Số bậc cân</span><span class="lv-value">1 bậc</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    Mockup tĩnh dựng theo đúng token màu &amp; cấu trúc thật của <code>PricingDetail.tsx</code> (Agency Admin) — không phải ảnh chụp màn hình, không kết nối dữ liệu thật.
+  </footer>
+
+</div>

@@ -21,6 +21,13 @@ const C_BG_HEADER      = '#F3F4F6'
 const CURRENT_AGENCY_ID = 'AGN001'
 const agencyShops = allShops.filter(s => s.agencyId === CURRENT_AGENCY_ID)
 
+// Giới hạn số đơn được LƯU THÀNH CÔNG trong 1 lần bấm "Nhập" — tách biệt với giới hạn dung
+// lượng file upload. addOrder() hiện đọc + ghi lại TOÀN BỘ danh sách đơn hàng cho MỖI đơn (không
+// batch), nên nhập N đơn tốn ~N lần đọc/ghi toàn bộ dữ liệu — với N lớn sẽ treo tab và (nếu lên
+// backend thật) tạo 1 transaction/API call quá lớn. 200 là mốc an toàn phổ biến cho 1 lần
+// lưu/API call ở các hệ thống bulk import tương tự (Shopee/Lazada).
+const MAX_SUCCESSFUL_IMPORT = 200
+
 function fmtDateInput(d: Date) {
   return d.toISOString().slice(0, 10)
 }
@@ -232,6 +239,7 @@ export default function AgencyOrdersImport() {
   const switchReviewTab = (tab: 'valid' | 'invalid') => { setReviewTab(tab); setSelectedRows(new Set()); setCurrentPage(1); setPageInput('1') }
 
   const handleConfirm = () => {
+    if (validRows.length === 0 || validRows.length > MAX_SUCCESSFUL_IMPORT) return
     setImporting(true)
     const now = new Date()
     const createdAt = fmtDateInput(now)
@@ -932,15 +940,20 @@ export default function AgencyOrdersImport() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, padding: '4px 0' }}>
+              {validRows.length > MAX_SUCCESSFUL_IMPORT && (
+                <span style={{ fontSize: 12, color: '#EF4444' }}>
+                  Chỉ được lưu tối đa {MAX_SUCCESSFUL_IMPORT} đơn/lần để tối ưu hạ tầng — hiện có {validRows.length} đơn hợp lệ, vui lòng xoá bớt hoặc tách file thành nhiều lượt import.
+                </span>
+              )}
               <button
                 onClick={handleConfirm}
-                disabled={validRows.length === 0 || importing}
+                disabled={validRows.length === 0 || validRows.length > MAX_SUCCESSFUL_IMPORT || importing}
                 style={{
                   padding: '12px 24px', border: 'none', borderRadius: 8,
-                  cursor: (validRows.length === 0 || importing) ? 'not-allowed' : 'pointer',
+                  cursor: (validRows.length === 0 || validRows.length > MAX_SUCCESSFUL_IMPORT || importing) ? 'not-allowed' : 'pointer',
                   fontSize: 15, fontWeight: 700, color: '#fff',
-                  background: (validRows.length === 0 || importing) ? '#9CA3AF' : C_ACTION,
+                  background: (validRows.length === 0 || validRows.length > MAX_SUCCESSFUL_IMPORT || importing) ? '#9CA3AF' : C_ACTION,
                 }}
               >
                 Nhập {validRows.length} đơn hợp lệ

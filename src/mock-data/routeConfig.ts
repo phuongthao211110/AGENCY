@@ -193,8 +193,9 @@ export function resolveUrbanArea(province: string, ward: string): boolean | null
 }
 
 /**
- * List of all unique route names currently defined, in order of first appearance in routeMatrix
- * (đường chéo 'Nội Tỉnh' được khai báo đầu tiên trong routeMatrix nên luôn đứng đầu danh sách).
+ * List of all unique route names currently defined, in order of first appearance in routeMatrix.
+ * RouteConfig.tsx ("Cấu hình tuyến") tự ghim tên 'Nội Tỉnh' lên đầu danh sách khi hiển thị (bất kể
+ * thứ tự khai báo ở đây) — xem `orderedNames` trong component đó, không dựa vào thứ tự hàm này trả về.
  */
 export function listRouteNames(): string[] {
   const seen = new Set<string>()

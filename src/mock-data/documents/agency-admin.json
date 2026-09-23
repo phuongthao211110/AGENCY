@@ -1,7 +1,7 @@
 {
   "platform": "agency-admin",
-  "currentVersion": "1.3.0",
-  "lastUpdated": "2026-09-14",
+  "currentVersion": "1.8.0",
+  "lastUpdated": "2026-09-23",
   "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
@@ -752,46 +752,50 @@
             "Bấm \"Tải xuống file mẫu\" nếu chưa có file — nhận file mau-import-don-hang.xlsx gồm 2 sheet: \"Nhập đơn hàng\" (13 cột, 2 dòng ví dụ — 1 Hàng hoá, 1 Thư) và \"Danh sách Shop\"",
             "Điền dữ liệu vào file theo thứ tự cột; cột \"Loại đơn\" phân biệt từng dòng là Hàng hoá hay Thư",
             "Upload file: kéo thả vào vùng dấu chấm lửng (có feedback đổi màu khi kéo qua) hoặc bấm \"chọn file từ máy tính\"; hỗ trợ .xlsx, .xls, .xlsm",
-            "Hệ thống parse file ngay lập tức và chuyển sang màn review (upload zone ẩn hẳn): header đổi thành icon Excel + tên file + nút đỏ Huỷ; card \"Địa chỉ lấy hàng & Nhà vận chuyển\"; 2 tab dạng pill \"Đơn hàng hợp lệ N\" / \"Đơn hàng lỗi N\"; bảng các dòng với mọi field sửa được trực tiếp",
+            "Hệ thống parse file ngay lập tức và chuyển sang màn review (upload zone ẩn hẳn):\n   - Header đổi thành icon Excel + tên file + nút đỏ \"Huỷ\"\n   - Card \"Địa chỉ lấy hàng & Nhà vận chuyển\" tóm tắt file (địa chỉ shop, carrier tương ứng)\n   - Tab \"Đơn hàng hợp lệ N\" / \"Đơn hàng lỗi N\" dạng pill đen\n   - Bảng hiển thị từng dòng theo tab đang chọn, mọi field đều sửa được trực tiếp",
             "Xem và sửa lỗi ngay trên bảng: sửa bất kỳ field nào → hệ thống re-validate dòng đó ngay lập tức → dòng tự chuyển tab (Lỗi ↔ Hợp lệ) theo kết quả validate mới",
             "Xoá đơn không muốn import: tick checkbox nhiều dòng → \"Xoá N đơn đã chọn\", hoặc bấm icon X trên từng dòng",
-            "Bấm \"Nhập N đơn hợp lệ\" (disabled khi không có đơn hợp lệ nào) → xác nhận import"
+            "Bấm \"Nhập N đơn hợp lệ\" (disabled khi không có đơn hợp lệ nào, HOẶC khi N vượt quá 200) → xác nhận import",
+            "Nếu số đơn hợp lệ vượt 200: nút \"Nhập\" bị khoá, hiện dòng chữ đỏ phía trên nút báo cần xoá bớt đơn hoặc tách file thành nhiều lượt import"
           ],
           "systemFlow": [
-            "Người dùng chọn file (click hoặc kéo thả) — handleFile() gọi parseImportSheet() đọc sheet đầu tiên bằng XLSX.read()",
-            "Với mỗi dòng không trống: cột số (Khối lượng, Dài/Rộng/Cao, COD, Phí ship) strip dấu chấm/phẩy phân cách hàng nghìn trước khi parse (getNum = col => get(col).replace(/[.,\\s]/g, '')); Dài/Rộng/Cao để trống mặc định 10cm",
-            "validateRawRow() kiểm tra từng dòng: shopId phải thuộc agencyShops; orderKindRaw phải là \"Hàng hoá\" hoặc \"Thư\"; receiverName, receiverPhone, receiverAddress không rỗng; weight số dương ≤ 20.000g; dimensions 1–200cm; cod chỉ validate khi loại đơn là Hàng hoá; fee số không âm. Dòng Thư có COD khác 0 không bị báo lỗi — giá trị bị bỏ qua tự động",
+            "Người dùng chọn file (click hoặc kéo thả) — handleFile() gọi parseImportSheet() đọc sheet đầu tiên của workbook bằng XLSX.read()",
+            "Với mỗi dòng dữ liệu không trống: các cột số (Khối lượng, Dài/Rộng/Cao, COD, Phí ship) strip dấu chấm/phẩy phân cách hàng nghìn trước khi parse (getNum = col => get(col).replace(/[.,\\s]/g, '')); Dài/Rộng/Cao để trống mặc định 10cm",
+            "validateRawRow() kiểm tra từng dòng: shopId phải thuộc danh sách shop của đại lý; orderKindRaw phải là \"Hàng hoá\" hoặc \"Thư\"; receiverName, receiverPhone, receiverAddress không rỗng; weight là số dương ≤ 20.000g; các chiều 1–200cm; cod chỉ validate khi loại đơn là Hàng hoá; fee là số không âm. Dòng Thư có COD khác 0 không bị báo lỗi — giá trị bị bỏ qua tự động",
             "State chuyển sang review mode (isReview = !!rows): upload zone ẩn hẳn, header đổi thành tên file + nút đỏ Huỷ",
-            "Card \"Địa chỉ lấy hàng & Nhà vận chuyển\" tự thích nghi: 1 shop → hiện tên/SĐT/địa chỉ; nhiều shop → hiện \"N shop khác nhau — mỗi dòng lấy đúng địa chỉ theo Mã shop\". Carrier tóm tắt GHN (Hàng hoá, dispatch ngay) và/hoặc 247Express (Thư, chờ xử lý)",
+            "Card \"Địa chỉ lấy hàng & Nhà vận chuyển\" tự thích nghi: 1 shop → hiện tên/SĐT/địa chỉ shop đó; nhiều shop → hiện \"N shop khác nhau — mỗi dòng lấy đúng địa chỉ theo Mã shop\". Carrier: GHN cho Hàng hoá (dispatch ngay), 247Express cho Thư (chờ xử lý), tóm tắt tỷ lệ nếu file có cả 2 loại",
             "Inline editing: updateRowField() cập nhật r.raw rồi gọi lại validateRawRow() — dòng tự chuyển tab hợp lệ/lỗi theo kết quả re-validate mà không cần thao tác thêm",
-            "Confirm: handleConfirm() duyệt validRows (errors.length === 0), lấy senderName/senderPhone từ shop.ownerName/phone, gọi addOrder(). Hàng hoá → dispatchStatus:'dispatched', carrierCode:'GHN'; Thư → dispatchStatus:'pending_agency', carrierCode:null, cod=0 bất kể giá trị trong file",
-            "Toast \"Đã nhập thành công N đơn hàng (X Hàng hoá · Y Thư)\" hiện top-center (dark pill + green checkmark) → sau ~1,4 giây navigate('/agency-admin/orders')"
+            "Confirm: handleConfirm() duyệt validRows (dòng có errors.length === 0), với mỗi dòng lấy senderName/senderPhone từ shop.ownerName/shop.phone, rồi gọi addOrder(). Hàng hoá → dispatchStatus: 'dispatched', carrierCode: 'GHN'; Thư → dispatchStatus: 'pending_agency', carrierCode: null, cod = 0 bất kể giá trị trong file",
+            "MAX_SUCCESSFUL_IMPORT = 200 — giới hạn số đơn được LƯU THÀNH CÔNG trong 1 lần bấm \"Nhập\", tách biệt với giới hạn dung lượng/số dòng file upload (không giới hạn). Lý do: addOrder() đọc + ghi lại TOÀN BỘ danh sách đơn hàng cho MỖI đơn (không batch), nên nhập N đơn tốn ~N lần đọc/ghi toàn bộ dữ liệu — N lớn sẽ treo tab và (nếu lên backend thật) tạo 1 transaction/API call quá lớn. handleConfirm() có early return nếu validRows.length > MAX_SUCCESSFUL_IMPORT (phòng hộ, dù nút đã bị disabled từ trước)",
+            "Toast \"Đã nhập thành công N đơn hàng (X Hàng hoá · Y Thư)\" hiện top-center (dark pill + green checkmark) → sau ~1,4 giây tự điều hướng về /agency-admin/orders"
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
             "AC1: Trang \"Nhập đơn hàng\" là trang riêng tại /agency-admin/orders/import, truy cập được từ sidebar (mục con \"Nhập đơn hàng\" dưới \"Đơn hàng\") và từ nút \"Import đơn hàng\" trên trang danh sách đơn hàng.",
-            "AC2: Bấm \"Tải xuống file mẫu\" → tải về mau-import-don-hang.xlsx gồm 2 sheet: \"Nhập đơn hàng\" với 13 cột + 2 dòng ví dụ (1 Hàng hoá, 1 Thư), và \"Danh sách Shop\" liệt kê mã + tên tất cả shop thuộc đại lý đang đăng nhập.",
-            "AC3: Vùng upload nhận file bằng cả click và kéo thả. Trong lúc kéo file vào vùng, vùng upload đổi nền + viền sang màu cam để báo hiệu sẵn sàng nhận.",
-            "AC4: Chỉ nhận file Excel (.xlsx, .xls, .xlsm). File sai định dạng → hiện lỗi đỏ \"File không đúng định dạng — vui lòng dùng đúng template\", không crash.",
-            "AC5: Sau khi file parse thành công, toàn bộ upload zone ẩn hẳn. Header đổi thành icon Excel xanh lá + tên file + nút đỏ \"Huỷ\". Bấm \"Huỷ\" → điều hướng về trang danh sách đơn hàng.",
-            "AC6: Card \"Địa chỉ lấy hàng & Nhà vận chuyển\" hiển thị đúng: 1 shop trong file → hiện tên/SĐT/địa chỉ pickup của shop đó; nhiều shop → hiện \"N shop khác nhau — mỗi dòng lấy đúng địa chỉ của shop tương ứng\". Carrier tóm tắt GHN (Hàng hoá) và/hoặc 247Express (Thư) theo tỷ lệ thực tế trong file.",
-            "AC7: Bảng review có 2 tab \"Đơn hàng hợp lệ N\" / \"Đơn hàng lỗi N\". Tab \"Lỗi\" có thêm cột \"Lỗi\" liệt kê rõ lý do lỗi của từng dòng.",
-            "AC8: Mọi field có thể gây lỗi đều có input sửa được trực tiếp: Mã shop (dropdown agencyShops, viền đỏ nếu không tồn tại), Loại đơn (dropdown Hàng hoá/Thư, viền đỏ nếu không nhận ra), Số điện thoại (text, viền đỏ nếu rỗng), Tên người nhận (text, viền đỏ nếu rỗng), Địa chỉ (text, viền đỏ nếu rỗng), COD (input số cho Hàng hoá; badge xám \"Không áp dụng\" cho Thư — thêm \"— đã bỏ qua\" nếu file có COD khác 0), Phí ship (dropdown Shop trả/Khách trả + input số), Khối lượng (gram, dương, ≤ 20.000g), Dài/Rộng/Cao (cm, mặc định 10, ≤ 200), Sản phẩm (bút chì → input inline).",
-            "AC9: Sau mỗi lần sửa field, hệ thống re-validate dòng đó ngay lập tức. Dòng tự chuyển tab hợp lệ/lỗi theo kết quả mới mà không cần thao tác thêm.",
-            "AC10: Có thể xoá đơn khỏi batch: tick checkbox nhiều dòng → \"Xoá N đơn đã chọn\", hoặc icon X trên từng dòng. Checkbox header chọn/bỏ chọn toàn bộ trang hiện tại.",
-            "AC11: Bảng có phân trang: dropdown số dòng/trang (10/20/50), nút trang trước/sau, input nhảy trực tiếp đến số trang.",
-            "AC12: Nút \"Nhập N đơn hợp lệ\" bị disabled khi không có đơn hợp lệ. Khi xác nhận: chỉ dòng hợp lệ được tạo đơn thật; Hàng hoá → dispatchStatus:'dispatched', carrierCode:'GHN'; Thư → dispatchStatus:'pending_agency', carrierCode:null, cod=0; senderName/senderPhone lấy từ profile shop, không nhập tay.",
-            "AC13: Sau import thành công, toast \"Đã nhập thành công N đơn hàng (X Hàng hoá · Y Thư)\" hiện top-center (dark pill, green checkmark). Sau ~1,4 giây tự điều hướng về trang danh sách đơn hàng.",
-            "AC14: Dòng có Mã shop không thuộc đại lý hiện tại → bị báo lỗi, không được import — không lộ dữ liệu shop của đại lý khác."
+            "AC2: Bấm \"Tải xuống file mẫu\" → tải về mau-import-don-hang.xlsx gồm 2 sheet: sheet \"Nhập đơn hàng\" với 13 cột theo thứ tự chuẩn + 2 dòng ví dụ (1 Hàng hoá, 1 Thư), và sheet \"Danh sách Shop\" liệt kê mã + tên tất cả shop thuộc đại lý đang đăng nhập.",
+            "AC3: Vùng upload nhận file bằng cả hai cách: click để duyệt file và kéo thả trực tiếp. Trong lúc kéo file vào vùng, vùng upload đổi nền + viền sang màu cam để báo hiệu sẵn sàng nhận.",
+            "AC4: Chỉ nhận file Excel (.xlsx, .xls, .xlsm). File sai định dạng hoặc không đọc được → hiện lỗi đỏ \"File không đúng định dạng — vui lòng dùng đúng template\", không crash.",
+            "AC5: Sau khi file được parse thành công, toàn bộ upload zone ẩn hẳn. Header trang đổi thành icon Excel xanh lá + tên file + nút đỏ \"Huỷ\". Bấm \"Huỷ\" → điều hướng về trang danh sách đơn hàng.",
+            "AC6: Card \"Địa chỉ lấy hàng & Nhà vận chuyển\" hiển thị đúng theo nội dung file:\n- 1 shop trong file: hiện tên shop, số điện thoại, địa chỉ pickup của shop đó\n- Nhiều shop: hiện \"N shop khác nhau — mỗi dòng lấy đúng địa chỉ của shop tương ứng theo Mã shop\"\n- Carrier: tóm tắt GHN (Hàng hoá, tự dispatch ngay) và/hoặc 247Express (Thư, vào Chờ xử lý) theo tỷ lệ thực tế trong file",
+            "AC7: Bảng review hiển thị 2 tab \"Đơn hàng hợp lệ N\" / \"Đơn hàng lỗi N\". Tab \"Lỗi\" có thêm cột \"Lỗi\" liệt kê rõ lý do lỗi của từng dòng.",
+            "AC8: Mọi field có thể gây lỗi đều có input sửa được trực tiếp trên bảng:\n- Mã shop *(bắt buộc)*: dropdown danh sách shop của đại lý; viền đỏ + nền đỏ nhạt nếu mã không tồn tại\n- Loại đơn *(bắt buộc)*: dropdown \"Hàng hoá\" / \"Thư\"; viền đỏ nếu không nhận ra giá trị\n- Số điện thoại *(bắt buộc)*: text input; viền đỏ nếu rỗng\n- Tên người nhận *(bắt buộc)*: text input; viền đỏ nếu rỗng\n- Địa chỉ *(bắt buộc)*: text input; viền đỏ nếu rỗng\n- COD: input số cho đơn Hàng hoá; badge xám \"Không áp dụng\" (không editable) cho đơn Thư — nếu file có COD khác 0 cho dòng Thư thì badge thêm \"— đã bỏ qua\" với tooltip hiện giá trị bị bỏ qua\n- Phí ship: dropdown \"Shop trả\"/\"Khách trả\" + input số tiền phí\n- Khối lượng *(bắt buộc)*: input số (gram, dương, tối đa 20.000g); Dài / Rộng / Cao: 3 input cm, mặc định 10cm nếu trống, tối đa 200cm mỗi chiều\n- Sản phẩm: bấm icon bút chì để mở input inline; Enter hoặc blur để đóng",
+            "AC9: Sau mỗi lần sửa field, hệ thống re-validate dòng đó ngay lập tức. Nếu dòng từ lỗi được sửa hết lỗi, nó tự chuyển sang tab \"Hợp lệ\" — và ngược lại — mà không cần thao tác thêm.",
+            "AC10: Có thể xoá đơn khỏi batch trước khi import: tick checkbox nhiều dòng → \"Xoá N đơn đã chọn\" (hiện ở đầu bảng khi có chọn), hoặc bấm icon X trên từng dòng. Checkbox header cho phép chọn/bỏ chọn toàn bộ trang hiện tại.",
+            "AC11: Bảng có phân trang: dropdown chọn số dòng/trang (10/20/50), nút trang trước/sau, input nhảy trực tiếp đến số trang bất kỳ.",
+            "AC12: Nút \"Nhập N đơn hợp lệ\" bị disabled (màu xám) khi không có đơn hợp lệ nào, HOẶC khi số đơn hợp lệ vượt quá 200 (MAX_SUCCESSFUL_IMPORT). Khi bấm xác nhận:\n- Chỉ các dòng hợp lệ được tạo đơn thật qua addOrder(); dòng lỗi không được import\n- Đơn Hàng hoá: dispatchStatus: 'dispatched', carrierCode: 'GHN' → xuất hiện trong các tab theo trạng thái GHN\n- Đơn Thư: dispatchStatus: 'pending_agency', carrierCode: null, cod = 0 → xuất hiện ở tab \"Chờ xử lý\"\n- senderName/senderPhone tự động lấy từ ownerName/phone của shop trong hồ sơ đăng ký, không nhập tay trong file",
+            "AC13: Sau khi import thành công, toast \"Đã nhập thành công N đơn hàng (X Hàng hoá · Y Thư)\" hiện ở giữa trên cùng trang (dark pill, green checkmark, fixed top-center). Sau ~1,4 giây hệ thống tự điều hướng về trang danh sách đơn hàng.",
+            "AC14: Dòng có Mã shop không thuộc đại lý hiện tại → bị báo lỗi, không được import — không lộ dữ liệu shop của đại lý khác.",
+            "AC15: Số đơn hợp lệ (N) vượt quá 200 → nút \"Nhập N đơn hợp lệ\" bị khoá (giống trường hợp N = 0); phía trên nút hiện dòng chữ đỏ \"Chỉ được lưu tối đa 200 đơn/lần để tối ưu hạ tầng — hiện có N đơn hợp lệ, vui lòng xoá bớt hoặc tách file thành nhiều lượt import.\" Giới hạn này CHỈ áp dụng cho bước LƯU (đơn hợp lệ, errors.length === 0) — không áp dụng cho tổng số dòng trong file upload (không giới hạn) hay số đơn ở tab \"Đơn hàng lỗi\"."
           ],
           "notes": [
-            "Rewrite hoàn toàn so với thiết kế cũ: phiên bản cũ dùng modal với màn chọn loại đơn trước, 2 template riêng (9 cột Hàng hoá / 8 cột Thư), không có drag-and-drop, không có inline editing, không có toast feedback, không có phân trang. Phiên bản mới: trang riêng (route thay modal), 1 template hợp nhất 13 cột (phân biệt Hàng hoá/Thư qua cột \"Loại đơn\" theo từng dòng), review table có inline editing cho mọi field, drag-and-drop, phân trang, và toast xác nhận.",
-            "Parse số kiểu VN: cột số tự strip dấu chấm/phẩy phân cách hàng nghìn — người dùng gõ \"25.000\" hay \"5.000.000\" vào Excel không bị parse sai thành 25 hoặc NaN.",
-            "COD cho đơn Thư: dùng chung cột COD trong file — thay vì báo lỗi, giá trị COD của dòng Thư bị bỏ qua tự động, badge \"Không áp dụng\" hiện trên review. Khi import, cod của đơn Thư luôn = 0.",
-            "Gap còn lại (chưa sửa): product (tên sản phẩm), length/width/height (kích thước), và feeType (Trả ship) được capture trong review UI nhưng không được lưu vào Order — Order type trong orderStore.ts không có các field này. Gap có sẵn của codebase, không phải do lần rewrite này giới thiệu.",
+            "Rewrite hoàn toàn so với thiết kế cũ: phiên bản cũ dùng modal với màn chọn loại đơn trước, 2 template riêng (9 cột Hàng hoá / 8 cột Thư), không có drag-and-drop, không có inline editing, không có toast feedback, không có phân trang. Phiên bản mới: trang riêng (route thay modal), 1 template hợp nhất 13 cột (phân biệt Hàng hoá/Thư qua cột \"Loại đơn\" theo từng dòng), toàn bộ review table có inline editing, drag-and-drop, phân trang, và toast xác nhận.",
+            "Parse số kiểu VN: cột số tự strip dấu chấm/phẩy phân cách hàng nghìn trước khi parse — người dùng gõ \"25.000\" hay \"5.000.000\" vào file Excel không bị JS's Number() parse sai thành 25 hoặc NaN.",
+            "COD cho đơn Thư: dùng chung cột COD trong file với đơn Hàng hoá — thay vì báo lỗi (gây phiền khi đại lý dùng cùng một file cho cả 2 loại), giá trị COD của dòng Thư bị bỏ qua tự động, badge \"Không áp dụng\" hiện trên review. Khi import, cod của đơn Thư luôn = 0 bất kể file ghi gì.",
+            "Gap còn lại (chưa sửa): product (tên sản phẩm), length/width/height (kích thước), và feeType (Trả ship — Shop/Khách) được capture và hiển thị trong review UI nhưng không được lưu vào Order — Order type trong orderStore.ts không có các field này. Đây là gap có sẵn của codebase, không phải do lần rewrite này giới thiệu.",
             "TLHH (tỷ lệ hoàn hàng) hiển thị kèm số điện thoại người nhận là badge tĩnh \"0%\" — chưa có dữ liệu thật để tính.",
             "Import trùng file 2 lần vẫn tạo đơn trùng — không có cơ chế chặn theo trùng số điện thoại/địa chỉ.",
-            "Đây là 1 trong 2 cách tạo đơn hộ shop (cách kia là drawer \"Tạo đơn hàng\" — xem AGA-ORDER-13); cả hai dùng chung addOrder() từ orderStore."
+            "Giới hạn 200 đơn/lần lưu thêm để tối ưu hạ tầng: gốc vấn đề là addOrder() đọc + ghi lại TOÀN BỘ mảng đơn hàng trong localStorage cho MỖI đơn (không có cơ chế batch/bulk write) — nhập N đơn tốn ~N lần đọc/ghi toàn bộ dữ liệu, không phải O(N) thật. 200 là mốc an toàn tạm thời (tương tự giới hạn phổ biến ở Shopee/Lazada cho 1 lần lưu/API call), CHƯA fix tận gốc — cách fix đúng là sửa addOrder()/handleConfirm() để build 1 mảng mới rồi ghi 1 lần cho cả batch (giảm về O(N + tổng đơn hiện có)), thay vì chặn số lượng.",
+            "Đây là 1 trong 2 cách tạo đơn hộ shop (cách kia là drawer \"Tạo đơn hàng\" — xem [tao-don-hang-thay-shop.md](./tao-don-hang-thay-shop.md)); cả hai dùng chung addOrder() từ orderStore."
           ]
         },
         {
@@ -2180,45 +2184,133 @@
         },
         {
           "id": "AGA-CARRIER-19",
-          "jiraKey": "",
-          "title": "[AGA] Thiết lập NVC - Tạo bảng giá: Dùng chung cấu hình vùng & tuyến",
+          "jiraKey": "platform: agency-admin",
+          "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Định nghĩa tuyến theo cấu hình Super Admin",
           "status": "draft",
-          "userStory": "Là Agency Admin (Đại lý), tôi muốn dropdown \"Tuyến\" và \"Vùng\" trong màn Tạo bảng giá tự động phản ánh cấu hình Miền/Vùng & Tuyến do Super Admin thiết lập — thay vì bị cố định 6 tuyến hardcode như trước — để mọi bảng giá (GHN, 247Express, NVC khác) đều dùng chung 1 định nghĩa tuyến nhất quán, không cần sửa code khi thêm/bớt tuyến.",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn danh sách \"Tuyến\" và \"Vùng\" khi tạo bảng giá được lấy tự động từ cấu hình Vùng & Tuyến do Super Admin quản lý tập trung, để không phải tự định nghĩa lại tuyến và mọi bảng giá (của mọi đại lý, mọi NVC) đều dùng chung 1 định nghĩa tuyến nhất quán.",
           "userFlow": [
-            "Agency Admin vào màn Tạo bảng giá (Thiết lập NVC → tab Bảng giá → Thêm bảng giá)",
-            "Trong phần \"Danh sách tuyến\", bấm nút \"Định nghĩa tuyến\" (nút bấm, không phải tên modal) → modal \"Bảng mô tả tuyến dịch vụ\" mở ra, gồm 3 khối: Định nghĩa miền/vùng (chip miền + số tỉnh/thành mỗi miền), Bảng tuyến (2 cột: Tuyến | Cặp miền áp dụng), và Định nghĩa Nội thành/Ngoại thành (chip xã/phường theo tỉnh, cam = Nội thành/xám = Ngoại thành)",
-            "Modal chỉ để XEM — không có link chỉnh sửa nào; dòng chú thích cuối modal ghi rõ \"Cấu hình vùng & tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.\"",
-            "Với mỗi dòng tuyến trong form, nếu bật toggle \"Tách Nội thành/Ngoại thành\" → xuất hiện icon (i) cạnh toggle, bấm vào cũng mở CÙNG modal \"Bảng mô tả tuyến dịch vụ\" ở trên (không phải modal riêng)",
-            "Bấm \"Thêm tuyến\" → dropdown \"Tuyến\" liệt kê tên tuyến động từ cấu hình Bước 2 bên Super Admin (xem GSA-ROUTE-4)",
-            "Phần thu hẹp phạm vi Tỉnh/Quận/Phường hiển thị cho tất cả tuyến, trừ tuyến có tên trùng 1 trong các luật \"Nội Tỉnh\" (mỗi miền có thể đặt tên nội tỉnh riêng — xem GSA-ROUTE-4)",
-            "Dropdown \"Vùng\" trong phần thu hẹp phạm vi lấy danh sách tên miền động từ cấu hình Bước 1 bên Super Admin (xem GSA-ROUTE-2)"
+            "Vào \"Thiết lập NVC\" → tab Bảng giá → \"Thêm bảng giá\" (hoặc bấm \"Thêm tuyến\" trong khối \"Danh sách tuyến\").",
+            "Mỗi dòng tuyến có dropdown \"Tuyến\" — danh sách tên tuyến LẤY TỪ cấu hình Super Admin (ví dụ \"Nội Tỉnh\", \"Nội Vùng\", \"Liên Vùng Đặc Biệt\", \"Liên Vùng\", \"Liên Vùng Tỉnh\", hoặc bất kỳ tên tuyến nào Super Admin đã đặt/đổi) — không tự gõ tên tuyến mới được.",
+            "Bấm nút \"Định nghĩa tuyến\" (đầu khối \"Danh sách tuyến\") → mở modal \"Bảng mô tả tuyến dịch vụ\", gồm 3 khối: \"Định nghĩa miền / vùng\" (chip tên miền + số tỉnh/thành mỗi miền), \"Bảng tuyến\" (2 cột: Tuyến | Cặp miền áp dụng), \"Định nghĩa Nội thành / Ngoại thành\" (chip xã/phường theo tỉnh, cam = Nội thành, xám = Ngoại thành). Cuối modal có dòng \"Cấu hình vùng & tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.\"",
+            "Modal chỉ để XEM — không có nút chỉnh sửa/link điều hướng nào sang trang cấu hình khác.",
+            "Với mỗi dòng tuyến, nếu bật toggle \"Tách Nội thành/Ngoại thành\" → xuất hiện icon (i) cạnh toggle, bấm vào cũng mở CÙNG modal \"Bảng mô tả tuyến dịch vụ\" ở trên (không phải modal riêng).",
+            "Phần \"Thu hẹp phạm vi\" (chọn Vùng/Tỉnh/Quận/Phường cho Từ - Đến) hiển thị cho MỌI tuyến, TRỪ tuyến đang là \"tuyến nội tỉnh\" của bất kỳ miền nào (ví dụ mặc định \"Nội Tỉnh\").",
+            "Đổi tuyến ở dropdown \"Tuyến\" → phần \"Thu hẹp phạm vi\" của đúng dòng đó reset về \"Tất cả\" cho cả 4 ô Vùng/Tỉnh/Quận/Phường (Từ và Đến).",
+            "Dropdown \"Vùng\" trong phần \"Thu hẹp phạm vi\" cũng lấy danh sách tên miền động từ cấu hình Super Admin."
           ],
           "systemFlow": [
-            "PricingCreate.tsx import danh sách tuyến và miền từ routeConfig.ts (store dùng chung với Super Admin) thay vì mảng hardcode",
-            "Dropdown \"Tuyến\" render danh sách options từ listRouteNames() — thêm/xoá/đổi tên tuyến ở Super Admin phản ánh ngay khi mở lại form Tạo bảng giá (cùng phiên trình duyệt, không cần reload)",
-            "Dropdown \"Vùng\" trong phần thu hẹp phạm vi render từ mảng regions (export trực tiếp từ routeConfig.ts) thay vì [\"Vùng 1\", \"Vùng 2\", \"Vùng 3\"] hardcode",
-            "Kiểm tra isSameProvinceRouteName(routeName) — true nếu tên tuyến khớp tên nội tỉnh của BẤT KỲ miền nào (sameProvinceRouteByRegion, mỗi miền 1 tên riêng): nếu khớp → ẩn section thu hẹp phạm vi Tỉnh/Quận/Phường cho tuyến đó",
-            "Component ZoneGuideModal (PricingCreate.tsx) tự tính toán trực tiếp từ routeMatrix + routeRegions + sameProvinceRouteByRegion + urbanConfigs qua helper isSameProvinceRouteName()/describeSameProvinceRoutePairs() — render 3 khối: \"Định nghĩa miền / vùng\" (mỗi miền là 1 chip + số tỉnh/thành), \"Bảng tuyến\" (grid 2 cột, mỗi tuyến liệt kê các cặp miền áp dụng; tuyến trùng tên nội tỉnh của 1 hay nhiều miền hiện 1 dòng con cho MỖI miền đang dùng tên đó, ví dụ \"Hà Nội ↔ Hà Nội\" / \"Cùng 1 tỉnh trong Miền Nam (Vùng 1)\" — 2 miền đặt tên khác nhau sẽ tách thành 2 mục tuyến riêng), \"Định nghĩa Nội thành / Ngoại thành\" (mỗi tỉnh trong urbanConfigs là 1 card, chip xã/phường màu theo isUrban)",
-            "ZoneGuideModal được mở từ 2 nơi: nút \"Định nghĩa tuyến\" ở đầu \"Danh sách tuyến\" (setShowZoneGuide(true)), và icon (i) cạnh toggle \"Tách Nội thành/Ngoại thành\" của mỗi dòng tuyến (onOpenZoneGuide truyền xuống RouteBlock) — cả 2 đều mở CHUNG 1 modal, không phải 2 modal riêng",
-            "Modal KHÔNG chứa bất kỳ link/nút điều hướng nào sang trang cấu hình — Agency Admin chỉ đọc, không sửa được miền/tuyến/Nội-Ngoại thành"
+            "`PricingCreate.tsx` import trực tiếp `regions`, `routeMatrix`, `isSameProvinceRouteName`, `describeSameProvinceRoutePairs`, `listRouteNames`, `urbanConfigs` từ `../../../mock-data/routeConfig.ts` — cùng module store mà Super Admin dùng để cấu hình Vùng & Tuyến (`RouteConfig.tsx`), không có bản sao/hardcode riêng cho Agency Admin.",
+            "Dropdown \"Tuyến\" (mỗi `RouteBlock`) render `listRouteNames().map(name => <option>)` — hàm này (trong `routeConfig.ts`) duyệt `Object.values(routeMatrix)`, khử trùng lặp, trả về danh sách tên tuyến DUY NHẤT theo đúng thứ tự khai báo trong `routeMatrix`.",
+            "`handleRouteNameChange(newRouteName)`: đổi `route.routeName` VÀ reset đồng thời cả 8 field `fromRegion/fromProvince/fromDistrict/fromWard/toRegion/toProvince/toDistrict/toWard` về rỗng — tránh giữ lại phạm vi thu hẹp của tuyến cũ khi đổi sang tuyến khác.",
+            "`showLocationScoping = !isSameProvinceRouteName(route.routeName)` — `isSameProvinceRouteName(name)` kiểm tra `regions.some(r => routeMatrix[pairKey(r.id, r.id)] === name)`, tức tên tuyến có khớp giá trị nằm trên ĐƯỜNG CHÉO của ma trận tuyến (cặp cùng 1 miền) hay không, với BẤT KỲ miền nào — diagonal value nằm ngay trong `routeMatrix` như mọi cặp khác, Super Admin có thể đổi tên độc lập từng miền qua đúng cơ chế chip toggle dùng chung với mọi tuyến khác.",
+            "`showLocationScoping === false` → ẩn hẳn khối \"Thu hẹp phạm vi\" (không render).",
+            "Nút \"Định nghĩa tuyến\" (đầu \"Danh sách tuyến\") và icon (i) cạnh toggle \"Tách Nội thành/Ngoại thành\" của MỖI dòng tuyến (khi bật) đều gọi chung `setShowZoneGuide(true)` (state ở component cha `PricingCreate`) → mở 1 modal `ZoneGuideModal` DUY NHẤT, không phải 2 modal riêng.",
+            "`ZoneGuideModal`: khối \"Bảng tuyến\" build từ `guideRows = listRouteNames().map(routeName => ...)` — với mỗi `routeName`, nếu `isSameProvinceRouteName(routeName)` thì `pairs = describeSameProvinceRoutePairs(routeName)` (liệt kê MỖI miền đang dùng tên đó, dạng \"{tỉnh} ↔ {tỉnh}\" nếu miền chỉ có 1 tỉnh, hoặc \"Cùng 1 tỉnh trong {tên miền}\" nếu miền có nhiều tỉnh); ngược lại duyệt `Object.entries(routeMatrix)` lấy mọi cặp `(regionA, regionB)` map sang đúng `routeName`, hiển thị dạng \"{Tên miền A} ↔ {Tên miền B}\".",
+            "Khối \"Định nghĩa Nội thành / Ngoại thành\" trong modal render trực tiếp từ `urbanConfigs` (cũng import từ `routeConfig.ts`) — mỗi tỉnh 1 card, chip xã/phường tô màu theo `w.isUrban` (cam = Nội thành, xám = Ngoại thành).",
+            "Modal KHÔNG chứa bất kỳ nút/link điều hướng nào sang trang khác — chỉ đọc dữ liệu tĩnh, không có `onClick` điều hướng route nào trong toàn bộ `ZoneGuideModal`.",
+            "Dữ liệu Vùng & Tuyến (`regions`, `routeMatrix`, `urbanConfigs`) lưu ở module-level state trong `routeConfig.ts` (không phải React Context/Zustand, không persist backend), dùng CHUNG giữa Super Admin và Agency Admin trong cùng phiên trình duyệt — Super Admin sửa ở `RouteConfig.tsx` thì `PricingCreate.tsx` thấy thay đổi ngay khi mở lại form, không cần reload trang."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Dropdown \"Tuyến\" trong form Tạo bảng giá lấy danh sách tên tuyến động từ cấu hình Super Admin — không còn hardcode 6 tuyến cố định.",
-            "AC2: Super Admin thêm/đổi tên/xoá tuyến → dropdown \"Tuyến\" trong form Tạo bảng giá phản ánh thay đổi ngay khi mở lại form (cùng phiên trình duyệt), không cần sửa code.",
-            "AC3: Dropdown \"Vùng\" trong phần thu hẹp phạm vi Từ/Đến của mỗi dòng tuyến lấy danh sách tên miền động từ cấu hình Super Admin — không còn hardcode \"Vùng 1/2/3\".",
-            "AC4: Tuyến có tên trùng tên nội tỉnh của bất kỳ miền nào → phần thu hẹp phạm vi Tỉnh/Quận/Phường bị ẩn cho tuyến đó; tất cả tuyến khác vẫn hiển thị phần thu hẹp phạm vi bình thường.",
-            "AC5: Nút \"Định nghĩa tuyến\" mở modal \"Bảng mô tả tuyến dịch vụ\" gồm đúng 3 khối: Định nghĩa miền/vùng, Bảng tuyến (Tuyến | Cặp miền áp dụng — tuyến nội tỉnh liệt kê 1 dòng con cho mỗi miền đang dùng tên đó, ví dụ \"Hà Nội ↔ Hà Nội\", \"Cùng 1 tỉnh trong Miền Nam (Vùng 1)\"), và Định nghĩa Nội thành/Ngoại thành.",
-            "AC6: Modal \"Bảng mô tả tuyến dịch vụ\" KHÔNG có bất kỳ link hay nút điều hướng nào sang trang cấu hình khác — chỉ có dòng chú thích tĩnh \"Cấu hình vùng & tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.\"",
-            "AC7: Icon (i) cạnh toggle \"Tách Nội thành/Ngoại thành\" (khi bật) mở đúng modal \"Bảng mô tả tuyến dịch vụ\" ở trên — không phải modal riêng cho Nội/Ngoại thành.",
-            "AC8: Cấu hình vùng & tuyến dùng chung cho mọi bảng giá (GHN, 247Express, và NVC khác trong tương lai) — không phải cấu hình riêng per bảng giá, và không phải cấu hình riêng per đại lý."
+            "AC1: Dropdown \"Tuyến\" của mỗi dòng trong \"Danh sách tuyến\" lấy danh sách tên tuyến ĐỘNG từ `listRouteNames()` (cấu hình Super Admin) — không hardcode danh sách tuyến cố định trong `PricingCreate.tsx`.",
+            "AC2: Super Admin thêm/đổi tên/xoá tuyến ở `RouteConfig.tsx` → mở lại (hoặc đang mở sẵn) form Tạo bảng giá thấy đúng danh sách tuyến mới, không cần sửa code, không cần reload nếu component re-render.",
+            "AC3: Đổi tuyến ở dropdown \"Tuyến\" của 1 dòng → 8 field phạm vi (Từ/Đến × Vùng/Tỉnh/Quận/Phường) của ĐÚNG dòng đó reset về rỗng (\"Tất cả\"); các dòng tuyến khác không bị ảnh hưởng.",
+            "AC4: Tuyến đang là tuyến nội tỉnh của bất kỳ miền nào (`isSameProvinceRouteName === true`) → ẩn hẳn khối \"Thu hẹp phạm vi\" cho dòng đó; mọi tuyến khác luôn hiện khối này.",
+            "AC5: Nút \"Định nghĩa tuyến\" (đầu khối \"Danh sách tuyến\") mở modal \"Bảng mô tả tuyến dịch vụ\" gồm đúng 3 khối theo thứ tự: Định nghĩa miền/vùng, Bảng tuyến, Định nghĩa Nội thành/Ngoại thành.",
+            "AC6: Icon (i) cạnh toggle \"Tách Nội thành/Ngoại thành\" (chỉ xuất hiện khi toggle đang BẬT) mở ĐÚNG modal \"Bảng mô tả tuyến dịch vụ\" ở AC5 — không phải modal riêng.",
+            "AC7: Modal \"Bảng mô tả tuyến dịch vụ\" KHÔNG có bất kỳ nút/link điều hướng nào sang trang cấu hình khác — chỉ có dòng chú thích tĩnh cuối modal \"Cấu hình vùng & tuyến do Super Admin quản lý tập trung, dùng chung cho mọi đại lý.\"",
+            "AC8: Trong \"Bảng tuyến\" của modal, 1 tuyến đang là tuyến nội tỉnh của NHIỀU miền khác nhau → liệt kê MỖI miền đó thành 1 dòng con riêng (không gộp chung 1 dòng) — ví dụ tên \"Nội Tỉnh\" đang dùng mặc định cho 6 miền thì hiện đủ 6 dòng con.",
+            "AC9: Cấu hình Vùng & Tuyến dùng CHUNG cho mọi bảng giá (không phân biệt NVC GHN/247Express/khác trong tương lai) và mọi đại lý — không phải cấu hình riêng theo từng bảng giá hay từng đại lý."
           ],
           "notes": [
-            "Lịch sử quyết định: Ban đầu có xây 1 trang chi tiết chỉ-xem (RouteConfigView.tsx) cho Agency Admin để \"thấy những gì Super Admin đã cấu hình\", kèm link điều hướng từ modal sang đó — sau đó bị huỷ theo phản hồi trực tiếp: \"ý tôi là trên agency ko cần thấy trang cấu hình vùng/tuyến mà xem định nghĩa tuyến trong bảng giá như cũ\". Trang RouteConfigView.tsx đã bị xoá, modal quay lại dạng thông tin thuần tuý như hiện tại — đây là lý do AC6 khẳng định modal không có link điều hướng nào.",
-            "RouteCheck.tsx \"chưa được nối vào cấu hình dùng chung\" — đã fix, RouteCheck.tsx giờ đọc resolveRouteName()/listRouteNames()/regions trực tiếp từ routeConfig.ts, đã verify bằng Playwright (đổi tên tuyến ở Super Admin thấy ngay ở Agency Admin, không cần reload).",
-            "Toàn bộ dữ liệu (miền, tuyến, Nội/Ngoại thành) lưu ở bộ nhớ trong phiên (module-level state trong routeConfig.ts), KHÔNG có backend/persistence thật — reload lại toàn trang (F5, tab mới) sẽ trả về đúng dữ liệu seed ban đầu.",
-            "Xem GSA-ROUTE-6 để có bảng \"Tác động đa nền tảng\" đầy đủ từ góc nhìn Super Admin (bên cấu hình), bổ sung cho story này (bên tiêu thụ).",
-            "Trước đây \"Nội Tỉnh\" là 1 tên tuyến DUY NHẤT dùng chung cho mọi miền (sameProvinceRoute, hằng số toàn cục) — đã đổi thành mỗi miền tự đặt tên/giá nội tỉnh riêng (sameProvinceRouteByRegion, key theo regionId) để Super Admin (và qua đó Agency Admin) tính được giá nội tỉnh khác nhau theo từng miền, ví dụ Hà Nội khác Miền Nam (Vùng 1). Chi tiết xem GSA-ROUTE-4."
+            "Story này viết lại từ đầu để khớp code HIỆN TẠI, thay cho nội dung cũ đã LỖI THỜI trong hệ thống Document: bản cũ mô tả cơ chế \"mỗi miền tự đặt 1 tên nội tỉnh riêng\" qua biến `sameProvinceRouteByRegion` — biến này ĐÃ BỊ GỠ BỎ hoàn toàn khỏi `routeConfig.ts` trong lần redesign gần nhất (xem GSA-ROUTE-3). Nay \"Nội Tỉnh\" chỉ là 1 tên GỢI Ý mặc định cho mọi đường chéo `routeMatrix`, Super Admin có thể tách riêng từng miền sang tên khác bất kỳ lúc nào qua đúng cơ chế chip/toggle dùng chung với mọi tuyến khác — không còn UI đặc biệt riêng cho \"Nội Tỉnh\" (xem GSA-ROUTE-3, phần \"Cấu hình tuyến\").",
+            "Xem GSA-ROUTE-3 (Cấu hình tuyến, phía Super Admin) để hiểu cơ chế chip toggle gán tuyến cho từng cặp miền — đây là NGUỒN dữ liệu mà story này tiêu thụ (đọc), không mô tả lại cách cấu hình.",
+            "Toàn bộ dữ liệu Vùng & Tuyến lưu ở bộ nhớ trong phiên (module-level state, không backend) — reload toàn trang (F5, tab mới) sẽ về lại dữ liệu seed ban đầu, mọi thay đổi Super Admin đã làm trong phiên trước đó sẽ mất.",
+            "Khoảng trống tài liệu đã biết (nay đã lấp): `agency-admin.json` đã có sẵn story ID `AGA-CARRIER-19` từ trước (tên cũ \"Dùng chung cấu hình vùng & tuyến\") nhưng CHƯA từng có file `.md` tương ứng và CHƯA xuất hiện trong `docs/agency-admin/README.md` — story này thay thế nội dung cũ, đổi tên theo đúng yêu cầu, và bổ sung file `.md` + dòng README còn thiếu.",
+            "Không nhầm với AGA-CARRIER-16 (\"Tách giá Nội thành/Ngoại thành theo tuyến\" — mô tả toggle `splitUrbanRural` và 2 ô nhập GIÁ `basePriceUrban`/`basePriceRural`): story đó tập trung vào GIÁ theo khu vực, còn story này tập trung vào ĐỊNH NGHĨA tuyến/miền lấy từ đâu."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-20",
+          "jiraKey": "platform: agency-admin",
+          "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Thêm tuyến theo cấu hình Super Admin",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn bấm \"Thêm tuyến\" trong màn Tạo bảng giá để thêm 1 dòng cấu hình giá mới, với tuyến mặc định lấy từ danh sách tuyến do Super Admin định nghĩa, để nhanh chóng bổ sung thêm mức giá cho tuyến khác mà không phải tự gõ hay nhớ chính xác tên tuyến.",
+          "userFlow": [
+            "Mở form Tạo bảng giá → khối \"Danh sách tuyến\" TỰ ĐỘNG khởi tạo sẵn N dòng (N = số tuyến Super Admin đã cấu hình tại thời điểm mở form), mỗi dòng ứng với đúng 1 tuyến, các field giá còn để trống.",
+            "Cuối danh sách luôn có nút viền nét đứt \"+ Thêm tuyến\".",
+            "Bấm \"+ Thêm tuyến\" → thêm 1 dòng MỚI vào cuối danh sách; dropdown \"Tuyến\" của dòng mới mặc định chọn TUYẾN ĐẦU TIÊN trong danh sách Super Admin đã cấu hình — không phải ô trống, không tự gõ tên tuyến.",
+            "Số đếm \"{N} tuyến\" ở góc phải tiêu đề khối tự tăng lên ngay khi thêm dòng mới.",
+            "Đổi dropdown \"Tuyến\" của dòng mới sang tên tuyến khác bất kỳ trong danh sách Super Admin (xem AGA-CARRIER-19 để biết danh sách tuyến lấy từ đâu) để cấu hình đúng tuyến mong muốn.",
+            "Không giới hạn số dòng có thể thêm — có thể thêm nhiều dòng hơn số tuyến Super Admin đã định nghĩa, kể cả chọn TRÙNG tên tuyến với 1 dòng đã có sẵn (không có cảnh báo trùng).",
+            "Xoá 1 dòng bất kỳ bằng nút \"✕\" ở góc trên bên phải mỗi dòng — không giới hạn xoá tới 0 dòng, khi đó hiện \"Chưa có tuyến nào. Thêm tuyến để cấu hình giá.\" thay cho danh sách.",
+            "Dòng mới thêm KHÔNG kế thừa bất kỳ giá trị nào từ dòng khác — mọi field (Khối lượng chuẩn, Giá chuẩn, Vượt cân, Phụ phí, Thu hẹp phạm vi, Tách Nội/Ngoại thành) đều ở trạng thái trống/mặc định."
+          ],
+          "systemFlow": [
+            "`routes` (state, `RouteConfig[]`) khởi tạo LẦN ĐẦU bằng `listRouteNames().map((name, i) => makeEmptyRoute(name, String(i + 1)))` — tự động seed đúng 1 dòng CHO MỖI tên tuyến Super Admin đã cấu hình tại thời điểm mở form (không phải danh sách rỗng ban đầu).",
+            "`addRoute()`: `setRoutes(prev => [...prev, makeEmptyRoute(listRouteNames()[0] ?? '', Date.now().toString())])` — LUÔN lấy `listRouteNames()[0]` (tuyến ĐẦU TIÊN theo đúng thứ tự khai báo trong `routeMatrix` của Super Admin) làm giá trị mặc định cho dòng mới; KHÔNG có logic tự chọn tuyến \"còn thiếu\"/\"chưa dùng trong form\". Nếu `listRouteNames()` rỗng (lý thuyết — `routeMatrix` luôn được seed sẵn nên hiếm khi xảy ra) thì fallback `''`.",
+            "`makeEmptyRoute(routeName, id)`: tạo `RouteConfig` mới với `routeName` truyền vào; mọi field vị trí (`from`/`to` × `Region`/`Province`/`District`/`Ward`) rỗng; `standardWeight`/`basePrice`/`basePriceUrban`/`basePriceRural` rỗng; `splitUrbanRural: false`; `overweightTiers: []`; `surcharges: makeEmptySurcharges()` — hoàn toàn độc lập với các dòng đã có, không copy giá trị từ dòng nào.",
+            "`id` của dòng mới dùng `Date.now().toString()` (khác scheme `String(i + 1)` của các dòng seed ban đầu) — chỉ cần duy nhất để dùng làm React `key` và để `updateRoute`/`deleteRoute` xác định đúng dòng, không mang ý nghĩa nghiệp vụ.",
+            "`routes.length` hiển thị trực tiếp ở góc phải tiêu đề \"Danh sách tuyến\" dạng \"{routes.length} tuyến\" — đọc thẳng từ state, không qua bước tính toán riêng.",
+            "KHÔNG có bước kiểm tra trùng `routeName` giữa các dòng trong `routes` — `addRoute()`, và `handleRouteNameChange` (trong `RouteBlock`, khi đổi tuyến của 1 dòng đang có) đều không so sánh với `routeName` của các dòng khác.",
+            "`deleteRoute(id)`: `setRoutes(prev => prev.filter(r => r.id !== id))` — xoá đúng 1 dòng theo `id`; các dòng còn lại giữ nguyên vị trí và dữ liệu.",
+            "Nút \"Thêm tuyến\" LUÔN bấm được (không có điều kiện `disabled`) — không giới hạn số dòng tối đa."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Mở form Tạo bảng giá lần đầu (chưa từng chỉnh sửa) → \"Danh sách tuyến\" tự động hiện sẵn đúng N dòng (N = số tuyến Super Admin đã cấu hình tại thời điểm đó), mỗi dòng ứng 1 tuyến khác nhau theo đúng thứ tự Super Admin khai báo.",
+            "AC2: Bấm \"+ Thêm tuyến\" → thêm đúng 1 dòng mới vào CUỐI danh sách hiện có (không chèn giữa, không thay thế dòng nào).",
+            "AC3: Dòng mới thêm có dropdown \"Tuyến\" mặc định chọn TUYẾN ĐẦU TIÊN trong danh sách Super Admin đã cấu hình (`listRouteNames()[0]`) — không phải ô trống, không tự nhập tên tuyến mới.",
+            "AC4: Mọi field khác của dòng mới (Khối lượng chuẩn, Giá chuẩn, Vượt cân, Phụ phí, Thu hẹp phạm vi, Tách Nội/Ngoại thành) đều ở trạng thái TRỐNG/mặc định ban đầu — không kế thừa giá trị từ bất kỳ dòng nào đã có.",
+            "AC5: Số đếm \"{N} tuyến\" ở góc phải tiêu đề khối \"Danh sách tuyến\" cập nhật ngay = tổng số dòng đang có sau khi thêm/xoá, không cần thao tác thêm.",
+            "AC6: Có thể thêm nhiều dòng có CÙNG tên tuyến (chọn trùng dropdown \"Tuyến\" với 1 dòng đã có) — hệ thống không chặn, không cảnh báo trùng.",
+            "AC7: Nút \"+ Thêm tuyến\" luôn bấm được, không giới hạn số dòng tối đa có thể thêm.",
+            "AC8: Xoá hết mọi dòng (còn 0 dòng) → hiện dòng chữ \"Chưa có tuyến nào. Thêm tuyến để cấu hình giá.\" thay cho danh sách trống; nút \"+ Thêm tuyến\" vẫn còn để thêm lại."
+          ],
+          "notes": [
+            "Known gap: hệ thống không kiểm tra/cảnh báo khi 2 dòng trong cùng 1 bảng giá trỏ tới CÙNG 1 tên tuyến — 2 dòng \"Nội Tỉnh\" với 2 mức giá khác nhau đều hợp lệ về mặt UI, có thể gây nhầm lẫn giá nào mới thật sự áp dụng khi tính cước (ngữ nghĩa \"2 dòng cùng tuyến\" chưa được định nghĩa rõ ở tầng nghiệp vụ) — cần làm rõ nếu đưa lên production.",
+            "Tuyến mặc định của dòng mới LUÔN là `listRouteNames()[0]` bất kể dòng đó đã tồn tại hay chưa trong form — người dùng cần tự đổi dropdown sang đúng tuyến muốn thêm; đây không phải lỗi mà là hành vi chủ ý đơn giản hoá (không cố tính toán \"tuyến còn thiếu\" để tránh phức tạp thêm logic).",
+            "Xem AGA-CARRIER-19 để biết dropdown \"Tuyến\" của mỗi dòng lấy danh sách từ đâu và modal \"Định nghĩa tuyến\" mô tả cấu hình Super Admin ra sao — story này chỉ tập trung vào hành vi nút \"+ Thêm tuyến\", không lặp lại nội dung đó.",
+            "`routes` chỉ tồn tại trong state cục bộ của form (không lưu tạm/draft) — rời trang mà chưa bấm \"Tạo bảng giá\" sẽ mất toàn bộ các dòng đã thêm/chỉnh sửa."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-21",
+          "jiraKey": "platform: agency-admin",
+          "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Lưu bảng giá thật, đồng bộ tuyến với Super Admin & Web Shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn bấm \"Tạo bảng giá\" thực sự LƯU bảng giá vào hệ thống (thay vì chỉ điều hướng đi mà không lưu gì), và tuyến trong bảng giá phải dùng ĐÚNG tên tuyến Super Admin đang quản lý — để bảng giá tôi vừa tạo xuất hiện được trong danh sách, xem lại được, và Web Shop tính đúng phí ship theo bảng giá đó.",
+          "userFlow": [
+            "Vào \"Tạo bảng giá\", điền tên bảng giá, cấu hình \"Danh sách tuyến\" (chọn tuyến, nhập khối lượng chuẩn + giá) và \"Phụ phí đổi địa chỉ\" như bình thường.",
+            "Bấm \"Tạo bảng giá\" → hệ thống LƯU bảng giá mới, rồi điều hướng về \"Thiết lập NVC\" (tab Bảng giá).",
+            "Bảng giá vừa tạo XUẤT HIỆN NGAY trong danh sách bảng giá — bấm vào xem được trang Chi tiết bảng giá đầy đủ (khối \"Tuyến vận chuyển\" liệt kê đúng các tuyến đã chọn).",
+            "Tại Web Shop, nếu 1 dịch vụ carrier (AgencyService) được gán priceTableId trỏ tới bảng giá vừa tạo, đơn hàng tạo mới sẽ tính phí ship theo ĐÚNG bảng giá đó (không còn luôn dùng bộ dữ liệu tĩnh seed sẵn).",
+            "Nếu Super Admin sau đó XOÁ 1 tuyến đang được dùng trong bảng giá này (ở \"Cấu hình vùng & tuyến\") → vào lại trang Chi tiết bảng giá, dòng tuyến đó hiện thêm nhãn cảnh báo đỏ \"⚠ Tuyến đã bị xoá\"."
+          ],
+          "systemFlow": [
+            "File mới src/mock-data/pricingStore.ts — cùng convention với orderStore.ts/shopStore.ts: loadPricing() đọc từ localStorage (key ghn_pricing_v1), seed lần đầu từ pricing.json, tự backfill bảng giá mới thêm vào seed sau này; savePricing(list); addPricingTable(table) = loadPricing() + push + savePricing().",
+            "PricingCreate.tsx.handleSubmit() — TRƯỚC ĐÂY chỉ có navigate(...), không lưu gì. NAY build 1 PriceTable object từ state form rồi gọi addPricingTable() trước khi điều hướng:\n   - zones: build từ routes — mỗi dòng tuyến trong form → 1 zone, với label VÀ routeName đều lấy TRỰC TIẾP route.routeName (tên tuyến Super Admin đang quản lý trong routeConfig.ts) — đây là cầu nối để 3 platform nhận diện đúng 1 tuyến theo cùng 1 tên. from/to lấy tỉnh cụ thể nếu có thu hẹp phạm vi, không thì lấy tên vùng/miền, cuối cùng fallback \"Tất cả\".\n   - weights/prices: bảng giá thật (pricing.json) chỉ có 1 lưới bậc cân DÙNG CHUNG cho mọi tuyến (weights[] × zones), trong khi form cho phép MỖI tuyến tự đặt \"Khối lượng chuẩn\" + nhiều mức \"Vượt cân\" riêng — 2 mô hình không khớp nhau. Bản lưu này CHỈ giữ đúng 1 mức giá cơ bản/tuyến tại 1 bậc cân chung (khối lượng chuẩn LỚN NHẤT trong các tuyến, hoặc 500g nếu không tuyến nào nhập) — xem Notes về giới hạn.\n   - surcharges: addressChange map thẳng từ state addressChangeFee (đúng nghĩa dùng chung cho cả bảng, không mất gì). Các phụ phí còn lại (Giao trả 1 phần/Bảo hiểm/Thu hộ/Giao thất bại) vẫn cấu hình RIÊNG theo từng tuyến trong form, nhưng pricing.json chỉ có 1 object surcharges DÙNG CHUNG cho cả bảng — bản lưu này CHỈ giữ cấu hình của TUYẾN ĐẦU TIÊN (routes[0].surcharges) cho các phụ phí này.\n   - id: sinh mới PRC${Date.now()}; agencyId: 'AGN001'; nvc: 'GHN'; isDefault: false; status: 'active'.",
+            "CarrierSetup.tsx (tab Bảng giá, TabPricingMerged) — đổi từ import allPriceTables from '.../pricing.json' (tĩnh) sang gọi loadPricing() (động) mỗi lần render — danh sách bảng giá hiện đủ cả seed gốc lẫn bảng vừa tạo.",
+            "PricingDetail.tsx — đổi từ import tĩnh sang loadPricing().find(p => p.id === id). Khối \"Tuyến vận chuyển\" tính thêm routeDeleted = !!zone.routeName && !listRouteNames().includes(zone.routeName) cho MỖI zone — zone seed cũ không có field routeName nên luôn coi là hợp lệ (chưa từng gắn với 1 tuyến Super Admin cụ thể để mà \"mất\" được); zone tạo qua bước 2 mà tuyến gốc đã bị Super Admin xoá thì hiện thêm badge đỏ \"⚠ Tuyến đã bị xoá\" cạnh tên tuyến, kèm tooltip nêu rõ tên tuyến đã mất.",
+            "Orders.tsx (Web Shop) — shopFeeFromPriceTable() và nơi tính surcharges cho CreateOrderDrawer đổi từ đọc biến allPricing (import tĩnh pricing.json) sang gọi loadPricing() trực tiếp — bảng giá vừa tạo ở Agency Admin giờ THẬT SỰ được Web Shop dùng để tính phí ship, nếu có dịch vụ nào trỏ priceTableId tới bảng giá đó."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bấm \"Tạo bảng giá\" (form hợp lệ, có tên bảng giá) → 1 bản ghi bảng giá mới được lưu vào pricingStore (localStorage), không chỉ điều hướng đi mà không lưu như trước.",
+            "AC2: Ngay sau khi tạo, quay về tab \"Bảng giá\" ở \"Thiết lập NVC\" → bảng giá vừa tạo xuất hiện trong danh sách, không cần tải lại trang.",
+            "AC3: Bấm vào bảng giá vừa tạo → trang Chi tiết bảng giá hiện đúng: tên, mô tả, khối \"Tuyến vận chuyển\" liệt kê đủ các tuyến đã cấu hình (đúng Từ/Đến/Nhãn theo dữ liệu đã nhập).",
+            "AC4: Mỗi zone trong bảng giá mới tạo có label VÀ routeName trùng khớp CHÍNH XÁC tên tuyến tương ứng đang tồn tại trong routeConfig.ts (Super Admin quản lý) tại thời điểm tạo — không tự đặt tên khác.",
+            "AC5: Nếu sau khi tạo, Super Admin xoá đúng tuyến đang được dùng trong bảng giá đó → mở lại trang Chi tiết bảng giá, đúng dòng tuyến đó hiện badge đỏ \"⚠ Tuyến đã bị xoá\"; các dòng tuyến khác (còn tồn tại) không bị ảnh hưởng.",
+            "AC6: Zone thuộc bảng giá SEED GỐC (tạo trước khi có tính năng này, không có field routeName) KHÔNG BAO GIỜ hiện badge \"Tuyến đã bị xoá\", bất kể Super Admin xoá tuyến gì — vì các zone này chưa từng gắn với 1 tuyến Super Admin cụ thể.",
+            "AC7: Tại Web Shop, đơn hàng dùng 1 dịch vụ carrier có priceTableId trỏ tới bảng giá vừa tạo ở Agency Admin → phí ship tính đúng theo weights/prices/surcharges của bảng giá đó, không còn luôn luôn dùng dữ liệu tĩnh seed sẵn trong pricing.json.",
+            "AC8: Reload lại toàn trang (F5) → bảng giá đã tạo vẫn còn (lưu bền trong localStorage của trình duyệt, không mất như trước đây khi chưa lưu thật)."
+          ],
+          "notes": [
+            "Bối cảnh phát sinh: xuất phát từ câu hỏi \"xoá tuyến ở Super Admin thì tuyến đó có mất ở Agency Admin và Web Shop không\" — phát hiện ra \"Tạo bảng giá\" trước đây hoàn toàn KHÔNG lưu dữ liệu (handleSubmit chỉ có navigate(...)), nên Web Shop luôn đọc pricing.json tĩnh, không hề liên quan gì tới tuyến Super Admin quản lý — 2 hệ thống \"tuyến\" (routeConfig.ts động vs pricing.json tĩnh) tồn tại song song, không nối với nhau. Story này nối 2 hệ thống lại làm 1, ít nhất là cho MỌI bảng giá tạo mới từ nay trở đi.",
+            "Giới hạn đã biết (chưa xử lý): bậc cân \"Vượt cân\" theo từng nấc và 2 giá Nội thành/Ngoại thành riêng (form có, pricing.json không có chỗ chứa) — CHƯA được lưu đầy đủ, bản lưu chỉ giữ 1 mức giá cơ bản/tuyến tại 1 bậc cân chung. Muốn lưu đủ, cần mở rộng schema pricing.json/pricingStore.ts (thêm overweightTiers/basePriceUrban/basePriceRural theo từng zone) — chưa nằm trong phạm vi story này.",
+            "Giới hạn đã biết (chưa xử lý): phụ phí Giao trả 1 phần/Bảo hiểm/Thu hộ/Giao thất bại vẫn cấu hình theo TỪNG tuyến trong form (đúng theo quyết định trước đó — xem AGA-CARRIER-19 Notes, KHÔNG gộp các phụ phí này về 1 mối như \"Phụ phí đổi địa chỉ\"), nhưng pricing.json chỉ có 1 object surcharges DÙNG CHUNG cho cả bảng — nên khi lưu, chỉ tuyến ĐẦU TIÊN trong danh sách được giữ đúng cấu hình phụ phí; các tuyến còn lại bị bỏ qua phần này. Cần mở rộng schema (surcharges theo từng zone) nếu muốn lưu đúng và đủ.",
+            "Phạm vi đã cố ý KHÔNG đổi: các trang chỉ đọc pricing.json để hiển thị tên bảng giá (không tạo/sửa) — ShopCreate.tsx, AgencyOrders.tsx, ServiceDetail.tsx, ShopDetail.tsx, src/platforms/shop/pages/Pricing.tsx — CHƯA đổi sang pricingStore.ts, vẫn đọc dữ liệu seed tĩnh. Không ảnh hưởng tính đúng đắn của story này (các trang đó không liên quan tới việc tạo bảng giá mới), nhưng nếu muốn toàn hệ thống nhất quán 100% thì cần đổi nốt các trang này ở 1 story riêng.",
+            "pricingStore.ts dùng đúng pattern seed + backfill + localStorage như orderStore.ts/shopStore.ts — dữ liệu KHÔNG có backend thật, reload trình duyệt khác/xoá localStorage sẽ mất bảng giá đã tạo, chỉ còn lại 7 bảng giá seed gốc trong pricing.json."
           ]
         }
       ]
@@ -2304,45 +2396,55 @@
           "jiraKey": "",
           "title": "[AGA] Báo cáo: Xu hướng tổng phí ship theo shop",
           "status": "draft",
-          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem biểu đồ xu hướng TỔNG PHÍ SHIP theo Ngày/Tuần/Tháng, tách theo TỪNG SHOP, so sánh với cùng kỳ liền trước, để biết shop nào đang tăng/giảm đóng góp vào tổng phí ship theo thời gian.",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem biểu đồ xu hướng TỔNG PHÍ SHIP theo Ngày/Tuần/Tháng, lọc được theo 1 shop cụ thể hoặc xem gộp Tất cả shop, so sánh với cùng kỳ liền trước, để biết shop nào đang tăng/giảm đóng góp vào tổng phí ship theo thời gian.",
           "userFlow": [
-            "Trong trang \"Báo cáo\", cuộn tới khối \"Xu hướng tổng phí ship theo shop\".",
+            "Trong trang \"Báo cáo\", cuộn tới khối \"Chỉ số hoạt động theo kỳ\" (khối này còn chứa 4 KPI mới AOV/Onboard/Re-active — xem AGA-REPORT-6; story này chỉ mô tả phần biểu đồ xu hướng tổng phí ship + 3 ô so sánh kỳ).",
             "Chọn 1 trong 3 tab thời gian: \"Ngày\" / \"Tuần\" / \"Tháng\" (mặc định \"Tuần\").",
-            "3 ô tổng hợp hiện ngay dưới: \"Kỳ này\" (khoảng ngày, tổng phí kỳ hiện tại); \"Cùng kỳ trước\" (khoảng ngày, tổng phí kỳ liền trước); \"So với cùng kỳ\" (% tăng/giảm kèm icon mũi tên lên/xuống màu xanh/đỏ, hoặc chữ \"Mới\" màu xanh dương nếu kỳ trước = 0).",
-            "Bên dưới là biểu đồ cột CHỒNG (stacked bar) — mỗi cột là 1 kỳ (6 kỳ gần nhất), mỗi lát màu trong cột là 1 shop.",
-            "Di chuột vào 1 cột bất kỳ (không cần trúng đúng lát mỏng) → hiện tooltip liệt kê TỪNG SHOP có phát sinh phí trong kỳ đó kèm số tiền, và tổng cả kỳ ở đầu tooltip.",
+            "3 ô tổng hợp hiện ngay dưới: \"Kỳ này (khoảng ngày)\" — tổng phí kỳ hiện tại; ô thứ 2 — tổng phí \"kỳ trước\" theo ĐÚNG định nghĩa của tab đang chọn (tab Ngày ghi \"Cùng kỳ D-7\", tab Tuần ghi \"Tuần liền trước\", tab Tháng ghi \"MTD-1 (cùng ngày tháng trước)\"); \"So với cùng kỳ\" — % tăng/giảm (kèm icon mũi tên lên/xuống màu xanh/đỏ), hoặc chữ \"Mới\" (xanh lá) nếu kỳ trước = 0.",
+            "Dropdown \"Shop\" bên dưới 3 ô tổng hợp — mặc định \"Tất cả shop\". Bấm vào mở panel có Ô TÌM KIẾM (theo tên hoặc mã shop) + danh sách shop cuộn được — cần thiết khi đại lý có hàng chục/hàng trăm shop, không thể chọn nhanh bằng `<select>` gốc. Chọn 1 shop cụ thể → CẢ 3 ô tổng hợp lẫn biểu đồ đều thu hẹp lại chỉ tính phí ship của đúng shop đó.",
+            "Biểu đồ cột: khi \"Tất cả shop\" → cột CHỒNG (stacked bar), mỗi cột là 1 kỳ — tab Tuần vẽ đúng 4 cột (4 tuần gần nhất), tab Ngày/Tháng vẽ 6 cột. Nếu đại lý có ≤ 8 shop, mỗi lát màu là 1 shop; nếu > 8 shop, chỉ 8 shop đóng góp NHIỀU NHẤT (cộng dồn phí qua toàn bộ khung đang hiển thị) được tách lát riêng, phần còn lại GỘP vào 1 lát xám \"Khác (N shop)\" duy nhất — tránh cột bị chia thành hàng chục/hàng trăm lát siêu mỏng không đọc được. Khi đã chọn 1 shop cụ thể → mỗi cột chỉ còn 1 màu CAM duy nhất (đúng màu accent của hệ thống), thể hiện phí ship riêng của shop đó qua từng kỳ.",
+            "Di chuột vào 1 cột bất kỳ (không cần trúng đúng lát mỏng) → hiện tooltip liệt kê TỪNG SHOP (hoặc chỉ 1 shop nếu đang lọc) có phát sinh phí trong kỳ đó kèm số tiền, và tổng cả kỳ ở đầu tooltip.",
             "Cột cuối cùng (kỳ hiện tại) luôn hiện số tổng ngay trên đỉnh cột, không cần hover.",
-            "Dưới biểu đồ có legend liệt kê tên + màu từng shop.",
-            "Bấm \"Xem dạng bảng\" → chuyển hiển thị số liệu dạng bảng (cột: Kỳ, từng shop, Tổng) thay cho biểu đồ; bấm lại (\"Ẩn dạng bảng\") để quay về chỉ biểu đồ."
+            "Dưới biểu đồ có legend liệt kê tên + màu từng shop đang hiển thị trên biểu đồ (1 dòng nếu đang lọc theo 1 shop).",
+            "Bấm \"Xem dạng bảng\" → hiện bảng số liệu ĐẦY ĐỦ MỌI SHOP của đại lý (không bị ảnh hưởng bởi dropdown \"Shop\" phía trên) — hàng là từng shop (sắp theo tổng phí giảm dần), cột là từng kỳ; bấm lại (\"Ẩn dạng bảng\") để ẩn bảng."
           ],
           "systemFlow": [
-            "getAgencyOrders() lấy toàn bộ đơn của mọi shop thuộc CURRENT_AGENCY_ID.",
-            "Vì dữ liệu đơn hàng demo là NGÀY CỐ ĐỊNH trong quá khứ (không tự cập nhật theo ngày hệ thống thật), anchorDate (mốc \"hiện tại\") lấy theo NGÀY CÓ ĐƠN GẦN NHẤT của đại lý (Math.max(...agencyOrders.map(...))), KHÔNG dùng new Date() thật — nếu dùng ngày thật, mọi kỳ sẽ luôn rơi vào lúc chưa có dữ liệu demo.",
-            "Dùng PHÍ SHIP (order.fee) làm số liệu chính, KHÔNG dùng COD — vì không phải đơn nào cũng có COD (đơn khách trả trước/chuyển khoản thì COD = 0), nhưng đơn nào cũng phát sinh phí ship.",
-            "PERIOD_DAYS = { day: 1, week: 7, month: 30 } — độ dài 1 kỳ theo tab đang chọn.",
-            "computePeriodComparison(): curEnd = endOfDay(anchor), curStart = startOfDay(anchor − (days−1) ngày), prevEnd = endOfDay(curStart − 1 ngày), prevStart = startOfDay(prevEnd − (days−1) ngày) — kỳ trước LUÔN liền kề ngay trước kỳ này, không chồng lấn. deltaPct = previous > 0 ? (current−previous)/previous×100 : (current > 0 ? null : 0) — previous = 0 VÀ current > 0 → trả null (hiển thị \"Mới\") thay vì % tăng vô hạn.",
-            "buildShopTrendSeries() vẽ TREND_BAR_COUNT = 6 kỳ liên tiếp gần nhất (kỳ cuối trùng \"Kỳ này\"), mỗi kỳ tính riêng phí ship của TỪNG shop trong danh sách shops (đã lọc theo đại lý).",
-            "SHOP_CHART_COLORS — bảng màu categorical 8 màu ĐÃ VALIDATE (theo skill dataviz, đảm bảo phân biệt được dưới mù màu/CVD khi nhiều lát xếp chồng); quá 8 shop thì các shop từ thứ 9 trở đi LẶP LẠI màu theo idx % 8 (chưa có cơ chế gộp \"Khác\" thật sự dù comment trong code có nhắc tới ý tưởng này).",
-            "ShopTrendStackedChart — hover CẢ CỘT (không phải riêng 1 lát) để hiện tooltip liệt kê đủ mọi shop có value > 0 trong kỳ đó; cột hiện tại (isCurrent) luôn có nhãn tổng hiện trực tiếp trên đỉnh, không cần hover.",
-            "Nút \"Xem dạng bảng\" (showTable) chuyển sang bảng: cột \"Kỳ\" + 1 cột/shop + cột \"Tổng\" — dùng đúng shopLegend (danh sách shop lấy từ points[0].slices) làm tiêu đề cột."
+            "`getAgencyOrders()` lấy toàn bộ đơn của mọi shop thuộc `CURRENT_AGENCY_ID`.",
+            "Vì dữ liệu đơn hàng demo là NGÀY CỐ ĐỊNH trong quá khứ (không tự cập nhật theo ngày hệ thống thật), `anchorDate` (mốc \"hiện tại\") lấy theo NGÀY CÓ ĐƠN GẦN NHẤT của đại lý (`Math.max(...agencyOrders.map(...))`), KHÔNG dùng `new Date()` thật — nếu dùng ngày thật, mọi kỳ sẽ luôn rơi vào lúc chưa có dữ liệu demo.",
+            "Dùng PHÍ SHIP (`order.fee`) làm số liệu chính, KHÔNG dùng COD — vì không phải đơn nào cũng có COD (đơn khách trả trước/chuyển khoản thì COD = 0), nhưng đơn nào cũng phát sinh phí ship.",
+            "`PERIOD_DAYS = { day: 1, week: 7, month: 30 }` — CHỈ dùng để tính độ dài 1 \"bucket\" khi vẽ biểu đồ xu hướng (`buildShopTrendSeries`), KHÔNG còn dùng để tính khoảng so sánh \"Kỳ này/Kỳ trước\" (xem điểm 5 — đã tách hẳn thành `getComparisonRanges()`, theo đúng yêu cầu nghiệp vụ D-7/tuần liền trước/MTD-MTD-1, không phải cứ lùi đều theo `PERIOD_DAYS`).",
+            "`getComparisonRanges(period, anchor)` — 3 định nghĩa \"kỳ trước\" KHÁC NHAU theo tab, KHÔNG còn dùng chung 1 công thức lùi đều như bản cũ:\n   - Ngày: `curStart/curEnd` = đúng ngày `anchor`; `prevStart/prevEnd` = đúng ngày `anchor − 7 ngày` (CÙNG THỨ trong tuần, không phải hôm qua).\n   - Tuần: `curStart/curEnd` = 7 ngày gần nhất kết thúc tại `anchor`; `prevStart/prevEnd` = 7 ngày LIỀN TRƯỚC đó (liền kề, không chồng lấn) — để tính được % tăng/giảm.\n   - Tháng: `curStart` = ngày 1 tháng của `anchor` (`startOfMonth`), `curEnd = anchor` (MTD — Month-to-Date); `prevStart` = ngày 1 tháng TRƯỚC, `prevEnd` = ngày TƯƠNG ỨNG (cùng số ngày trong tháng) của tháng trước — có `Math.min(dayOfMonth, daysInPrevMonth)` để clamp khi tháng trước ít ngày hơn (VD 31/3 → tháng trước chỉ tới 28/2, không tràn sang 2-3/3). Đây là MTD-1, KHÔNG so với trọn tháng trước.",
+            "`computePeriodComparison()` gọi `getComparisonRanges()` lấy 4 mốc trên + `compareLabel` (nhãn hiển thị cho ô \"kỳ trước\": \"Cùng kỳ D-7\" / \"Tuần liền trước\" / \"MTD-1 (cùng ngày tháng trước)\"), rồi `current`/`previous` = `sumFeeInRange()` theo đúng 2 khoảng đó. `deltaPct = previous > 0 ? (current−previous)/previous×100 : (current > 0 ? null : 0)` — `previous = 0` VÀ `current > 0` → trả `null` (hiển thị \"Mới\") thay vì % tăng vô hạn.",
+            "`selectedShopId` (state, mặc định `''` = \"Tất cả shop\"): `trendOrders = selectedShopId ? agencyOrders.filter(o => o.shopId === selectedShopId) : agencyOrders` — dùng đúng biến này cho `computePeriodComparison()`, nên 3 ô tổng hợp LUÔN khớp phạm vi dropdown \"Shop\".",
+            "`buildShopTrendSeries()` vẽ `TREND_BAR_COUNT[period]` kỳ liên tiếp gần nhất (kỳ cuối trùng \"Kỳ này\") — `TREND_BAR_COUNT = { day: 6, week: 4, month: 6 }`, tab Tuần chốt đúng 4 cột (4 tuần gần nhất) theo yêu cầu nghiệp vụ, Ngày/Tháng giữ 6 cột như trước. Mỗi kỳ tính riêng phí ship của từng shop trong `shopList` truyền vào. Có 2 lời gọi riêng biệt:\n   - `fullShopTrendSeries = buildShopTrendSeries(agencyOrders, shops, ...)` — LUÔN đủ mọi shop, dùng cho bảng \"Xem dạng bảng\" (không phụ thuộc dropdown).\n   - `chartPoints = selectedShopId ? buildShopTrendSeries(agencyOrders, [selectedShop], ...) : collapseToTopShops(fullShopTrendSeries, SHOP_CHART_COLORS.length)` — dữ liệu vẽ biểu đồ: thu hẹp còn 1 shop khi có chọn, hoặc gộp Top 8 + \"Khác\" khi xem \"Tất cả shop\". `ShopTrendTable` KHÔNG dùng `chartPoints` mà dùng thẳng `fullShopTrendSeries` chưa gộp, nên bảng luôn liệt kê đủ từng shop riêng lẻ dù biểu đồ đã gộp \"Khác\".",
+            "`SHOP_CHART_COLORS` — bảng màu categorical 8 màu ĐÃ VALIDATE (theo skill `dataviz`, đảm bảo phân biệt được dưới mù màu/CVD khi nhiều lát xếp chồng), dùng khi hiển thị \"Tất cả shop\". `collapseToTopShops(points, topN)` (`topN = SHOP_CHART_COLORS.length = 8`): nếu tổng số shop ≤ `topN` thì trả nguyên `points`, không đổi gì; nếu > `topN` thì xếp hạng shop theo TỔNG phí CỘNG DỒN qua toàn bộ `points` (không phải theo 1 kỳ đơn lẻ, để Top 8 ổn định giữa các kỳ), giữ nguyên `topN` shop cao nhất, GỘP phần còn lại thành 1 `ShopSlice` tổng hợp `{ shopId: '__other__', shopName: 'Khác (N shop)', color: '#9CA3AF' }` (xám, tách biệt hẳn 8 màu categorical) — tổng giá trị các lát sau khi gộp vẫn khớp `p.total` gốc.",
+            "`ShopTrendChart` (đổi tên từ `ShopTrendStackedChart`) nhận thêm prop `overrideColor?: string` — khi dropdown đang lọc 1 shop cụ thể, trang truyền `overrideColor={C_ACTION}` (cam), ép TOÀN BỘ lát cột + legend render đúng 1 màu cam thay vì màu categorical theo index gốc của shop đó trong `SHOP_CHART_COLORS`. Hover CẢ CỘT (không phải riêng 1 lát) để hiện tooltip liệt kê đủ shop có `value > 0` trong kỳ đó. Trục Y có 5 mốc gridline (`0/25/50/75/100%` của giá trị cao nhất). Legend căn GIỮA theo chiều ngang toàn khối chart (không lệch theo trục Y).",
+            "Nhãn tổng cố định trên đỉnh cột hiện tại (`isCurrent`, không cần hover) CHỈ hiện ở chế độ \"Tất cả shop\" (`!overrideColor`) — khi đã lọc theo 1 shop cụ thể thì KHÔNG hiện nhãn cố định này nữa (chỉ còn tooltip khi hover), giữ chart gọn theo đúng mockup lọc-1-shop.",
+            "Nút \"Xem dạng bảng\" (`showTable`, state ở component cha — KHÔNG còn nằm trong `ShopTrendChart`) có icon mũi tên lên/xuống (`UpOutlined`/`DownOutlined`) trước label, bật sẽ render `ShopTrendTable` — LUÔN nhận `fullShopTrendSeries` + `ranked` (danh sách shop sort theo tổng phí giảm dần, cùng thứ tự với bảng \"COD & phí theo shop\") làm input, không nhận `chartPoints` — nên bảng luôn đủ mọi shop bất kể dropdown \"Shop\" đang lọc gì. Bảng transposed: cột đầu \"Shop\" (2 dòng: tên shop in đậm + mã shop màu xám bên dưới), các cột sau là từng kỳ (nhãn ngày), mỗi ô tra theo `point.slices.find(s => s.shopId === shop.id)?.value ?? 0`.",
+            "`ShopFilterDropdown` — combobox tự viết (không phải `<select>` native), cùng pattern trigger + panel nổi + đóng khi click ra ngoài (`useRef` + `mousedown` listener trên `document`) đã dùng ở bộ lọc \"Thời gian\" của `AgencyReconciliation.tsx`. Panel có ô tìm kiếm lọc theo `name`/`id` (case-insensitive, `includes`) + danh sách cuộn (`maxHeight: 280px`) + dòng \"Tất cả shop\" luôn ghim đầu danh sách. Cần thiết vì `<select>` native chỉ nhảy theo ký tự đầu, không tìm được theo từ giữa chuỗi — không dùng được tốt khi đại lý có hàng trăm shop."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: 3 tab \"Ngày\"/\"Tuần\"/\"Tháng\" — mặc định chọn \"Tuần\"; đổi tab → toàn bộ 3 ô tổng hợp + biểu đồ + bảng cập nhật lại theo độ dài kỳ mới.",
+            "AC1: 3 tab \"Ngày\"/\"Tuần\"/\"Tháng\" — mặc định chọn \"Tuần\"; đổi tab → toàn bộ 3 ô tổng hợp + biểu đồ + bảng cập nhật lại theo độ dài kỳ mới, đồng thời tôn trọng shop đang lọc ở dropdown \"Shop\" (nếu có).",
             "AC2: Mốc \"hiện tại\" dùng NGÀY CÓ ĐƠN GẦN NHẤT của đại lý (không phải ngày hệ thống thật) — caption dưới tiêu đề khối nêu rõ điều này kèm ngày cụ thể.",
-            "AC3: 3 ô tổng hợp hiện đúng khoảng ngày của \"Kỳ này\" và \"Cùng kỳ trước\" (không chồng lấn, liền kề nhau), và số liệu tổng phí ship tương ứng.",
-            "AC4: \"So với cùng kỳ\" hiện % tăng (xanh lá, icon mũi tên lên) hoặc % giảm (đỏ, mũi tên xuống); nếu kỳ trước = 0 và kỳ này > 0 → hiện chữ \"Mới\" (xanh dương, không có %); nếu cả 2 kỳ đều = 0 → hiện \"0.0%\" (không mũi tên).",
-            "AC5: Biểu đồ hiện đúng 6 cột (kỳ), mỗi cột chồng nhiều lát màu — mỗi màu ứng với 1 shop, thứ tự màu CỐ ĐỊNH theo shop (không đổi màu ngẫu nhiên giữa các lần render).",
-            "AC6: Hover vào bất kỳ đâu trên 1 cột (không cần trúng đúng lát) → hiện tooltip liệt kê từng shop có phát sinh phí (value > 0) trong kỳ đó kèm số tiền, cộng tổng kỳ ở đầu tooltip; shop có value = 0 trong kỳ đó KHÔNG xuất hiện trong tooltip.",
-            "AC7: Cột cuối cùng (kỳ hiện tại) luôn hiện nhãn tổng số tiền ngay trên đỉnh cột mà không cần hover; các cột khác chỉ hiện số khi hover.",
-            "AC8: Legend liệt kê đủ tên + màu của mọi shop (kể cả shop có value = 0 ở TẤT CẢ 6 kỳ) — lấy theo danh sách shop tại kỳ đầu tiên (points[0].slices), không lọc theo shop có phát sinh hay không.",
-            "AC9: Bấm \"Xem dạng bảng\" → hiện bảng cùng số liệu (Kỳ | từng shop | Tổng); bấm lại (nay hiện \"Ẩn dạng bảng\") → ẩn bảng, quay về chỉ hiện biểu đồ."
+            "AC3: Dropdown \"Shop\" mặc định \"Tất cả shop\"; chọn 1 shop cụ thể → 3 ô tổng hợp VÀ biểu đồ đều chỉ tính phí ship của đúng shop đó (không còn gộp toàn đại lý).",
+            "AC4: 3 ô tổng hợp hiện đúng khoảng ngày của \"Kỳ này\" và ô \"kỳ trước\" (nhãn đổi theo tab — \"Cùng kỳ D-7\" / \"Tuần liền trước\" / \"MTD-1 (cùng ngày tháng trước)\"), và số liệu tổng phí ship tương ứng đúng phạm vi đang lọc (Tất cả shop hoặc 1 shop). Riêng tab Tuần: 2 khoảng liền kề nhau, không chồng lấn; tab Ngày/Tháng: 2 khoảng KHÔNG liền kề (D-7 và MTD-1 cố ý cách nhau, không phải kỳ ngay trước).",
+            "AC5: \"So với cùng kỳ\" hiện % tăng (xanh lá, icon mũi tên lên) hoặc % giảm (đỏ, mũi tên xuống); nếu kỳ trước = 0 và kỳ này > 0 → hiện chữ \"Mới\" (xanh lá, không có %); nếu cả 2 kỳ đều = 0 → hiện \"0.0%\" (không mũi tên).",
+            "AC6: Khi \"Tất cả shop\" VÀ tổng số shop ≤ 8 — biểu đồ hiện đúng `TREND_BAR_COUNT[period]` cột (kỳ) — 4 cột ở tab Tuần, 6 cột ở tab Ngày/Tháng — mỗi cột chồng nhiều lát màu, mỗi màu ứng với 1 shop, thứ tự màu CỐ ĐỊNH theo shop (không đổi màu ngẫu nhiên giữa các lần render).",
+            "AC6b: Khi \"Tất cả shop\" VÀ tổng số shop > 8 — biểu đồ chỉ tách lát riêng cho 8 shop đóng góp NHIỀU NHẤT (tính tổng phí cộng dồn qua toàn bộ khung đang hiển thị), phần còn lại gộp thành 1 lát màu XÁM DUY NHẤT \"Khác (N shop)\" (N = tổng số shop − 8); tổng chiều cao cột (8 lát Top + 1 lát Khác) khớp đúng tổng phí thật của kỳ đó; Top 8 không đổi giữa các kỳ trong cùng 1 lần xem (xếp hạng theo tổng cả khung thời gian, không theo từng kỳ riêng lẻ).",
+            "AC7: Khi đã chọn 1 shop cụ thể — biểu đồ hiện đúng số cột theo `TREND_BAR_COUNT[period]`, mỗi cột CHỈ 1 màu cam duy nhất (không dùng lại màu categorical theo index gốc của shop trong bảng 8 màu); legend bên dưới cũng chỉ 1 dòng, cùng màu cam.",
+            "AC8: Hover vào bất kỳ đâu trên 1 cột (không cần trúng đúng lát) → hiện tooltip liệt kê shop có phát sinh phí (`value > 0`) trong kỳ đó kèm số tiền, cộng tổng kỳ ở đầu tooltip; shop có `value = 0` trong kỳ đó KHÔNG xuất hiện trong tooltip.",
+            "AC9: Ở chế độ \"Tất cả shop\" — cột cuối cùng (kỳ hiện tại) luôn hiện nhãn tổng số tiền ngay trên đỉnh cột mà không cần hover; các cột khác chỉ hiện số khi hover. Khi đã lọc theo 1 shop cụ thể — KHÔNG cột nào hiện nhãn cố định (kể cả cột cuối), chỉ hiện số khi hover vào cột.",
+            "AC10: Bấm \"Xem dạng bảng\" (có icon mũi tên xuống, đổi thành mũi tên lên khi đang mở) → hiện bảng ĐẦY ĐỦ MỌI SHOP của đại lý — kể cả khi biểu đồ đang gộp \"Khác\" ở AC6b, bảng vẫn liệt kê từng shop riêng lẻ, không gộp — (không bị ảnh hưởng bởi dropdown \"Shop\" đang lọc gì cho biểu đồ) — hàng là shop (sắp theo tổng phí giảm dần), mỗi ô \"Shop\" hiện 2 dòng (tên shop in đậm + mã shop màu xám), cột đầu \"Shop\", các cột sau là từng kỳ; bấm lại (nay hiện \"Ẩn dạng bảng\") → ẩn bảng.",
+            "AC11: Bấm vào dropdown \"Shop\" → mở panel có ô tìm kiếm (tự động focus) + danh sách shop cuộn được, dòng \"Tất cả shop\" luôn ở đầu danh sách bất kể đang gõ tìm gì. Gõ vào ô tìm kiếm → danh sách lọc theo tên HOẶC mã shop chứa đúng chuỗi đã gõ (không phân biệt hoa/thường); không tìm thấy → hiện \"Không tìm thấy shop phù hợp.\". Bấm 1 dòng → chọn shop đó, đóng panel, xoá chuỗi tìm kiếm. Bấm ra ngoài panel (không chọn gì) → đóng panel, giữ nguyên lựa chọn cũ."
           ],
           "notes": [
-            "Bảng màu categorical 8 màu đã chạy qua script validate của skill dataviz (đảm bảo phân biệt dưới mù màu) trước khi đưa vào code — không tự ý đổi thứ tự hay thêm màu tuỳ ý nếu sau này có > 8 shop.",
-            "Known gap: với đại lý có > 8 shop, các shop từ thứ 9 trở đi sẽ LẶP LẠI màu của shop thứ 1, 2... (idx % 8) — 2 shop khác nhau có thể trùng màu trên biểu đồ, gây nhầm lẫn. Code hiện tại KHÔNG có cơ chế gộp shop dư vào 1 lát \"Khác\" như comment gợi ý — cần bổ sung nếu đại lý mẫu vượt quá 8 shop.",
-            "Vì anchorDate neo theo dữ liệu demo cố định (không phải ngày hệ thống thật), khi xem lại demo này ở BẤT KỲ THỜI ĐIỂM NÀO trong tương lai, \"hiện tại\" vẫn luôn là cùng 1 ngày cố định — đây là hành vi CHỦ Ý cho môi trường demo, không phải bug.",
-            "Dùng order.fee (phí ship) thay vì COD làm số liệu chính — quyết định rõ ràng của user trong phiên trước (\"vì có thể tôi sẽ không có cod\")."
+            "Bảng màu categorical 8 màu đã chạy qua script validate của skill `dataviz` (đảm bảo phân biệt dưới mù màu) trước khi đưa vào code — không tự ý đổi thứ tự hay thêm màu tuỳ ý.",
+            "Đã fix (trước là known gap): trước đây với đại lý có > 8 shop, các shop từ thứ 9 trở đi LẶP LẠI màu (`idx % 8`), gây nhầm lẫn 2 shop khác nhau trông giống màu nhau. Nay `collapseToTopShops()` gộp mọi shop ngoài Top 8 vào 1 lát \"Khác\" màu xám — không còn tình trạng trùng màu categorical. Dữ liệu demo đã seed 105 shop cho `AGN001` (`shops.json`, `SHP101`–`SHP200`) + đơn hàng cho 20 shop trong số đó (`orders.json`, `ORD101`–`ORD141`, ngày trong khoảng 01–15/4/2024 — không đổi `anchorDate` hiện có) để chứng minh trực tiếp hành vi gộp \"Khác\" và ô tìm kiếm shop khi danh sách dài.",
+            "Vì `anchorDate` neo theo dữ liệu demo cố định (không phải ngày hệ thống thật), khi xem lại demo này ở BẤT KỲ THỜI ĐIỂM NÀO trong tương lai, \"hiện tại\" vẫn luôn là cùng 1 ngày cố định — đây là hành vi CHỦ Ý cho môi trường demo, không phải bug.",
+            "Dùng `order.fee` (phí ship) thay vì COD làm số liệu chính — quyết định rõ ràng của user trong phiên trước (\"vì có thể tôi sẽ không có cod\").",
+            "Bảng \"Xem dạng bảng\" tách khỏi component biểu đồ (`ShopTrendChart` → `ShopTrendTable` riêng) và luôn build từ TOÀN BỘ shop — thiết kế có chủ đích để bảng dùng làm dữ liệu đối chiếu đầy đủ, còn dropdown \"Shop\" + biểu đồ chỉ là công cụ xem nhanh xu hướng của 1 shop cụ thể.",
+            "Đổi tên khối + đổi cách tính \"kỳ trước\": khối bao ngoài đổi tên từ \"Xu hướng tổng phí ship theo shop\" thành \"Chỉ số hoạt động theo kỳ\" — cùng khối này giờ còn chứa 4 KPI mới (AOV theo sản lượng/theo cân, KH Onboard mới, KH Re-active — xem AGA-REPORT-6), dùng CHUNG state `period`/`anchorDate`/dropdown \"Shop\" với story này. Đồng thời \"kỳ trước\" đổi từ công thức lùi đều 1 kiểu cho cả 3 tab sang 3 định nghĩa khác nhau theo yêu cầu nghiệp vụ thật (D-7/tuần liền trước/MTD-MTD-1) — xem System Flow điểm 5."
           ]
         },
         {
@@ -2380,11 +2482,184 @@
             "Cùng nguồn dữ liệu (getShopCodTotal, getShopServiceFeeTotal) với KPI \"COD\" ở AGA-REPORT-1 — tổng COD/tổng phí của mọi dòng trong bảng này CỘNG LẠI phải đúng bằng 2 KPI tương ứng ở đầu trang.",
             "Không có ô tìm kiếm/lọc riêng cho bảng này — chỉ có sắp xếp cố định theo Tổng phí giảm dần, không đổi được tiêu chí sắp xếp qua UI."
           ]
+        },
+        {
+          "id": "AGA-REPORT-4",
+          "jiraKey": "platform: agency-admin",
+          "title": "[AGA] Báo cáo: Gộp shop dư vào \"Khác\" khi biểu đồ nhiều shop",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn khi đại lý có nhiều hơn 8 shop, biểu đồ \"Xu hướng tổng phí ship theo shop\" vẫn dễ đọc bằng cách gộp các shop đóng góp ít vào 1 nhóm \"Khác\", để không bị rối mắt bởi hàng chục/hàng trăm lát màu siêu mỏng trùng màu nhau.",
+          "userFlow": [
+            "Mở \"Báo cáo\" → khối \"Xu hướng tổng phí ship theo shop\", để dropdown \"Shop\" ở mặc định \"Tất cả shop\".",
+            "Nếu đại lý có ≤ 8 shop: biểu đồ hiện đủ từng shop, mỗi màu 1 shop (không đổi so với trước).",
+            "Nếu đại lý có > 8 shop: biểu đồ chỉ tách lát riêng cho 8 shop đóng góp phí ship nhiều nhất; toàn bộ shop còn lại gộp vào 1 lát màu xám duy nhất, tên \"Khác (N shop)\" (N = số shop bị gộp).",
+            "Hover vào cột → tooltip liệt kê đúng 8 shop Top + dòng \"Khác (N shop)\" kèm tổng phí của nhóm này, y như 1 \"shop ảo\".",
+            "Legend dưới biểu đồ hiện đủ 8 tên shop Top + 1 mục \"Khác (N shop)\" màu xám.",
+            "Mở \"Xem dạng bảng\" → bảng KHÔNG áp dụng gộp, vẫn liệt kê đủ từng shop riêng lẻ (kể cả các shop đã bị gộp vào \"Khác\" trên biểu đồ)."
+          ],
+          "systemFlow": [
+            "`collapseToTopShops(points, topN)` — hàm nhận `points: ShopTrendPoint[]` (đã build sẵn đủ mọi shop) và `topN = SHOP_CHART_COLORS.length = 8`.",
+            "Nếu số shop trong `points[0].slices` ≤ `topN` → trả nguyên `points`, không gộp.",
+            "Ngược lại: tính TỔNG phí của mỗi shop CỘNG DỒN qua toàn bộ `points` (không phải theo từng kỳ riêng lẻ) bằng `Map<shopId, tổng>`, sort giảm dần, lấy `topN` shopId đầu làm `topShopIds`.",
+            "Với mỗi `point`: giữ nguyên slice của shop nằm trong `topShopIds`; slice của các shop còn lại bị lọc ra và CỘNG GIÁ TRỊ lại thành 1 `otherValue`; tạo `ShopSlice` mới `{ shopId: '__other__', shopName: 'Khác (N shop)', value: otherValue, color: '#9CA3AF' }` (xám, tách biệt hẳn 8 màu categorical), gắn vào cuối mảng `slices` của point đó.",
+            "`p.total` giữ nguyên không đổi — tổng các slice sau khi gộp (8 slice Top + 1 slice Khác) luôn cộng lại đúng bằng `p.total` gốc (không có shop nào bị rơi mất số liệu).",
+            "Trang gọi hàm này CHỈ cho dữ liệu vẽ biểu đồ (`chartPoints`) khi đang ở chế độ \"Tất cả shop\": `chartPoints = selectedShopId ? ... : collapseToTopShops(fullShopTrendSeries, SHOP_CHART_COLORS.length)`. `ShopTrendTable` (bảng \"Xem dạng bảng\") luôn dùng `fullShopTrendSeries` GỐC (chưa gộp), tách biệt hoàn toàn khỏi `chartPoints`.",
+            "Xếp hạng Top 8 tính theo TỔNG CẢ 6 KỲ đang hiển thị (không phải riêng kỳ hiện tại) — mục đích để danh sách 8 shop Top không nhảy lung tung giữa các cột trong cùng 1 lần xem, dù thứ hạng theo từng kỳ riêng lẻ có thể khác.",
+            "`ShopTrendChart` không cần biết gì về việc gộp — nó chỉ render đúng mảng `slices` được truyền vào, nên lát \"Khác\" tự động có tooltip/legend/màu như 1 \"shop\" bình thường, không cần code riêng."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Đại lý có ≤ 8 shop → biểu đồ hiện đủ từng shop, không có lát \"Khác\" nào xuất hiện (hành vi giữ nguyên như trước khi có tính năng này).",
+            "AC2: Đại lý có > 8 shop → biểu đồ chỉ có tối đa 9 lát màu mỗi cột: 8 lát cho 8 shop đóng góp nhiều nhất (theo tổng phí cộng dồn cả khung thời gian hiển thị) + 1 lát xám \"Khác (N shop)\" cho phần còn lại.",
+            "AC3: N trong \"Khác (N shop)\" = đúng số shop bị gộp (tổng số shop − 8), không đổi giữa các kỳ trong cùng 1 lần xem trang.",
+            "AC4: Tổng giá trị của 9 lát (8 Top + Khác) trong 1 cột luôn cộng lại đúng bằng tổng phí thật của kỳ đó — không có shop nào bị mất số liệu khi gộp.",
+            "AC5: Hover vào cột có lát \"Khác\" → tooltip liệt kê \"Khác (N shop)\" kèm số tiền tổng, ở vị trí cuối danh sách (sau 8 shop Top); nếu \"Khác\" = 0đ trong kỳ đó thì KHÔNG xuất hiện trong tooltip (theo đúng quy tắc ẩn slice `value = 0` đã áp dụng cho mọi slice khác).",
+            "AC6: Bảng \"Xem dạng bảng\" KHÔNG áp dụng gộp — luôn liệt kê đủ từng shop dù biểu đồ phía trên đang gộp bao nhiêu shop vào \"Khác\".",
+            "AC7: Danh sách 8 shop Top được chọn dựa trên TỔNG phí cộng dồn qua toàn bộ 6 kỳ hiển thị; đổi tab Ngày/Tuần/Tháng → tính lại Top 8 theo đúng khung 6 kỳ mới tương ứng."
+          ],
+          "notes": [
+            "Ngưỡng gộp (`topN = 8`) LUÔN bằng đúng `SHOP_CHART_COLORS.length` — nếu sau này đổi bảng màu categorical (thêm/bớt màu), ngưỡng gộp tự động đổi theo, không cần sửa số cứng ở 2 chỗ.",
+            "Việc gộp CHỈ ảnh hưởng biểu đồ \"Tất cả shop\" — không ảnh hưởng 3 ô KPI tổng hợp (Kỳ này/Cùng kỳ trước đó/So với cùng kỳ), các ô này luôn tính trên TOÀN BỘ đơn hàng thật, không qua bước gộp.",
+            "Trước khi có tính năng này, code cũ dùng `idx % 8` khiến shop thứ 9 trở đi LẶP MÀU với shop thứ 1 — đã thay hẳn bằng cơ chế gộp \"Khác\", không còn tình trạng 2 shop khác nhau trông giống màu nhau trên biểu đồ.",
+            "Dữ liệu demo hiện có 105 shop cho `AGN001` (seed thêm `SHP101`–`SHP200` trong `shops.json`) để chứng minh trực tiếp hành vi gộp — mở \"Báo cáo\" ở chế độ \"Tất cả shop\" sẽ luôn thấy đúng 9 lát/cột."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-5",
+          "jiraKey": "platform: agency-admin",
+          "title": "[AGA] Báo cáo: Tìm kiếm shop trong bộ lọc dropdown",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn gõ tìm shop theo tên hoặc mã trong dropdown \"Shop\" ở khối \"Xu hướng tổng phí ship theo shop\", để chọn nhanh đúng shop cần xem dù đại lý có hàng chục/hàng trăm shop, thay vì phải cuộn qua danh sách dài.",
+          "userFlow": [
+            "Bấm vào ô \"Shop\" (mặc định hiện \"Tất cả shop\") → mở panel bên dưới gồm ô tìm kiếm (tự động focus) + danh sách shop cuộn được.",
+            "Gõ tên hoặc mã shop vào ô tìm kiếm → danh sách bên dưới lọc ngay theo thời gian thực, chỉ còn shop có tên HOẶC mã chứa đúng chuỗi đã gõ (không phân biệt hoa/thường, không cần gõ đúng từ đầu).",
+            "Dòng \"Tất cả shop\" luôn ở đầu danh sách, không bị lọc mất dù đang gõ tìm kiếm gì.",
+            "Không có shop nào khớp → hiện dòng \"Không tìm thấy shop phù hợp.\" thay cho danh sách trống.",
+            "Bấm vào 1 dòng shop (hoặc \"Tất cả shop\") → chọn ngay, đóng panel, xoá chuỗi đã gõ, ô \"Shop\" cập nhật hiện đúng lựa chọn mới.",
+            "Bấm ra ngoài panel mà không chọn gì → đóng panel, giữ nguyên lựa chọn cũ trước đó."
+          ],
+          "systemFlow": [
+            "`ShopFilterDropdown` — component tự viết thay cho `<select>` native, nhận `shops`, `value` (shopId đang chọn, `''` = \"Tất cả shop\"), `onChange`.",
+            "State nội bộ: `open` (đóng/mở panel), `search` (chuỗi đang gõ). Panel chỉ render khi `open === true`.",
+            "Đóng khi click ra ngoài: `useRef<HTMLDivElement>` bọc cả trigger + panel, `useEffect` gắn listener `mousedown` trên `document` khi `open`, kiểm tra `!rootRef.current.contains(e.target)` → `setOpen(false)`. Gỡ listener khi đóng/unmount. Cùng pattern đã dùng ở bộ lọc \"Thời gian\" trong `AgencyReconciliation.tsx`.",
+            "Lọc: `q = search.trim().toLowerCase()`; nếu rỗng → hiện đủ `shops`; ngược lại → `shops.filter(s => s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q))`.",
+            "Dòng \"Tất cả shop\" render CỨNG ở đầu danh sách, tách biệt khỏi mảng `filtered` — không bị lọc theo `q`.",
+            "Chọn 1 dòng → gọi `onChange(shopId)`, rồi `setOpen(false)` + `setSearch('')` (reset ô tìm kiếm cho lần mở sau).",
+            "Trigger hiện label: nếu `value` khớp 1 shop trong danh sách → `${shop.id} - ${shop.name}`; nếu `value === ''` → \"Tất cả shop\"."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bấm vào ô \"Shop\" → mở panel có ô tìm kiếm tự động focus (gõ được ngay, không cần bấm thêm lần nữa vào ô tìm kiếm) + danh sách shop.",
+            "AC2: Gõ vào ô tìm kiếm → danh sách lọc theo tên HOẶC mã shop chứa chuỗi đã gõ, không phân biệt hoa/thường, cập nhật ngay theo thời gian thực (không cần bấm Enter/nút tìm).",
+            "AC3: Dòng \"Tất cả shop\" luôn hiện ở đầu danh sách bất kể đang gõ tìm kiếm gì, không bao giờ bị lọc mất.",
+            "AC4: Gõ chuỗi không khớp shop nào → hiện \"Không tìm thấy shop phù hợp.\" thay vì danh sách trống không rõ nghĩa.",
+            "AC5: Bấm chọn 1 dòng → panel đóng ngay, ô \"Shop\" cập nhật hiện đúng lựa chọn, ô tìm kiếm được xoá trắng (lần mở sau không còn chuỗi tìm kiếm cũ).",
+            "AC6: Bấm ra ngoài panel (không chọn dòng nào) → panel đóng, lựa chọn \"Shop\" giữ nguyên như trước khi mở.",
+            "AC7: Dropdown hoạt động đúng với danh sách vài shop lẫn danh sách hàng trăm shop — không giới hạn số lượng hiển thị, danh sách cuộn được trong khung cao tối đa 280px."
+          ],
+          "notes": [
+            "Thay hẳn `<select>` native vì native chỉ hỗ trợ nhảy theo ký tự ĐẦU của option khi gõ phím (không tìm được theo từ giữa chuỗi, ví dụ gõ \"Đà Nẵng\" sẽ không nhảy tới shop có \"Đà Nẵng\" ở giữa tên) — với đại lý nhiều shop, trải nghiệm rất kém.",
+            "Component này chỉ dùng nội bộ ở khối \"Xu hướng tổng phí ship theo shop\" hiện tại — chưa phải shared component dùng chung toàn hệ thống (dự án chưa có thư mục component dùng chung, xem ghi chú tương tự ở AGA-REPORT-4).",
+            "Dữ liệu demo hiện có 105 shop cho `AGN001` để kiểm chứng trực tiếp việc tìm kiếm hoạt động đúng với danh sách dài."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-6",
+          "jiraKey": "platform: agency-admin",
+          "title": "[AGA] Báo cáo: Chỉ số hoạt động theo kỳ (AOV, KH Onboard, KH Re-active)",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem 4 chỉ số vận hành theo đúng kỳ đang chọn (Ngày/Tuần/Tháng) — AOV theo sản lượng, AOV theo cân, số shop mới Onboard, số shop Re-active — ngay trong khối \"Chỉ số hoạt động theo kỳ\" ở trang \"Báo cáo\", để đánh giá hiệu quả kinh doanh và mức độ giữ chân shop của đại lý theo thời gian, không chỉ dừng ở tổng phí ship.",
+          "userFlow": [
+            "Trong trang \"Báo cáo\", ở khối \"Chỉ số hoạt động theo kỳ\" (cùng khối với \"Xu hướng tổng phí ship theo shop\" — xem AGA-REPORT-2), bên dưới 3 ô \"Kỳ này / Kỳ trước / So với cùng kỳ\" xuất hiện thêm 1 hàng 4 ô nhỏ.",
+            "Ô 1 — \"AOV theo sản lượng\": doanh thu (phí ship) kỳ này chia cho số đơn kỳ này, kèm dòng phụ ghi rõ số đơn dùng để tính.",
+            "Ô 2 — \"AOV theo cân\": doanh thu kỳ này chia cho tổng khối lượng (kg) kỳ này, kèm dòng phụ ghi rõ tổng cân nặng dùng để tính.",
+            "Ô 3 — \"KH Onboard mới\": số shop của đại lý có ngày tạo (createdAt) rơi vào đúng khoảng \"Kỳ này\" đang chọn.",
+            "Ô 4 — \"KH Re-active\": số shop có đơn phát sinh ở \"Kỳ này\" nhưng KHÔNG có đơn nào ở \"Kỳ trước\" liền kề, dù trước đó đã từng có đơn (không tính shop hoàn toàn mới — shop mới đã tính ở ô 3).",
+            "Đổi tab \"Ngày\"/\"Tuần\"/\"Tháng\" → cả 4 ô cập nhật lại theo đúng khoảng \"Kỳ này\"/\"Kỳ trước\" mới của tab đó (xem AGA-REPORT-2 cho định nghĩa chính xác D-7/tuần liền trước/MTD-MTD-1 theo từng tab).",
+            "Đổi dropdown \"Shop\" (đang lọc cho biểu đồ xu hướng) → 2 ô AOV (1, 2) thu hẹp tính theo đúng 1 shop đang chọn; 2 ô KH Onboard/Re-active (3, 4) KHÔNG đổi theo dropdown này — luôn đếm trên toàn bộ shop của đại lý, vì đơn vị đang đếm là SỐ SHOP, không hợp lý nếu bó hẹp vào đúng 1 shop."
+          ],
+          "systemFlow": [
+            "4 chỉ số này dùng CHUNG state period/anchorDate/selectedShopId/trend (kết quả computePeriodComparison()) với khối \"Xu hướng tổng phí ship theo shop\" — không có state hay period selector riêng.",
+            "curOrders = trendOrders.filter(o => createdAt nằm trong [trend.curStart, trend.curEnd]) — trendOrders đã tôn trọng dropdown \"Shop\" (xem AGA-REPORT-2 điểm 7).",
+            "aovByVolume = curOrders.length > 0 ? trend.current / curOrders.length : 0 — trend.current = tổng phí ship (order.fee) kỳ này, ĐÃ tính sẵn ở computePeriodComparison(), không tính lại.",
+            "curTotalWeightKg = Σ curOrders[i].weight / 1000 (đổi gram → kg); aovByWeight = curTotalWeightKg > 0 ? trend.current / curTotalWeightKg : 0.",
+            "newShopsOnboard = shops.filter(s => s.createdAt nằm trong [trend.curStart, trend.curEnd]).length — dùng shops (TOÀN BỘ shop đại lý, KHÔNG lọc theo selectedShopId), so theo field createdAt có sẵn của Shop.",
+            "countReactiveShops(orders, shopList, curStart, curEnd, prevStart, prevEnd) — hàm mới, duyệt TỪNG shop trong shopList (luôn = shops, toàn bộ đại lý): hasCurrent = có ≥ 1 đơn trong [curStart, curEnd]; nếu không có → loại. hasPrevPeriod = có ≥ 1 đơn trong [prevStart, prevEnd]; nếu CÓ → loại (shop vẫn đang hoạt động ở kỳ trước, không phải \"quay lại\"). Còn lại kiểm tra hasHistoryBeforePrev = có ≥ 1 đơn trước prevStart — CHỈ đếm là \"re-active\" nếu có lịch sử trước đó (loại shop hoàn toàn mới, vì shop mới đã được tính ở \"KH Onboard mới\", tránh đếm trùng 2 ô).",
+            "Cả 4 ô render trong 1 hàng flex riêng, ngay dưới hàng 3 ô \"Kỳ này/Kỳ trước/So với cùng kỳ\" và phía trên dropdown \"Shop\" — dùng KpiCard-style nhỏ gọn (label xám 12px, giá trị 18px đậm, dòng phụ 11px xám) chứ không dùng lại component KpiCard lớn ở đầu trang (kích thước khác, tránh lẫn với 4 KPI tổng quan toàn đại lý ở AGA-REPORT-1)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Hàng 4 ô \"AOV theo sản lượng / AOV theo cân / KH Onboard mới / KH Re-active\" hiện đúng thứ tự, ngay dưới 3 ô \"Kỳ này/Kỳ trước/So với cùng kỳ\" và phía trên dropdown \"Shop\", trong CÙNG khối \"Chỉ số hoạt động theo kỳ\" với AGA-REPORT-2.",
+            "AC2: \"AOV theo sản lượng\" = tổng phí ship kỳ này ÷ số đơn kỳ này; kỳ này có 0 đơn → hiện \"0 ₫\", không lỗi/NaN.",
+            "AC3: \"AOV theo cân\" = tổng phí ship kỳ này ÷ tổng khối lượng (kg) kỳ này (đổi từ gram); kỳ này có tổng khối lượng 0 → hiện \"0 ₫\", không lỗi/NaN.",
+            "AC4: \"KH Onboard mới\" = đúng số shop có createdAt rơi vào khoảng \"Kỳ này\" đang chọn — không lọc theo dropdown \"Shop\" (luôn tính trên toàn bộ shop đại lý).",
+            "AC5: \"KH Re-active\" = đúng số shop thoả cả 3 điều kiện: (a) có đơn ở Kỳ này, (b) KHÔNG có đơn ở Kỳ trước, (c) có đơn TỪ TRƯỚC Kỳ trước (không phải shop mới toanh) — không lọc theo dropdown \"Shop\".",
+            "AC6: Đổi tab Ngày/Tuần/Tháng → cả 4 ô cập nhật lại theo đúng khoảng Kỳ này/Kỳ trước mới của tab đó, khớp với 3 ô so sánh phía trên (AGA-REPORT-2 AC4).",
+            "AC7: Đổi dropdown \"Shop\" sang 1 shop cụ thể → 2 ô AOV (1, 2) thu hẹp đúng theo shop đó; 2 ô KH Onboard/Re-active (3, 4) GIỮ NGUYÊN số liệu toàn đại lý, không đổi theo shop đang lọc.",
+            "AC8: 1 shop KHÔNG được tính đồng thời ở cả \"KH Onboard mới\" VÀ \"KH Re-active\" trong cùng 1 kỳ — shop có đơn đầu tiên trong Kỳ này (chưa từng có đơn trước đó) CHỈ tính vào \"KH Onboard mới\"; shop có đơn Kỳ này sau khi từng có đơn (nhưng không có ở Kỳ trước) CHỈ tính vào \"KH Re-active\"."
+          ],
+          "notes": [
+            "Nguồn gốc yêu cầu: dựa theo backlog \"Thống kê shop trên Agency\" (15/09/2026) — 5 gạch đầu dòng: AOV (theo cân, theo sản lượng); Khách hàng re-active dịch vụ; Doanh thu - sản lượng phát sinh của từng shop (ĐÃ có sẵn ở AGA-REPORT-3, không cần xây thêm); Số lượng KH OB (Onboard, đếm KH phát sinh); View theo Ngày (cùng kỳ D-7)/Tuần (4 tuần gần nhất)/Tháng (MTD, MTD-1) — áp dụng lại đúng cơ chế Ngày/Tuần/Tháng đã có ở AGA-REPORT-2, xem story đó để biết chi tiết getComparisonRanges().",
+            "\"BC\" trong backlog gốc = Shop — đã xác nhận trực tiếp với người yêu cầu trước khi viết story này, khớp với tiêu đề dòng backlog \"Thống kê SHOP trên Agency\".",
+            "AOV viết tắt \"Average Order Value\" — ở đây KHÔNG dùng 1 công thức duy nhất mà tách 2 biến thể theo đúng yêu cầu: chia theo SỐ ĐƠN (sản lượng) và chia theo TỔNG CÂN (kg) — 2 con số này thường KHÁC NHAU đáng kể nếu đại lý có nhiều đơn nhẹ/nhỏ lẻ so với ít đơn nặng.",
+            "Định nghĩa \"Re-active\" là quyết định nghiệp vụ tự suy ra (backlog gốc chỉ ghi \"Khách hàng re-active dịch vụ\", không có công thức chi tiết) — logic hiện tại: đã từng có đơn, KHÔNG có đơn ở đúng kỳ liền trước, rồi CÓ đơn trở lại ở kỳ này. Nếu đội nghiệp vụ có định nghĩa khác (VD: khoảng \"ngừng hoạt động\" phải dài hơn 1 kỳ, không chỉ đúng 1 kỳ liền trước) thì cần chỉnh lại countReactiveShops().",
+            "Không có \"known gap\" nào về mặt tính toán — cả 4 chỉ số đều dùng dữ liệu đơn hàng/shop thật (orderStore/shopStore), không dùng công thức demo cố định như 1 số KPI khác trong hệ thống (xem AGA-REPORT-1 Notes về \"Known inconsistency\" của cách tính COD)."
+          ]
         }
       ]
     }
   ],
   "history": [
+    {
+      "version": "1.8.0",
+      "date": "2026-09-23",
+      "summary": "Thêm AGA-REPORT-6 (AOV theo sản lượng/theo cân, KH Onboard mới, KH Re-active) theo backlog Thống kê shop trên Agency; đổi tên khối AGA-REPORT-2 thành \"Chỉ số hoạt động theo kỳ\" và đổi cách tính kỳ trước sang D-7/tuần liền trước/MTD-MTD-1 theo từng tab, tuần chốt 4 cột biểu đồ"
+    },
+    {
+      "version": "1.7.5",
+      "date": "2026-09-22",
+      "summary": "Thêm AGA-CARRIER-21 — Tạo bảng giá giờ lưu thật (pricingStore.ts mới) và đồng bộ tên tuyến với Super Admin (routeName trên mỗi zone); Web Shop + Chi tiết bảng giá đọc động thay vì pricing.json tĩnh; Chi tiết bảng giá cảnh báo khi tuyến đã bị Super Admin xoá"
+    },
+    {
+      "version": "1.7.4",
+      "date": "2026-09-18",
+      "summary": "Thêm giới hạn 200 đơn/lần lưu thành công khi import đơn hàng (MAX_SUCCESSFUL_IMPORT) để tối ưu hạ tầng — cập nhật AGA-ORDER-14"
+    },
+    {
+      "version": "1.7.3",
+      "date": "2026-09-17",
+      "summary": "Revert seed routeMatrix — Nội Tỉnh Hà Nội/TP.HCM về lại chung 1 tên \"Nội Tỉnh\" như ban đầu (bỏ tách riêng theo bảng giá GHN thật), cập nhật AGA-CARRIER-19 khớp lại"
+    },
+    {
+      "version": "1.7.2",
+      "date": "2026-09-17",
+      "summary": "Revert nhãn \"Nội tỉnh: X\" — user phản hồi dạng cũ \"X ↔ X\" dễ hiểu hơn, quay lại describeSameProvinceRoutePairs() gốc, cập nhật AGA-CARRIER-19"
+    },
+    {
+      "version": "1.7.1",
+      "date": "2026-09-17",
+      "summary": "Sửa nhãn \"X ↔ X\" gây hiểu nhầm (2 đầu giống hệt nhau) trong ZoneGuideModal — đổi sang tiền tố \"Nội tỉnh: X\" rõ nghĩa hơn cho tuyến nội miền, cập nhật AGA-CARRIER-19"
+    },
+    {
+      "version": "1.7.0",
+      "date": "2026-09-17",
+      "summary": "Seed lại routeMatrix (routeConfig.ts): Nội Tỉnh Hà Nội + TP.HCM tách thành tuyến riêng \"Nội Tỉnh (Hà Nội, TP.HCM)\" theo đúng bảng giá GHN thật (Đà Nẵng vẫn dùng chung Nội Tỉnh) — cập nhật AGA-CARRIER-19 khớp seed mới, xoá file .md orphan trùng ID cũ"
+    },
+    {
+      "version": "1.6.0",
+      "date": "2026-09-16",
+      "summary": "Thêm AGA-CARRIER-20 (Thiết lập NVC - Tạo bảng giá: Thêm tuyến theo cấu hình Super Admin) — hành vi nút Thêm tuyến, seed ban đầu theo listRouteNames(), và known gap không cảnh báo trùng tuyến"
+    },
+    {
+      "version": "1.5.0",
+      "date": "2026-09-16",
+      "summary": "Viết lại AGA-CARRIER-19 (Thiết lập NVC - Tạo bảng giá: Định nghĩa tuyến theo cấu hình Super Admin) — nội dung cũ lỗi thời (sameProvinceRouteByRegion đã bị gỡ), bổ sung file .md còn thiếu"
+    },
+    {
+      "version": "1.4.0",
+      "date": "2026-09-16",
+      "summary": "Thêm AGA-REPORT-4/5 — gộp shop dư vào lát \"Khác\" khi biểu đồ \"Xu hướng tổng phí ship theo shop\" có > 8 shop, và ô tìm kiếm trong dropdown \"Shop\" (AgencyReport.tsx)"
+    },
     {
       "version": "1.3.0",
       "date": "2026-09-14",
