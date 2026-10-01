@@ -155,6 +155,110 @@ export function describeSameProvinceRoutePairs(routeName: string): string[] {
     .map((r) => (r.provinces.length === 1 ? `${r.provinces[0]} ↔ ${r.provinces[0]}` : `Cùng 1 tỉnh trong ${r.name}`))
 }
 
+// ─── Versioning — "Danh sách bộ vùng tuyến" ────────────────────────────────────
+// 1 "bộ vùng tuyến" = Vùng miền + Tuyến + Nội/Ngoại thành GỘP CHUNG thành 1 khối BẤT BIẾN: mỗi
+// lần Super Admin bấm "Lưu thay đổi" ở RouteConfig.tsx (dù sửa ở phần nào trong 3 phần trên),
+// KHÔNG sửa đè lên bộ đang dùng — tạo hẳn 1 bộ MỚI, đẩy vào routeConfigVersions, rồi biến bộ mới
+// thành bộ "đang áp dụng". Bộ cũ giữ nguyên vĩnh viễn, chỉ xem lại được (read-only) trong "Danh
+// sách bộ vùng tuyến" — nhưng CÓ THỂ bấm "Đặt làm mặc định" ở đó để áp dụng LẠI 1 bộ cũ bất kỳ
+// (không cần tạo bộ mới trùng nội dung) — xem `setActiveRouteConfigVersion()`. "Bộ đang áp dụng"
+// vì vậy KHÔNG còn đồng nghĩa với "bộ tạo gần nhất" nữa — theo dõi qua `activeVersionId` riêng,
+// không suy ra từ vị trí cuối mảng.
+
+export interface RouteConfigVersion {
+  id: string
+  version: number
+  label: string
+  createdAt: string
+  regions: RegionDef[]
+  routeMatrix: Record<string, string>
+  urbanConfigs: UrbanConfig[]
+  // Tên các TUYẾN (giá trị trong routeMatrix) đang bị Super Admin khoá THỦ CÔNG trong bộ này —
+  // khoá 1 tuyến = không cho đổi tên tuyến đó, không cho thêm/bớt cặp miền khỏi/vào tuyến đó (dù
+  // thao tác từ chip của CHÍNH tuyến đó hay từ chip của 1 tuyến KHÁC đang cố "giành" cặp miền đi),
+  // không cho xoá tuyến đó. KHÁC với tính năng khoá CẢ BỘ đã bỏ — đây khoá TỪNG TUYẾN riêng lẻ bên
+  // trong 1 bộ, không ảnh hưởng gì tới việc đặt bộ này làm mặc định. Carry-forward sang bộ mới khi
+  // lưu phần Vùng miền/Nội-Ngoại thành (không đụng Tuyến) để không bị mất khoá ngoài ý muốn.
+  lockedRouteNames?: string[]
+}
+
+function cloneRegions(list: RegionDef[]): RegionDef[] {
+  return list.map((r) => ({ ...r, provinces: [...r.provinces] }))
+}
+
+function cloneUrbanConfigs(list: UrbanConfig[]): UrbanConfig[] {
+  return list.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
+}
+
+/** Lịch sử đầy đủ mọi bộ vùng tuyến đã từng tạo, theo đúng thứ tự tạo — KHÔNG suy ra bộ đang áp
+ * dụng từ vị trí trong mảng này nữa, dùng `getActiveRouteConfigVersion()`. */
+export const routeConfigVersions: RouteConfigVersion[] = [
+  {
+    id: 'rcv_seed',
+    version: 1,
+    label: 'Bộ mặc định',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    regions: cloneRegions(regions),
+    routeMatrix: { ...routeMatrix },
+    urbanConfigs: cloneUrbanConfigs(urbanConfigs),
+  },
+]
+
+let activeVersionId: string = routeConfigVersions[0].id
+
+/** Đồng bộ nội dung 1 bộ vào `regions`/`routeMatrix`/`urbanConfigs` (3 biến export dùng chung
+ * toàn app) — GIỮ NGUYÊN identity mảng/object (chỉ đổi nội dung bên trong qua
+ * .length = 0/.push()/Object.assign) để mọi nơi đang import trực tiếp 3 biến này (CarrierSetup,
+ * PricingCreate, Web Shop Orders, RouteCheck...) tự thấy dữ liệu mới nhất ngay lập tức. */
+function applyVersionToStore(version: RouteConfigVersion): void {
+  regions.length = 0
+  regions.push(...cloneRegions(version.regions))
+  for (const key of Object.keys(routeMatrix)) delete routeMatrix[key]
+  Object.assign(routeMatrix, version.routeMatrix)
+  urbanConfigs.length = 0
+  urbanConfigs.push(...cloneUrbanConfigs(version.urbanConfigs))
+  activeVersionId = version.id
+}
+
+/**
+ * Tạo 1 bộ vùng tuyến MỚI từ draft (regions + routeMatrix + urbanConfigs) Super Admin vừa chỉnh
+ * trên RouteConfig.tsx, đẩy vào routeConfigVersions, rồi áp dụng NGAY làm bộ đang dùng.
+ */
+export function commitNewRouteConfigVersion(
+  draftRegions: RegionDef[],
+  draftRouteMatrix: Record<string, string>,
+  draftUrbanConfigs: UrbanConfig[],
+  label?: string,
+  lockedRouteNames?: string[],
+): RouteConfigVersion {
+  const version: RouteConfigVersion = {
+    id: `rcv_${Date.now()}`,
+    version: routeConfigVersions.length + 1,
+    label: label?.trim() || `Bộ #${routeConfigVersions.length + 1}`,
+    createdAt: new Date().toISOString(),
+    regions: cloneRegions(draftRegions),
+    routeMatrix: { ...draftRouteMatrix },
+    urbanConfigs: cloneUrbanConfigs(draftUrbanConfigs),
+    lockedRouteNames: lockedRouteNames ? [...lockedRouteNames] : [],
+  }
+  routeConfigVersions.push(version)
+  applyVersionToStore(version)
+  return version
+}
+
+/** "Bật mặc định" 1 bộ ĐÃ CÓ SẴN trong lịch sử (kể cả bộ cũ hơn bộ đang áp dụng) — không tạo bộ
+ * mới, chỉ đổi con trỏ `activeVersionId` và đồng bộ dữ liệu bộ đó vào store dùng chung. */
+export function setActiveRouteConfigVersion(versionId: string): RouteConfigVersion | null {
+  const version = routeConfigVersions.find((v) => v.id === versionId)
+  if (!version) return null
+  applyVersionToStore(version)
+  return version
+}
+
+export function getActiveRouteConfigVersion(): RouteConfigVersion {
+  return routeConfigVersions.find((v) => v.id === activeVersionId) ?? routeConfigVersions[routeConfigVersions.length - 1]
+}
+
 // ─── Query functions ──────────────────────────────────────────────────────────
 
 export function findRegionOf(province: string): RegionDef | undefined {
@@ -210,107 +314,7 @@ export function listRouteNames(): string[] {
 }
 
 // ─── Mutate functions ─────────────────────────────────────────────────────────
-
-export function addRegion(name: string): RegionDef {
-  const newRegion: RegionDef = { id: `region_${Date.now()}`, name, provinces: [] }
-  regions.push(newRegion)
-  routeMatrix[pairKey(newRegion.id, newRegion.id)] = 'Nội Tỉnh'
-  return newRegion
-}
-
-export function renameRegion(id: string, name: string): void {
-  const region = regions.find((r) => r.id === id)
-  if (region) region.name = name
-}
-
-export function deleteRegion(id: string): void {
-  const idx = regions.findIndex((r) => r.id === id)
-  if (idx !== -1) regions.splice(idx, 1)
-  // Remove all matrix entries that reference this region id (bao gồm cả cặp đường chéo "Nội Tỉnh")
-  for (const key of Object.keys(routeMatrix)) {
-    if (key.split('|').includes(id)) delete routeMatrix[key]
-  }
-}
-
-/**
- * Assign a province to a region, removing it from its previous region first
- * (ensures 1 province ∈ 1 region at all times).
- */
-export function assignProvinceToRegion(province: string, regionId: string): void {
-  for (const region of regions) {
-    const idx = region.provinces.indexOf(province)
-    if (idx !== -1) region.provinces.splice(idx, 1)
-  }
-  const target = regions.find((r) => r.id === regionId)
-  if (target && !target.provinces.includes(province)) target.provinces.push(province)
-}
-
-export function removeProvinceFromRegion(province: string, regionId: string): void {
-  const region = regions.find((r) => r.id === regionId)
-  if (region) {
-    const idx = region.provinces.indexOf(province)
-    if (idx !== -1) region.provinces.splice(idx, 1)
-  }
-}
-
-export function setRouteName(regionIdA: string, regionIdB: string, name: string): void {
-  routeMatrix[pairKey(regionIdA, regionIdB)] = name
-}
-
-/** Un-assign a region pair — it becomes "chưa cấu hình" until assigned to a tuyến again. */
-export function clearRouteName(regionIdA: string, regionIdB: string): void {
-  delete routeMatrix[pairKey(regionIdA, regionIdB)]
-}
-
-/** Rename a tuyến everywhere it's used — every matrix cell pointing to oldName now points to newName. */
-export function renameRouteName(oldName: string, newName: string): void {
-  for (const key of Object.keys(routeMatrix)) {
-    if (routeMatrix[key] === oldName) routeMatrix[key] = newName
-  }
-}
-
-/** Delete a tuyến — every region pair pointing to it becomes "chưa cấu hình". */
-export function deleteRouteName(name: string): void {
-  for (const key of Object.keys(routeMatrix)) {
-    if (routeMatrix[key] === name) delete routeMatrix[key]
-  }
-}
-
-/** Thêm 1 tỉnh/thành vào danh sách có phân biệt Nội thành/Ngoại thành, ban đầu chưa có xã/phường nào. */
-export function addUrbanProvince(province: string): UrbanConfig {
-  const existing = findUrbanConfig(province)
-  if (existing) return existing
-  const config: UrbanConfig = { province, wards: [] }
-  urbanConfigs.push(config)
-  return config
-}
-
-/** Bỏ hẳn 1 tỉnh khỏi danh sách có Nội/Ngoại thành — tỉnh đó về lại trạng thái không phân biệt. */
-export function removeUrbanProvince(province: string): void {
-  const idx = urbanConfigs.findIndex((u) => u.province === province)
-  if (idx !== -1) urbanConfigs.splice(idx, 1)
-}
-
-/** Thêm 1 xã/phường mới vào 1 tỉnh đã có phân biệt Nội/Ngoại thành. */
-export function addUrbanWard(province: string, ward: string, isUrban: boolean): void {
-  const config = findUrbanConfig(province)
-  if (!config) return
-  if (config.wards.some((w) => w.ward === ward)) return
-  config.wards.push({ ward, isUrban })
-}
-
-/** Xoá hẳn 1 xã/phường khỏi danh sách của 1 tỉnh. */
-export function removeUrbanWard(province: string, ward: string): void {
-  const config = findUrbanConfig(province)
-  if (!config) return
-  const idx = config.wards.findIndex((w) => w.ward === ward)
-  if (idx !== -1) config.wards.splice(idx, 1)
-}
-
-/** Đổi phân loại Nội thành ↔ Ngoại thành cho 1 xã/phường đã có trong danh sách. */
-export function toggleUrbanWardClassification(province: string, ward: string): void {
-  const config = findUrbanConfig(province)
-  if (!config) return
-  const found = config.wards.find((w) => w.ward === ward)
-  if (found) found.isUrban = !found.isUrban
-}
+// Vùng miền/Tuyến/Nội-Ngoại thành KHÔNG còn có hàm mutate rời sửa đè trực tiếp — RouteConfig.tsx
+// giờ chỉnh cả 3 phần trên draft cục bộ, chỉ ghi vào store dùng chung qua
+// `commitNewRouteConfigVersion()` (tạo bộ MỚI, xem phần "Versioning" phía trên) — không có cách
+// nào sửa đè lên bộ đang áp dụng nữa.

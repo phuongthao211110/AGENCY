@@ -26,6 +26,18 @@ export interface Order {
   // Khác với giá trị luôn cố định "Shop trả ship" khi đối soát với GHN (GHN chỉ biết thu cước
   // từ bên gửi/đại lý, không có khái niệm thu từ người nhận) — 2 giá trị này KHÁC NHAU có chủ đích.
   feePayer: 'sender' | 'receiver'
+  // Phương thức thanh toán PHÍ SHIP khi feePayer === 'sender' (Shop trả ship) — chỉ có ý nghĩa
+  // trong trường hợp đó, mặc định 'cash' (trừ vào kỳ đối soát như trước giờ). 'momo' = shop thanh
+  // toán phí ship ngay lúc tạo/xác nhận đơn qua QR MoMo (mô phỏng UI, không có SDK/backend thật).
+  // 'bank_transfer' = tương tự nhưng qua chuyển khoản ngân hàng (cũng mô phỏng UI thuần).
+  paymentMethod?: 'cash' | 'momo' | 'bank_transfer'
+  // Chỉ có ý nghĩa khi paymentMethod === 'momo' | 'bank_transfer'. 'not_required' = trả tiền mặt
+  // (mặc định, không qua luồng thanh toán online). 'pending' = đã tạo mã/QR, chờ thanh toán.
+  // 'paid' = đã bấm "Tôi đã thanh toán".
+  // 'failed' = QR hết hạn (15 phút) mà chưa thanh toán — phải tạo QR mới để thử lại.
+  paymentStatus?: 'not_required' | 'pending' | 'paid' | 'failed'
+  // ISO timestamp lúc bấm "Tôi đã thanh toán" — chỉ set khi paymentStatus chuyển sang 'paid'.
+  paymentPaidAt?: string
   status: string
   createdAt: string
   // Optional fields present in some JSON entries

@@ -2,7 +2,7 @@
 
 **Platform:** Agency Admin (Đại lý)  
 **Figma:** [AGA Design File](https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449)  
-**Version:** 1.8.0 | **Cập nhật:** 2026-09-23
+**Version:** 1.13.0 | **Cập nhật:** 2026-09-27
 
 ---
 
@@ -16,6 +16,13 @@
 | [AGA] Báo cáo: Gộp shop dư vào "Khác" khi biểu đồ nhiều shop | [gop-shop-du-vao-khac.md](./bao-cao/gop-shop-du-vao-khac.md) | — | [Draft] |
 | [AGA] Báo cáo: Tìm kiếm shop trong bộ lọc dropdown | [tim-kiem-shop-trong-bo-loc.md](./bao-cao/tim-kiem-shop-trong-bo-loc.md) | — | [Draft] |
 | [AGA] Báo cáo: Chỉ số hoạt động theo kỳ (AOV, KH Onboard, KH Re-active) | [chi-so-hoat-dong-theo-ky.md](./bao-cao/chi-so-hoat-dong-theo-ky.md) | — | [Draft] |
+| [AGA] Báo cáo: Redesign "Thống kê Shop trên Agency" — khung trang tổng thể | [redesign-thong-ke-shop-6-kpi-khach-hang.md](./bao-cao/redesign-thong-ke-shop-6-kpi-khach-hang.md) | — | [Draft] |
+| [AGA] Báo cáo: Chỉ số "Khách hàng mới" (KH đặt đơn lần đầu trong kỳ) | [khach-hang-moi.md](./bao-cao/khach-hang-moi.md) | — | [Draft] |
+| [AGA] Báo cáo: Chỉ số "Khách quay lại" (KH từng mua, ngừng 1 kỳ, nay quay lại) | [khach-quay-lai.md](./bao-cao/khach-quay-lai.md) | — | [Draft] |
+| [AGA] Báo cáo: Khối KPI tổng quan theo kỳ (6 thẻ, so sánh kỳ trước) | [kpi-tong-quan-theo-ky.md](./bao-cao/kpi-tong-quan-theo-ky.md) | — | [Draft] |
+| [AGA] Báo cáo: Card "Khách hàng" — bố cục 2 khối chỉ số khách hàng | [card-khach-hang-bo-cuc.md](./bao-cao/card-khach-hang-bo-cuc.md) | — | [Draft] |
+| [AGA] Báo cáo: Biểu đồ "Xu hướng doanh thu & sản lượng" | [xu-huong-doanh-thu-san-luong.md](./bao-cao/xu-huong-doanh-thu-san-luong.md) | — | [Draft] |
+| [AGA] Báo cáo: Bảng "Chi tiết theo shop" | [bang-chi-tiet-theo-shop.md](./bao-cao/bang-chi-tiet-theo-shop.md) | — | [Draft] |
 
 ## Login / Logout
 

@@ -1,7 +1,7 @@
 {
   "platform": "agency-admin",
-  "currentVersion": "1.8.0",
-  "lastUpdated": "2026-09-23",
+  "currentVersion": "1.13.0",
+  "lastUpdated": "2026-09-27",
   "figmaUrl": "https://www.figma.com/design/264Gc7s2XLHjBZsr2HnBEe/-AGA--AGENCY-ADMIN?node-id=2-449",
   "sections": [
     {
@@ -2605,11 +2605,301 @@
             "Định nghĩa \"Re-active\" là quyết định nghiệp vụ tự suy ra (backlog gốc chỉ ghi \"Khách hàng re-active dịch vụ\", không có công thức chi tiết) — logic hiện tại: đã từng có đơn, KHÔNG có đơn ở đúng kỳ liền trước, rồi CÓ đơn trở lại ở kỳ này. Nếu đội nghiệp vụ có định nghĩa khác (VD: khoảng \"ngừng hoạt động\" phải dài hơn 1 kỳ, không chỉ đúng 1 kỳ liền trước) thì cần chỉnh lại countReactiveShops().",
             "Không có \"known gap\" nào về mặt tính toán — cả 4 chỉ số đều dùng dữ liệu đơn hàng/shop thật (orderStore/shopStore), không dùng công thức demo cố định như 1 số KPI khác trong hệ thống (xem AGA-REPORT-1 Notes về \"Known inconsistency\" của cách tính COD)."
           ]
+        },
+        {
+          "id": "AGA-REPORT-7",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Redesign \"Thống kê Shop trên Agency\" — khung trang tổng thể",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn trang \"Báo cáo\" có bố cục tổng thể rõ ràng, nhất quán (header → 6 KPI → 2 card song song → bảng chi tiết theo shop) và 1 bộ lọc kỳ DUY NHẤT ở đầu trang, để dễ định hướng khi xem số liệu mà không phải đoán thứ tự thông tin hay tìm bộ lọc nằm rải rác.",
+          "userFlow": [
+            "Vào menu \"Báo cáo\" (Agency Admin) — tiêu đề trang là \"Báo cáo\"; ngay dưới là 1 dòng mô tả gộp chung: \"Doanh thu, sản lượng và khách hàng theo từng shop. Cập nhật lúc HH:mm - DD/MM/YYYY\" (giờ thật lúc tải trang; hover vào cụm \"Cập nhật lúc...\" hiện tooltip giải thích mốc \"hiện tại\" dùng ngày có đơn gần nhất của đại lý).",
+            "Góc phải header là bộ lọc kỳ duy nhất của trang: nhãn \"Thời gian\" + dropdown chọn Ngày/Tuần/Tháng — điều khiển 6 KPI (AGA-REPORT-10) và bảng \"Chi tiết theo shop\" (AGA-REPORT-13); KHÔNG còn đặt ở card \"Xu hướng...\" như bản trước.",
+            "Bên dưới header, đúng thứ tự từ trên xuống: khối 6 thẻ KPI (xem AGA-REPORT-10) → 2 card song song \"Xu hướng doanh thu & sản lượng\" (xem AGA-REPORT-12) và \"Khách hàng\" (xem AGA-REPORT-11) → bảng \"Chi tiết theo shop\" (xem AGA-REPORT-13)."
+          ],
+          "systemFlow": [
+            "`anchorDate` = ngày có `createdAt` gần nhất trong toàn bộ đơn của đại lý (`Math.max` trên timestamp) — vì dữ liệu đơn hàng demo là ngày cố định trong quá khứ, không dùng ngày hệ thống thật. Dùng CHUNG cho mọi khối trên trang (AGA-REPORT-10/11/12/13 đều dựa vào giá trị này).",
+            "State `period` (`useState<PeriodKey>`) khai báo ở component `AgencyReport()` (khung trang này) — điều khiển qua `<select>` ở header, không còn là 3 nút bấm đặt trong card \"Xu hướng...\" như bản trước; mọi khối con đọc CHUNG 1 state này, không có state `period` riêng ở đâu khác.",
+            "Toàn bộ trang là 1 component `AgencyReport()` duy nhất (`AgencyReport.tsx`) — các khối con (KPI, chart, card khách hàng, bảng) chỉ là các đoạn JSX/hàm phụ trong CÙNG file, không phải component/route riêng."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Trang hiện đúng thứ tự từ trên xuống: header (tiêu đề \"Báo cáo\" + mô tả gộp \"Cập nhật lúc...\") → khối 6 KPI (AGA-REPORT-10) → 2 card song song (AGA-REPORT-12 | AGA-REPORT-11) → bảng \"Chi tiết theo shop\" (AGA-REPORT-13).",
+            "AC2: Header KHÔNG còn eyebrow \"ĐẠI LÝ · VẬN HÀNH SHOP\"; dòng mô tả và \"Cập nhật lúc...\" nằm CHUNG 1 dòng (không tách 2 dòng như bản trước).",
+            "AC3: Dropdown \"Thời gian\" ở góc phải header là NƠI DUY NHẤT chọn Ngày/Tuần/Tháng trên toàn trang — không còn bộ chọn kỳ nào khác (kể cả trong card \"Xu hướng...\").",
+            "AC4: \"Cập nhật lúc\" luôn hiện đúng giờ/ngày THẬT tại thời điểm tải trang (không phải giờ cố định); hover vào hiện tooltip giải thích mốc `anchorDate`."
+          ],
+          "notes": [
+            "**Redesign lần 2 (2026-09-27)**: gộp eyebrow + mô tả + \"Cập nhật lúc\" thành 1 dòng, chuyển bộ lọc Ngày/Tuần/Tháng từ card \"Xu hướng...\" (AGA-REPORT-12) lên dropdown ở header trang này, đổi tiêu đề trang từ \"Thống kê Shop trên Agency\" về lại \"Báo cáo\" — theo đúng ảnh mockup UI thật do người yêu cầu cung cấp (khác ảnh mockup layout tham khảo ban đầu dùng để dựng bản đầu tiên).",
+            "**Sau khi tách chi tiết, story này (AGA-REPORT-7) chỉ còn giữ khung trang tổng thể (header, bộ lọc kỳ, thứ tự các khối)** — mọi nội dung chi tiết đã tách hết sang story riêng: AGA-REPORT-10 (khối 6 KPI), AGA-REPORT-11 (card \"Khách hàng\"), AGA-REPORT-12 (biểu đồ \"Xu hướng doanh thu & sản lượng\"), AGA-REPORT-13 (bảng \"Chi tiết theo shop\"). Định nghĩa 2 chỉ số khách hàng nằm ở AGA-REPORT-8/AGA-REPORT-9.",
+            "**Nguồn gốc yêu cầu**: dựa theo mockup dashboard \"Thống kê shop trên Agency\" (ảnh do người yêu cầu cung cấp) — đã xác nhận qua 2 vòng hỏi lại trước khi implement lần đầu: (1) \"BC\" trong mockup gốc (ví dụ tên cột \"BC Cầu Giấy\") vẫn nghĩa là **Shop** — ảnh chỉ dùng để tham khảo LAYOUT, không phải dữ liệu thật; (2) \"KH\" trong bảng chi tiết theo shop = **KHÁCH HÀNG CUỐI của shop** (người mua/nhận hàng, nhận diện qua `receiverPhone`) — KHÔNG PHẢI đếm số shop như cách hiểu ban đầu ở AGA-REPORT-6.",
+            "**Story này (cùng AGA-REPORT-8 đến 13) THAY THẾ hoàn toàn phần UI mô tả trong AGA-REPORT-2 (biểu đồ cột stacked theo shop), AGA-REPORT-3 (bảng \"COD & phí theo shop\"), AGA-REPORT-4 (gộp shop dư vào \"Khác\"), AGA-REPORT-5 (tìm kiếm trong dropdown Shop) và AGA-REPORT-6 (AOV/KH Onboard/KH Re-active tính theo SHOP, không phải theo khách hàng cuối).** Toàn bộ UI/logic mô tả trong 5 story đó đã bị gỡ khỏi `AgencyReport.tsx`. **5 story cũ hiện KHÔNG còn khớp code** — cần cập nhật/đánh dấu \"Đã thay thế\" khi rà lại, chưa xử lý trong phạm vi các story này."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-8",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Chỉ số \"Khách hàng mới\" (KH đặt đơn lần đầu trong kỳ)",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn biết có bao nhiêu KHÁCH HÀNG CUỐI (người mua/nhận hàng của shop) đặt đơn LẦN ĐẦU TIÊN trong kỳ đang chọn — cả theo từng shop và tổng toàn đại lý — để đánh giá khả năng thu hút khách mới của từng shop, tách biệt khỏi số khách quay lại mua tiếp (xem AGA-REPORT-9).",
+          "userFlow": [
+            "\"Khách hàng mới\" xuất hiện ở 3 nơi trên trang \"Báo cáo\": (a) 1 trong 6 thẻ KPI đầu trang, (b) khối đầu tiên trong card \"Khách hàng\" (chấm màu xanh lá, góc phải trang), (c) cột \"Khách mới\" trong bảng \"Chi tiết theo shop\".",
+            "Thẻ KPI đầu trang: hiện số khách mới TOÀN đại lý trong kỳ, kèm badge % so với kỳ trước (hoặc chữ \"Mới\" màu xanh dương nếu kỳ trước = 0 khách mới).",
+            "Khối trong card \"Khách hàng\": chấm màu xanh lá (`#0D9488`) + nhãn \"Khách hàng mới\" + badge % (góc phải) → dòng định nghĩa \"Khách đặt đơn lần đầu tiên trong kỳ này\" → số lớn → sparkline 7 cột (7 ngày gần nhất, cột cuối cùng — hôm nay — tô đậm nhất, các cột trước nhạt hơn).",
+            "Cột \"Khách mới\" trong bảng \"Chi tiết theo shop\": số khách mới CỦA RIÊNG shop đó trong kỳ đang chọn, hover vào tiêu đề cột hiện tooltip định nghĩa.",
+            "Đổi tab Ngày/Tuần/Tháng → cả 3 nơi cập nhật lại theo đúng khoảng \"Kỳ này\" mới của tab đó (sparkline trong card \"Khách hàng\" là ngoại lệ — xem System Flow điểm 4)."
+          ],
+          "systemFlow": [
+            "Khách hàng nhận diện qua `order.receiverPhone` (người nhận/mua hàng thật) — KHÔNG PHẢI chính shop. `customersActiveInRange(orders, start, end)` gom `Set<receiverPhone>` có đơn trong khoảng đó.",
+            "`countNewCustomers(orders, curStart, curEnd)` = số khách có đơn trong `[curStart, curEnd]` VÀ KHÔNG có đơn nào trước `curStart` trong toàn bộ lịch sử đơn được truyền vào (`orders.some(o => o.receiverPhone === phone && createdAt < curStart)` → false với mọi đơn).",
+            "Tính theo TỪNG shop (cột bảng, khối trong `buildShopPeriodStats`): truyền `shopOrders` đã lọc theo ĐÚNG 1 `shopId` vào `countNewCustomers()` — vì 1 số điện thoại có thể \"mới\" ở shop A nhưng đã từng mua ở shop B, 2 quan hệ khách hàng độc lập theo từng shop. Số ở thẻ KPI đầu trang = Σ giá trị này qua mọi shop (`shopStatsCur.reduce(...)`), KHÔNG tính lại trên toàn bộ `agencyOrders` gộp chung (tránh đếm trùng 1 khách mua ở nhiều shop thành \"mới\" 2 lần theo nghĩa khác).",
+            "Sparkline 7 cột trong card \"Khách hàng\" là NGOẠI LỆ — tính theo NGÀY cố định (7 ngày gần nhất tính từ `anchorDate`, mỗi điểm = `countNewCustomers(agencyOrders, startOfDay(day), endOfDay(day))` trên TOÀN đại lý), không đổi theo tab Ngày/Tuần/Tháng đang chọn — chỉ minh hoạ xu hướng ngắn hạn.",
+            "`pctDelta(cur, prev)`: `prev > 0` → % bình thường; `prev = 0` và `cur > 0` → trả `null` (hiện badge \"Mới\" màu xanh dương); cả 2 = 0 → 0%. Giá trị \"kỳ trước\" tính lại bằng `buildShopPeriodStats` với `prevCycle = getComparisonRanges(period, trend.prevEnd)` (lùi thêm 1 chu kỳ nữa để có \"kỳ trước của kỳ trước\" làm mốc so sánh).",
+            "Component hiển thị: `CompactKpiCard` (thẻ KPI đầu trang, có `title` tooltip), khối tự viết trong card \"Khách hàng\" (không dùng component riêng), header cột bảng có `title` tooltip."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: \"Khách hàng mới\" của 1 shop = khách (theo `receiverPhone`) có đơn trong Kỳ này VÀ KHÔNG có đơn nào trước thời điểm bắt đầu Kỳ này, trong toàn bộ lịch sử đơn CỦA RIÊNG shop đó.",
+            "AC2: Số ở thẻ KPI đầu trang = TỔNG (Σ) đúng bằng cột \"Khách mới\" cộng dồn qua mọi shop trong bảng \"Chi tiết theo shop\" — không lệch số.",
+            "AC3: Badge % ở thẻ KPI và khối trong card \"Khách hàng\" hiện đúng % tăng/giảm so với kỳ trước; nếu kỳ trước = 0 khách mới và kỳ này > 0 → hiện chữ \"Mới\" (xanh dương), không hiện %/∞.",
+            "AC4: Đổi tab Ngày/Tuần/Tháng → số ở thẻ KPI, khối trong card \"Khách hàng\" (trừ sparkline) và cột bảng đều cập nhật theo đúng khoảng Kỳ này mới; sparkline 7 cột KHÔNG đổi theo tab (luôn 7 ngày gần nhất tính từ `anchorDate`).",
+            "AC5: Sparkline hiện đủ 7 cột, cột cuối cùng (hôm nay) tô màu đậm nhất (`#0D9488`), 6 cột trước tô nhạt hơn (`#0D9488` + alpha 33%); hover 1 cột hiện tooltip đúng số khách mới ngày đó.",
+            "AC6: Đại lý/shop không có đơn nào trong Kỳ này → hiện \"0 KH\", không lỗi/NaN; không nhầm lẫn với \"Khách quay lại\" (AGA-REPORT-9) — 1 khách hàng không được tính đồng thời ở cả 2 chỉ số trong cùng 1 kỳ, của cùng 1 shop."
+          ],
+          "notes": [
+            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng chỉ số — AGA-REPORT-7 nay chỉ còn giữ khung trang tổng thể (header, thứ tự các khối), còn định nghĩa/logic chi tiết của \"Khách hàng mới\" chuyển hẳn về story này.",
+            "\"Khách hàng quay lại\" (chỉ số song song, dùng chung `buildShopPeriodStats`) được tách thành story riêng — xem [AGA-REPORT-9](./khach-quay-lai.md).",
+            "**Định nghĩa nghiệp vụ đã xác nhận với người yêu cầu**: \"KH\" = khách hàng CUỐI của shop (người mua/nhận hàng, nhận diện qua `receiverPhone`) — KHÔNG PHẢI đếm số shop.",
+            "Không có \"known gap\" về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-9",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Chỉ số \"Khách quay lại\" (KH từng mua, ngừng 1 kỳ, nay quay lại)",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn biết có bao nhiêu KHÁCH HÀNG CUỐI (người mua/nhận hàng của shop) từng mua hàng, NGỪNG mua ở kỳ liền trước, rồi QUAY LẠI đặt đơn tiếp trong kỳ đang chọn — cả theo từng shop và tổng toàn đại lý — để đánh giá mức độ giữ chân/kéo lại khách hàng cũ, tách biệt khỏi số khách hoàn toàn mới (xem AGA-REPORT-8).",
+          "userFlow": [
+            "\"Khách quay lại\" xuất hiện ở 3 nơi trên trang \"Báo cáo\": (a) 1 trong 6 thẻ KPI đầu trang, (b) khối thứ hai trong card \"Khách hàng\" (chấm màu tím, góc phải trang), (c) cột \"Khách quay lại\" trong bảng \"Chi tiết theo shop\".",
+            "Thẻ KPI đầu trang: hiện số khách quay lại TOÀN đại lý trong kỳ, kèm badge % so với kỳ trước (hoặc chữ \"Mới\" màu xanh dương nếu kỳ trước = 0 khách quay lại).",
+            "Khối trong card \"Khách hàng\": chấm màu tím (`#7C3AED`) + nhãn \"Khách quay lại\" + badge % (góc phải) → dòng định nghĩa \"Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp\" → số lớn → sparkline 7 cột (7 ngày gần nhất, cột cuối cùng — hôm nay — tô đậm nhất).",
+            "Cột \"Khách quay lại\" trong bảng \"Chi tiết theo shop\": số khách quay lại CỦA RIÊNG shop đó trong kỳ đang chọn, hover vào tiêu đề cột hiện tooltip định nghĩa.",
+            "Đổi tab Ngày/Tuần/Tháng → cả 3 nơi cập nhật lại theo đúng khoảng \"Kỳ này\"/\"Kỳ trước\" mới của tab đó (sparkline trong card \"Khách hàng\" là ngoại lệ — xem System Flow điểm 4)."
+          ],
+          "systemFlow": [
+            "Khách hàng nhận diện qua `order.receiverPhone` — KHÔNG PHẢI chính shop. `customersActiveInRange(orders, start, end)` gom `Set<receiverPhone>` có đơn trong khoảng đó (dùng chung với AGA-REPORT-8).",
+            "`countReactiveCustomers(orders, curStart, curEnd, prevStart, prevEnd)` = số khách có đơn trong `[curStart, curEnd]`, KHÔNG có đơn nào trong `[prevStart, prevEnd]` (Kỳ trước — coi là đã ngừng mua ở kỳ đó), NHƯNG có ÍT NHẤT 1 đơn TRƯỚC `prevStart` (từng là khách cũ, không phải khách hoàn toàn mới — khách hoàn toàn mới đã tính ở AGA-REPORT-8, không tính trùng ở đây).",
+            "Tính theo TỪNG shop (cột bảng, khối trong `buildShopPeriodStats`): truyền `shopOrders` đã lọc theo ĐÚNG 1 `shopId` vào `countReactiveCustomers()`. Số ở thẻ KPI đầu trang = Σ giá trị này qua mọi shop (`shopStatsCur.reduce(...)`), KHÔNG tính lại trên `agencyOrders` gộp chung.",
+            "Sparkline 7 cột trong card \"Khách hàng\" là NGOẠI LỆ và dùng \"Kỳ trước\" ĐƠN GIẢN HOÁ = đúng 1 ngày liền trước (D-1), KHÁC với định nghĩa \"Kỳ trước\" chính thức ở thẻ KPI/bảng (theo đúng tab Ngày/Tuần/Tháng đang chọn) — mỗi điểm sparkline = `countReactiveCustomers(agencyOrders, startOfDay(day), endOfDay(day), startOfDay(day-1), endOfDay(day-1))`, chỉ minh hoạ xu hướng ngắn hạn, KHÔNG dùng để đọc số chính thức.",
+            "`pctDelta(cur, prev)`: `prev > 0` → % bình thường; `prev = 0` và `cur > 0` → trả `null` (hiện badge \"Mới\"); cả 2 = 0 → 0%. Giá trị \"kỳ trước\" của thẻ KPI/bảng tính lại bằng `buildShopPeriodStats` với `prevCycle = getComparisonRanges(period, trend.prevEnd)` để có đủ 2 mốc lùi (kỳ trước của kỳ trước) cho phép so sánh 3-điểm-thời-gian.",
+            "Component hiển thị: `CompactKpiCard` (thẻ KPI đầu trang, có `title` tooltip), khối tự viết trong card \"Khách hàng\", header cột bảng có `title` tooltip."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: \"Khách quay lại\" của 1 shop = khách (theo `receiverPhone`) có đơn trong Kỳ này, KHÔNG có đơn nào trong Kỳ trước, NHƯNG có ít nhất 1 đơn TỪ TRƯỚC Kỳ trước — trong lịch sử đơn CỦA RIÊNG shop đó.",
+            "AC2: Số ở thẻ KPI đầu trang = TỔNG (Σ) đúng bằng cột \"Khách quay lại\" cộng dồn qua mọi shop trong bảng \"Chi tiết theo shop\" — không lệch số.",
+            "AC3: Badge % ở thẻ KPI và khối trong card \"Khách hàng\" hiện đúng % tăng/giảm so với kỳ trước; nếu kỳ trước = 0 khách quay lại và kỳ này > 0 → hiện chữ \"Mới\" (xanh dương), không hiện %/∞.",
+            "AC4: Đổi tab Ngày/Tuần/Tháng → số ở thẻ KPI, khối trong card \"Khách hàng\" (trừ sparkline) và cột bảng đều cập nhật theo đúng khoảng Kỳ này/Kỳ trước mới; sparkline 7 cột KHÔNG đổi theo tab (luôn dùng D-1 làm \"kỳ trước\" đơn giản hoá cho từng ngày).",
+            "AC5: 1 khách hàng KHÔNG được tính đồng thời ở cả \"Khách hàng mới\" (AGA-REPORT-8) VÀ \"Khách quay lại\" trong cùng 1 kỳ, của cùng 1 shop — khách có đơn Kỳ này mà chưa từng có đơn trước đó CHỈ tính vào \"Khách hàng mới\"; khách có đơn Kỳ này sau khi từng có đơn (nhưng không có ở Kỳ trước) CHỈ tính vào \"Khách quay lại\".",
+            "AC6: Đại lý/shop không có đơn nào thoả điều kiện trong Kỳ này → hiện \"0 KH\", không lỗi/NaN."
+          ],
+          "notes": [
+            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng chỉ số — AGA-REPORT-7 nay chỉ còn giữ khung trang tổng thể (header, thứ tự các khối), còn định nghĩa/logic chi tiết của \"Khách quay lại\" chuyển hẳn về story này.",
+            "\"Khách hàng mới\" (chỉ số song song, loại trừ lẫn nhau — xem AC5) được tách thành story riêng — xem [AGA-REPORT-8](./khach-hang-moi.md).",
+            "**Định nghĩa \"quay lại\" là quyết định nghiệp vụ tự suy ra** (mockup gốc chỉ ghi \"Khách hàng re-active dịch vụ\", không có công thức chi tiết) — logic hiện tại: ngừng đúng 1 kỳ liền trước rồi quay lại. Nếu đội nghiệp vụ có định nghĩa khác (VD: khoảng \"ngừng hoạt động\" phải dài hơn 1 kỳ) thì cần chỉnh lại `countReactiveCustomers()`.",
+            "Không có \"known gap\" về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-10",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Khối KPI tổng quan theo kỳ (6 thẻ, so sánh kỳ trước)",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem nhanh 6 chỉ số vận hành quan trọng nhất (Doanh thu, Sản lượng, AOV theo cân, AOV theo sản lượng, Khách hàng mới, Khách quay lại) ngay đầu trang \"Báo cáo\", mỗi chỉ số kèm % so với kỳ trước, để đánh giá xu hướng kinh doanh mà không cần cuộn xuống hay tính tay.",
+          "userFlow": [
+            "Ngay dưới header trang, hiện 2 hàng thẻ KPI: hàng 1 gồm 4 thẻ đều nhau (Doanh thu, Sản lượng, Khách hàng mới, Khách quay lại); hàng 2 gồm 2 thẻ RỘNG HƠN (AOV theo cân, AOV theo sản lượng).",
+            "Mỗi thẻ gồm: nhãn xám nhỏ ở trên, số lớn đậm và badge % nằm CÙNG 1 hàng ngay bên dưới (mũi tên xanh khi tăng, đỏ khi giảm, chữ \"Mới\" màu xanh dương nếu kỳ trước = 0 và kỳ này > 0).",
+            "2 thẻ \"Khách hàng mới\"/\"Khách quay lại\" có thêm tooltip (hover) giải thích định nghĩa — logic chi tiết xem AGA-REPORT-8 và AGA-REPORT-9.",
+            "Đổi dropdown \"Thời gian\" (đặt ở header trang — xem AGA-REPORT-7) → cả 6 thẻ cập nhật lại theo đúng khoảng Kỳ này/Kỳ trước của lựa chọn đó.",
+            "Màn hình hẹp → mỗi hàng thẻ tự xuống dòng (wrap) độc lập, thẻ hàng 1 rộng tối thiểu ~150px, thẻ hàng 2 rộng tối thiểu ~300px."
+          ],
+          "systemFlow": [
+            "`getComparisonRanges(period, anchor)` định nghĩa khoảng \"Kỳ này\"/\"Kỳ trước\" theo 3 tab: Ngày → so cùng kỳ D-7; Tuần → 7 ngày gần nhất so 7 ngày liền trước; Tháng → MTD so MTD-1 (clamp ngày nếu tháng trước ít ngày hơn).",
+            "\"Doanh thu\" = `trend.current`/`trend.previous` (Σ `order.fee` trong khoảng, từ `computePeriodComparison()`). \"Sản lượng\" = `totalVolume` = Σ `volume` của mọi shop trong `shopStatsCur` (kết quả `buildShopPeriodStats()` cho từng shop).",
+            "\"AOV theo sản lượng\" = `trend.current / totalVolume`; \"AOV theo cân\" = `trend.current / (Σ order.weight trong kỳ / 1000)` — cả 2 chia cho 0 → trả 0, không lỗi/NaN.",
+            "\"Khách hàng mới\"/\"Khách quay lại\" = Σ `newCustomers`/`reactiveCustomers` qua mọi shop trong `shopStatsCur` — logic 2 hàm `countNewCustomers()`/`countReactiveCustomers()` xem AGA-REPORT-8/AGA-REPORT-9 (không lặp lại ở đây để tránh 2 nguồn dễ lệch khi sửa).",
+            "Giá trị \"kỳ trước\" của cả 6 KPI tính lại bằng chính công thức tương ứng nhưng áp khoảng `trend.prevStart/prevEnd` (làm \"kỳ hiện tại\" của phép tính lùi) và `prevCycle.prevStart/prevEnd` (làm \"kỳ trước\" của phép tính lùi), với `prevCycle = getComparisonRanges(period, trend.prevEnd)`.",
+            "`pctDelta(cur, prev)`: `prev > 0` → % bình thường; `prev = 0` và `cur > 0` → trả `null` (hiện badge \"Mới\" màu xanh dương); cả 2 = 0 → 0%. Dùng CHUNG cho cả 6 thẻ.",
+            "Component `CompactKpiCard({label, value, deltaPct, tooltip?, flexBasis?})` — thẻ trắng bo góc 10px, viền `#E5E7EB`, render nhãn (dòng riêng) rồi số + `DeltaBadge` CÙNG 1 hàng flex (`gap: 8`); `flexBasis` mặc định `150px` (hàng 1), truyền `300px` cho 2 thẻ AOV ở hàng 2 để chúng rộng hơn; `DeltaBadge` render icon `RiseOutlined`/`FallOutlined` + % hoặc chữ \"Mới\" màu `#3B82F6`.",
+            "6 giá trị này CŨNG là TỔNG (Σ) đúng bằng bảng \"Chi tiết theo shop\" (AGA-REPORT-13) — dùng chung 1 nguồn tính (`shopStatsCur`), không phải 2 nguồn tính riêng."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Đúng 2 hàng: hàng 1 gồm 4 thẻ đúng thứ tự (Doanh thu, Sản lượng, Khách hàng mới, Khách quay lại); hàng 2 gồm 2 thẻ RỘNG HƠN đúng thứ tự (AOV theo cân, AOV theo sản lượng).",
+            "AC2: Mỗi thẻ có số lớn và badge % nằm CÙNG 1 hàng (không phải 2 hàng riêng); badge kèm icon tăng/giảm, hoặc chữ \"Mới\" (xanh dương) khi kỳ trước = 0 và kỳ này > 0; kỳ này và kỳ trước đều 0 → hiện \"0,0%\".",
+            "AC3: Đổi dropdown \"Thời gian\" ở header trang → cả 6 thẻ cập nhật đúng theo khoảng Kỳ này/Kỳ trước tương ứng của lựa chọn đó.",
+            "AC4: \"Doanh thu\"/\"Sản lượng\" khi đại lý không có đơn nào trong kỳ → hiện \"0 ₫\"/\"0 đơn\", không lỗi.",
+            "AC5: \"AOV theo cân\"/\"AOV theo sản lượng\" khi chia cho 0 (0 đơn hoặc 0kg trong kỳ) → hiện \"0 ₫/kg\"/\"0 ₫/đơn\", không NaN.",
+            "AC6: 6 giá trị khớp CHÍNH XÁC với tổng (Σ) cột tương ứng trong bảng \"Chi tiết theo shop\" (AGA-REPORT-13) — không lệch số.",
+            "AC7: Màn hình hẹp (dưới ~900px) → mỗi hàng thẻ tự xuống dòng độc lập, không tràn ngang/không phát sinh thanh cuộn ngang."
+          ],
+          "notes": [
+            "**Redesign lần 2 (2026-09-27)**: đổi layout từ 1 hàng 6 thẻ đều nhau sang 2 hàng (4 thẻ chính + 2 thẻ AOV rộng hơn), badge % chuyển từ dòng riêng lên CÙNG hàng với số lớn — theo đúng ảnh mockup UI thật do người yêu cầu cung cấp.",
+            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng phần của trang.",
+            "2 thẻ \"Khách hàng mới\"/\"Khách quay lại\" ở đây chỉ mô tả VỊ TRÍ/HÀNH VI HIỂN THỊ trong khối KPI — định nghĩa/công thức tính đầy đủ xem [AGA-REPORT-8](./khach-hang-moi.md) và [AGA-REPORT-9](./khach-quay-lai.md).",
+            "Bộ lọc \"Thời gian\" điều khiển khối này nhưng KHÔNG nằm trong khối này — xem [AGA-REPORT-7](./redesign-thong-ke-shop-6-kpi-khach-hang.md) (đặt ở góc phải header trang, KHÔNG còn ở card \"Xu hướng...\" như bản trước).",
+            "Không có \"known gap\" nào về nguồn dữ liệu — cả 6 KPI đều dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-11",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Card \"Khách hàng\" — bố cục 2 khối chỉ số khách hàng",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn có 1 khu vực riêng gọi là \"Khách hàng\" nằm cạnh biểu đồ xu hướng, gom đủ 2 chỉ số khách hàng (Khách hàng mới, Khách quay lại) theo đúng thứ tự cố định, để xem nhanh sức khoẻ khách hàng mà không phải tìm rải rác trên trang.",
+          "userFlow": [
+            "Card \"Khách hàng\" nằm bên PHẢI, cùng hàng với card \"Xu hướng doanh thu & sản lượng\" (bên trái, xem AGA-REPORT-12) — 2 card chia theo tỉ lệ khoảng 2:1 (Xu hướng rộng hơn).",
+            "Đầu card là tiêu đề \"Khách hàng\" (đậm, 15px).",
+            "Bên dưới là 2 khối xếp DỌC theo thứ tự cố định: \"Khách hàng mới\" (trên, chấm xanh lá) rồi \"Khách quay lại\" (dưới, chấm tím) — không đổi thứ tự theo tab hay bộ lọc nào.",
+            "Mỗi khối tự chứa đủ: chấm màu + nhãn + badge %, dòng định nghĩa, số lớn, sparkline 7 cột — nội dung/logic chi tiết từng khối xem AGA-REPORT-8 (khối trên) và AGA-REPORT-9 (khối dưới).",
+            "Màn hình hẹp → card \"Khách hàng\" tự xuống dưới card \"Xu hướng...\" (wrap toàn card, không co hẹp lẫn nhau)."
+          ],
+          "systemFlow": [
+            "Card dùng `flex: '1 1 260px'`, viền `1px solid #E5E7EB`, bo góc 10px, padding 16px, `display: flex; flexDirection: column; gap: 18px` — 2 khối con xếp theo đúng thứ tự khai báo trong JSX (không sort động theo giá trị).",
+            "Card \"Xu hướng...\" dùng `flex: '2 1 480px'` — cùng hàng flex-wrap với card này, tỉ lệ ~2:1 khi đủ rộng, tự xuống dòng khi màn hình hẹp.",
+            "Mỗi khối con là 1 `<div>` tự viết (không tách component riêng) — bố cục: dòng đầu `justify-content: space-between` (chấm + nhãn bên trái, badge % bên phải), rồi dòng định nghĩa nhỏ (11.5px, xám), số lớn (24px đậm), sparkline.",
+            "`MiniBarSparkline({values, color})` — component dùng CHUNG cho cả 2 khối, chỉ khác `color` (`#0D9488` cho Khách hàng mới, `#7C3AED` cho Khách quay lại) và mảng `values` (7 số — logic tính riêng theo từng khối, xem AGA-REPORT-8/AGA-REPORT-9); cột cuối cùng (hôm nay) luôn tô màu đậm 100%, 6 cột trước tô nhạt hơn (alpha ~33%)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Card \"Khách hàng\" nằm bên phải, cùng hàng với card \"Xu hướng doanh thu & sản lượng\" khi màn hình đủ rộng.",
+            "AC2: Đúng 2 khối theo thứ tự cố định: \"Khách hàng mới\" trên, \"Khách quay lại\" dưới — không đổi thứ tự trong bất kỳ trạng thái nào (kể cả khi giá trị bằng nhau hoặc bằng 0).",
+            "AC3: Mỗi khối tự đủ 5 phần: chấm màu, nhãn, badge %, dòng định nghĩa, số lớn, sparkline 7 cột (nội dung đúng theo AGA-REPORT-8/AGA-REPORT-9).",
+            "AC4: Màn hình hẹp (dưới ~900px) → card \"Khách hàng\" xuống dưới card \"Xu hướng...\", không bị bóp méo hay tràn nội dung.",
+            "AC5: 2 sparkline dùng đúng 2 màu cố định: `#0D9488` (Khách hàng mới), `#7C3AED` (Khách quay lại) — không đổi màu theo trạng thái nào khác."
+          ],
+          "notes": [
+            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng phần của trang.",
+            "Story này CHỈ mô tả CONTAINER/BỐ CỤC của card — định nghĩa, công thức và AC chi tiết của từng chỉ số bên trong xem [AGA-REPORT-8](./khach-hang-moi.md) (Khách hàng mới) và [AGA-REPORT-9](./khach-quay-lai.md) (Khách quay lại).",
+            "Trong ảnh mockup gốc, khối \"Khách hàng\" có thêm vài chỉ số phụ khác; bản hiện tại CHỈ có đúng 2 khối theo phạm vi đã xác nhận với người yêu cầu (\"KH\" = khách hàng cuối của shop, chỉ tính Onboard mới và Re-active)."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-12",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Biểu đồ \"Xu hướng doanh thu & sản lượng\"",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem biểu đồ đường thể hiện doanh thu/sản lượng theo từng ngày trong 14 ngày gần nhất, so sánh trực quan với đúng 14 ngày đó lùi 7 ngày trước, để nhận biết xu hướng tăng/giảm mà không cần đọc số liệu thô.",
+          "userFlow": [
+            "Card \"Xu hướng doanh thu & sản lượng\" nằm bên TRÁI, cùng hàng với card \"Khách hàng\" (xem AGA-REPORT-11).",
+            "Đầu card: tiêu đề bên trái; bên phải gồm 1 dropdown chọn shop (mặc định \"Toàn đại lý\", liệt kê tên từng shop của đại lý) đặt NGAY BÊN TRÁI cụm nút toggle \"Doanh thu\"/\"Sản lượng\" (đổi biểu đồ này) — bộ lọc kỳ (trước đây là 3 nút Ngày/Tuần/Tháng đặt ở card này) đã chuyển hẳn lên dropdown \"Thời gian\" ở header trang (xem AGA-REPORT-7), không còn nút chọn kỳ nào trong card này nữa.",
+            "Dưới cụm nút là 2 dòng chú thích nhỏ: dòng 1 \"6 KPI & Bảng chi tiết đang so với [kỳ trước theo lựa chọn]\", dòng 2 \"Biểu đồ luôn hiện 14 ngày gần nhất, không đổi theo tab.\" — khi dropdown đang chọn 1 shop cụ thể (khác \"Toàn đại lý\"), dòng 2 nối thêm \" — đang xem riêng shop **[Tên shop]**\" (tên shop tô màu xanh `#3B82F6`, bold).",
+            "Chọn 1 shop trong dropdown → biểu đồ (cả 2 đường Kỳ này/Kỳ trước) vẽ lại chỉ dựa trên đơn hàng của riêng shop đó, không còn là tổng toàn đại lý. Chọn lại \"Toàn đại lý\" → biểu đồ về đúng hành vi mặc định (tổng toàn đại lý) như trước.",
+            "Biểu đồ: đường nét liền màu cam (`#FF5200`) = Kỳ này (14 ngày gần nhất), đường nét đứt xám = Kỳ trước (đúng 14 ngày đó lùi 7 ngày); có vùng tô mờ dưới đường Kỳ này; trục Y hiện 5 mốc giá trị, trục X hiện nhãn ngày (DD/MM) cách quãng.",
+            "Rê chuột vào biểu đồ → hiện đường dọc chỉ vị trí đang trỏ, chấm tròn trên đường Kỳ này, và 1 dòng text dưới biểu đồ ghi rõ ngày + giá trị Kỳ này + giá trị Kỳ trước (D-7) của đúng ngày đó.",
+            "Cuối card là legend 2 dòng: nét liền cam = \"Kỳ này\", nét đứt xám = \"Kỳ trước (D-7)\"."
+          ],
+          "systemFlow": [
+            "`buildDailySeries(orders, endDate, days)` — trả về `days` điểm liên tiếp theo NGÀY, điểm cuối = `endDate`; mỗi điểm gồm `revenue` (Σ `order.fee` trong ngày) và `volume` (đếm đơn trong ngày).",
+            "State `chartShopId` (mặc định `'all'`) điều khiển bởi dropdown chọn shop mới; options của dropdown lấy từ `shops` (kết quả `buildShopStats()` của toàn đại lý).",
+            "`chartOrders = chartShopId === 'all' ? agencyOrders : agencyOrders.filter(o => o.shopId === chartShopId)` — khi chọn \"Toàn đại lý\", `chartOrders` = `agencyOrders` (hành vi y hệt trước đây, không đổi); khi chọn 1 shop cụ thể, `chartOrders` chỉ còn đơn của riêng shop đó.",
+            "`dailyCurrent = buildDailySeries(chartOrders, anchorDate, 14)`; `dailyPrevious = buildDailySeries(chartOrders, anchorDate - 7 ngày, 14)` — 2 mảng CÙNG ĐỘ DÀI (14), khớp theo INDEX (điểm thứ i của `dailyPrevious` = đúng 7 ngày trước điểm thứ i của `dailyCurrent`) — hoàn toàn ĐỘC LẬP với tab Ngày/Tuần/Tháng; nguồn dữ liệu đầu vào (`chartOrders`) là phần DUY NHẤT thay đổi theo `chartShopId`, logic dựng chuỗi ngày không đổi.",
+            "`TrendLineChart({current, previous, metric})` vẽ bằng SVG thuần: `xFor(i)`/`yFor(v)` map index/giá trị sang toạ độ; `curPath`/`prevPath` là chuỗi lệnh `M`/`L` nối các điểm; `areaPath` = `curPath` khép kín xuống đáy để tô vùng mờ (opacity 0.08).",
+            "`maxValue = Math.max(1, ...curValues, ...prevValues)` — dùng CHUNG 1 trục Y cho cả 2 đường để so sánh đúng tỉ lệ; tối thiểu 1 để tránh chia 0 khi toàn bộ dữ liệu = 0 (bao gồm trường hợp shop đang chọn không có đơn nào trong 14 ngày).",
+            "Hover: `<rect>` trong suốt phủ từng \"cột\" ngày (`onMouseEnter`/`onMouseLeave` set `hoverIdx`) → khi có `hoverIdx`, vẽ thêm đường dọc nét đứt + chấm tròn tại điểm đang trỏ + dòng text tổng hợp Kỳ này/Kỳ trước của ngày đó.",
+            "`chartMetric` (state `'revenue' | 'volume'`) chọn field nào của `DailyPoint` dùng để vẽ (`curValues = current.map(p => p[metric])`) và định dạng số hiển thị (`fmtVND` cho revenue, `fmtNum` cho volume).",
+            "Bộ lọc kỳ (dropdown \"Thời gian\") đặt VẬT LÝ ở header trang (AGA-REPORT-7), KHÔNG còn trong card này — điều khiển 6 KPI (AGA-REPORT-10) và bảng \"Chi tiết theo shop\" (AGA-REPORT-13), KHÔNG điều khiển chính biểu đồ này (biểu đồ luôn cố định 14 ngày, độc lập hoàn toàn với lựa chọn kỳ).",
+            "`chartShopId` CHỈ đọc bởi biểu đồ này — không truyền xuống/ảnh hưởng 6 KPI đầu trang, bảng \"Chi tiết theo shop\" (AGA-REPORT-13), hay card \"Khách hàng\" (AGA-REPORT-11); các khối đó tiếp tục dùng `agencyOrders` (toàn đại lý) không đổi."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Card nằm bên trái, cùng hàng với card \"Khách hàng\" (AGA-REPORT-11), chiếm tỉ lệ rộng hơn (~2:1) khi đủ chỗ.",
+            "AC2: Toggle \"Doanh thu\"/\"Sản lượng\" đổi đúng cả trục Y lẫn 2 đường biểu đồ theo field tương ứng.",
+            "AC3: Biểu đồ luôn hiện đúng 14 điểm/ngày cho cả 2 đường, bất kể dropdown \"Thời gian\" ở header đang chọn Ngày/Tuần/Tháng.",
+            "AC4: Đường \"Kỳ trước\" tại vị trí ngày X = đúng giá trị của ngày (X trừ 7 ngày) — khớp theo index, không theo khoảng của lựa chọn kỳ ở header.",
+            "AC5: Rê chuột vào biểu đồ → hiện đường chỉ vị trí + chấm tròn + dòng text đúng ngày/giá trị Kỳ này/giá trị Kỳ trước (D-7) của điểm đang trỏ; rời chuột ra → ẩn hết, chỉ còn chấm tròn cố định ở điểm cuối cùng (ngày gần nhất).",
+            "AC6: Không có đơn hàng nào trong toàn bộ 14 ngày (`agencyOrders` rỗng hoặc quá cũ) → biểu đồ vẫn render (2 đường phẳng ở đáy), không lỗi/NaN/chia 0.",
+            "AC7: Legend hiện đúng 2 mục: nét liền cam \"Kỳ này\", nét đứt xám \"Kỳ trước (D-7)\".",
+            "AC8: Dropdown chọn shop mặc định ở \"Toàn đại lý\" và liệt kê đầy đủ tên các shop của đại lý; chọn 1 shop cụ thể → 2 đường biểu đồ (Kỳ này/Kỳ trước) đổi đúng theo dữ liệu đơn hàng của riêng shop đó, không còn lẫn dữ liệu của shop khác.",
+            "AC9: Chọn lại \"Toàn đại lý\" sau khi đã chọn 1 shop → biểu đồ trở về đúng tổng dữ liệu toàn đại lý như hành vi mặc định trước đây.",
+            "AC10: Chọn 1 shop không có đơn hàng nào trong 14 ngày gần nhất → biểu đồ vẫn render bình thường (2 đường phẳng ở đáy), không lỗi/NaN/chia 0.",
+            "AC11: Khi đang chọn 1 shop cụ thể, dòng chú thích dưới toggle hiện thêm \"đang xem riêng shop [Tên shop]\" với tên shop tô màu xanh `#3B82F6` in đậm; khi chọn \"Toàn đại lý\" thì không hiện phần này.",
+            "AC12: Bộ lọc shop của biểu đồ này không ảnh hưởng đến 6 KPI đầu trang, bảng \"Chi tiết theo shop\" (AGA-REPORT-13), hay card \"Khách hàng\" (AGA-REPORT-11) — các khối đó luôn tính trên toàn đại lý bất kể dropdown đang chọn shop nào."
+          ],
+          "notes": [
+            "**Bổ sung ngày 2026-10-01**: thêm dropdown chọn shop (\"Toàn đại lý\" hoặc 1 shop cụ thể) cho riêng biểu đồ này, đặt bên trái cụm toggle Doanh thu/Sản lượng. Khi chọn 1 shop, `chartOrders` được lọc theo `shopId` trước khi dựng `dailyCurrent`/`dailyPrevious`, nên 2 đường biểu đồ phản ánh đúng dữ liệu riêng của shop đó. Thay đổi này CHỈ tác động biểu đồ xu hướng — không ảnh hưởng 6 KPI đầu trang, bảng \"Chi tiết theo shop\" (AGA-REPORT-13), hay card \"Khách hàng\" (AGA-REPORT-11), các khối đó vẫn tính trên toàn đại lý như cũ.",
+            "**Redesign lần 2 (2026-09-27)**: gỡ hẳn bộ lọc Ngày/Tuần/Tháng khỏi card này — chuyển lên dropdown \"Thời gian\" ở header trang (AGA-REPORT-7), card giờ chỉ còn đúng 1 toggle Doanh thu/Sản lượng — theo đúng ảnh mockup UI thật do người yêu cầu cung cấp. Trước đây bộ lọc đặt vật lý trong card này nhưng không điều khiển chính biểu đồ, dễ gây hiểu lầm — bản mới loại bỏ hẳn nguồn nhầm lẫn đó bằng cách dời hẳn ra khỏi card.",
+            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng phần của trang.",
+            "Màu `#FF5200` (cam, `C_ACTION`) cho đường \"Kỳ này\" dùng ĐÚNG token màu hành động chính của app (theo CLAUDE.md), khác với màu teal trong ảnh mockup gốc — chủ động không copy màu mockup để giữ nhất quán toàn hệ thống.",
+            "Không có \"known gap\" nào về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+          ]
+        },
+        {
+          "id": "AGA-REPORT-13",
+          "jiraKey": "",
+          "title": "[AGA] Báo cáo: Bảng \"Chi tiết theo shop\"",
+          "status": "draft",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn có 1 bảng liệt kê đủ số liệu (Doanh thu, Sản lượng, AOV/đơn, Khách mới, Khách quay lại) của TỪNG shop, sắp xếp theo doanh thu và tìm kiếm được, để đối chiếu nhanh giữa các shop mà không cần cộng dồn thủ công, và bấm vào 1 shop để xem chi tiết ngay.",
+          "userFlow": [
+            "Bảng nằm ở cuối trang \"Báo cáo\", dưới 2 card \"Xu hướng doanh thu & sản lượng\" và \"Khách hàng\" (xem [AGA-REPORT-7](./redesign-thong-ke-shop-6-kpi-khach-hang.md) cho vị trí tổng thể trên trang).",
+            "Tiêu đề bảng \"Chi tiết theo shop\" bên trái, ô tìm kiếm \"Tìm shop...\" bên phải cùng hàng.",
+            "Header bảng đủ 6 cột: Shop | Doanh thu | Sản lượng | AOV/đơn | Khách mới | Khách quay lại.",
+            "Các dòng sắp theo Doanh thu giảm dần; mỗi dòng hiện tên shop (màu xanh, đậm) + mã shop nhỏ bên dưới.",
+            "Bấm vào 1 dòng bất kỳ → điều hướng sang trang chi tiết shop đó.",
+            "Gõ vào ô tìm kiếm → lọc theo tên hoặc mã shop; không có shop nào khớp → hiện \"Không tìm thấy shop phù hợp.\"; đại lý chưa có shop nào → hiện \"Chưa có shop nào.\"",
+            "Đổi dropdown \"Thời gian\" (đặt ở header trang — xem [AGA-REPORT-7](./redesign-thong-ke-shop-6-kpi-khach-hang.md)) → toàn bộ số liệu trong bảng cập nhật lại theo đúng khoảng Kỳ này mới."
+          ],
+          "systemFlow": [
+            "Nguồn dữ liệu: `buildShopPeriodStats(shop, allOrders, curStart, curEnd, prevStart, prevEnd)` gọi cho TỪNG shop trong đại lý — DÙNG CHUNG với khối 6 KPI ([AGA-REPORT-10](./kpi-tong-quan-theo-ky.md)), không phải 2 nguồn tính riêng, đảm bảo 6 KPI luôn khớp CHÍNH XÁC với tổng (Σ) cột tương ứng của bảng này.",
+            "`rankedShopStats = shopStatsCur` lọc theo ô tìm kiếm (khớp không phân biệt hoa/thường trên `name` hoặc `id` của shop), sắp giảm dần theo `revenue`.",
+            "Click 1 dòng → `navigate('/agency-admin/shops/:id')`.",
+            "Bộ lọc \"Thời gian\" (dropdown đặt ở header trang — AGA-REPORT-7) điều khiển khoảng Kỳ này/Kỳ trước dùng để tính bảng này — đổi lựa chọn → gọi lại `buildShopPeriodStats()` cho mọi shop theo khoảng mới.",
+            "\"Khách mới\"/\"Khách quay lại\" trong bảng dùng đúng định nghĩa/logic ở [AGA-REPORT-8](./khach-hang-moi.md)/[AGA-REPORT-9](./khach-quay-lai.md) — không tính lại riêng ở đây."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bảng đủ 6 cột đúng thứ tự: Shop, Doanh thu, Sản lượng, AOV/đơn, Khách mới, Khách quay lại — sắp theo Doanh thu giảm dần.",
+            "AC2: Gõ vào ô tìm kiếm lọc đúng theo tên/mã shop (không phân biệt hoa/thường); không có shop nào khớp → hiện \"Không tìm thấy shop phù hợp.\"; đại lý chưa có shop → hiện \"Chưa có shop nào.\"",
+            "AC3: Bấm vào 1 dòng bất kỳ trong bảng → điều hướng đúng trang chi tiết shop đó (`/agency-admin/shops/:id`).",
+            "AC4: Giá trị mỗi dòng trong bảng khớp CHÍNH XÁC với kết quả `buildShopPeriodStats()` của đúng shop đó, theo đúng khoảng Kỳ này đang chọn ở dropdown \"Thời gian\".",
+            "AC5: Đổi dropdown \"Thời gian\" → bảng cập nhật lại theo đúng khoảng Kỳ này mới, khớp với 6 KPI ở AGA-REPORT-10.",
+            "AC6: Đại lý chưa có đơn hàng nào (`agencyOrders` rỗng) → mọi dòng trong bảng hiện 0/0 ₫/0 KH, không lỗi/NaN."
+          ],
+          "notes": [
+            "**Redesign lần 2 (2026-09-27)**: bộ lọc kỳ điều khiển bảng này đổi từ 3 nút Ngày/Tuần/Tháng đặt trong card \"Xu hướng...\" (AGA-REPORT-12) sang dropdown \"Thời gian\" ở header trang (AGA-REPORT-7) — bản thân bảng (cột, sắp xếp, tìm kiếm) không đổi gì.",
+            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng phần của trang — AGA-REPORT-7 giờ chỉ còn giữ khung trang tổng thể (header, thứ tự các khối), không còn mô tả bảng này nữa.",
+            "Không có \"known gap\" nào về nguồn dữ liệu — bảng dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+          ]
         }
       ]
     }
   ],
   "history": [
+    {
+      "version": "1.13.0",
+      "date": "2026-09-27",
+      "summary": "Redesign lần 2 trang \"Báo cáo\" theo mockup UI thật: đổi tiêu đề về \"Báo cáo\", gộp mô tả + \"Cập nhật lúc\" 1 dòng, chuyển bộ lọc Ngày/Tuần/Tháng từ card \"Xu hướng...\" lên dropdown \"Thời gian\" ở header, tách 6 KPI thành 2 hàng (4 thẻ chính + 2 thẻ AOV rộng hơn) với badge % cùng hàng số lớn — cập nhật AGA-REPORT-7/10/12/13"
+    },
+    {
+      "version": "1.12.0",
+      "date": "2026-09-27",
+      "summary": "Tách nốt AGA-REPORT-7 — bảng \"Chi tiết theo shop\" tách thành AGA-REPORT-13 riêng, AGA-REPORT-7 giờ chỉ còn giữ khung trang tổng thể (header, thứ tự các khối); cập nhật cross-reference ở AGA-REPORT-8/9/10/12 trỏ đúng sang AGA-REPORT-13"
+    },
+    {
+      "version": "1.11.0",
+      "date": "2026-09-23",
+      "summary": "Tách tiếp AGA-REPORT-7 thành 3 story: AGA-REPORT-10 (khối 6 KPI tổng quan), AGA-REPORT-11 (card \"Khách hàng\" bố cục), AGA-REPORT-12 (biểu đồ \"Xu hướng doanh thu & sản lượng\") — AGA-REPORT-7 giờ chỉ còn giữ khung trang tổng thể và bảng \"Chi tiết theo shop\""
+    },
+    {
+      "version": "1.10.0",
+      "date": "2026-09-23",
+      "summary": "Tách AGA-REPORT-7 (redesign Báo cáo) thành 3 story: AGA-REPORT-7 chỉ còn giữ cấu trúc trang tổng thể, AGA-REPORT-8 (Khách hàng mới) và AGA-REPORT-9 (Khách quay lại) tách riêng để quản lý độc lập từng chỉ số khách hàng"
+    },
+    {
+      "version": "1.9.0",
+      "date": "2026-09-23",
+      "summary": "Thêm AGA-REPORT-7 — redesign trang \"Báo cáo\" theo mockup mới (6 KPI, biểu đồ xu hướng dạng đường, khối Khách hàng, bảng Chi tiết theo shop); Khách hàng mới/quay lại giờ tính theo receiverPhone (khách cuối của shop), thay thế UI/logic mô tả ở AGA-REPORT-2 đến AGA-REPORT-6"
+    },
     {
       "version": "1.8.0",
       "date": "2026-09-23",

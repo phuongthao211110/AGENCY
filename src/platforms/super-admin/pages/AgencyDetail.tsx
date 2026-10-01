@@ -13,8 +13,9 @@ import {
   DollarOutlined,
   BarChartOutlined,
   LockOutlined,
+  SwapRightOutlined,
 } from '@ant-design/icons'
-import { agenciesList, setAllowedCarriers, setOrderFormComponent, ORDER_FORM_COMPONENT_LABELS, ORDER_FORM_COMPONENT_SCOPE, DEFAULT_ORDER_FORM_COMPONENTS, type OrderFormComponents, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub, findPastHubRejection } from '../agencyStore'
+import { agenciesList, setAllowedCarriers, setOrderFormComponent, getOrderFormComponentHistory, ORDER_FORM_COMPONENT_LABELS, ORDER_FORM_COMPONENT_SCOPE, DEFAULT_ORDER_FORM_COMPONENTS, type OrderFormComponents, shopConnections, approveShopConnection, rejectShopConnection, carrierRequests, approveCarrierRequest, rejectCarrierRequest, clientHubs247, grantAdditionalHub, findPastHubRejection } from '../agencyStore'
 import allShops from '../../../mock-data/shops.json'
 import { getShopServiceFeeTotal } from '../../../mock-data/reconciliationLedger'
 import AgencyRequestsView from '../components/AgencyRequestsView'
@@ -217,7 +218,7 @@ const ALL_CARRIERS: { key: string; label: string; color: string; description: st
 export default function AgencyDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'info' | 'shops' | 'orders'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'shops' | 'orders' | 'history'>('info')
   const [toastVisible, setToastVisible] = useState(false)
   const [, forceRender] = useState(0)
   const [rejectingId, setRejectingId] = useState<string | null>(null)
@@ -287,10 +288,11 @@ export default function AgencyDetail() {
   const street = addrParts[0]?.trim() ?? agency.address
   const wardCity = addrParts.slice(1).join(',').trim()
 
-  const tabs: { key: 'info' | 'shops' | 'orders'; label: string }[] = [
+  const tabs: { key: 'info' | 'shops' | 'orders' | 'history'; label: string }[] = [
     { key: 'info', label: 'Thông tin đại lý' },
     { key: 'shops', label: 'Danh sách shop' },
     { key: 'orders', label: 'Đơn hàng' },
+    { key: 'history', label: 'Lịch sử chỉnh sửa' },
   ]
 
   return (
@@ -914,6 +916,71 @@ export default function AgencyDetail() {
                     </div>
                   </InfoCard>
                 </>
+              )
+            })()}
+          </div>
+        )}
+
+        {/* ── Tab: Lịch sử chỉnh sửa ── */}
+        {activeTab === 'history' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {(() => {
+              const history = getOrderFormComponentHistory(agency.id)
+              if (history.length === 0) {
+                return (
+                  <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, fontStyle: 'italic', padding: '16px 0' }}>
+                    Chưa có thay đổi nào.
+                  </div>
+                )
+              }
+              const grouped: Record<string, typeof history> = {}
+              history.forEach((h) => {
+                const date = h.changedAt.slice(0, 10)
+                if (!grouped[date]) grouped[date] = []
+                grouped[date].push(h)
+              })
+              const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+              return (
+                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+                  {/* Table header */}
+                  <div style={{ display: 'flex', background: '#F3F4F6' }}>
+                    <div style={{ width: 80, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, flexShrink: 0 }}>Thời gian</div>
+                    <div style={{ flex: '1 0 0', minWidth: 140, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Người thực hiện</div>
+                    <div style={{ flex: '1 0 0', minWidth: 160, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Trường thay đổi</div>
+                    <div style={{ flex: '3 0 0', minWidth: 220, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY }}>Nội dung thay đổi</div>
+                  </div>
+                  <div style={{ height: 1, background: C_BORDER }} />
+                  {sortedDates.map((date) => {
+                    const [y, m, d] = date.split('-')
+                    const dateLabel = `${d}/${m}/${y}`
+                    const items = grouped[date]
+                    return (
+                      <div key={date}>
+                        <div style={{ background: '#F3F4F6', padding: '6px 12px', fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY, borderBottom: `1px solid ${C_BORDER}` }}>
+                          {dateLabel}
+                        </div>
+                        {items.map((item, idx) => (
+                          <div key={item.id}>
+                            <div style={{ display: 'flex', alignItems: 'center', background: '#fff' }}>
+                              <div style={{ width: 80, padding: '10px 12px', fontSize: 13, color: C_TEXT_SECONDARY, flexShrink: 0 }}>
+                                {new Date(item.changedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                              <div style={{ flex: '1 0 0', minWidth: 140, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>Super Admin</div>
+                              <div style={{ flex: '1 0 0', minWidth: 160, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY }}>{ORDER_FORM_COMPONENT_LABELS[item.key]}</div>
+                              <div style={{ flex: '3 0 0', minWidth: 220, padding: '10px 12px', fontSize: 13, color: C_TEXT_PRIMARY, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ color: C_TEXT_SECONDARY }}>{item.fromValue ? 'Bật' : 'Tắt'}</span>
+                                <SwapRightOutlined style={{ fontSize: 12, color: C_TEXT_SECONDARY, flexShrink: 0 }} />
+                                <span style={{ color: C_TEXT_PRIMARY, fontWeight: 500 }}>{item.toValue ? 'Bật' : 'Tắt'}</span>
+                              </div>
+                            </div>
+                            {idx < items.length - 1 && <div style={{ height: 1, background: C_BORDER }} />}
+                          </div>
+                        ))}
+                        <div style={{ height: 1, background: C_BORDER }} />
+                      </div>
+                    )
+                  })}
+                </div>
               )
             })()}
           </div>

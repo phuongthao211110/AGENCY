@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import { RiseOutlined, FallOutlined, SearchOutlined } from '@ant-design/icons'
@@ -11,7 +11,6 @@ import { getShopCodTotal, getShopServiceFeeTotal } from '../../../mock-data/reco
 const C_TEXT_PRIMARY   = '#111827'
 const C_TEXT_SECONDARY = '#6B7280'
 const C_LINK           = '#3B82F6'
-const C_ACTION         = '#FF5200'
 const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
 const C_GOOD           = '#16A34A'
@@ -40,8 +39,14 @@ function buildShopStats() {
   })
 }
 
-type PeriodKey = 'day' | 'week' | 'month'
-const PERIOD_LABELS: Record<PeriodKey, string> = { day: 'Ngày', week: 'Tuần', month: 'Tháng' }
+type PeriodPreset = 'today' | 'yesterday' | 'thisWeek' | 'lastWeek' | 'thisMonth' | 'lastMonth' | 'd30' | 'd60' | 'd90' | 'custom'
+const PERIOD_PRESET_LABELS: Record<PeriodPreset, string> = {
+  today: 'Hôm nay', yesterday: 'Hôm qua', thisWeek: 'Tuần này', lastWeek: 'Tuần trước',
+  thisMonth: 'Tháng này', lastMonth: 'Tháng trước', d30: '30 ngày trước', d60: '60 ngày trước',
+  d90: '90 ngày trước', custom: 'Tuỳ chỉnh',
+}
+// Thứ tự hiện trong panel filter — ĐÚNG thứ tự tham khảo từ mockup người dùng cung cấp.
+const PERIOD_PRESET_ORDER: PeriodPreset[] = ['today', 'yesterday', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth', 'd30', 'd60', 'd90', 'custom']
 const DAY_MS = 24 * 60 * 60 * 1000
 
 function getAgencyOrders() {
@@ -49,52 +54,102 @@ function getAgencyOrders() {
   return loadOrders().filter((o) => shopIds.has(o.shopId))
 }
 
-function sumFeeInRange(orders: { createdAt: string; fee: number }[], start: Date, end: Date) {
+// Đơn feePayer='sender' đã chọn thanh toán phí ship qua kênh online (MoMo / chuyển khoản ngân
+// hàng) VÀ đã thanh toán xong (paymentStatus 'paid') — phí này shop đã trả thẳng ngay lúc tạo/xác
+// nhận đơn, KHÔNG còn nằm trong dòng tiền COD của kỳ đối soát nữa. Nếu vẫn cộng order.fee của các
+// đơn này vào doanh thu/tổng phí theo kỳ thì coi như tính phí 2 LẦN (1 lần qua online, 1 lần khi
+// đối soát COD) — dùng hàm này ở MỌI nơi cộng dồn order.fee trong file này để loại trừ đúng.
+function isPrepaidOnline(o: { paymentMethod?: string; paymentStatus?: string }): boolean {
+  return (o.paymentMethod === 'momo' || o.paymentMethod === 'bank_transfer') && o.paymentStatus === 'paid'
+}
+
+function sumFeeInRange(orders: { createdAt: string; fee: number; paymentMethod?: string; paymentStatus?: string }[], start: Date, end: Date) {
   const startMs = start.getTime()
   const endMs = end.getTime()
   return orders.reduce((sum, o) => {
     const t = new Date(o.createdAt).getTime()
-    return t >= startMs && t <= endMs ? sum + o.fee : sum
+    if (t < startMs || t > endMs) return sum
+    if (isPrepaidOnline(o)) return sum
+    return sum + o.fee
   }, 0)
 }
 
 const startOfDay   = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x }
 const endOfDay     = (d: Date) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x }
 const startOfMonth = (d: Date) => { const x = new Date(d); x.setDate(1); x.setHours(0, 0, 0, 0); return x }
+// Tuần bắt đầu Thứ 2 (quy ước VN) — getDay(): 0=CN...6=Thứ7, lùi về đúng Thứ 2 gần nhất.
+const startOfWeek  = (d: Date) => { const x = startOfDay(d); const day = x.getDay(); const diff = day === 0 ? 6 : day - 1; x.setDate(x.getDate() - diff); return x }
 const fmtDate       = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 const fmtDateTime    = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}, ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+const fmtDateInput   = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` // yyyy-mm-dd cho <input type="date">
 
-// Khoảng "Kỳ này" / "Kỳ trước" theo ĐÚNG yêu cầu nghiệp vụ cho từng tab — 3 tab dùng 3 định nghĩa
-// "kỳ trước" khác nhau:
-// - Ngày: so với CÙNG KỲ D-7 (đúng ngày này 7 ngày trước — cùng thứ trong tuần), không phải hôm qua.
-// - Tuần: 7 ngày gần nhất so với 7 ngày LIỀN TRƯỚC đó (để tính % tăng/giảm được).
-// - Tháng: MTD (đầu tháng → đúng ngày mốc) so với MTD-1 (đầu tháng trước → đúng ngày tương ứng
-//   tháng trước, có clamp nếu tháng trước ít ngày hơn) — KHÔNG so với trọn tháng trước.
-function getComparisonRanges(period: PeriodKey, anchor: Date) {
-  if (period === 'day') {
-    const curStart = startOfDay(anchor)
-    const curEnd   = endOfDay(anchor)
-    const prevAnchor = new Date(anchor.getTime() - 7 * DAY_MS)
-    return { curStart, curEnd, prevStart: startOfDay(prevAnchor), prevEnd: endOfDay(prevAnchor), compareLabel: 'Cùng kỳ 7 ngày trước (D-7)' }
-  }
-  if (period === 'week') {
-    const curEnd   = endOfDay(anchor)
-    const curStart = startOfDay(new Date(anchor.getTime() - 6 * DAY_MS))
-    const prevEnd   = endOfDay(new Date(curStart.getTime() - DAY_MS))
-    const prevStart = startOfDay(new Date(prevEnd.getTime() - 6 * DAY_MS))
-    return { curStart, curEnd, prevStart, prevEnd, compareLabel: 'Tuần liền trước' }
-  }
-  const curStart = startOfMonth(anchor)
+type Range = { curStart: Date; curEnd: Date; prevStart: Date; prevEnd: Date; compareLabel: string }
+
+// "N ngày gần nhất kết thúc tại anchor" so với "N ngày LIỀN TRƯỚC đó" — công thức dùng chung cho
+// Hôm nay/Hôm qua/30-60-90 ngày trước/Tuỳ chỉnh (đều là 1 cửa sổ N ngày trượt, chỉ khác N và anchor).
+function rollingRange(anchor: Date, days: number, compareLabel: string): Range {
   const curEnd   = endOfDay(anchor)
-  const dayOfMonth = anchor.getDate()
-  const prevMonthFirst = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1)
-  const daysInPrevMonth = new Date(prevMonthFirst.getFullYear(), prevMonthFirst.getMonth() + 1, 0).getDate()
-  const prevAnchor = new Date(prevMonthFirst.getFullYear(), prevMonthFirst.getMonth(), Math.min(dayOfMonth, daysInPrevMonth))
-  return { curStart, curEnd, prevStart: startOfMonth(prevAnchor), prevEnd: endOfDay(prevAnchor), compareLabel: 'MTD-1 (cùng ngày tháng trước)' }
+  const curStart = startOfDay(new Date(anchor.getTime() - (days - 1) * DAY_MS))
+  const prevEnd   = endOfDay(new Date(curStart.getTime() - DAY_MS))
+  const prevStart = startOfDay(new Date(prevEnd.getTime() - (days - 1) * DAY_MS))
+  return { curStart, curEnd, prevStart, prevEnd, compareLabel }
 }
 
-function computePeriodComparison(orders: { createdAt: string; fee: number }[], period: PeriodKey, anchor: Date) {
-  const { curStart, curEnd, prevStart, prevEnd, compareLabel } = getComparisonRanges(period, anchor)
+// Khoảng "Kỳ này" / "Kỳ trước" theo preset đang chọn ở filter "Thời gian" — mỗi preset 1 định
+// nghĩa "kỳ trước" riêng cho % tăng/giảm:
+// - Hôm nay/Hôm qua/30-60-90 ngày trước/Tuỳ chỉnh: cửa sổ N-ngày trượt so với N-ngày liền trước
+//   (xem rollingRange) — Hôm qua dùng anchor lùi 1 ngày nên N=1 vẫn đúng nghĩa "đúng 1 ngày đó".
+// - Tuần này/Tháng này: TO-DATE (đầu tuần/tháng → đúng ngày mốc) so với CÙNG OFFSET NGÀY của
+//   tuần/tháng liền trước — giữ đúng quy ước MTD/MTD-1 đã có từ trước khi mở rộng sang Tuần.
+// - Tuần trước/Tháng trước: TRỌN VẸN tuần/tháng liền trước so với tuần/tháng liền trước NỮA.
+function getComparisonRanges(preset: PeriodPreset, anchor: Date, custom: { from: Date; to: Date } | null = null): Range {
+  switch (preset) {
+    case 'today': return rollingRange(anchor, 1, 'Hôm qua')
+    case 'yesterday': return rollingRange(new Date(anchor.getTime() - DAY_MS), 1, '2 ngày trước')
+    case 'd30': return rollingRange(anchor, 30, '30 ngày liền trước')
+    case 'd60': return rollingRange(anchor, 60, '60 ngày liền trước')
+    case 'd90': return rollingRange(anchor, 90, '90 ngày liền trước')
+    case 'custom': {
+      const from = custom?.from ?? anchor
+      const to   = custom?.to ?? anchor
+      const days = Math.max(1, Math.round((endOfDay(to).getTime() - startOfDay(from).getTime()) / DAY_MS) + 1)
+      return rollingRange(anchor, days, `${fmtNum(days)} ngày liền trước`)
+    }
+    case 'thisWeek': {
+      const curStart = startOfWeek(anchor)
+      const curEnd   = endOfDay(anchor)
+      const prevStart = new Date(curStart.getTime() - 7 * DAY_MS)
+      const prevEnd   = new Date(curEnd.getTime() - 7 * DAY_MS)
+      return { curStart, curEnd, prevStart, prevEnd, compareLabel: 'Cùng kỳ tuần trước' }
+    }
+    case 'lastWeek': {
+      const curEnd    = endOfDay(new Date(startOfWeek(anchor).getTime() - DAY_MS))
+      const curStart  = startOfWeek(curEnd)
+      const prevEnd   = endOfDay(new Date(curStart.getTime() - DAY_MS))
+      const prevStart = startOfWeek(prevEnd)
+      return { curStart, curEnd, prevStart, prevEnd, compareLabel: 'Tuần trước nữa' }
+    }
+    case 'thisMonth': {
+      const curStart = startOfMonth(anchor)
+      const curEnd   = endOfDay(anchor)
+      const dayOfMonth = anchor.getDate()
+      const prevMonthFirst = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1)
+      const daysInPrevMonth = new Date(prevMonthFirst.getFullYear(), prevMonthFirst.getMonth() + 1, 0).getDate()
+      const prevAnchor = new Date(prevMonthFirst.getFullYear(), prevMonthFirst.getMonth(), Math.min(dayOfMonth, daysInPrevMonth))
+      return { curStart, curEnd, prevStart: startOfMonth(prevAnchor), prevEnd: endOfDay(prevAnchor), compareLabel: 'Cùng kỳ tháng trước' }
+    }
+    case 'lastMonth': {
+      const curEnd    = endOfDay(new Date(startOfMonth(anchor).getTime() - DAY_MS))
+      const curStart  = startOfMonth(curEnd)
+      const prevEnd   = endOfDay(new Date(curStart.getTime() - DAY_MS))
+      const prevStart = startOfMonth(prevEnd)
+      return { curStart, curEnd, prevStart, prevEnd, compareLabel: 'Tháng trước nữa' }
+    }
+  }
+}
+
+function computePeriodComparison(orders: { createdAt: string; fee: number }[], preset: PeriodPreset, anchor: Date, custom: { from: Date; to: Date } | null = null) {
+  const { curStart, curEnd, prevStart, prevEnd, compareLabel } = getComparisonRanges(preset, anchor, custom)
   const current  = sumFeeInRange(orders, curStart, curEnd)
   const previous = sumFeeInRange(orders, prevStart, prevEnd)
   return { current, previous, curStart, curEnd, prevStart, prevEnd, compareLabel }
@@ -153,7 +208,7 @@ function countReactiveCustomers(orders: CustomerOrder[], curStart: Date, curEnd:
 
 // ── Thống kê 1 shop trong 1 khoảng kỳ — Doanh thu/Sản lượng/AOV/KH OB/KH Re-active đều tính
 // TRÊN ĐÚNG đơn hàng của shop đó (đã filter theo shopId trước khi truyền vào 2 hàm KH ở trên). ──
-type OrderForStats = { createdAt: string; fee: number; weight: number; shopId: string; receiverPhone: string }
+type OrderForStats = { createdAt: string; fee: number; weight: number; shopId: string; receiverPhone: string; paymentMethod?: string; paymentStatus?: string }
 type ShopPeriodStat = {
   id: string; name: string; status: string
   revenue: number; volume: number; aov: number
@@ -167,7 +222,7 @@ function buildShopPeriodStats(
 ): ShopPeriodStat {
   const shopOrders = allOrders.filter((o) => o.shopId === shop.id)
   const curShopOrders = shopOrders.filter((o) => { const t = new Date(o.createdAt).getTime(); return t >= curStart.getTime() && t <= curEnd.getTime() })
-  const revenue = curShopOrders.reduce((sum, o) => sum + o.fee, 0)
+  const revenue = curShopOrders.reduce((sum, o) => isPrepaidOnline(o) ? sum : sum + o.fee, 0)
   const volume  = curShopOrders.length
   return {
     id: shop.id, name: shop.name, status: shop.status,
@@ -180,21 +235,78 @@ function buildShopPeriodStats(
 // ── Chuỗi theo NGÀY (độc lập với tab Ngày/Tuần/Tháng của KPI phía trên) — dùng riêng cho biểu đồ
 // đường "Xu hướng doanh thu & sản lượng" để luôn có đủ điểm vẽ đường mượt, không phụ thuộc độ dài
 // kỳ đang chọn. `days` điểm liên tiếp, điểm cuối luôn là `endDate`. ─────────────────────────────
-type DailyPoint = { date: Date; label: string; revenue: number; volume: number }
+// ── Biểu đồ cột chồng theo shop — bảng màu định danh (categorical) của skill dataviz: 8 hue cố
+// định thứ tự, CVD-safe cho cặp liền kề (đúng trường hợp cột chồng — mỗi segment chỉ "chạm" đúng
+// 2 segment lân cận). Dự án chưa có bảng màu nhiều-chuỗi riêng (tokens.ts chỉ có 1 màu action + 1
+// màu link) nên dùng thẳng bộ màu mặc định đã validate của skill, không tự bịa màu.
+// 8 màu đầu = bộ categorical đã validate sẵn của skill (CVD-safe, thứ tự cố định). 2 màu cuối
+// (cyan, nâu hổ phách) là THÊM NGOÀI chuẩn 8-slot của skill — người dùng yêu cầu rõ hiển thị đủ
+// 10 màu riêng cho đúng "10 shop nhiều nhất" (không gộp sớm vào "Khác" như bản 8-slot trước).
+// Đã chạy validate_palette.js cho cả 10 màu: PASS mọi check kể cả CVD cặp liền kề — nhưng đây vẫn
+// là lựa chọn CHỦ ĐỘNG đánh đổi khỏi khuyến nghị "không tự sinh quá 8 hue" của skill, theo đúng
+// yêu cầu khớp ảnh mockup của người dùng.
+const SHOP_PALETTE = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948', '#0891b2', '#a16207']
+const C_OTHER = '#898781' // "Khác" — màu de-emphasis (muted ink), nằm ngoài 10 màu định danh ở trên
+const OTHER_ID = '__other__'
+// Giới hạn số shop được tô màu riêng = 10 — khớp đúng lựa chọn tối đa của dropdown ("10 shop
+// nhiều nhất"). "Khác" chỉ xuất hiện khi SỐ SHOP THỰC TẾ CÓ DOANH THU vượt quá giới hạn đang chọn
+// (kể cả khi chọn "Tất cả shop" mà đại lý có > 10 shop active) — không phải lúc nào cũng có "Khác".
+const MAX_COLORED_SHOPS = 10
 
-function buildDailySeries(orders: { createdAt: string; fee: number }[], endDate: Date, days: number): DailyPoint[] {
-  const points: DailyPoint[] = []
+type TopLimitKey = 'top5' | 'top10' | 'all'
+const TOP_LIMIT_LABELS: Record<TopLimitKey, string> = { top5: '5 shop nhiều nhất', top10: '10 shop nhiều nhất', all: 'Tất cả shop' }
+const TOP_LIMIT_N: Record<TopLimitKey, number> = { top5: 5, top10: 10, all: Infinity }
+
+type StackEntity = { id: string; name: string; color: string }
+type ShopDayPoint = { date: Date; label: string; values: Record<string, { revenue: number; volume: number }> }
+
+// Xếp hạng shop theo TỔNG doanh thu trong cả khoảng `days` ngày (không đổi theo toggle Doanh
+// thu/Sản lượng) — để identity màu luôn ổn định khi đổi toggle hay khi đổi ngày hover (đúng quy
+// tắc "màu đi theo thực thể, không đi theo thứ hạng tức thời" của dataviz skill).
+function buildShopStackedSeries(
+  orders: { createdAt: string; fee: number; shopId: string; paymentMethod?: string; paymentStatus?: string }[],
+  shops: { id: string; name: string }[],
+  endDate: Date,
+  days: number,
+  topLimitKey: TopLimitKey,
+): { points: ShopDayPoint[]; entities: StackEntity[]; otherCount: number } {
+  const windowStart = startOfDay(new Date(endDate.getTime() - (days - 1) * DAY_MS))
+  const windowEnd = endOfDay(endDate)
+  const windowOrders = orders.filter((o) => { const t = new Date(o.createdAt).getTime(); return t >= windowStart.getTime() && t <= windowEnd.getTime() })
+
+  const totalByShop = new Map<string, number>()
+  for (const o of windowOrders) {
+    if (isPrepaidOnline(o)) continue
+    totalByShop.set(o.shopId, (totalByShop.get(o.shopId) ?? 0) + o.fee)
+  }
+  const rankedIds = shops.map((s) => s.id).filter((id) => totalByShop.has(id)).sort((a, b) => totalByShop.get(b)! - totalByShop.get(a)!)
+
+  const effectiveN = Math.min(TOP_LIMIT_N[topLimitKey], MAX_COLORED_SHOPS, rankedIds.length)
+  const topIds = rankedIds.slice(0, effectiveN)
+  const topSet = new Set(topIds)
+  const otherCount = rankedIds.length - topIds.length
+  const hasOther = otherCount > 0
+
+  const entities: StackEntity[] = topIds.map((id, i) => ({ id, name: shops.find((s) => s.id === id)!.name, color: SHOP_PALETTE[i] }))
+  if (hasOther) entities.push({ id: OTHER_ID, name: 'Khác', color: C_OTHER })
+
+  const points: ShopDayPoint[] = []
   for (let i = days - 1; i >= 0; i--) {
     const day = new Date(endDate.getTime() - i * DAY_MS)
-    const start = startOfDay(day), end = endOfDay(day)
-    const dayOrders = orders.filter((o) => { const t = new Date(o.createdAt).getTime(); return t >= start.getTime() && t <= end.getTime() })
-    points.push({
-      date: day, label: fmtDate(day),
-      revenue: dayOrders.reduce((sum, o) => sum + o.fee, 0),
-      volume: dayOrders.length,
-    })
+    const dStart = startOfDay(day), dEnd = endOfDay(day)
+    const values: Record<string, { revenue: number; volume: number }> = {}
+    for (const ent of entities) values[ent.id] = { revenue: 0, volume: 0 }
+    for (const o of windowOrders) {
+      const t = new Date(o.createdAt).getTime()
+      if (t < dStart.getTime() || t > dEnd.getTime()) continue
+      const key = topSet.has(o.shopId) ? o.shopId : (hasOther ? OTHER_ID : null)
+      if (!key) continue
+      values[key].revenue += isPrepaidOnline(o) ? 0 : o.fee
+      values[key].volume += 1
+    }
+    points.push({ date: day, label: fmtDate(day), values })
   }
-  return points
+  return { points, entities, otherCount }
 }
 
 // ── UI: badge % tăng/giảm dùng chung cho mọi KPI ──────────────
@@ -216,38 +328,195 @@ function DeltaBadge({ pct }: { pct: number | null }) {
 
 // ── KPI gọn (label + số lớn + badge %) — 6 ô xếp 1 hàng theo đúng mockup, không icon để giữ mật
 // độ thông tin cao, không rối mắt như KpiCard cũ (icon + label + số lớn, tốn diện tích hơn). ────
-function CompactKpiCard({ label, value, deltaPct, tooltip }: { label: string; value: string; deltaPct: number | null; tooltip?: string }) {
+function CompactKpiCard({ label, value, deltaPct, tooltip, flexBasis = '150px' }: { label: string; value: string; deltaPct: number | null; tooltip?: string; flexBasis?: string }) {
   return (
-    <div style={{ flex: '1 1 150px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }} title={tooltip}>
+    <div style={{ flex: `1 1 ${flexBasis}`, background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }} title={tooltip}>
       <span style={{ fontSize: 12.5, color: C_TEXT_SECONDARY }}>{label}</span>
-      <span style={{ fontSize: 21, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: 1.15 }}>{value}</span>
-      <DeltaBadge pct={deltaPct} />
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <span style={{ fontSize: 21, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: 1.15 }}>{value}</span>
+        <DeltaBadge pct={deltaPct} />
+      </div>
     </div>
   )
 }
 
-// ── Biểu đồ đường + vùng tô — "Kỳ này" (nét liền, có tô nền) chồng "Kỳ trước" (nét đứt, cùng
-// index ngày, lùi đúng 7 ngày) trên CHUNG 1 trục X, kèm toggle đổi chỉ số Doanh thu/Sản lượng.
-// Vẽ bằng SVG thuần (không thư viện) — cùng cách tiếp cận với ShopTrendChart trước đây. ─────────
-function TrendLineChart({ current, previous, metric }: { current: DailyPoint[]; previous: DailyPoint[]; metric: 'revenue' | 'volume' }) {
+// ── Filter "Thời gian" — nút mở panel liệt kê preset (radio) + ô ngày "từ...đến" phản ánh đúng
+// khoảng đang áp dụng (preset hay tuỳ chỉnh). Theo đúng pattern mockup người dùng cung cấp: click
+// nút → panel; chọn preset → đổi filter + đóng panel; sửa trực tiếp 1 trong 2 ô ngày → tự chuyển
+// sang "Tuỳ chỉnh" với đúng khoảng vừa nhập. ──────────────────────────────────────────────────────
+function TimeRangeFilter({
+  preset, curStart, curEnd, onChangePreset, onChangeCustomRange,
+}: {
+  preset: PeriodPreset
+  curStart: Date
+  curEnd: Date
+  onChangePreset: (p: PeriodPreset) => void
+  onChangeCustomRange: (from: Date, to: Date) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onClickOutside = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [open])
+
+  const handleDateInput = (which: 'from' | 'to', value: string) => {
+    if (!value) return
+    const [y, m, d] = value.split('-').map(Number)
+    const picked = new Date(y, m - 1, d)
+    const from = which === 'from' ? picked : curStart
+    const to   = which === 'to'   ? picked : curEnd
+    onChangeCustomRange(from, to)
+  }
+
+  return (
+    <div ref={rootRef} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 8,
+          border: `1px solid ${C_BORDER}`, background: '#fff', cursor: 'pointer',
+          fontSize: 13, color: C_TEXT_SECONDARY,
+        }}
+      >
+        Thời gian <b style={{ color: C_TEXT_PRIMARY }}>{PERIOD_PRESET_LABELS[preset]}</b>
+        <span style={{ fontSize: 10, color: C_TEXT_SECONDARY }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 20, width: 320,
+          background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          padding: 16,
+        }}>
+          <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginBottom: 10 }}>Thời gian</div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <input
+              type="date" value={fmtDateInput(curStart)}
+              onChange={(e) => handleDateInput('from', e.target.value)}
+              style={{ flex: 1, minWidth: 0, padding: '7px 8px', borderRadius: 8, border: 'none', background: C_BG_HEADER, fontSize: 13, color: C_TEXT_PRIMARY }}
+            />
+            <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, flexShrink: 0 }}>đến</span>
+            <input
+              type="date" value={fmtDateInput(curEnd)}
+              onChange={(e) => handleDateInput('to', e.target.value)}
+              style={{ flex: 1, minWidth: 0, padding: '7px 8px', borderRadius: 8, border: 'none', background: C_BG_HEADER, fontSize: 13, color: C_TEXT_PRIMARY }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {PERIOD_PRESET_ORDER.map((key) => {
+              const selected = preset === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => { onChangePreset(key); if (key !== 'custom') setOpen(false) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 2px', border: 'none', borderTop: `1px solid ${C_BORDER}`,
+                    background: 'none', cursor: 'pointer', fontSize: 14, color: C_TEXT_PRIMARY, textAlign: 'left',
+                  }}
+                >
+                  {PERIOD_PRESET_LABELS[key]}
+                  <span style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    border: `1.5px solid ${selected ? '#111827' : C_BORDER}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {selected && <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#111827' }} />}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Path 1 rect với 2 góc TRÊN bo tròn, đáy vuông — dùng cho segment TRÊN CÙNG của mỗi cột chồng
+// (xem dataviz skill marks-and-anatomy: "4px rounded data-end, square at the baseline").
+function topRoundedRectPath(x: number, y: number, w: number, h: number, r: number): string {
+  const rr = Math.max(0, Math.min(r, h / 2, w / 2))
+  if (rr <= 0) return `M${x},${y + h} L${x},${y} L${x + w},${y} L${x + w},${y + h} Z`
+  return `M${x},${y + h} L${x},${y + rr} Q${x},${y} ${x + rr},${y} L${x + w - rr},${y} Q${x + w},${y} ${x + w},${y + rr} L${x + w},${y + h} Z`
+}
+
+// ── Biểu đồ cột chồng theo shop — mỗi cột = 1 ngày, mỗi segment màu = 1 shop (tối đa
+// MAX_COLORED_SHOPS màu định danh riêng, phần còn lại gộp "Khác"). Hover 1 cột → bảng chi tiết
+// dưới biểu đồ liệt kê ĐỦ mọi thực thể của đúng ngày đó (đúng quy tắc "1 tooltip, mọi chuỗi" thay
+// vì phải trỏ đúng từng segment mỏng). Vẽ bằng SVG thuần, không thư viện — cùng cách tiếp cận với
+// biểu đồ đường trước đây trong file này. ──────────────────────────────────────────────────────
+function ShopStackedBarChart({ points, entities, metric }: { points: ShopDayPoint[]; entities: StackEntity[]; metric: 'revenue' | 'volume' }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
-  const curValues  = current.map((p) => p[metric])
-  const prevValues = previous.map((p) => p[metric])
-  const maxValue = Math.max(1, ...curValues, ...prevValues)
-  const n = current.length
+  const [tableView, setTableView] = useState(false)
+  const n = points.length
+  const totals = points.map((p) => entities.reduce((sum, e) => sum + p.values[e.id][metric], 0))
+  const maxValue = Math.max(1, ...totals)
 
-  const W = 640, H = 220, padL = 56, padR = 16, padT = 16, padB = 28
+  const W = 640, H = 240, padL = 56, padR = 16, padT = 16, padB = 28
   const plotW = W - padL - padR, plotH = H - padT - padB
-  const xFor = (i: number) => padL + (n <= 1 ? 0 : (i / (n - 1)) * plotW)
-  const yFor = (v: number) => padT + plotH - (v / maxValue) * plotH
-
-  const curPath  = curValues.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i).toFixed(1)} ${yFor(v).toFixed(1)}`).join(' ')
-  const prevPath = prevValues.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i).toFixed(1)} ${yFor(v).toFixed(1)}`).join(' ')
-  const areaPath = `${curPath} L ${xFor(n - 1).toFixed(1)} ${(padT + plotH).toFixed(1)} L ${xFor(0).toFixed(1)} ${(padT + plotH).toFixed(1)} Z`
+  const barSlot = n > 0 ? plotW / n : plotW
+  const barW = Math.min(24, barSlot * 0.6)
+  const GAP = 2 // 2px surface gap giữa các segment chồng (dataviz skill: "surface gap")
+  const xFor = (i: number) => padL + barSlot * i + barSlot / 2
 
   const gridSteps = [0, 0.25, 0.5, 0.75, 1]
   const fmtMetric = (v: number) => metric === 'revenue' ? fmtVND(v) : fmtNum(v)
-  const xLabelEvery = Math.max(1, Math.ceil(n / 6))
+  const xLabelEvery = Math.max(1, Math.ceil(n / 7))
+
+  if (tableView) {
+    return (
+      <div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, color: C_TEXT_SECONDARY, fontWeight: 600, minWidth: 180 }}>Shop</th>
+                {points.map((p, i) => (
+                  <th key={i} style={{ textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, color: C_TEXT_SECONDARY, fontWeight: 600, whiteSpace: 'nowrap' }}>{p.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {entities.map((e) => (
+                <tr key={e.id}>
+                  <td style={{ padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}` }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 2, background: e.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: e.id === OTHER_ID ? C_TEXT_PRIMARY : C_LINK }}>{e.name}</span>
+                    </span>
+                    {e.id !== OTHER_ID && <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 1, marginLeft: 14 }}>{e.id}</div>}
+                  </td>
+                  {points.map((p, i) => (
+                    <td key={i} style={{ textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, color: C_TEXT_PRIMARY, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtMetric(p.values[e.id][metric])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {entities.length === 0 && (
+                <tr><td colSpan={points.length + 1} style={{ padding: '16px 12px', textAlign: 'center', color: C_TEXT_SECONDARY }}>Chưa có shop nào phát sinh doanh thu trong 14 ngày gần nhất.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <button
+          onClick={() => setTableView(false)}
+          style={{ marginTop: 10, background: 'none', border: 'none', padding: 0, fontSize: 12, fontWeight: 600, color: C_LINK, cursor: 'pointer' }}
+        >
+          ↑ Xem dạng biểu đồ
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -259,29 +528,36 @@ function TrendLineChart({ current, previous, metric }: { current: DailyPoint[]; 
           </g>
         ))}
 
-        <path d={areaPath} fill={C_ACTION} opacity={0.08} stroke="none" />
-        <path d={prevPath} fill="none" stroke="#9CA3AF" strokeWidth={1.5} strokeDasharray="4 4" />
-        <path d={curPath} fill="none" stroke={C_ACTION} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />
+        {points.map((p, i) => {
+          const x = xFor(i) - barW / 2
+          let yCursor = padT + plotH
+          const segs = entities.map((e) => {
+            const v = p.values[e.id][metric]
+            const segH = (v / maxValue) * plotH
+            const top = yCursor - segH
+            yCursor = top
+            return { ent: e, v, top, segH }
+          })
+          const lastVisible = [...segs].reverse().find((s) => s.segH > 0)
+          return (
+            <g key={i} opacity={hoverIdx === null || hoverIdx === i ? 1 : 0.55}>
+              {segs.map((seg) => {
+                if (seg.segH <= 0) return null
+                const h = Math.max(0.5, seg.segH - GAP)
+                if (seg === lastVisible) {
+                  return <path key={seg.ent.id} d={topRoundedRectPath(x, seg.top, barW, h, 4)} fill={seg.ent.color} />
+                }
+                return <rect key={seg.ent.id} x={x} y={seg.top} width={barW} height={h} fill={seg.ent.color} />
+              })}
+              <rect
+                x={padL + barSlot * i} y={padT} width={barSlot} height={plotH} fill="transparent"
+                onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
+              />
+            </g>
+          )
+        })}
 
-        {current.map((_, i) => (
-          <rect
-            key={i}
-            x={xFor(i) - (plotW / n) / 2} y={padT} width={plotW / n} height={plotH}
-            fill="transparent"
-            onMouseEnter={() => setHoverIdx(i)}
-            onMouseLeave={() => setHoverIdx(null)}
-          />
-        ))}
-
-        {hoverIdx !== null && (
-          <line x1={xFor(hoverIdx)} x2={xFor(hoverIdx)} y1={padT} y2={padT + plotH} stroke={C_BORDER} strokeWidth={1} strokeDasharray="3 3" />
-        )}
-        <circle cx={xFor(n - 1)} cy={yFor(curValues[n - 1])} r={4} fill={C_ACTION} stroke="#fff" strokeWidth={1.5} />
-        {hoverIdx !== null && (
-          <circle cx={xFor(hoverIdx)} cy={yFor(curValues[hoverIdx])} r={4} fill={C_ACTION} stroke="#fff" strokeWidth={1.5} />
-        )}
-
-        {current.map((p, i) => (
+        {points.map((p, i) => (
           i % xLabelEvery === 0 || i === n - 1 ? (
             <text key={i} x={xFor(i)} y={H - 8} fontSize={10} fill={C_TEXT_SECONDARY} textAnchor="middle">{p.label}</text>
           ) : null
@@ -289,43 +565,56 @@ function TrendLineChart({ current, previous, metric }: { current: DailyPoint[]; 
       </svg>
 
       {hoverIdx !== null && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
-          <span>{current[hoverIdx].label}</span>
-          <span>Kỳ này: <b style={{ color: C_TEXT_PRIMARY }}>{fmtMetric(curValues[hoverIdx])}</b></span>
-          <span>Kỳ trước (D-7): <b style={{ color: C_TEXT_PRIMARY }}>{fmtMetric(prevValues[hoverIdx])}</b></span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 14px', fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 6, padding: '8px 10px', background: C_BG_HEADER, borderRadius: 8 }}>
+          <span style={{ width: '100%', textAlign: 'center', fontWeight: 700, color: C_TEXT_PRIMARY, marginBottom: 2 }}>{points[hoverIdx].label}</span>
+          {[...entities]
+            .sort((a, b) => points[hoverIdx].values[b.id][metric] - points[hoverIdx].values[a.id][metric])
+            .map((e) => (
+              <span key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 10, height: 2, background: e.color, borderRadius: 1, flexShrink: 0 }} />
+                <b style={{ color: C_TEXT_PRIMARY }}>{fmtMetric(points[hoverIdx].values[e.id][metric])}</b> {e.name}
+              </span>
+            ))}
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginTop: 8 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C_TEXT_PRIMARY }}>
-          <span style={{ width: 14, height: 2, background: C_ACTION, borderRadius: 1 }} /> Kỳ này
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C_TEXT_PRIMARY }}>
-          <span style={{ width: 14, height: 0, borderTop: '2px dashed #9CA3AF' }} /> Kỳ trước (D-7)
-        </span>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '6px 16px', marginTop: 10 }}>
+        {entities.map((e) => (
+          <span key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C_TEXT_PRIMARY }}>
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: e.color, flexShrink: 0 }} />
+            {e.name}
+          </span>
+        ))}
+        {entities.length === 0 && <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa có shop nào phát sinh doanh thu trong 14 ngày gần nhất.</span>}
       </div>
+
+      <button
+        onClick={() => setTableView(true)}
+        style={{ display: 'block', margin: '8px auto 0', background: 'none', border: 'none', padding: 0, fontSize: 12, fontWeight: 600, color: C_LINK, cursor: 'pointer' }}
+      >
+        ↓ Xem dạng bảng
+      </button>
     </div>
   )
 }
 
-// ── Sparkline dạng cột nhỏ cho khối "Khách hàng" — cột cuối (hôm nay) tô đậm, các cột trước nhạt
-// hơn để ánh mắt rơi ngay vào giá trị mới nhất, không cần đọc nhãn trục X (không gian quá hẹp). ──
-function MiniBarSparkline({ values, color }: { values: number[]; color: string }) {
+// ── Sparkline dạng đường cho khối "Khách hàng" — 1 chuỗi, không cần legend/trục (tiêu đề phía
+// trên đã nói rõ đang vẽ gì). Line 2px + vùng tô mờ 10% + chấm tròn ở điểm cuối (hôm nay), đúng
+// mark spec dataviz skill cho sparkline — thay cho bản cột cũ theo yêu cầu đổi sang biểu đồ đường.
+function MiniLineSparkline({ values, color }: { values: number[]; color: string }) {
   const max = Math.max(1, ...values)
+  const n = values.length
+  const W = 220, H = 40, pad = 4
+  const xFor = (i: number) => n <= 1 ? 0 : (i / (n - 1)) * W
+  const yFor = (v: number) => H - pad - (v / max) * (H - pad * 2)
+  const linePath = values.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i).toFixed(1)} ${yFor(v).toFixed(1)}`).join(' ')
+  const areaPath = `${linePath} L ${xFor(n - 1).toFixed(1)} ${H} L ${xFor(0).toFixed(1)} ${H} Z`
   return (
-    <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 32 }}>
-      {values.map((v, i) => (
-        <div
-          key={i}
-          title={fmtNum(v)}
-          style={{
-            flex: 1, borderRadius: 2,
-            height: Math.max(3, (v / max) * 32),
-            background: i === values.length - 1 ? color : `${color}55`,
-          }}
-        />
-      ))}
-    </div>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+      <path d={areaPath} fill={color} opacity={0.1} stroke="none" />
+      <path d={linePath} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={xFor(n - 1)} cy={yFor(values[n - 1])} r={4} fill={color} stroke="#fff" strokeWidth={1.5} />
+    </svg>
   )
 }
 
@@ -333,7 +622,8 @@ function MiniBarSparkline({ values, color }: { values: number[]; color: string }
 export default function AgencyReport() {
   const navigate = useNavigate()
   const shops = buildShopStats()
-  const [period, setPeriod] = useState<PeriodKey>('week')
+  const [period, setPeriod] = useState<PeriodPreset>('d30')
+  const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | null>(null)
   const [search, setSearch] = useState('')
   const now = new Date()
 
@@ -344,9 +634,12 @@ export default function AgencyReport() {
   const anchorDate = agencyOrders.length > 0
     ? new Date(Math.max(...agencyOrders.map((o) => new Date(o.createdAt).getTime())))
     : new Date()
+  // Preset 'custom': anchor = ngày "đến" của khoảng tự chọn (người dùng chưa chọn gì thì tạm dùng
+  // anchorDate làm cả from/to để field ngày có giá trị hợp lệ hiển thị).
+  const periodAnchor = period === 'custom' ? (customRange?.to ?? anchorDate) : anchorDate
 
-  const trend = computePeriodComparison(agencyOrders, period, anchorDate)
-  const prevCycle = getComparisonRanges(period, trend.prevEnd)
+  const trend = computePeriodComparison(agencyOrders, period, periodAnchor, customRange)
+  const prevCycle = getComparisonRanges(period, trend.prevEnd, customRange)
 
   // ── 6 KPI đầu trang: Doanh thu/Sản lượng/AOV theo cân/AOV theo sản lượng/KH OB/KH Re-active —
   // TẤT CẢ đều = TỔNG CỘNG của bảng "Chi tiết theo shop" bên dưới (Σ từng shop), để 2 khối này
@@ -370,11 +663,12 @@ export default function AgencyReport() {
   const aovByWeight      = curWeightKg > 0 ? trend.current / curWeightKg : 0
   const prevAovByWeight  = prevWeightKg > 0 ? trend.previous / prevWeightKg : 0
 
-  // Biểu đồ đường: luôn 14 ngày gần nhất kết thúc tại anchorDate ("Kỳ này"), và cùng 14 ngày đó
-  // lùi lại đúng 7 ngày ("Kỳ trước") — độc lập với tab Ngày/Tuần/Tháng (tab chỉ đổi 6 KPI/bảng).
+  // Biểu đồ cột chồng theo shop: luôn 14 ngày gần nhất kết thúc tại anchorDate — độc lập với tab
+  // Ngày/Tuần/Tháng (tab chỉ đổi 6 KPI/bảng), giữ đúng quy ước đã có từ bản biểu đồ đường trước.
   const [chartMetric, setChartMetric] = useState<'revenue' | 'volume'>('revenue')
-  const dailyCurrent  = buildDailySeries(agencyOrders, anchorDate, 14)
-  const dailyPrevious = buildDailySeries(agencyOrders, new Date(anchorDate.getTime() - 7 * DAY_MS), 14)
+  const [topLimitKey, setTopLimitKey] = useState<TopLimitKey>('top10')
+  const { points: shopStackPoints, entities: shopStackEntities, otherCount: shopStackOtherCount } =
+    buildShopStackedSeries(agencyOrders, shops, anchorDate, 14, topLimitKey)
 
   // Bảng chi tiết — sắp theo doanh thu giảm dần, lọc theo ô tìm kiếm (tên hoặc mã shop).
   const q = search.trim().toLowerCase()
@@ -389,31 +683,37 @@ export default function AgencyReport() {
         {/* Page header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '16px 16px 12px' }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: C_ACTION, textTransform: 'uppercase' }}>Đại lý · Vận hành shop</div>
-            <h1 style={{ fontSize: 26, fontWeight: 700, color: C_TEXT_PRIMARY, margin: '2px 0 4px', lineHeight: '32px' }}>
-              Thống kê Shop trên Agency
+            <h1 style={{ fontSize: 26, fontWeight: 700, color: C_TEXT_PRIMARY, margin: '0 0 4px', lineHeight: '32px' }}>
+              Báo cáo
             </h1>
             <p style={{ fontSize: 13.5, color: C_TEXT_SECONDARY, margin: 0, lineHeight: '20px' }}>
-              Doanh thu, sản lượng và khách hàng theo từng shop
+              Doanh thu, sản lượng và khách hàng theo từng shop.{' '}
+              <span title={`Mốc "hiện tại" dùng ngày có đơn gần nhất của đại lý (${fmtDate(anchorDate)}) vì dữ liệu demo là ngày cố định trong quá khứ, không dùng ngày hệ thống thật.`}>
+                Cập nhật lúc {fmtDateTime(now)}
+              </span>
             </p>
           </div>
-          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, textAlign: 'right' }}>
-            Cập nhật lúc {fmtDateTime(now)}
+          <div style={{ flexShrink: 0 }}>
+            <TimeRangeFilter
+              preset={period}
+              curStart={trend.curStart}
+              curEnd={trend.curEnd}
+              onChangePreset={(p) => { setPeriod(p); if (p !== 'custom') setCustomRange(null) }}
+              onChangeCustomRange={(from, to) => { setPeriod('custom'); setCustomRange({ from, to }) }}
+            />
           </div>
         </div>
 
-        <div style={{ padding: '0 16px 4px', fontSize: 12, color: C_TEXT_SECONDARY }}>
-          Mốc "hiện tại" dùng ngày có đơn gần nhất của đại lý ({fmtDate(anchorDate)}) vì dữ liệu demo là ngày cố định trong quá khứ, không dùng ngày hệ thống thật.
-        </div>
-
-        {/* 6 KPI đầu trang */}
-        <div style={{ display: 'flex', gap: 12, padding: '12px 16px', flexShrink: 0, flexWrap: 'wrap' }}>
+        {/* 6 KPI đầu trang — hàng 1: 4 ô chính; hàng 2: 2 ô AOV rộng hơn */}
+        <div style={{ display: 'flex', gap: 12, padding: '12px 16px 0', flexShrink: 0, flexWrap: 'wrap' }}>
           <CompactKpiCard label="Doanh thu" value={fmtVND(trend.current)} deltaPct={pctDelta(trend.current, trend.previous)} />
           <CompactKpiCard label="Sản lượng" value={`${fmtNum(totalVolume)} đơn`} deltaPct={pctDelta(totalVolume, prevTotalVolume)} />
-          <CompactKpiCard label="AOV theo cân" value={`${fmtVND(aovByWeight)}/kg`} deltaPct={pctDelta(aovByWeight, prevAovByWeight)} />
-          <CompactKpiCard label="AOV theo sản lượng" value={`${fmtVND(aovByVolume)}/đơn`} deltaPct={pctDelta(aovByVolume, prevAovByVolume)} />
           <CompactKpiCard label="Khách hàng mới" tooltip="Khách đặt đơn lần đầu tiên trong kỳ này" value={`${fmtNum(totalNewCust)} KH`} deltaPct={pctDelta(totalNewCust, prevTotalNewCust)} />
           <CompactKpiCard label="Khách quay lại" tooltip="Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp" value={`${fmtNum(totalReactive)} KH`} deltaPct={pctDelta(totalReactive, prevTotalReactive)} />
+        </div>
+        <div style={{ display: 'flex', gap: 12, padding: '12px 16px', flexShrink: 0, flexWrap: 'wrap' }}>
+          <CompactKpiCard flexBasis="300px" label="AOV theo cân" value={`${fmtVND(aovByWeight)}/kg`} deltaPct={pctDelta(aovByWeight, prevAovByWeight)} />
+          <CompactKpiCard flexBasis="300px" label="AOV theo sản lượng" value={`${fmtVND(aovByVolume)}/đơn`} deltaPct={pctDelta(aovByVolume, prevAovByVolume)} />
         </div>
 
         {/* Xu hướng (trái) + Khách hàng (phải) */}
@@ -421,50 +721,47 @@ export default function AgencyReport() {
           <div style={{ flex: '2 1 480px', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Xu hướng doanh thu &amp; sản lượng</span>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {(Object.keys(PERIOD_LABELS) as PeriodKey[]).map((key) => {
-                    const isSelected = period === key
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => setPeriod(key)}
-                        style={{
-                          padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                          background: isSelected ? '#111827' : '#fff',
-                          border: `1px solid ${isSelected ? '#111827' : C_BORDER}`,
-                          color: isSelected ? '#fff' : C_TEXT_PRIMARY,
-                        }}
-                      >
-                        {PERIOD_LABELS[key]}
-                      </button>
-                    )
-                  })}
-                </div>
-                <div style={{ display: 'flex', gap: 0, border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-                  {(['revenue', 'volume'] as const).map((m) => {
-                    const isSelected = chartMetric === m
-                    return (
-                      <button
-                        key={m}
-                        onClick={() => setChartMetric(m)}
-                        style={{
-                          padding: '6px 14px', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                          background: isSelected ? '#111827' : '#fff',
-                          color: isSelected ? '#fff' : C_TEXT_PRIMARY,
-                        }}
-                      >
-                        {m === 'revenue' ? 'Doanh thu' : 'Sản lượng'}
-                      </button>
-                    )
-                  })}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Shop</span>
+                <select
+                  value={topLimitKey}
+                  onChange={(e) => setTopLimitKey(e.target.value as TopLimitKey)}
+                  style={{
+                    padding: '6px 10px', borderRadius: 8, border: `1px solid ${C_BORDER}`, background: '#fff',
+                    fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, cursor: 'pointer', outline: 'none',
+                  }}
+                >
+                  {(Object.keys(TOP_LIMIT_LABELS) as TopLimitKey[]).map((key) => (
+                    <option key={key} value={key}>{TOP_LIMIT_LABELS[key]}</option>
+                  ))}
+                </select>
+                <div style={{ display: 'flex', gap: 0, border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                {(['revenue', 'volume'] as const).map((m) => {
+                  const isSelected = chartMetric === m
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => setChartMetric(m)}
+                      style={{
+                        padding: '6px 14px', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                        background: isSelected ? '#111827' : '#fff',
+                        color: isSelected ? '#fff' : C_TEXT_PRIMARY,
+                      }}
+                    >
+                      {m === 'revenue' ? 'Doanh thu' : 'Sản lượng'}
+                    </button>
+                  )
+                })}
                 </div>
               </div>
             </div>
             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 12 }}>
-              6 KPI &amp; bảng chi tiết đang so với {trend.compareLabel.toLowerCase()} — biểu đồ dưới luôn hiện 14 ngày gần nhất, không đổi theo tab.
+              6 KPI &amp; Bảng chi tiết đang so với {trend.compareLabel.toLowerCase()}
+              <br />
+              Biểu đồ luôn hiện 14 ngày gần nhất, không đổi theo tab
+              {shopStackOtherCount > 0 && <> — {shopStackOtherCount} shop còn lại gộp vào <strong style={{ color: C_TEXT_PRIMARY }}>"Khác"</strong> (tối đa {MAX_COLORED_SHOPS} shop được tô màu riêng)</>}
             </div>
-            <TrendLineChart current={dailyCurrent} previous={dailyPrevious} metric={chartMetric} />
+            <ShopStackedBarChart points={shopStackPoints} entities={shopStackEntities} metric={chartMetric} />
           </div>
 
           <div style={{ flex: '1 1 260px', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -481,7 +778,7 @@ export default function AgencyReport() {
                 Khách đặt đơn lần đầu tiên trong kỳ này
               </span>
               <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY, marginTop: 4 }}>{fmtNum(totalNewCust)} KH</span>
-              <MiniBarSparkline
+              <MiniLineSparkline
                 color="#0D9488"
                 values={Array.from({ length: 7 }, (_, i) => {
                   const day = new Date(anchorDate.getTime() - (6 - i) * DAY_MS)
@@ -501,7 +798,7 @@ export default function AgencyReport() {
                 Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp
               </span>
               <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY, marginTop: 4 }}>{fmtNum(totalReactive)} KH</span>
-              <MiniBarSparkline
+              <MiniLineSparkline
                 color="#7C3AED"
                 values={Array.from({ length: 7 }, (_, i) => {
                   const day = new Date(anchorDate.getTime() - (6 - i) * DAY_MS)

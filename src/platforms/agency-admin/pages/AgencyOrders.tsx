@@ -372,6 +372,10 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const [partialDeliver, setPartialDeliver]          = useState(false)
   const [collectOnFail, setCollectOnFail]            = useState(true)
   const [collectOnFailAmt, setCollectOnFailAmt]      = useState(0)
+  // Field thật (không còn là text tĩnh "Thêm ghi chú") — nhưng nút "Tạo đơn" của drawer này hiện
+  // CHƯA gọi addOrder() (gap có sẵn từ trước, không liên quan tới field này) nên giá trị nhập vào
+  // đây tạm thời chưa lưu được vào đơn thật — khác với Web Shop, nơi orderNote đã lưu thật.
+  const [orderNote, setOrderNote]                    = useState('')
 
   const selectedShop = agencyShops.find(s => s.id === selectedShopId) ?? agencyShops[0]
   const shopServices = ((selectedShop as any)?.configuredServices ?? []).map((cs: { serviceId: string; demoFee: number }) => ({
@@ -390,6 +394,10 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   // lý này, đơn không được phép có bất kỳ khoản thu hộ nào khi giao — ép effectiveFeePayer luôn
   // là 'sender' bất kể feePayer đang lưu giá trị gì trong state.
   const effectiveFeePayer = formComponents.cod ? feePayer : 'sender'
+  // Chỉ những field THẬT SỰ xuất hiện trong form Hàng hoá mới tính vào cảnh báo — tránh báo nhầm
+  // khi Super Admin chỉ tắt 1 field riêng của form Thư (ví dụ letterContent) không liên quan ở đây.
+  const goodsFieldKeys = ['cod', 'discount', 'shipCollect', 'goodsValue', 'declareValue', 'partialDeliver', 'collectOnFail', 'viewGoodsNote', 'orderNote'] as const
+  const hasHiddenFields = goodsFieldKeys.some((k) => !formComponents[k])
 
   const convertedWeight = Math.max(weight, (dimD * dimR * dimC) / 5000).toFixed(1)
 
@@ -497,6 +505,12 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           </button>
         </div>
         <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+        {hasHiddenFields && (
+          <div style={{ margin: '6px 6px 0', fontSize: 12, color: C_TEXT_SECONDARY, background: '#FFF9F7', border: '1px solid #FECBA1', borderRadius: 6, padding: '8px 10px', flexShrink: 0 }}>
+            ⚠ Một số tuỳ chọn (COD, giảm giá, thu ship khách hàng...) đã bị Super Admin giới hạn cho đại lý này nên không hiện trong form bên dưới.
+          </div>
+        )}
 
         {/* Body */}
         <div style={{
@@ -773,8 +787,6 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
                   {[
                     { label: 'Ghi chú nội bộ',    link: 'Thêm ghi chú' },
-                    { label: 'Ghi chú đơn hàng',   link: 'Thêm ghi chú' },
-                    ...(formComponents.viewGoodsNote ? [{ label: 'Ghi chú xem hàng', link: 'Cho xem hàng không thử' }] : []),
                     { label: 'Thanh toán',          link: 'Thanh toán Tiền mặt (Thu hộ COD)' },
                     { label: 'Nguồn tạo',           link: 'Facebook' },
                   ].map(({ label, link }) => (
@@ -783,6 +795,23 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                       <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{link}</span>
                     </div>
                   ))}
+                  {formComponents.orderNote && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0' }}>
+                    <span style={{ color: C_TEXT_PRIMARY }}>Ghi chú đơn hàng</span>
+                    <textarea
+                      value={orderNote}
+                      onChange={(e) => setOrderNote(e.target.value)}
+                      placeholder="Nhập ghi chú cho đơn hàng này..."
+                      style={{ width: '100%', minHeight: 56, border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 8px', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  )}
+                  {formComponents.viewGoodsNote && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Ghi chú xem hàng</span>
+                      <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>Cho xem hàng không thử</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -990,6 +1019,10 @@ function CreateLetterDrawerAgency({ open, onClose }: { open: boolean; onClose: (
   // Super Admin bật/tắt từng thành phần trong form tạo đơn theo đại lý — dùng chung 1 nguồn với
   // CreateOrderDrawer, một số key áp dụng cho cả Hàng hoá lẫn Thư (goodsValue, viewGoodsNote).
   const formComponents = agency?.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
+  // Chỉ 3 field THẬT SỰ xuất hiện trong form Thư — tránh báo nhầm khi Super Admin chỉ tắt field
+  // riêng của form Hàng hoá (ví dụ cod, discount...) không liên quan ở đây.
+  const letterFieldKeys = ['goodsValue', 'letterContent', 'viewGoodsNote'] as const
+  const hasHiddenFields = letterFieldKeys.some((k) => !formComponents[k])
 
   const [selectedShopId, setSelectedShopId] = useState(agencyShops[0]?.id ?? '')
   const [selectedHubId, setSelectedHubId] = useState(agencyHubs[0]?.id ?? '')
@@ -1107,6 +1140,12 @@ function CreateLetterDrawerAgency({ open, onClose }: { open: boolean; onClose: (
           </button>
         </div>
         <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+        {hasHiddenFields && (
+          <div style={{ margin: '6px 6px 0', fontSize: 12, color: C_TEXT_SECONDARY, background: '#FFF9F7', border: '1px solid #FECBA1', borderRadius: 6, padding: '8px 10px', flexShrink: 0 }}>
+            ⚠ Một số tuỳ chọn (giá trị hàng, nội dung thư...) đã bị Super Admin giới hạn cho đại lý này nên không hiện trong form bên dưới.
+          </div>
+        )}
 
         <div style={{ flex: 1, display: 'flex', gap: 6, padding: 6, background: '#F3F4F6', overflow: 'hidden', alignItems: 'flex-start' }}>
 
@@ -1936,8 +1975,11 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
 
                 {/* Notes & misc */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '2px 0' }}>
+                    <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Ghi chú đơn hàng</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', textAlign: 'right', flex: 1 }}>{order.orderNote || '—'}</span>
+                  </div>
                   {[
-                    { label: 'Ghi chú đơn hàng',   link: 'Thêm ghi chú' },
                     { label: 'Thanh toán',          link: 'Thanh toán Tiền mặt (Thu hộ COD)' },
                     { label: 'Nguồn tạo',           link: 'Facebook' },
                   ].map(({ label, link }) => (

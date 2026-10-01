@@ -998,6 +998,237 @@ function LinkText({ children }: { children: React.ReactNode }) {
   return <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{children}</span>
 }
 
+// ── Thanh toán online phí ship (MoMo / chuyển khoản ngân hàng) ─────────────
+// Chỉ áp dụng khi feePayer === 'sender' (Shop trả ship) — "Khách trả ship" nghĩa là GHN thu hộ
+// phí ship từ NGƯỜI NHẬN lúc giao hàng, không phải shop trả trước nên không có khái niệm thanh
+// toán online. Prototype thuần mock data — không có SDK/backend thật, toàn bộ là mô phỏng UI.
+
+// Cùng pattern pill-button với PaperSizePicker (L211-232) nhưng dùng C_ACTION cho lựa chọn đang
+// chọn — khớp quy ước "Action buttons = #FF5200" của dự án thay vì màu xanh đậm riêng của print.
+function PaymentMethodPicker({ value, onChange }: { value: 'cash' | 'momo' | 'bank_transfer'; onChange: (v: 'cash' | 'momo' | 'bank_transfer') => void }) {
+  const options: { value: 'cash' | 'momo' | 'bank_transfer'; label: string }[] = [
+    { value: 'cash', label: 'Tiền mặt' },
+    { value: 'momo', label: 'Thanh toán qua MoMo' },
+    { value: 'bank_transfer', label: 'Chuyển khoản ngân hàng' },
+  ]
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {options.map(o => {
+        const selected = value === o.value
+        return (
+          <button
+            key={o.value}
+            onClick={() => onChange(o.value)}
+            style={{
+              padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
+              background: selected ? C_ACTION : '#F3F4F6',
+              color: selected ? '#fff' : '#4B5563',
+              fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
+            }}
+          >
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// Badge trạng thái thanh toán online (MoMo / chuyển khoản ngân hàng) — dùng chung ở list (TRow)
+// và chi tiết đơn (OrderDetailDrawer). Màu tái dùng đúng bộ đã có sẵn trong file này
+// (D9F7E5/00C853 ở badge TLHH, FEF3C7/F59E0B ở ROW_STATUS_STYLE.returning, FEE2E2/EF4444 ở
+// ROW_STATUS_STYLE.cancelled) — không bịa mã màu mới.
+function paymentBadge(order: Order): { label: string; color: string; bg: string } | null {
+  const methodLabel = order.paymentMethod === 'bank_transfer' ? 'chuyển khoản' : order.paymentMethod === 'momo' ? 'MoMo' : null
+  if (!methodLabel) return null
+  if (order.paymentStatus === 'paid')    return { label: `Đã thanh toán ${methodLabel}`, color: '#00C853', bg: '#D9F7E5' }
+  if (order.paymentStatus === 'pending') return { label: `Chờ thanh toán ${methodLabel}`, color: '#F59E0B', bg: '#FEF3C7' }
+  if (order.paymentStatus === 'failed')  return { label: 'Thanh toán thất bại', color: '#EF4444', bg: '#FEE2E2' }
+  return null
+}
+
+function formatPaidAt(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} ngày ${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`
+}
+
+// QR giả lập — pattern chấm bi tĩnh, không phải QR thật (prototype không có SDK MoMo).
+function FakeMomoQr({ dim = true }: { dim?: boolean }) {
+  const cells: React.ReactNode[] = []
+  // Seed cố định (không random mỗi lần render) để QR không "nhấp nháy" đổi hình khi component re-render.
+  const seed = [1,0,1,1,0,0,1,0,1,1,0,1,0,0,1,1,0,1,0,1,1,0,0,1,0,1,1,0,1,0,1,1,0,0,1,1,0,1,0,1,1,0,1,0,0,1,1,0,1,0,1,1,0,1,0,0,1,1,0,1,0,1,1,0]
+  const size = 8
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const on = seed[(r * size + c) % seed.length] === 1
+      const corner = (r < 2 && c < 2) || (r < 2 && c > size - 3) || (r > size - 3 && c < 2)
+      cells.push(
+        <rect key={`${r}-${c}`} x={c * 20} y={r * 20} width={18} height={18} rx={2}
+          fill={corner || on ? '#111827' : '#fff'} />
+      )
+    }
+  }
+  return (
+    <svg width={160} height={160} viewBox={`0 0 ${size * 20} ${size * 20}`} style={{ opacity: dim ? 1 : 0.3, borderRadius: 8 }}>
+      <rect x={0} y={0} width={size * 20} height={size * 20} fill="#fff" />
+      {cells}
+    </svg>
+  )
+}
+
+// Thông tin chuyển khoản demo — 1 ngân hàng/số tài khoản cố định, không có tài khoản ngân hàng
+// thật (prototype thuần mock data). Nội dung chuyển khoản dùng chung "Mã đơn tham chiếu".
+const DEMO_BANK_INFO = {
+  bankName: 'Vietcombank',
+  accountNumber: '0071000123456',
+  accountHolder: 'CTY TNHH GHN AGENCY DEMO',
+}
+
+function BankTransferInfo({ amount, orderRef }: { amount: number; orderRef: string }) {
+  const rows: { label: string; value: string; highlight?: boolean }[] = [
+    { label: 'Ngân hàng', value: DEMO_BANK_INFO.bankName },
+    { label: 'Số tài khoản', value: DEMO_BANK_INFO.accountNumber },
+    { label: 'Chủ tài khoản', value: DEMO_BANK_INFO.accountHolder },
+    { label: 'Số tiền', value: `${amount.toLocaleString('vi-VN')}đ`, highlight: true },
+    { label: 'Nội dung chuyển khoản', value: orderRef, highlight: true },
+  ]
+  return (
+    <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, overflow: 'hidden' }}>
+      {rows.map((r, i) => (
+        <div key={r.label} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          padding: '8px 12px', borderTop: i === 0 ? 'none' : `1px solid ${C_BORDER}`,
+        }}>
+          <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, flexShrink: 0 }}>{r.label}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: r.highlight ? C_LINK : C_TEXT_PRIMARY, textAlign: 'right', wordBreak: 'break-word' }}>
+            {r.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Modal thanh toán online (MoMo / chuyển khoản ngân hàng) — dùng chung cho lúc tạo đơn
+// (CreateOrderDrawer, đơn chưa tồn tại trong store) lẫn lúc xác nhận gửi 1 đơn nháp có sẵn
+// (OrderDetailDrawer, đã có order.id thật). `method` quyết định nội dung hiển thị (QR MoMo hay
+// khối thông tin chuyển khoản) — logic đếm ngược/xác nhận/hết hạn dùng chung cho cả 2.
+function OnlinePaymentModal({ open, method, amount, orderRef, onConfirmPaid, onClose, onExpire, onRetry }: {
+  open: boolean
+  method: 'momo' | 'bank_transfer'
+  amount: number
+  orderRef: string
+  onConfirmPaid: () => void
+  onClose: () => void
+  onExpire?: () => void
+  onRetry?: () => void
+}) {
+  const COUNTDOWN_SECONDS = 15 * 60
+  const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS)
+  const [expired, setExpired] = useState(false)
+
+  // Reset đếm ngược mỗi lần modal mở lại (VD: mở lại sau khi đóng rồi quay lại "Tôi đã thanh toán").
+  useEffect(() => {
+    if (open) { setSecondsLeft(COUNTDOWN_SECONDS); setExpired(false) }
+  }, [open])
+
+  useEffect(() => {
+    if (!open || expired) return
+    const timer = setInterval(() => {
+      setSecondsLeft(s => {
+        if (s <= 1) {
+          setExpired(true)
+          onExpire?.()
+          return 0
+        }
+        return s - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [open, expired])
+
+  if (!open) return null
+
+  const mm = Math.floor(secondsLeft / 60).toString().padStart(2, '0')
+  const ss = (secondsLeft % 60).toString().padStart(2, '0')
+
+  function regenerateCode() {
+    setSecondsLeft(COUNTDOWN_SECONDS)
+    setExpired(false)
+    onRetry?.()
+  }
+
+  const codeLabel = method === 'momo' ? 'QR' : 'chuyển khoản'
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 360, background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '22px' }}>
+            {method === 'momo' ? 'Thanh toán phí ship qua MoMo' : 'Thanh toán phí ship qua chuyển khoản ngân hàng'}
+          </span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><IcX /></button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: C_TEXT_SECONDARY }}>
+          <span>Mã đơn tham chiếu</span>
+          <span style={{ color: C_LINK, fontWeight: 700 }}>{orderRef}</span>
+        </div>
+
+        {method === 'momo' ? (
+          <>
+            <div style={{ alignSelf: 'center', padding: 8, border: `1px solid ${C_BORDER}`, borderRadius: 6 }}>
+              <FakeMomoQr dim={!expired} />
+            </div>
+
+            <div style={{ textAlign: 'center', fontSize: 22, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: '28px' }}>
+              {amount.toLocaleString('vi-VN')}đ
+            </div>
+          </>
+        ) : (
+          <div style={{ opacity: expired ? 0.4 : 1 }}>
+            <BankTransferInfo amount={amount} orderRef={orderRef} />
+          </div>
+        )}
+
+        {!expired ? (
+          <div style={{ textAlign: 'center', fontSize: 13, color: C_TEXT_SECONDARY }}>
+            Mã {codeLabel} hết hạn sau <span style={{ fontWeight: 700, color: C_ACTION, fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</span>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', fontSize: 13, color: '#EF4444', fontWeight: 600 }}>
+            Mã {codeLabel} đã hết hạn — thanh toán thất bại
+          </div>
+        )}
+
+        {expired ? (
+          <button
+            onClick={regenerateCode}
+            style={{ padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
+          >
+            {method === 'momo' ? 'Tạo QR mới' : 'Tạo mã mới'}
+          </button>
+        ) : (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={onClose}
+              style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+            >
+              Đóng
+            </button>
+            <button
+              onClick={onConfirmPaid}
+              style={{ flex: 1, padding: '8px 12px', background: C_ACTION, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
+            >
+              Tôi đã thanh toán
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── CreateOrderDrawer ────────────────────────────────────────
 function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   // ── State ──
@@ -1022,6 +1253,7 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   const [partialDeliver, setPartialDeliver]     = useState(false)
   const [collectOnFail, setCollectOnFail]       = useState(true)
   const [collectOnFailAmt, setCollectOnFailAmt] = useState(0)
+  const [orderNote, setOrderNote]               = useState('')
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
   // Super Admin bật/tắt từng thành phần trong form tạo đơn theo TỪNG đại lý (agencyStore.ts,
@@ -1060,6 +1292,34 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   // — nên phải ép effectiveFeePayer luôn là 'sender', bất kể feePayer đang lưu giá trị gì trong
   // state (phòng trường hợp state cũ còn sót lại 'receiver' từ trước khi bị tắt).
   const effectiveFeePayer = formComponents.cod ? feePayer : 'sender'
+  // Chỉ những field THẬT SỰ xuất hiện trong form Hàng hoá mới tính vào cảnh báo — tránh báo nhầm
+  // khi Super Admin chỉ tắt 1 field riêng của form Thư (ví dụ letterContent) không liên quan ở đây.
+  const goodsFieldKeys = ['cod', 'discount', 'shipCollect', 'goodsValue', 'declareValue', 'partialDeliver', 'collectOnFail', 'viewGoodsNote', 'orderNote'] as const
+  const hasHiddenFields = goodsFieldKeys.some((k) => !formComponents[k])
+
+  // Thanh toán online (MoMo / chuyển khoản ngân hàng) cho phí ship — chỉ có ý nghĩa khi Shop trả
+  // ship (effectiveFeePayer === 'sender').
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'momo' | 'bank_transfer'>('cash')
+  const [paymentStatus, setPaymentStatus] = useState<'not_required' | 'pending' | 'paid' | 'failed'>('not_required')
+  const [paymentPaidAt, setPaymentPaidAt] = useState<string | undefined>(undefined)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+
+  function handleSelectPaymentMethod(m: 'cash' | 'momo' | 'bank_transfer') {
+    setPaymentMethod(m)
+    setPaymentStatus(m !== 'cash' ? 'pending' : 'not_required')
+    setPaymentPaidAt(undefined)
+  }
+
+  // Đổi payer sender→receiver sau khi đã chọn thanh toán online: reset về tiền mặt — "Khách trả
+  // ship" không đi qua luồng shop tự thanh toán trước, không có khái niệm thanh toán online.
+  useEffect(() => {
+    if (effectiveFeePayer === 'receiver' && paymentMethod !== 'cash') {
+      setPaymentMethod('cash')
+      setPaymentStatus('not_required')
+      setPaymentPaidAt(undefined)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveFeePayer])
 
   const now = new Date()
   const createdAt = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} - ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`
@@ -1091,9 +1351,9 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     : cod + feeShipping
 
   // ── Persist order to store on submit ───────────────────────
-  function handleCreate() {
+  function buildOrder(payStatus: 'not_required' | 'pending' | 'paid' | 'failed', paidAt?: string): Order {
     const now = new Date()
-    const newOrder: Order = {
+    return {
       id: `ORD_GHN_${Date.now()}`,
       shopId: 'SHP001',
       trackingCode: `GHN_SHOP_${Date.now()}`,
@@ -1106,6 +1366,9 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       cod,
       fee: totalShipping,
       feePayer: effectiveFeePayer,
+      paymentMethod,
+      paymentStatus: payStatus,
+      paymentPaidAt: paidAt,
       status: 'pickup',
       createdAt: now.toISOString().split('T')[0],
       actionHistory: [],
@@ -1114,9 +1377,38 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       carrierCode: 'GHN',
       dispatchedAt: now.toISOString(),
       dispatchedBy: null,
+      orderNote: orderNote.trim() || undefined,
     }
-    addOrder(newOrder)
+  }
+
+  // "Xác nhận gửi đơn" — với đơn Hàng hoá, bấm "Tạo đơn" tạo đơn NGAY ở trạng thái 'pickup' (đã
+  // gửi NVC), không có bước nháp riêng. Nếu đã chọn thanh toán online (MoMo/chuyển khoản) mà chưa
+  // thanh toán, chặn lại và mở modal thay vì tạo đơn luôn — chỉ tạo đơn sau khi shop bấm "Tôi đã
+  // thanh toán" trong modal.
+  function handleCreate() {
+    if (paymentMethod !== 'cash' && paymentStatus !== 'paid') {
+      setPaymentModalOpen(true)
+      return
+    }
+    addOrder(buildOrder(paymentStatus, paymentPaidAt))
     onClose()
+  }
+
+  function handlePaymentPaid() {
+    const paidAt = new Date().toISOString()
+    setPaymentStatus('paid')
+    setPaymentPaidAt(paidAt)
+    setPaymentModalOpen(false)
+    addOrder(buildOrder('paid', paidAt))
+    onClose()
+  }
+
+  function handlePaymentExpire() {
+    setPaymentStatus('failed')
+  }
+
+  function handlePaymentRetry() {
+    setPaymentStatus('pending')
   }
 
   return (
@@ -1149,6 +1441,12 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           </button>
         </div>
         <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+        {hasHiddenFields && (
+          <div style={{ margin: '6px 6px 0', fontSize: 12, color: C_TEXT_SECONDARY, background: '#FFF9F7', border: '1px solid #FECBA1', borderRadius: 6, padding: '8px 10px', flexShrink: 0 }}>
+            ⚠ Một số tuỳ chọn (COD, giảm giá, thu ship khách hàng...) đã bị Super Admin giới hạn cho đại lý của bạn nên không hiện trong form bên dưới.
+          </div>
+        )}
 
         {/* ── Body: gray bg, 6px gap & padding ───────────────── */}
         <div style={{
@@ -1442,10 +1740,12 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
                   {[
                     { label: 'Ghi chú nội bộ',    link: 'Thêm ghi chú' },
-                    { label: 'Ghi chú đơn hàng',   link: 'Thêm ghi chú' },
-                    // Thành phần bật/tắt được — Super Admin tắt thì bỏ khỏi mảng, không render dòng này.
-                    ...(formComponents.viewGoodsNote ? [{ label: 'Ghi chú xem hàng', link: 'Cho xem hàng không thử' }] : []),
-                    { label: 'Thanh toán',          link: 'Thanh toán Tiền mặt (Thu hộ COD)' },
+                    {
+                      label: 'Thanh toán',
+                      link: effectiveFeePayer === 'sender' && paymentMethod !== 'cash'
+                        ? (paymentMethod === 'momo' ? 'Thanh toán qua MoMo' : 'Thanh toán qua chuyển khoản ngân hàng')
+                        : 'Thanh toán Tiền mặt (Thu hộ COD)',
+                    },
                     { label: 'Nguồn tạo',           link: 'Facebook' },
                   ].map(({ label, link }) => (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
@@ -1453,6 +1753,24 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                       <LinkText>{link}</LinkText>
                     </div>
                   ))}
+                  {/* Thành phần bật/tắt được — Super Admin tắt thì bỏ khỏi mảng, không render dòng này. */}
+                  {formComponents.orderNote && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0' }}>
+                    <span style={{ color: C_TEXT_PRIMARY }}>Ghi chú đơn hàng</span>
+                    <textarea
+                      value={orderNote}
+                      onChange={(e) => setOrderNote(e.target.value)}
+                      placeholder="Nhập ghi chú cho đơn hàng này..."
+                      style={{ width: '100%', minHeight: 56, border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '6px 8px', outline: 'none', resize: 'vertical', fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  )}
+                  {formComponents.viewGoodsNote && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Ghi chú xem hàng</span>
+                      <LinkText>Cho xem hàng không thử</LinkText>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1479,6 +1797,18 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 </div>
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+              {/* Hình thức thanh toán phí ship — CHỈ áp dụng khi Shop trả ship. "Khách trả ship"
+                  nghĩa là GHN thu hộ phí từ người nhận lúc giao, shop không tự trả trước nên
+                  không có khái niệm thanh toán online ở đây. */}
+              {effectiveFeePayer === 'sender' && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 8 }}>
+                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, lineHeight: '18px' }}>Hình thức thanh toán phí ship</span>
+                    <PaymentMethodPicker value={paymentMethod} onChange={handleSelectPaymentMethod} />
+                  </div>
+                  <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+                </>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
                 {serviceGroups.length === 0 ? (
                   <div style={{ padding: '12px 4px', fontSize: 13, color: C_TEXT_SECONDARY }}>
@@ -1606,6 +1936,17 @@ function CreateOrderDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           </div>
         </div>
       </div>
+
+      <OnlinePaymentModal
+        open={paymentModalOpen}
+        method={paymentMethod === 'bank_transfer' ? 'bank_transfer' : 'momo'}
+        amount={totalShipping}
+        orderRef={shopCode.trim() || 'Đơn hàng mới'}
+        onConfirmPaid={handlePaymentPaid}
+        onClose={() => setPaymentModalOpen(false)}
+        onExpire={handlePaymentExpire}
+        onRetry={handlePaymentRetry}
+      />
     </>
   )
 }
@@ -1636,6 +1977,10 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
   // Super Admin bật/tắt từng thành phần trong form tạo đơn theo đại lý — dùng chung 1 nguồn với
   // CreateOrderDrawer, một số key áp dụng cho cả Hàng hoá lẫn Thư (goodsValue, viewGoodsNote).
   const formComponents = agenciesList.find(a => a.id === currentShop.agencyId)?.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
+  // Chỉ 3 field THẬT SỰ xuất hiện trong form Thư — tránh báo nhầm khi Super Admin chỉ tắt field
+  // riêng của form Hàng hoá (ví dụ cod, discount...) không liên quan ở đây.
+  const letterFieldKeys = ['goodsValue', 'letterContent', 'viewGoodsNote'] as const
+  const hasHiddenFields = letterFieldKeys.some((k) => !formComponents[k])
   // 247Express: lấy hàng tại hub cố định của dịch vụ đại lý (không phải địa chỉ shop)
   const primary247Service = servicesList.find(
     s => s.agencyId === currentShop.agencyId && s.carrier === '247Express' && s.enabled && (s.hubIds?.length ?? 0) > 0
@@ -1730,6 +2075,12 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
           </button>
         </div>
         <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
+
+        {hasHiddenFields && (
+          <div style={{ margin: '6px 6px 0', fontSize: 12, color: C_TEXT_SECONDARY, background: '#FFF9F7', border: '1px solid #FECBA1', borderRadius: 6, padding: '8px 10px', flexShrink: 0 }}>
+            ⚠ Một số tuỳ chọn (giá trị hàng, nội dung thư...) đã bị Super Admin giới hạn cho đại lý của bạn nên không hiện trong form bên dưới.
+          </div>
+        )}
 
         <div style={{ flex: 1, display: 'flex', gap: 6, padding: 6, background: '#F3F4F6', overflow: 'hidden', alignItems: 'flex-start' }}>
 
@@ -2134,7 +2485,13 @@ function rowStatus(order: Order): { label: string; color: string } {
   if (order.sendKind === 'letter' && order.dispatchStatus === 'pending_agency') {
     return { label: 'Chờ xử lý', color: '#F59E0B' }
   }
-  return ROW_STATUS_STYLE[order.status] ?? { label: order.status, color: '#6B7280' }
+  const base = ROW_STATUS_STYLE[order.status] ?? { label: order.status, color: '#6B7280' }
+  // Huỷ đơn đã thu tiền online rồi (MoMo/chuyển khoản) — không xử lý hoàn tiền thật (prototype),
+  // chỉ hiển thị nhắc còn nợ hoàn tiền cho khách, tránh để shop tưởng nhầm là đã xong hẳn.
+  if (order.status === 'cancelled' && (order.paymentMethod === 'momo' || order.paymentMethod === 'bank_transfer') && order.paymentStatus === 'paid') {
+    return { ...base, label: `${base.label} · Chờ hoàn tiền` }
+  }
+  return base
 }
 
 // ── OrderDetailDrawer ─────────────────────────────────────────
@@ -2209,8 +2566,9 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [confirmingReturn, setConfirmingReturn] = useState(false)
   const [printOpen, setPrintOpen] = useState(false)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
 
-  useEffect(() => { if (order) { setActiveTab('info'); setEditMode(false); setDraft(null); setConfirmingCancel(false); setConfirmingReturn(false); setPrintOpen(false) } }, [order?.id])
+  useEffect(() => { if (order) { setActiveTab('info'); setEditMode(false); setDraft(null); setConfirmingCancel(false); setConfirmingReturn(false); setPrintOpen(false); setPaymentModalOpen(false) } }, [order?.id])
 
   function startEdit() {
     if (!order) return
@@ -2223,7 +2581,7 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
     setDraft(null)
   }
 
-  function saveEdit() {
+  function commitSave(status: string) {
     if (!order || !draft) return
     updateOrder(order.id, {
       receiverName: draft.receiverName,
@@ -2232,10 +2590,44 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
       weight: Math.round((Number(draft.weightKg) || 0) * 1000),
       cod: Number(draft.cod) || 0,
       fee: Number(draft.fee) || 0,
-      status: draft.status,
+      status,
     })
     setEditMode(false)
     setDraft(null)
+    onUpdated?.()
+  }
+
+  // "Xác nhận gửi đơn / xác nhận NVC lấy hàng" — chuyển 1 đơn đang là "Đơn nháp" (status
+  // 'pending') sang trạng thái đã gửi NVC (VD 'pickup'). Nếu đơn đã chọn thanh toán phí ship qua
+  // kênh online (MoMo/chuyển khoản) mà chưa thanh toán, chặn lại và mở modal thay vì xác nhận luôn.
+  function saveEdit() {
+    if (!order || !draft) return
+    const leavingDraft = order.status === 'pending' && draft.status !== 'pending'
+    const onlineUnpaid = (order.paymentMethod === 'momo' || order.paymentMethod === 'bank_transfer') && order.paymentStatus !== 'paid'
+    if (leavingDraft && onlineUnpaid) {
+      setPaymentModalOpen(true)
+      return
+    }
+    commitSave(draft.status)
+  }
+
+  function handlePaymentPaidInDetail() {
+    if (!order || !draft) return
+    const paidAt = new Date().toISOString()
+    updateOrder(order.id, { paymentStatus: 'paid', paymentPaidAt: paidAt })
+    setPaymentModalOpen(false)
+    commitSave(draft.status)
+  }
+
+  function handlePaymentExpireInDetail() {
+    if (!order) return
+    updateOrder(order.id, { paymentStatus: 'failed' })
+    onUpdated?.()
+  }
+
+  function handlePaymentRetryInDetail() {
+    if (!order) return
+    updateOrder(order.id, { paymentStatus: 'pending' })
     onUpdated?.()
   }
 
@@ -2628,10 +3020,33 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
 
                 {/* Notes & misc */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, fontSize: 14, lineHeight: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '2px 0' }}>
+                    <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Ghi chú đơn hàng</span>
+                    <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px', textAlign: 'right', flex: 1 }}>{order.orderNote || '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                    <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Thanh toán</span>
+                    <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>
+                      {order.paymentMethod === 'momo' ? 'Thanh toán qua MoMo'
+                        : order.paymentMethod === 'bank_transfer' ? 'Thanh toán qua chuyển khoản ngân hàng'
+                        : 'Thanh toán Tiền mặt (Thu hộ COD)'}
+                    </span>
+                  </div>
+                  {(order.paymentMethod === 'momo' || order.paymentMethod === 'bank_transfer') && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
+                      <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        Trạng thái {order.paymentMethod === 'momo' ? 'MoMo' : 'chuyển khoản'}
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 700, textAlign: 'right', flex: 1, color: paymentBadge(order)?.color }}>
+                        {paymentBadge(order)?.label}
+                        {order.paymentStatus === 'paid' && order.paymentPaidAt && (
+                          <span style={{ fontWeight: 400, color: C_TEXT_SECONDARY }}> · {formatPaidAt(order.paymentPaidAt)}</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
                   {[
-                    { label: 'Ghi chú đơn hàng',   link: 'Thêm ghi chú' },
-                    { label: 'Thanh toán',          link: 'Thanh toán Tiền mặt (Thu hộ COD)' },
-                    { label: 'Nguồn tạo',           link: 'Facebook' },
+                    { label: 'Nguồn tạo', link: 'Facebook' },
                   ].map(({ label, link }) => (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
                       <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
@@ -2859,6 +3274,17 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
             {printOpen && order && (
               <PrintOrderModal orders={[order]} onClose={() => setPrintOpen(false)} />
             )}
+
+            <OnlinePaymentModal
+              open={paymentModalOpen}
+              method={order.paymentMethod === 'bank_transfer' ? 'bank_transfer' : 'momo'}
+              amount={order.fee}
+              orderRef={order.trackingCode}
+              onConfirmPaid={handlePaymentPaidInDetail}
+              onClose={() => setPaymentModalOpen(false)}
+              onExpire={handlePaymentExpireInDetail}
+              onRetry={handlePaymentRetryInDetail}
+            />
           </div>
         </div>}
 
@@ -3035,6 +3461,7 @@ function TRow({ order, checked, onToggle, onSelect, onReturn, onCancel, onPrint 
   const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
   const weightKg = (order.weight / 1000).toFixed(1)
   const feeType = order.feePayer === 'receiver' ? 'Khách trả' : 'Shop trả'
+  const payBadge = paymentBadge(order)
 
   return (
     <div
@@ -3116,6 +3543,14 @@ function TRow({ order, checked, onToggle, onSelect, onReturn, onCancel, onPrint 
         <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: 2 }}>
           <span style={{ fontSize: 14, color: C_TEXT_BODY, lineHeight: '22px' }}>{order.fee.toLocaleString()}</span>
           <span style={{ fontSize: 14, color: C_TEXT_BODY, lineHeight: '22px' }}>{feeType}</span>
+          {payBadge && (
+            <span style={{
+              fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 8, whiteSpace: 'nowrap',
+              background: payBadge.bg, color: payBadge.color,
+            }}>
+              {payBadge.label}
+            </span>
+          )}
         </div>
         {/* GTB - TT */}
         <div style={{ flex: '1 0 0', minWidth: 120, padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>

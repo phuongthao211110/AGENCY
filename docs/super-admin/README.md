@@ -2,7 +2,7 @@
 
 **Platform:** GHN Super Admin  
 **Figma:** [GSA Design File](https://www.figma.com/design/G33IlXebyXXGxZbbYbKECr/-GSA--GHN-SUPER-ADMIN?node-id=2-449)  
-**Version:** 1.16.11 | **Cập nhật:** 2026-09-17
+**Version:** 1.17.0 | **Cập nhật:** 2026-09-27
 
 ---
 
@@ -65,3 +65,7 @@ _Chưa có stories_
 | [GSA] Vùng & Tuyến: Thêm tỉnh | [them-tinh.md](./route-config/them-tinh.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Thiết lập lại | [thiet-lap-lai.md](./route-config/thiet-lap-lai.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Chỉnh sửa vùng/ tuyến/ tỉnh | [chinh-sua-vung-tuyen-tinh.md](./route-config/chinh-sua-vung-tuyen-tinh.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Bộ vùng tuyến — mỗi lần lưu tạo 1 bộ mới, không sửa đè | [bo-vung-tuyen-versioning.md](./route-config/bo-vung-tuyen-versioning.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Danh sách bộ vùng tuyến | [danh-sach-bo-vung-tuyen.md](./route-config/danh-sach-bo-vung-tuyen.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Đặt bộ vùng tuyến làm mặc định | [dat-bo-vung-tuyen-mac-dinh.md](./route-config/dat-bo-vung-tuyen-mac-dinh.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Trang "Chỉnh sửa vùng & tuyến" — 1 draft chung cho 3 phần | [trang-chinh-sua-mot-draft-chung.md](./route-config/trang-chinh-sua-mot-draft-chung.md) | — | [Draft] |

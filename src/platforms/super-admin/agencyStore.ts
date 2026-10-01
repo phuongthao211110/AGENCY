@@ -41,6 +41,7 @@ export interface OrderFormComponents {
   collectOnFail:  boolean // Giao thất bại thu tiền — chỉ Hàng hoá
   viewGoodsNote:  boolean // Ghi chú xem hàng — Hàng hoá & Thư
   letterContent:  boolean // Nội dung thư, tài liệu — chỉ Thư
+  orderNote:      boolean // Ghi chú đơn hàng — chỉ Hàng hoá (đơn Thư dùng letterContent thay thế)
 }
 
 export const ORDER_FORM_COMPONENT_LABELS: Record<keyof OrderFormComponents, string> = {
@@ -53,6 +54,7 @@ export const ORDER_FORM_COMPONENT_LABELS: Record<keyof OrderFormComponents, stri
   collectOnFail:  'Giao thất bại thu tiền',
   viewGoodsNote:  'Ghi chú xem hàng',
   letterContent:  'Nội dung thư, tài liệu',
+  orderNote:      'Ghi chú đơn hàng',
 }
 
 // Loại đơn mà mỗi thành phần áp dụng — hiển thị làm nhãn phụ trong UI Super Admin để tránh nhầm
@@ -60,14 +62,14 @@ export const ORDER_FORM_COMPONENT_LABELS: Record<keyof OrderFormComponents, stri
 export const ORDER_FORM_COMPONENT_SCOPE: Record<keyof OrderFormComponents, 'goods' | 'letter' | 'both'> = {
   cod: 'goods', discount: 'goods', shipCollect: 'goods', goodsValue: 'both',
   declareValue: 'goods', partialDeliver: 'goods', collectOnFail: 'goods',
-  viewGoodsNote: 'both', letterContent: 'letter',
+  viewGoodsNote: 'both', letterContent: 'letter', orderNote: 'goods',
 }
 
 // Mặc định TẤT CẢ bật — đại lý cũ chưa có field này trong data vẫn thấy đủ form như trước.
 export const DEFAULT_ORDER_FORM_COMPONENTS: OrderFormComponents = {
   cod: true, discount: true, shipCollect: true, goodsValue: true,
   declareValue: true, partialDeliver: true, collectOnFail: true, viewGoodsNote: true,
-  letterContent: true,
+  letterContent: true, orderNote: true,
 }
 
 // Mã dịch vụ chính 247Express (ServiceTypeID) — dùng để gọi GetPriceForCustomerAPI,
@@ -96,10 +98,37 @@ export function setAllowedCarriers(agencyId: string, carriers: string[]) {
   if (agency) agency.allowedCarriers = carriers
 }
 
+// Lịch sử bật/tắt orderFormComponents — append-only, mỗi lần Super Admin đổi 1 field ghi 1 dòng.
+// Không ghi nếu giá trị không đổi (vd click nhầm hoặc set lại giá trị cũ).
+export interface OrderFormComponentHistoryEntry {
+  id: string
+  agencyId: string
+  key: keyof OrderFormComponents
+  fromValue: boolean
+  toValue: boolean
+  changedAt: string
+}
+
+export const orderFormComponentHistory: OrderFormComponentHistoryEntry[] = []
+
 export function setOrderFormComponent(agencyId: string, key: keyof OrderFormComponents, value: boolean) {
   const agency = agenciesList.find(a => a.id === agencyId)
   if (!agency) return
-  agency.orderFormComponents = { ...(agency.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS), [key]: value }
+  const current = agency.orderFormComponents ?? DEFAULT_ORDER_FORM_COMPONENTS
+  if (current[key] === value) return
+  orderFormComponentHistory.unshift({
+    id: `ofc-hist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    agencyId,
+    key,
+    fromValue: current[key],
+    toValue: value,
+    changedAt: new Date().toISOString(),
+  })
+  agency.orderFormComponents = { ...current, [key]: value }
+}
+
+export function getOrderFormComponentHistory(agencyId: string): OrderFormComponentHistoryEntry[] {
+  return orderFormComponentHistory.filter(h => h.agencyId === agencyId)
 }
 
 // ─── Shop connection requests ─────────────────────────────────────────────────
