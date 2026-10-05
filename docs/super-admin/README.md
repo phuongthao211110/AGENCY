@@ -69,3 +69,4 @@ _Chưa có stories_
 | [GSA] Vùng & Tuyến: Danh sách bộ vùng tuyến | [danh-sach-bo-vung-tuyen.md](./route-config/danh-sach-bo-vung-tuyen.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Đặt bộ vùng tuyến làm mặc định | [dat-bo-vung-tuyen-mac-dinh.md](./route-config/dat-bo-vung-tuyen-mac-dinh.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Trang "Chỉnh sửa vùng & tuyến" — 1 draft chung cho 3 phần | [trang-chinh-sua-mot-draft-chung.md](./route-config/trang-chinh-sua-mot-draft-chung.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Khoá tuyến | [khoa-tuyen.md](./route-config/khoa-tuyen.md) | — | [Draft] |

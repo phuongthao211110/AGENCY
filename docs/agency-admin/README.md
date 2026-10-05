@@ -75,6 +75,9 @@
 | [AGENCY][247] Đơn hàng: Chọn nhiều đơn và đẩy qua 247Express | [chon-nhieu-don-day-qua-247.md](./orders/chon-nhieu-don-day-qua-247.md) | AGENCY-656 | [Draft] |
 | [AGENCY] Đơn hàng - Danh sách đơn hàng: Filter shop | [danh-sach-don-hang-filter-shop.md](./orders/danh-sach-don-hang-filter-shop.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Danh sách đơn hàng: Đơn nháp | [danh-sach-tab-don-nhap.md](./orders/danh-sach-tab-don-nhap.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Chi tiết đơn: Redesign tab Lịch sử trạng thái theo đúng UI thật | [redesign-lich-su-trang-thai.md](./orders/redesign-lich-su-trang-thai.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Chi tiết đơn: Redesign tab Lịch sử thao tác theo đúng UI thật | [redesign-lich-su-thao-tac.md](./orders/redesign-lich-su-thao-tac.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Nhập đơn hàng: Ghi nhận lịch sử thao tác khi import | [ghi-nhan-lich-su-thao-tac-khi-import.md](./orders/ghi-nhan-lich-su-thao-tac-khi-import.md) | — | [Draft] |
 
 ## Đối soát & Chuyển khoản
 

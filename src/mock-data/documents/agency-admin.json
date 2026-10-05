@@ -1176,6 +1176,108 @@
             "Gap đáng chú ý: tên tab \"Đơn nháp\" ngụ ý đây là nơi đơn \"mới tạo, chưa xử lý\" sẽ xuất hiện — nhưng vì luồng tạo đơn Hàng hoá thật (CreateOrderDrawer) bỏ qua trạng thái pending hoàn toàn (tạo thẳng ở pickup), tab này trên thực tế không có đường vào từ bất kỳ hành động nào của shop hay đại lý hiện tại — chỉ tồn tại nhờ dữ liệu seed lịch sử.",
             "Huỷ đơn ở đây (isCancellable) không ghi log vào order.log[] — khác hoàn toàn với luồng huỷ 247Express đã tiếp nhận (xem AGA-ORDER-23)."
           ]
+        },
+        {
+          "id": "AGA-ORDER-26",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Chi tiết đơn: Redesign tab Lịch sử trạng thái theo đúng UI thật",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem lịch sử trạng thái vận chuyển của một đơn hàng theo đúng bố cục UI thật GHN — nhóm theo ngày, tô màu theo kết quả giao hàng — để nhận biết ngay đơn đang giao thành công, thất bại hay trung tính mà không cần đọc từng dòng chữ.",
+          "userFlow": [
+            "Trong drawer chi tiết đơn, bấm tab Lịch sử trạng thái",
+            "Danh sách log nhóm theo ngày (mới nhất lên trước), mỗi nhóm có banner nền cam nhạt ghi ngày dd/mm/yyyy",
+            "Mỗi dòng log gồm 3 cột: Thời gian (giờ:phút) | Trạng thái | Chi tiết — thành công tô xanh bold, thất bại có 2 dòng đen + cam, trung tính hiện ghi chú + tên kho xám",
+            "Không còn thanh thống kê Số lần lấy/Giao/Hoàn và không còn badge Hành động"
+          ],
+          "systemFlow": [
+            "AgencyOrders.tsx ~dòng 2196-2260: Render 3 cột. Dữ liệu từ order.log[], nhóm theo ngày qua logByDate (đã có sẵn). formatDateHeader() sửa lại bỏ weekday, chỉ còn dd/mm/yyyy. Banner ngày: background #FFF4ED, text đen bold.",
+            "Logic tô màu: isSuccess = item.status_name.includes('thành công') && !item.status_name.includes('không thành công') → cả 2 cột tô #059669 bold. isFailure = item.action === 'DELIVERY_FAIL' → cột Chi tiết 2 dòng: tên trạng thái (đen) + Lý do: item.note màu #EA580C (chỉ khi note tồn tại). Trung tính: Chi tiết = item.note || item.status_name, kèm warehouse_name màu #6B7280.",
+            "Không còn render phần thống kê num_pick/num_deliver/num_return và không còn ACTION_LABEL/ACTION_COLOR badge.",
+            "Schema mock data order.log[] không đổi — chỉ thay đổi render layer."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Tab Lịch sử trạng thái hiển thị đúng 3 cột: Thời gian | Trạng thái | Chi tiết — không còn cột Hành động badge, không còn thanh thống kê Số lần lấy/Giao/Hoàn.",
+            "AC2: Các dòng log nhóm theo ngày (mới nhất lên trước); mỗi nhóm có banner nền #FFF4ED, ngày hiển thị format dd/mm/yyyy (không kèm tên thứ).",
+            "AC3: Dòng thành công (status_name chứa 'thành công' và không chứa 'không thành công') → cả cột Trạng thái lẫn Chi tiết tô #059669 bold.",
+            "AC4: Dòng thất bại (action === 'DELIVERY_FAIL') → cột Trạng thái giữ màu đen; cột Chi tiết 2 dòng: dòng 1 = tên trạng thái (đen), dòng 2 = Lý do: {note} màu #EA580C — dòng 2 chỉ hiện khi item.note có giá trị.",
+            "AC5: Đơn không có log[] → tab hiện trạng thái rỗng, không lỗi."
+          ],
+          "notes": [
+            "Redesign giao diện tab Lịch sử trạng thái đã tồn tại trong OrderDetailDrawer — không phải tính năng mới, không thay đổi data model.",
+            "Tách ra từ 1 story ban đầu gộp chung 2 tab — xem thêm AGA-ORDER-27 (tab Lịch sử thao tác), 2 story làm chung 1 lần sửa code cùng lúc.",
+            "Thay thế thiết kế cũ tại AGA-ORDER-11 (lich-su-trang-thai-thao-tac.md): bản cũ dùng bảng 4 cột + thanh thống kê.",
+            "Gap chưa làm: Web Shop (Orders.tsx ~dòng 2655-3400) có tab tương tự nhưng code tách biệt, chưa đồng bộ theo thiết kế mới.",
+            "GHNLogEntry không có field tên nhân viên/người cập nhật trạng thái → cột Chi tiết không hiện 'Nhân viên cập nhật: ...' như ảnh mẫu GHN gốc. Bổ sung field khi làm hệ thống thật."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-27",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Chi tiết đơn: Redesign tab Lịch sử thao tác theo đúng UI thật",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn xem lịch sử thao tác (ai đổi gì, lúc nào) của một đơn hàng theo đúng bố cục UI thật GHN — nhóm theo ngày, hiển thị thay đổi dạng mũi tên — để tra soát đơn nhanh hơn.",
+          "userFlow": [
+            "Trong drawer chi tiết đơn, bấm tab Lịch sử thao tác",
+            "Danh sách nhóm theo ngày (mới nhất lên trước), mỗi nhóm có banner nền cam nhạt ghi ngày dd/mm/yyyy",
+            "Mỗi dòng gồm 4 cột: Thời gian | Người thực hiện | Trường thay đổi | Nội dung thay đổi",
+            "Có thay đổi thật hiện giá trị cũ → giá trị mới (bold); chỉ có giá trị mới hiện → giá trị mới (bold); hành động xem/in không đổi giá trị hiện dấu —"
+          ],
+          "systemFlow": [
+            "AgencyOrders.tsx ~dòng 2263-2305: Render 4 cột. Dữ liệu từ order.actionHistory[], nhóm theo ngày qua actionByDate. Banner ngày dùng chung formatDateHeader() với tab Lịch sử trạng thái (xem AGA-ORDER-26).",
+            "Format cột Nội dung thay đổi: oldContent === '-' && newContent === '-' → hiện —; oldContent === '-' có newContent → hiện → newContent bold; ngược lại → oldContent → newContent bold.",
+            "Pattern đồng bộ với AgencyOrdersHistory.tsx (trang Lịch sử đơn hàng toàn đại lý): 2 nơi dùng chung kiểu trình bày audit-log.",
+            "Schema mock data order.actionHistory[] không đổi — chỉ thay đổi render layer."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Tab Lịch sử thao tác hiển thị đúng 4 cột: Thời gian | Người thực hiện | Trường thay đổi | Nội dung thay đổi.",
+            "AC2: Cột Nội dung thay đổi: oldContent = newContent = '-' → hiện —; oldContent = '-' có newContent → hiện → newContent bold; còn lại → oldContent → newContent bold.",
+            "AC3: Nhóm theo ngày với banner nền #FFF4ED, format ngày dd/mm/yyyy (không kèm tên thứ).",
+            "AC4: Đơn không có actionHistory[] → tab hiện trạng thái rỗng, không lỗi."
+          ],
+          "notes": [
+            "Redesign giao diện tab Lịch sử thao tác đã tồn tại trong OrderDetailDrawer — không phải tính năng mới, không thay đổi data model.",
+            "Tách ra từ 1 story ban đầu gộp chung 2 tab — xem thêm AGA-ORDER-26 (tab Lịch sử trạng thái), 2 story làm chung 1 lần sửa code cùng lúc.",
+            "Thay thế thiết kế cũ tại AGA-ORDER-11 (lich-su-trang-thai-thao-tac.md): bản cũ dùng bảng 5 cột tách riêng cột cũ/mới.",
+            "Gap chưa làm: Web Shop (Orders.tsx ~dòng 2655-3400) có tab tương tự nhưng actionByDate nested thêm theo time-group — chưa đồng bộ theo thiết kế mới."
+          ]
+        },
+        {
+          "id": "AGA-ORDER-28",
+          "jiraKey": "",
+          "title": "[AGENCY] Đơn hàng - Nhập đơn hàng: Ghi nhận lịch sử thao tác khi import",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn mỗi đơn hàng được tạo qua luồng import hàng loạt đều có dòng lịch sử thao tác khởi tạo — ghi rõ ai thực hiện, vào lúc nào, hành động gì — để khi nhân viên tra soát tab \"Lịch sử thao tác\" trong chi tiết đơn hoặc xem trang \"Lịch sử đơn hàng\" toàn đại lý, đơn import không bị xuất hiện trống rỗng như đơn chưa từng có thao tác nào.",
+          "userFlow": [
+            "Agency Admin tải file Excel, upload lên trang /agency-admin/orders/import, review bảng và bấm \"Nhập N đơn hợp lệ\"",
+            "Sau khi import thành công, mở chi tiết bất kỳ đơn vừa import → bấm tab \"Lịch sử thao tác\"",
+            "Thấy đúng 1 dòng lịch sử: thời gian import, người thực hiện \"Agency Admin (import)\", hành động \"Nhập đơn hàng (import)\", cột nội dung thay đổi hiện —",
+            "Vào trang \"Lịch sử đơn hàng\" (/agency-admin/orders/history), tìm theo mã đơn vừa import",
+            "Đơn xuất hiện với cùng nội dung dòng lịch sử nói trên"
+          ],
+          "systemFlow": [
+            "Người dùng bấm \"Nhập N đơn hợp lệ\" — handleConfirm() trong AgencyOrdersImport.tsx được gọi",
+            "Trước vòng lặp validRows.forEach(...), now = new Date() khởi tạo 1 lần — mọi đơn trong cùng 1 lần import dùng chung timestamp này",
+            "Với mỗi validRow, addOrder() được gọi với actionHistory gồm 1 entry: { date: createdAt (fmtDateInput(now) → YYYY-MM-DD), time: now.toTimeString().slice(0,8) (HH:MM:SS), operator: 'Agency Admin (import)', action: 'Nhập đơn hàng (import)', oldContent: '-', newContent: '-' }",
+            "Tab \"Lịch sử thao tác\" trong AgencyOrders.tsx nhóm order.actionHistory[] theo ngày qua actionByDate, render 4 cột; oldContent === '-' && newContent === '-' → cột Nội dung thay đổi hiện —",
+            "Trang AgencyOrdersHistory.tsx (/agency-admin/orders/history) gộp actionHistory[] từ mọi đơn trong store; đơn import có entry nên đóng góp đúng 1 dòng vào feed"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Mỗi đơn hàng được tạo qua import hàng loạt phải có đúng 1 entry trong actionHistory[] ngay từ lúc tạo — không được để mảng rỗng.",
+            "AC2: Entry lịch sử import có các giá trị cố định: operator = 'Agency Admin (import)', action = 'Nhập đơn hàng (import)', oldContent = '-', newContent = '-'; date theo định dạng YYYY-MM-DD và time theo định dạng HH:MM:SS của thời điểm bấm \"Nhập\".",
+            "AC3: Tab \"Lịch sử thao tác\" trong modal chi tiết đơn hiển thị đúng dòng lịch sử này — nhóm theo ngày, cột \"Nội dung thay đổi\" hiện — khi cả oldContent lẫn newContent đều là '-'.",
+            "AC4: Trang \"Lịch sử đơn hàng\" (/agency-admin/orders/history) hiển thị đơn vừa import với cùng nội dung dòng lịch sử nói trên — đơn import không bị vắng mặt khỏi feed lịch sử toàn đại lý.",
+            "AC5: Tất cả đơn trong cùng 1 lần bấm \"Nhập\" có cùng giá trị time (dùng chung biến now tạo trước vòng lặp) — hành vi đúng, phản ánh đây là 1 hành động batch duy nhất.",
+            "AC6: Đơn Hàng hoá và đơn Thư được import trong cùng 1 lần đều có entry lịch sử, không phân biệt loại đơn."
+          ],
+          "notes": [
+            "Root cause trước fix: handleConfirm() truyền actionHistory: [] khi gọi addOrder() — mảng rỗng khiến đơn import không có dòng nào trong tab \"Lịch sử thao tác\" và không xuất hiện trong trang \"Lịch sử đơn hàng\".",
+            "Chuỗi operator 'Agency Admin (import)' tái dùng đúng giá trị đã có sẵn ở field dispatchedBy ngay bên dưới trong cùng hàm — đảm bảo nhất quán tên người thực hiện giữa hai field.",
+            "Gap chưa fix — Web Shop: CreateOrderDrawer và CreateLetterDrawer trong src/platforms/shop/pages/Orders.tsx vẫn gọi addOrder() với actionHistory: [] rỗng — cùng root cause nhưng khác platform, nằm ngoài phạm vi yêu cầu lần này.",
+            "Timestamp batch: tất cả đơn trong 1 lần import có cùng time (giây), không phân biệt thứ tự xử lý từng dòng — chấp nhận được vì đây là 1 hành động duy nhất, không phải N hành động riêng lẻ."
+          ]
         }
       ]
     },

@@ -1171,6 +1171,118 @@
             "Chỉ áp dụng cho CreateOrderDrawer (đơn Hàng hoá) — KHÔNG áp dụng cho CreateLetterDrawer (đơn Thư/tài liệu, qua 247Express).",
             "Dữ liệu mẫu addressChange chỉ được thêm vào PRC001 — 6 bảng giá còn lại trong pricing.json chưa có field này (mặc định undefined), nên dòng này sẽ KHÔNG hiện với các dịch vụ dùng bảng giá khác cho tới khi Agency Admin cấu hình thêm ở Tạo bảng giá."
           ]
+        },
+        {
+          "id": "SHOP-ORDER-38",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng: Tách kiện theo sản phẩm",
+          "status": "draft",
+          "userStory": "Là chủ shop có đơn hàng nhiều sản phẩm (ví dụ đơn trên 20kg gồm 2 loại hàng), tôi muốn tách bản in thành nhiều thẻ vận đơn riêng — mỗi sản phẩm 1 kiện — để dán mã lên từng thùng khi đóng gói, mà không cần tạo đơn mới thật trong hệ thống.",
+          "userFlow": [
+            "Mở modal \"In đơn hàng\" (nút In nhanh ở 1 dòng trong danh sách, hoặc chọn nhiều đơn rồi bấm \"In vận đơn\")",
+            "Nếu trong batch sắp in có ít nhất 1 đơn có ≥2 sản phẩm, modal hiện thêm khối \"Tách kiện theo sản phẩm\" ngay trên vùng xem trước thẻ in",
+            "Mỗi đơn đủ điều kiện có 1 dòng \"{mã đơn} — {N} sản phẩm\" kèm toggle bật/tắt riêng; có dòng ghi chú giải thích \"chỉ ảnh hưởng bản in, không tạo đơn mới\"",
+            "Bật toggle cho 1 đơn → vùng xem trước và đếm số đơn cập nhật ngay: đơn đó nở thành N thẻ (\"Kiện 1/N\", \"Kiện 2/N\"...), mỗi thẻ hiện đúng 1 sản phẩm + khối lượng/COD/phí đã chia đều theo số kiện; thẻ có thêm nhãn cam ghi \"Kiện {i}/{N}\"",
+            "Tắt toggle → thẻ gộp lại thành 1, thông tin trở về nguyên như ban đầu",
+            "Bấm \"In\" → in đúng số thẻ đang thấy trong preview (bao gồm cả các kiện đã tách)"
+          ],
+          "systemFlow": [
+            "splitEvenly(total: number, parts: number): number[] — hàm module-scope trong Orders.tsx, khai báo ngay trước function PrintOrderModal: chia 1 số nguyên thành parts phần, tổng luôn bằng đúng total — phần dư gán cho các phần ĐẦU (tránh lỗi làm tròn)",
+            "type PrintUnit — module-scope, cùng file: đại diện cho 1 thẻ in thực tế; field: key, order, trackingCode, kienLabel (string|null), productLine (string|null), weightGram, cod, fee",
+            "splitOrderIds: Set<string> — state cục bộ trong PrintOrderModal, mặc định new Set(), reset mỗi lần mở modal, KHÔNG persist qua printSettingsStore hoặc localStorage",
+            "multiProductOrders = orders.filter(o => (orderProducts[o.id]?.length ?? 1) > 1) — danh sách đơn đủ điều kiện hiện toggle (có ≥2 sản phẩm trong orderProducts)",
+            "Khối UI \"Tách kiện theo sản phẩm\" render ngay trên #print-order-area, chỉ khi multiProductOrders.length > 0; với mỗi order đủ điều kiện render 1 dòng toggle riêng",
+            "printUnits: PrintUnit[] = orders.flatMap(o => ...): đơn có ≤1 sản phẩm HOẶC toggle chưa bật → 1 unit, trackingCode gốc, kienLabel: null; đơn có ≥2 sản phẩm VÀ toggle bật → N units, mỗi unit: trackingCode = \"${o.trackingCode}-K${i+1}\", kienLabel = \"Kiện ${i+1}/${N}\", productLine = orderProducts[o.id][i], weightGram/cod/fee = phần tử tương ứng từ splitEvenly",
+            "Toàn bộ phần render thẻ in đổi từ orders.map sang printUnits.map(unit => ...) — dùng unit.order cho field không đổi theo kiện; dùng unit.trackingCode/productLine/weightGram/cod/fee cho số liệu đổi theo kiện; render thêm dòng nhãn cam unit.kienLabel khi khác null",
+            "Header modal và nút \"In\" dùng printUnits.length thay vì orders.length"
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Khối \"Tách kiện theo sản phẩm\" chỉ hiện trong modal In đơn hàng khi có ≥1 đơn trong batch sắp in có ≥2 sản phẩm — không hiện khi tất cả đơn đều chỉ có 1 sản phẩm.",
+            "AC2: Mỗi đơn đủ điều kiện có 1 toggle riêng kèm dòng \"{mã đơn} — {N} sản phẩm\"; bật/tắt từng đơn độc lập nhau — bật đơn này không ảnh hưởng đơn khác.",
+            "AC3: Toggle mặc định TẮT cho mọi đơn mỗi khi mở modal — không persist giữa các lần mở.",
+            "AC4: Bật toggle đơn có N sản phẩm → modal hiện đúng N thẻ riêng, mỗi thẻ có nhãn cam \"Kiện {i}/{N}\", mã vận đơn dạng {mã gốc}-K{i}, đúng 1 sản phẩm tương ứng của kiện đó.",
+            "AC5: Khối lượng/COD/phí ship được chia đều theo số kiện — tổng các kiện bằng đúng giá trị đơn gốc (không sai lệch do làm tròn: phần dư gán cho kiện đầu).",
+            "AC6: Tắt toggle lại → 1 thẻ gốc được khôi phục ngay, mã vận đơn trở về mã gốc (không có hậu tố -K{i}).",
+            "AC7: Header modal và nút \"In\" hiển thị đúng tổng số thẻ sẽ in (tính cả kiện đã tách), không cố định theo số đơn ban đầu.",
+            "AC8: Tách kiện KHÔNG tạo đơn mới thật, KHÔNG thay đổi dữ liệu đơn gốc trong danh sách, KHÔNG ảnh hưởng đối soát hoặc COD — chỉ ảnh hưởng bản in lần đó.",
+            "AC9: Dòng ghi chú \"chỉ ảnh hưởng bản in, không tạo đơn mới\" hiện trong khối toggle."
+          ],
+          "notes": [
+            "Tính năng chỉ chia đều vì data model orderProducts là Record<string, string[]> — mảng chuỗi hiển thị, không có field số liệu riêng từng sản phẩm. Nếu 2 sản phẩm nặng khác nhau thực tế (VD áo 0,1kg + giày 2kg), bản in chia đều sẽ sai tỷ lệ thật — trade-off đã được xác nhận với người dùng.",
+            "Toggle không persist là cố ý: nhiều đơn có nhiều sản phẩm vẫn đóng chung 1 thùng (không cần tách kiện), nên không mặc định bật trong Cài đặt đơn hàng để tránh tách nhầm mỗi lần in.",
+            "UAT bằng Playwright trên đơn GHN00123461 (2 sản phẩm: Quần Jean + Áo Polo, khối lượng 0,4kg, COD 175.000đ): bật toggle → ra đúng 2 thẻ Kiện 1/2 và Kiện 2/2, mã -K1/-K2, khối lượng 0,2kg/0,2kg, COD 87.500đ/87.500đ. Test thêm với khối lượng 22kg → chia đúng 11kg/11kg.",
+            "Bug fix đồng thời: bug cắt nội dung khi in nhiều đơn (SHOP-ORDER-39) phải được fix cùng phiên — nếu không, tách 2+ kiện sẽ ngay lập tức bị compound bug đó cắt mất kiện sau kiện đầu tiên."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-39",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - In đơn hàng: Fix nội dung bị cắt khi in nhiều đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop chọn in nhiều đơn cùng lúc (hoặc in 1 đơn nội dung dài), tôi muốn bản in ra giấy có đủ tất cả thẻ đã chọn — không bị mất các đơn sau đơn đầu tiên — để không phải in lại từng đơn riêng lẻ.",
+          "userFlow": [
+            "Chọn ≥2 đơn hàng trong danh sách → bấm \"In vận đơn\"",
+            "Modal \"In đơn hàng\" mở — xem trước hiển thị đủ tất cả thẻ trong vùng cuộn",
+            "Bấm \"In {N} đơn\" → trình duyệt mở hộp thoại in",
+            "Print preview của trình duyệt hiện đủ tất cả N thẻ, không bị cắt",
+            "Bấm in → giấy ra đủ toàn bộ đơn theo khổ giấy đã cài đặt"
+          ],
+          "systemFlow": [
+            "Root cause: div gốc của PrintOrderModal (Orders.tsx) có CSS transform: translate(-50%, -50%) + overflow: hidden + maxHeight: 85vh. Thuộc tính transform tạo containing block mới cho position: fixed con — do đó #print-order-area { position: fixed; inset: 0 } trong @media print neo theo khung modal (480px × tối đa 85vh, đang có overflow: hidden) thay vì neo theo trang in thật. Mọi nội dung vượt khung bị overflow: hidden cắt mất vĩnh viễn.",
+            "Fix: thêm id=\"print-modal-root\" vào div gốc modal; mở rộng @media print trong Orders.tsx với 2 rule: #print-modal-root { position: static !important; transform: none !important; overflow: visible !important; max-height: none !important; box-shadow: none !important; } và #print-order-area { position: static !important; } — neutralize containing block và clipping của ancestor lúc in.",
+            "Chỉ CSS trong @media print thay đổi — UI modal khi xem thường (nền tối, bo góc, bóng đổ, overflow: hidden cuộn xem trước) không bị ảnh hưởng.",
+            "Verify (Playwright, viewport 1400×700, emulate media: print): trước fix — in 4 đơn, #print-order-area scrollHeight thật = 1602px nhưng bounding box chỉ 480×292.5px; chỉ hiện 1 phần đơn đầu, 3 đơn còn lại mất hoàn toàn. Sau fix — document.documentElement.scrollHeight = 1511px, tất cả 4 đơn hiện đầy đủ trong print preview.",
+            "Test bổ sung sau fix: in 2 kiện từ tính năng tách kiện (SHOP-ORDER-38) — scrollHeight = 853px, cả 2 thẻ hiện đủ, không mất thẻ nào."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: In 1 đơn → thẻ in hiện đầy đủ nội dung, không bị cắt giữa chừng.",
+            "AC2: In ≥2 đơn → tất cả thẻ hiện đủ trong print preview của trình duyệt, số thẻ khớp đúng số đơn đã chọn.",
+            "AC3: Nội dung thẻ từ đơn thứ 2 trở đi (người nhận, sản phẩm, khối lượng, COD, phí ship, barcode/QR) hiện đầy đủ — không bị cắt tại ranh giới 85vh của modal.",
+            "AC4: Print preview của trình duyệt có document.documentElement.scrollHeight đủ chứa toàn bộ thẻ (không còn bị kẹp bằng chiều cao viewport).",
+            "AC5: UI modal khi xem thường (nền tối, bo góc, bóng đổ, cuộn xem trước) không bị ảnh hưởng — chỉ CSS in @media print thay đổi.",
+            "AC6: Kết hợp với tính năng tách kiện (SHOP-ORDER-38): bật tách kiện cho đơn 2 sản phẩm → 2 thẻ kiện đều hiện đầy đủ trong bản in, không mất kiện nào."
+          ],
+          "notes": [
+            "Lỗi tồn tại ở bất kỳ lần in ≥2 đơn nào (hoặc 1 đơn đủ dài), KHÔNG phải do tính năng tách kiện (SHOP-ORDER-38) gây ra — lỗi có trước khi tính năng đó được thêm vào. Lý do sửa cùng phiên: tách kiện ngay lập tức bị compound bug này, buộc phải sửa cùng lúc để tính năng mới demo được.",
+            "Root cause là hành vi spec của CSS (transform tạo containing block cho position: fixed con), không phải bug trình duyệt. Neutralize ở @media print là cách fix đúng — không thay đổi cấu trúc HTML hay cách modal hiển thị thường."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-40",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Áp dụng cấu hình tuyến",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi xem chi tiết 1 đơn hàng hoá, tôi muốn thấy tuyến vận chuyển đang áp dụng cho đơn đó (dựa trên địa chỉ gửi/nhận và cấu hình \"Vùng & Tuyến\" hiện hành của Super Admin), để hiểu rõ đơn của mình được tính phí theo tuyến nào và phát hiện sớm nếu tuyến chưa được cấu hình đúng.",
+          "userFlow": [
+            "Mở chi tiết 1 đơn hàng hoá (sendKind = 'goods') → trong card \"Phí vận chuyển\", ngay sau dòng \"Phí ship: {order.fee}đ\", thấy thêm 1 dòng \"Tuyến áp dụng: Tuyến 1\" (hoặc tên tuyến đang active trong cấu hình).",
+            "Nếu địa chỉ gửi/nhận chưa được gán vùng, hoặc cặp vùng chưa có tuyến trong cấu hình hiện hành → dòng vẫn hiện \"Tuyến áp dụng: ...\" với text fallback rõ ràng thay vì để trống.",
+            "Mở chi tiết đơn Thư (sendKind = 'letter') → dòng \"Tuyến áp dụng\" KHÔNG xuất hiện."
+          ],
+          "systemFlow": [
+            "Cần import resolveRouteName từ src/mock-data/routeConfig.ts và parseProvinceFromAddress từ src/mock-data/pricingCalc.ts vào Orders.tsx — đây là lần đầu tiên 2 module này được nối với Orders.tsx (Web Shop).",
+            "Tại vị trí render card \"Phí vận chuyển\" trong Orders.tsx (khoảng dòng 3061-3102, bên trong nhánh order.sendKind !== 'letter' đã có sẵn từ dòng ~3066), cần tính: fromProvince = parseProvinceFromAddress(order.senderAddress), toProvince = parseProvinceFromAddress(order.receiverAddress), routeName = resolveRouteName(fromProvince, toProvince).",
+            "Sau dòng hiển thị \"Phí ship: {order.fee}đ\" (dòng ~3089-3101), cần render thêm 1 dòng: \"Tuyến áp dụng: {routeName ?? '<text fallback>'}\".",
+            "Điều kiện render: vị trí thêm đã nằm trong nhánh order.sendKind !== 'letter' — không cần thêm điều kiện mới, đơn Thư tự động bị loại trừ.",
+            "resolveRouteName đọc trực tiếp routeMatrix và regions từ state module-scope trong routeConfig.ts — không cần truyền params hay quản lý version, luôn phản ánh cấu hình hiện hành của Super Admin."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Mở chi tiết đơn hàng hoá → trong card \"Phí vận chuyển\", có 1 dòng \"Tuyến áp dụng: {tên tuyến}\" ngay sau dòng phí ship — tên tuyến khớp với cấu hình \"Vùng & Tuyến\" hiện hành trong Super Admin.",
+            "AC2: resolveRouteName trả về null (tỉnh gửi/nhận chưa được gán vùng, hoặc cặp vùng chưa có tuyến) → dòng \"Tuyến áp dụng\" vẫn hiện với text fallback rõ ràng — không được hiển thị rỗng hoặc undefined.",
+            "AC3: Mở chi tiết đơn Thư (sendKind = 'letter') → KHÔNG có dòng \"Tuyến áp dụng\" trong card \"Dịch vụ\".",
+            "AC4: Dòng \"Tuyến áp dụng\" chỉ phản ánh tuyến được phân tích từ địa chỉ thực tế của đơn — không tính lại order.fee, không thay đổi bất kỳ giá trị nào đã lưu trong đơn.",
+            "AC5: Sau khi Super Admin thay đổi cấu hình \"Vùng & Tuyến\" → mở lại chi tiết đơn → tên tuyến phản ánh đúng cấu hình mới nhất (vì resolveRouteName đọc trực tiếp state hiện hành, không cache)."
+          ],
+          "notes": [
+            "PLANNING SPEC — CHƯA CÓ CODE: Story này mô tả tính năng SẮP làm, chưa có dòng nào trong Orders.tsx, routeConfig.ts hay pricingCalc.ts được sửa tại thời điểm viết. Cần frontend-dev triển khai sau khi story được approve.",
+            "Tính năng THUẦN HIỂN THỊ — không đổi logic tính phí, không tính lại order.fee. Giá trị fee đã lưu từ lúc tạo đơn giữ nguyên.",
+            "Chỉ áp dụng cho đơn Hàng hoá — đơn Thư đi qua 247Express dùng hệ thống hub riêng, không liên quan routeMatrix. Quy ước phân nhánh theo sendKind đã tồn tại trong cùng card (dòng ~3066 trong Orders.tsx hiện có order.sendKind !== 'letter').",
+            "resolveRouteName và findRegionOf đã có sẵn trong routeConfig.ts; parseProvinceFromAddress đã có sẵn trong pricingCalc.ts (đã dùng ở AgencyOrdersImport.tsx) — không cần viết hàm mới.",
+            "Text fallback chính xác khi tuyến chưa xác định cần được đồng thuận với PM/design trước khi code — AC2 chỉ yêu cầu phải có fallback, không quy định chữ cụ thể.",
+            "Dev cần kiểm tra circular dependency khi import pricingCalc.ts vào Orders.tsx lần đầu."
+          ]
         }
       ]
     },

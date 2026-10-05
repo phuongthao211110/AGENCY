@@ -180,6 +180,11 @@ export interface RouteConfigVersion {
   // trong 1 bộ, không ảnh hưởng gì tới việc đặt bộ này làm mặc định. Carry-forward sang bộ mới khi
   // lưu phần Vùng miền/Nội-Ngoại thành (không đụng Tuyến) để không bị mất khoá ngoài ý muốn.
   lockedRouteNames?: string[]
+  // Cấp khoá THỨ 2, MỊN HƠN — khoá đúng 1 CẶP VÙNG MIỀN cụ thể (pairKey(a,b)), độc lập với khoá cả
+  // tuyến ở trên: khoá 1 cặp = không cho đổi cặp đó sang tuyến khác (dù route đang gán nó có bị
+  // khoá hay không), nhưng CÁC CẶP KHÁC cùng tuyến vẫn tự do sửa bình thường. Muốn xoá nguyên tuyến
+  // đang chứa 1 cặp bị khoá kiểu này → cũng bị chặn (xem handleDeleteTuyen), tránh orphan khoá.
+  lockedPairKeys?: string[]
 }
 
 function cloneRegions(list: RegionDef[]): RegionDef[] {
@@ -230,6 +235,7 @@ export function commitNewRouteConfigVersion(
   draftUrbanConfigs: UrbanConfig[],
   label?: string,
   lockedRouteNames?: string[],
+  lockedPairKeys?: string[],
 ): RouteConfigVersion {
   const version: RouteConfigVersion = {
     id: `rcv_${Date.now()}`,
@@ -239,6 +245,7 @@ export function commitNewRouteConfigVersion(
     regions: cloneRegions(draftRegions),
     routeMatrix: { ...draftRouteMatrix },
     urbanConfigs: cloneUrbanConfigs(draftUrbanConfigs),
+    lockedPairKeys: lockedPairKeys ? [...lockedPairKeys] : [],
     lockedRouteNames: lockedRouteNames ? [...lockedRouteNames] : [],
   }
   routeConfigVersions.push(version)

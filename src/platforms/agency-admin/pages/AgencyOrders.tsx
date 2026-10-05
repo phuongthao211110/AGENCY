@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import {
   PlusOutlined, SearchOutlined, InfoCircleOutlined, DownloadOutlined, CloseOutlined, TruckOutlined, StopOutlined,
@@ -12,7 +12,7 @@ import { loadOrders, addOrder, dispatchOrderToCarrier, updateOrder, cancelOrder,
 import allShops from '../../../mock-data/shops.json'
 import allServices from '../../../mock-data/services.json'
 import allPricing from '../../../mock-data/pricing.json'
-import { agenciesList, clientHubs247, DEFAULT_ORDER_FORM_COMPONENTS } from '../../super-admin/agencyStore'
+import { agenciesList, clientHubs247, DEFAULT_ORDER_FORM_COMPONENTS, hasActiveGhnConnection } from '../../super-admin/agencyStore'
 
 // ── Design tokens ────────────────────────────────────────────
 const C_ACTION         = '#FF5200'
@@ -1647,41 +1647,11 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
   const actionDates = Object.keys(actionByDate).sort((a, b) => b.localeCompare(a))
 
   function formatDateHeader(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+    return new Date(dateStr).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
   function formatTime(isoStr: string) {
     return new Date(isoStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-  }
-
-  const ACTION_LABEL: Record<string, string> = {
-    READY_TO_PICK:    'Chờ lấy',
-    PICK_IN_TRIP:     'Lấy hàng',
-    HUB_IN:           'Đến kho',
-    HUB_OUT:          'Rời kho',
-    HUB_DELIVERY_IN:  'Đến bưu cục',
-    DELIVER_IN_TRIP:  'Giao hàng',
-    DELIVERY_FAIL:    'Giao thất bại',
-    WAITING_TO_RETURN:'Chờ hoàn',
-    RETURN_IN_TRIP:   'Đang hoàn',
-    RETURNED:         'Hoàn xong',
-    CANCEL:           'Huỷ',
-  }
-
-  const ACTION_COLOR: Record<string, string> = {
-    DELIVER_IN_TRIP:  '#D1FAE5', DELIVERY_FAIL:    '#FEE2E2',
-    WAITING_TO_RETURN:'#FEF3C7', RETURN_IN_TRIP:   '#FEF3C7',
-    RETURNED:         '#F3F4F6', CANCEL:           '#FEE2E2',
-    READY_TO_PICK:    '#EFF6FF', PICK_IN_TRIP:     '#EFF6FF',
-    HUB_IN:           '#F3F4F6', HUB_OUT:          '#F3F4F6', HUB_DELIVERY_IN: '#F3F4F6',
-  }
-
-  const ACTION_TEXT_COLOR: Record<string, string> = {
-    DELIVER_IN_TRIP:  '#065F46', DELIVERY_FAIL:    '#991B1B',
-    WAITING_TO_RETURN:'#92400E', RETURN_IN_TRIP:   '#92400E',
-    RETURNED:         '#374151', CANCEL:           '#991B1B',
-    READY_TO_PICK:    '#1D4ED8', PICK_IN_TRIP:     '#1D4ED8',
-    HUB_IN:           '#374151', HUB_OUT:          '#374151', HUB_DELIVERY_IN: '#374151',
   }
 
   if (!order) return null
@@ -2194,21 +2164,7 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
 
         {/* ── Body: status history tab (GHN log[]) ─────────────── */}
         {activeTab === 'status' && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
-            {/* Stats bar */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {[
-                { label: 'Số lần lấy',  value: order?.num_pick    ?? 0, color: '#1D4ED8', bg: '#EFF6FF' },
-                { label: 'Số lần giao', value: order?.num_deliver ?? 0, color: '#065F46', bg: '#D1FAE5' },
-                { label: 'Số lần hoàn', value: order?.num_return  ?? 0, color: '#92400E', bg: '#FEF3C7' },
-              ].map(s => (
-                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6, background: s.bg, borderRadius: 6, padding: '4px 12px' }}>
-                  <span style={{ fontSize: 13, color: s.color, fontWeight: 700 }}>{s.value}</span>
-                  <span style={{ fontSize: 12, color: s.color }}>{s.label}</span>
-                </div>
-              ))}
-            </div>
-
+          <div style={{ flex: 1, overflowY: 'auto' }}>
             {log.length === 0 && (
               <div style={{ padding: '32px 0', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>Chưa có lịch sử trạng thái</div>
             )}
@@ -2216,57 +2172,52 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
             {log.length > 0 && (
               <>
                 {/* Table header */}
-                <div style={{ display: 'flex', background: C_BG_HEADER, padding: '6px 12px', borderRadius: 4, marginBottom: 2 }}>
-                  <span style={{ width: 200, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#374151' }}>Trạng thái</span>
-                  <span style={{ width: 110, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#374151' }}>Hành động</span>
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>Ghi chú</span>
-                  <span style={{ width: 80, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#374151', textAlign: 'right' }}>Thời gian</span>
+                <div style={{ display: 'flex', padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}` }}>
+                  <span style={{ width: 90, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#9CA3AF' }}>Thời gian</span>
+                  <span style={{ width: 190, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#9CA3AF' }}>Trạng thái</span>
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#9CA3AF' }}>Chi tiết</span>
                 </div>
 
                 {logDates.map(date => (
                   <div key={date}>
                     {/* Date group header */}
-                    <div style={{ padding: '5px 12px', background: '#FAFAFA', borderBottom: `1px solid ${C_BORDER}`, borderTop: `1px solid ${C_BORDER}`, marginTop: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280' }}>{formatDateHeader(date)}</span>
+                    <div style={{ padding: '6px 16px', background: '#FFF4ED' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>{formatDateHeader(date)}</span>
                     </div>
 
                     {logByDate[date].map((item, idx) => {
-                      const isLatest = item === log[0]
-                      const actionLabel = ACTION_LABEL[item.action] ?? item.action
-                      const badgeBg    = ACTION_COLOR[item.action]     ?? '#F3F4F6'
-                      const badgeText  = ACTION_TEXT_COLOR[item.action] ?? '#374151'
+                      const isSuccess = item.status_name.includes('thành công') && !item.status_name.includes('không thành công')
+                      const isFailure = item.action === 'DELIVERY_FAIL'
+                      const successColor = '#059669'
+                      const failureColor = '#EA580C'
                       return (
-                        <div key={idx} style={{
-                          display: 'flex', alignItems: 'center',
-                          padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`,
-                          background: isLatest ? '#F0F9FF' : '#fff',
-                        }}>
-                          {/* Trạng thái */}
-                          <div style={{ width: 200, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontSize: 14, fontWeight: isLatest ? 700 : 400, color: isLatest ? C_LINK : '#374151', lineHeight: '20px' }}>
-                              {item.status_name}
-                            </span>
-                            {item.is_force_majeure && (
-                              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: '#FEF3C7', color: '#92400E', fontWeight: 600, flexShrink: 0 }}>BKK</span>
-                            )}
-                          </div>
-                          {/* Hành động */}
-                          <div style={{ width: 110, flexShrink: 0 }}>
-                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: badgeBg, color: badgeText, fontWeight: 600 }}>
-                              {actionLabel}
-                            </span>
-                          </div>
-                          {/* Ghi chú */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 13, color: '#6B7280', lineHeight: '20px' }}>{item.note || '—'}</span>
-                            {item.warehouse_name && (
-                              <span style={{ fontSize: 12, color: '#9CA3AF', marginLeft: 8 }}>· {item.warehouse_name}</span>
-                            )}
-                          </div>
+                        <div key={idx} style={{ display: 'flex', padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}` }}>
                           {/* Thời gian */}
-                          <span style={{ width: 80, flexShrink: 0, fontSize: 13, color: '#6B7280', textAlign: 'right' }}>
+                          <span style={{ width: 90, flexShrink: 0, fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>
                             {formatTime(item.updated_date)}
                           </span>
+                          {/* Trạng thái */}
+                          <span style={{
+                            width: 190, flexShrink: 0, fontSize: 14, lineHeight: '20px',
+                            fontWeight: isSuccess ? 700 : 400,
+                            color: isSuccess ? successColor : C_TEXT_PRIMARY,
+                          }}>
+                            {item.status_name}
+                          </span>
+                          {/* Chi tiết */}
+                          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <span style={{
+                              fontSize: 14, lineHeight: '20px',
+                              fontWeight: isSuccess ? 700 : 400,
+                              color: isSuccess ? successColor : C_TEXT_PRIMARY,
+                            }}>
+                              {isFailure ? item.status_name : (item.note || item.status_name)}
+                              {item.warehouse_name && !isFailure && <span style={{ color: '#9CA3AF', fontWeight: 400 }}> · {item.warehouse_name}</span>}
+                            </span>
+                            {isFailure && item.note && (
+                              <span style={{ fontSize: 13, color: failureColor }}>Lý do: {item.note}</span>
+                            )}
+                          </div>
                         </div>
                       )
                     })}
@@ -2279,31 +2230,38 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
 
         {/* ── Body: action history tab ──────────────────────────── */}
         {activeTab === 'action' && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
-            <div style={{ display: 'flex', background: '#F3F4F6', padding: '6px 12px', marginTop: 0, borderRadius: 4, gap: 8 }}>
-              <span style={{ width: 90, fontSize: 13, fontWeight: 600, color: '#374151', flexShrink: 0 }}>Thời gian</span>
-              <span style={{ width: 120, fontSize: 13, fontWeight: 600, color: '#374151', flexShrink: 0 }}>Người thao tác</span>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>Hành động</span>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>Nội dung cũ</span>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#374151' }}>Nội dung sửa</span>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ display: 'flex', padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}` }}>
+              <span style={{ width: 90, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#9CA3AF' }}>Thời gian</span>
+              <span style={{ width: 150, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#9CA3AF' }}>Người thực hiện</span>
+              <span style={{ width: 200, flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#9CA3AF' }}>Trường thay đổi</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#9CA3AF' }}>Nội dung thay đổi</span>
             </div>
             {actionDates.length === 0 && (
               <div style={{ padding: '32px 0', textAlign: 'center', color: '#6B7280', fontSize: 14 }}>Chưa có lịch sử thao tác</div>
             )}
             {actionDates.map(date => (
               <div key={date}>
-                <div style={{ padding: '8px 12px', fontSize: 13, fontWeight: 700, color: '#111827', background: '#FAFAFA', borderBottom: `1px solid ${C_BORDER}` }}>
-                  {new Date(date).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric', year: 'numeric' })}
+                <div style={{ padding: '6px 16px', background: '#FFF4ED' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>{formatDateHeader(date)}</span>
                 </div>
-                {actionByDate[date].map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 90, fontSize: 13, color: '#374151', flexShrink: 0 }}>{item.time}</span>
-                    <span style={{ width: 120, fontSize: 13, color: '#374151', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.operator}</span>
-                    <span style={{ flex: 1, fontSize: 13, color: '#374151' }}>{item.action}</span>
-                    <span style={{ flex: 1, fontSize: 13, color: '#6B7280' }}>{item.oldContent}</span>
-                    <span style={{ flex: 1, fontSize: 13, color: '#6B7280' }}>{item.newContent}</span>
-                  </div>
-                ))}
+                {actionByDate[date].map((item, idx) => {
+                  const hasChange = !(item.oldContent === '-' && item.newContent === '-')
+                  return (
+                    <div key={idx} style={{ display: 'flex', padding: '10px 16px', borderBottom: `1px solid ${C_BORDER}`, alignItems: 'flex-start' }}>
+                      <span style={{ width: 90, flexShrink: 0, fontSize: 13, color: C_TEXT_PRIMARY }}>{item.time}</span>
+                      <span style={{ width: 150, flexShrink: 0, fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.operator}</span>
+                      <span style={{ width: 200, flexShrink: 0, fontSize: 13, color: C_TEXT_PRIMARY }}>{item.action}</span>
+                      <span style={{ flex: 1, fontSize: 13, color: '#6B7280' }}>
+                        {hasChange ? (
+                          item.oldContent === '-'
+                            ? <span>→ <b style={{ color: C_TEXT_PRIMARY, fontWeight: 600 }}>{item.newContent}</b></span>
+                            : <span>{item.oldContent} → <b style={{ color: C_TEXT_PRIMARY, fontWeight: 600 }}>{item.newContent}</b></span>
+                        ) : '—'}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             ))}
           </div>
@@ -2451,7 +2409,7 @@ function TRow({
 }
 
 // ── Pagination ────────────────────────────────────────────────
-function Pagination({ page, total, pageSize, onPageChange, onPageSizeChange }: {
+export function Pagination({ page, total, pageSize, onPageChange, onPageSizeChange }: {
   page: number; total: number; pageSize: number
   onPageChange: (p: number) => void; onPageSizeChange: (s: number) => void
 }) {
@@ -2698,9 +2656,12 @@ function ExportOrdersModal({ open, onClose, orders }: { open: boolean; onClose: 
 // ── Main page ─────────────────────────────────────────────────
 export default function AgencyOrders() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [orders, setOrders]           = useState<Order[]>(() => loadOrders().filter(o => agencyShopIds.has(o.shopId)))
   const [activeTab, setActiveTab]     = useState('draft')
-  const [search, setSearch]           = useState('')
+  // Deep-link từ trang "Lịch sử đơn hàng" — bấm mã đơn ở đó điều hướng về đây kèm sẵn mã đơn
+  // trong ô tìm kiếm (qua router state, không phải query string) để tìm thấy đúng đơn ngay.
+  const [search, setSearch]           = useState<string>(() => (location.state as { searchQuery?: string } | null)?.searchQuery ?? '')
   const [shopFilter, setShopFilter]   = useState('all')
   const [shopDropdownOpen, setShopDropdownOpen] = useState(false)
   const [filterSendKind, setFilterSendKind] = useState<'all' | 'goods' | 'letter'>('all')
@@ -2729,6 +2690,9 @@ export default function AgencyOrders() {
   const [cancelOrders, setCancelOrders] = useState<Order[] | null>(null)
   const agency = agenciesList.find(a => a.id === CURRENT_AGENCY_ID)
   const agencyHubs = (agency?.clientHubIds ?? []).map(id => clientHubs247.find(h => h.id === id)).filter((h): h is NonNullable<typeof h> => !!h)
+  // Không shop nào trong đại lý được duyệt "Kết nối Shop ID GHN" → ẩn hẳn "Tạo đơn hàng" (GHN
+  // Hàng hoá) và "Nhập đơn hàng" — cùng tinh thần với agencyHubs.length > 0 ở trên cho Thư.
+  const hasAnyGhnActiveShop = agencyShops.some(s => hasActiveGhnConnection(s.id))
 
   function refreshOrders() {
     setOrders(loadOrders().filter(o => agencyShopIds.has(o.shopId)))
@@ -2777,6 +2741,17 @@ export default function AgencyOrders() {
     cancelled:     orders.filter(o => o.status === 'cancelled'),
     lost_damaged:  orders.filter(o => o.status === 'lost' || o.status === 'damaged'),
   }
+
+  // Deep-link từ "Lịch sử đơn hàng": tự chuyển sang ĐÚNG tab chứa đơn đang tìm (nếu khác tab mặc
+  // định "draft") — tái dùng `ordersByTab` đã tính sẵn ở trên, không tính lại logic phân loại.
+  useEffect(() => {
+    const q = (location.state as { searchQuery?: string } | null)?.searchQuery
+    if (!q) return
+    const matchTab = Object.keys(ordersByTab).find((key) => ordersByTab[key].some((o) => o.trackingCode === q))
+    if (matchTab) setActiveTab(matchTab)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const tabOrders = ordersByTab[activeTab] ?? orders
 
   const shopFiltered = shopFilter === 'all' ? tabOrders : tabOrders.filter(o => o.shopId === shopFilter)
@@ -2842,16 +2817,18 @@ export default function AgencyOrders() {
             <DownloadOutlined style={{ color: C_TEXT_PRIMARY, fontSize: 16 }} />
             <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Xuất đơn hàng</span>
           </button>
-          <button
-            onClick={() => navigate('/agency-admin/orders/import')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-              background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', flexShrink: 0,
-            }}
-          >
-            <DownloadOutlined style={{ color: C_TEXT_PRIMARY, fontSize: 16, transform: 'rotate(180deg)' }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Nhập đơn hàng</span>
-          </button>
+          {hasAnyGhnActiveShop && (
+            <button
+              onClick={() => navigate('/agency-admin/orders/import')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', flexShrink: 0,
+              }}
+            >
+              <DownloadOutlined style={{ color: C_TEXT_PRIMARY, fontSize: 16, transform: 'rotate(180deg)' }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Nhập đơn hàng</span>
+            </button>
+          )}
           <div style={{ position: 'relative', flexShrink: 0 }} data-create-order-menu>
             <button
               onClick={() => setCreateMenuOpen(v => !v)}
@@ -2871,8 +2848,14 @@ export default function AgencyOrders() {
                 boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden',
               }}>
                 {[
-                  { label: 'Tạo đơn hàng', onClick: () => setDrawerOpen(true) },
-                  { label: 'Tạo thư, tài liệu', onClick: () => setLetterDrawerOpen(true) },
+                  // Ẩn hẳn khi KHÔNG shop nào trong đại lý được duyệt "Kết nối Shop ID GHN" —
+                  // cùng tinh thần với Thư ngay dưới đây, tránh mở drawer ra mà không gửi được.
+                  ...(hasAnyGhnActiveShop ? [{ label: 'Tạo đơn hàng', onClick: () => setDrawerOpen(true) }] : []),
+                  // Ẩn hẳn — không chỉ disable — khi đại lý chưa được Super Admin cấp bưu cục
+                  // 247Express nào (agencyHubs rỗng), đúng hành vi hệ thống thật: không có hub thì
+                  // không có gì để chọn "Bên gửi" nên không cho vào view tạo đơn Thư luôn, thay vì
+                  // mở drawer đầy đủ rồi mới lộ ra 1 dòng chữ báo thiếu bưu cục bên trong.
+                  ...(agencyHubs.length > 0 ? [{ label: 'Tạo thư, tài liệu', onClick: () => setLetterDrawerOpen(true) }] : []),
                 ].map(item => (
                   <div
                     key={item.label}

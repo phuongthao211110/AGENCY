@@ -9,6 +9,9 @@ import * as XLSX from 'xlsx'
 import { addOrder } from '../../../mock-data/orderStore'
 import allShops from '../../../mock-data/shops.json'
 import { contactsForShop, addContact, updateContact, type ShopContact } from '../../../mock-data/shopContactStore'
+import { feeFromPriceTable, parseProvinceFromAddress } from '../../../mock-data/pricingCalc'
+import { servicesList } from '../serviceStore'
+import { hasActiveGhnConnection } from '../../super-admin/agencyStore'
 
 // ── Design tokens ────────────────────────────────────────────
 const C_ACTION         = '#FF5200'
@@ -20,6 +23,9 @@ const C_BG_HEADER      = '#F3F4F6'
 
 const CURRENT_AGENCY_ID = 'AGN001'
 const agencyShops = allShops.filter(s => s.agencyId === CURRENT_AGENCY_ID)
+// Phòng vệ cho trường hợp vào thẳng URL /agency-admin/orders/import dù nút điều hướng đã ẩn
+// (xem AgencyOrders.tsx) — không shop nào trong đại lý được duyệt kết nối GHN thì chặn hẳn trang.
+const hasAnyGhnActiveShop = agencyShops.some(s => hasActiveGhnConnection(s.id))
 
 // Giới hạn số đơn được LƯU THÀNH CÔNG trong 1 lần bấm "Nhập" — tách biệt với giới hạn dung
 // lượng file upload. addOrder() hiện đọc + ghi lại TOÀN BỘ danh sách đơn hàng cho MỖI đơn (không
@@ -40,17 +46,19 @@ function fmtDateInput(d: Date) {
 // phải lỗi nhập liệu thật. ─────────────────────────────────────────────────
 type OrderKind = 'goods' | 'letter'
 
+// Phí ship KHÔNG còn là cột nhập tay trong template — hệ thống tự tính từ bảng giá dịch vụ của
+// shop (xem computeImportFee), tránh sai lệch do gõ tay và khớp đúng cách Web Shop tính phí.
 const IMPORT_HEADERS = [
   'Mã shop', 'Loại đơn', 'Tên người nhận', 'Số điện thoại',
   'Địa chỉ (Số nhà/ngõ, Đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành)',
   'Mã đơn shop', 'Sản phẩm', 'Khối lượng (Gram)', 'Dài (cm)', 'Rộng (cm)', 'Cao (cm)',
-  'Tiền thu hộ COD (đ)', 'Giá trị hàng khai giá (đ)', 'Phí ship (giá bán shop, đ)', 'Trả ship',
+  'Tiền thu hộ COD (đ)', 'Giá trị hàng khai giá (đ)', 'Trả ship',
   'Phí thu tiền khi giao thất bại (đ)', 'Ghi chú xem hàng', 'Ghi chú đơn hàng', 'Ca lấy hàng',
 ]
 
 const IMPORT_SAMPLE_ROWS: (string | number)[][] = [
-  [agencyShops[0]?.id ?? '', 'Hàng hoá', 'Huỳnh Huy Phong', '373336649', '7/28, Thành Thái, Phường 14, Quận 10, Hồ Chí Minh', '', 'Áo thun', 1000, 10, 10, 10, 5000000, 0, 25000, 'Shop trả', 0, 'Không cho xem hàng', '', ''],
-  [agencyShops[0]?.id ?? '', 'Thư', 'Trịnh Mỹ Ngọc Tuyền', '981234521', '150/26 Nguyễn Trãi, Mỹ Long, Thành phố Long Xuyên, An Giang', 'DH-0021', 'Hợp đồng thuê nhà', 200, 10, 10, 10, 50000, 0, 15000, 'Khách trả', 50000, 'Không cho xem hàng', 'Giao giờ hành chính', 'Sáng (8h-12h)'],
+  [agencyShops[0]?.id ?? '', 'Hàng hoá', 'Huỳnh Huy Phong', '373336649', '7/28, Thành Thái, Phường 14, Quận 10, Hồ Chí Minh', '', 'Áo thun', 1000, 10, 10, 10, 5000000, 0, 'Shop trả', 0, 'Không cho xem hàng', '', ''],
+  [agencyShops[0]?.id ?? '', 'Thư', 'Trịnh Mỹ Ngọc Tuyền', '981234521', '150/26 Nguyễn Trãi, Mỹ Long, Thành phố Long Xuyên, An Giang', 'DH-0021', 'Hợp đồng thuê nhà', 200, 10, 10, 10, 50000, 0, 'Khách trả', 50000, 'Không cho xem hàng', 'Giao giờ hành chính', 'Sáng (8h-12h)'],
 ]
 
 function downloadImportTemplate() {
@@ -104,10 +112,24 @@ function validateRawRow(raw: Record<string, string>): string[] {
   // Thư không áp dụng COD — tự động bỏ qua giá trị nhập (nếu có) khi import thay vì chặn
   // thành lỗi, vì cột COD dùng chung file với Hàng hoá nên không phải lỗi nhập liệu thật.
   if (kind === 'goods' && raw.cod && isNaN(Number(raw.cod))) errors.push('COD phải là số')
-  if (!raw.fee || isNaN(Number(raw.fee)) || Number(raw.fee) < 0) errors.push('Phí ship phải là số không âm')
   if (raw.declaredValue && (isNaN(Number(raw.declaredValue)) || Number(raw.declaredValue) < 0)) errors.push('Giá trị hàng khai giá phải là số không âm')
   if (raw.codFailureFee && (isNaN(Number(raw.codFailureFee)) || Number(raw.codFailureFee) < 0)) errors.push('Phí thu tiền khi giao thất bại phải là số không âm')
   return errors
+}
+
+// Phí ship tự tính từ dịch vụ ĐẦU TIÊN shop đã cấu hình (configuredServices[0]) — file import
+// không có cột chọn dịch vụ riêng từng dòng, nên lấy dịch vụ mặc định của shop, giống tinh thần
+// "mặc định" dùng ở nơi khác trong app. Shop chưa cấu hình dịch vụ nào, hoặc dịch vụ đó chưa có
+// priceTableId (247Express tính phí qua API riêng, không có bảng giá thủ công) → fee = 0, không
+// chặn import (đúng quy ước chung: thiếu service/bảng giá không bao giờ chặn, xem Orders.tsx).
+function computeImportFee(shopId: string, weightGram: string, receiverAddress: string): number {
+  const shop = agencyShops.find((s) => s.id === shopId) as (typeof agencyShops[number] & { configuredServices?: { serviceId: string }[] }) | undefined
+  const firstConfigured = shop?.configuredServices?.[0]
+  const service = firstConfigured ? servicesList.find((sv) => sv.id === firstConfigured.serviceId) : undefined
+  if (!service?.priceTableId) return 0
+  const fromProvince = parseProvinceFromAddress(shop?.address ?? '')
+  const toProvince = parseProvinceFromAddress(receiverAddress)
+  return feeFromPriceTable(service.priceTableId, Number(weightGram) || 0, fromProvince, toProvince)
 }
 
 function parseImportSheet(file: File): Promise<ImportRow[]> {
@@ -130,12 +152,16 @@ function parseImportSheet(file: File): Promise<ImportRow[]> {
           // Dài/Rộng/Cao không bắt buộc trong file — để trống thì mặc định 10cm mỗi chiều.
           // senderContactId để trống lúc parse — resolve mặc định (liên hệ đầu tiên của shop)
           // ngay khi render dòng, cho phép người dùng đổi qua picker "Bên gửi".
+          const shopId = get(0)
+          const weight = getNum(7)
+          const receiverAddress = get(4)
           const raw = {
-            shopId: get(0), orderKindRaw: get(1), receiverName: get(2), receiverPhone: get(3),
-            receiverAddress: get(4), shopOrderCode: get(5), product: get(6), weight: getNum(7),
+            shopId, orderKindRaw: get(1), receiverName: get(2), receiverPhone: get(3),
+            receiverAddress, shopOrderCode: get(5), product: get(6), weight,
             length: getNum(8) || '10', width: getNum(9) || '10', height: getNum(10) || '10',
-            cod: getNum(11), declaredValue: getNum(12), fee: getNum(13), feeType: get(14),
-            codFailureFee: getNum(15), viewGoodsPolicy: get(16), orderNote: get(17), pickupShift: get(18),
+            cod: getNum(11), declaredValue: getNum(12),
+            fee: String(computeImportFee(shopId, weight, receiverAddress)), feeType: get(13),
+            codFailureFee: getNum(14), viewGoodsPolicy: get(15), orderNote: get(16), pickupShift: get(17),
             senderContactId: '',
           }
           return { rowIndex: i + 2, raw, errors: validateRawRow(raw) }
@@ -278,7 +304,14 @@ export default function AgencyOrdersImport() {
         pickupShift: r.raw.pickupShift || undefined,
         status: 'pending',
         createdAt,
-        actionHistory: [],
+        actionHistory: [{
+          date: createdAt,
+          time: now.toTimeString().slice(0, 8),
+          operator: 'Agency Admin (import)',
+          action: 'Nhập đơn hàng (import)',
+          oldContent: '-',
+          newContent: '-',
+        }],
         sendKind,
         dispatchStatus: isGoods ? 'dispatched' : 'pending_agency',
         carrierCode: isGoods ? 'GHN' : null,
@@ -296,6 +329,27 @@ export default function AgencyOrdersImport() {
   const cardStyle: React.CSSProperties = { border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '12px 14px' }
   const isReview = !!rows
   const pageMaxWidth = isReview ? 1360 : 1024
+
+  // Chặn truy cập thẳng qua URL khi nút điều hướng đã ẩn (xem AgencyOrders.tsx) — không shop nào
+  // trong đại lý được duyệt "Kết nối Shop ID GHN" thì không có gì để import/gửi cho GHN cả.
+  if (!hasAnyGhnActiveShop) {
+    return (
+      <div style={{ background: '#F9FAFB', minHeight: 'calc(100vh - 40px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: 420, padding: 24 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY, marginBottom: 8 }}>Chưa có shop nào kết nối GHN</div>
+          <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginBottom: 16 }}>
+            Đại lý cần ít nhất 1 shop được duyệt "Kết nối Shop ID GHN" trước khi nhập đơn hàng.
+          </div>
+          <button
+            onClick={() => navigate('/agency-admin/orders')}
+            style={{ padding: '8px 16px', background: C_ACTION, border: 'none', borderRadius: 6, color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+          >
+            Quay lại Đơn hàng
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ background: '#F9FAFB', minHeight: 'calc(100vh - 40px)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -503,7 +557,7 @@ export default function AgencyOrdersImport() {
                       <div style={{ width: 80, flexShrink: 0, fontSize: 12, color: C_TEXT_SECONDARY }}>Khối lượng</div>
                       <div style={{ width: 140, flexShrink: 0, fontSize: 12, color: C_TEXT_SECONDARY }}>Kích thước</div>
                       <div style={{ width: 140, flexShrink: 0, fontSize: 12, color: C_TEXT_SECONDARY }}>Khai giá trị hàng</div>
-                      <div style={{ width: 160, flexShrink: 0, fontSize: 12, color: C_TEXT_SECONDARY }}>Phí ship</div>
+                      <div style={{ width: 160, flexShrink: 0, fontSize: 12, color: C_TEXT_SECONDARY }} title="Tự động tính từ bảng giá dịch vụ của shop, có thể sửa lại nếu cần">Phí ship (tự động)</div>
                       <div style={{ width: 110, flexShrink: 0, fontSize: 12, color: C_TEXT_SECONDARY }}>Mã đơn shop</div>
                       <div style={{ width: 130, flexShrink: 0, fontSize: 12, color: C_TEXT_SECONDARY }}>Sản phẩm</div>
                       <div style={{ width: 150, flexShrink: 0, fontSize: 12, color: C_TEXT_SECONDARY }}>Ghi chú đơn hàng</div>

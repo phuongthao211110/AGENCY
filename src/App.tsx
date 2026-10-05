@@ -25,6 +25,7 @@ import PricingCreate from './platforms/agency-admin/pages/PricingCreate'
 import PricingDetail from './platforms/agency-admin/pages/PricingDetail'
 import AgencyOrders from './platforms/agency-admin/pages/AgencyOrders'
 import AgencyOrdersImport from './platforms/agency-admin/pages/AgencyOrdersImport'
+import AgencyOrdersHistory from './platforms/agency-admin/pages/AgencyOrdersHistory'
 import AgencyReconciliation from './platforms/agency-admin/pages/AgencyReconciliation'
 import AgencyReconciliationDetail from './platforms/agency-admin/pages/AgencyReconciliationDetail'
 import AgencyReconciliationShopDetail from './platforms/agency-admin/pages/AgencyReconciliationShopDetail'
@@ -79,6 +80,7 @@ export default function App() {
         <Route path="/agency-admin" element={<AgencyAdminLayout />}>
           <Route path="orders" element={<AgencyOrders />} />
           <Route path="orders/import" element={<AgencyOrdersImport />} />
+          <Route path="orders/history" element={<AgencyOrdersHistory />} />
           <Route path="shops" element={<Shops />} />
           <Route path="shops/create" element={<ShopCreate />} />
           <Route path="shops/:id" element={<ShopDetail />} />

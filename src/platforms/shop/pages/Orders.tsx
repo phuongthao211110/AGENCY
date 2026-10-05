@@ -7,7 +7,7 @@ import { loadOrders, addOrder, cancelOrder, updateOrder, type Order } from '../.
 import { printSettings, updatePrintSetting, type PrintKindConfig } from '../../../mock-data/printSettingsStore'
 import { loadPricing } from '../../../mock-data/pricingStore'
 import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
-import { clientHubs247, agenciesList, DEFAULT_ORDER_FORM_COMPONENTS } from '../../super-admin/agencyStore'
+import { clientHubs247, agenciesList, DEFAULT_ORDER_FORM_COMPONENTS, hasActiveGhnConnection } from '../../super-admin/agencyStore'
 
 // ── Design tokens (hoisted above module-scope consts that reference them) ──
 const C_TEXT_PRIMARY   = '#111827'
@@ -3700,6 +3700,14 @@ export default function ShopOrders() {
   // nút hàng loạt trên thanh "Đã chọn N" (mảng nhiều phần tử) như cancelOrders ở trên.
   const [printOrders, setPrintOrders] = useState<Order[] | null>(null)
 
+  // Shop chưa được đại lý gán dịch vụ 247Express nào (sendKind='letter') → ẩn hẳn menu "Tạo thư,
+  // tài liệu" thay vì mở drawer rồi mới lộ ra không chọn được gì, đúng hành vi hệ thống thật.
+  const shopForLetterCheck = allShops.find(s => s.id === 'SHP001')!
+  const has247Service = servicesList.some(s => s.carrier === '247Express' && s.enabled && s.agencyId === shopForLetterCheck.agencyId)
+  // Shop chưa được duyệt "Kết nối Shop ID GHN" (xem agencyStore.ts — shopConnections) → ẩn hẳn
+  // "Tạo đơn hàng" (GHN Hàng hoá), cùng tinh thần với "Tạo thư, tài liệu" ở trên.
+  const hasGhnConnection = hasActiveGhnConnection('SHP001')
+
   function refreshOrders() {
     setOrders(loadOrders().filter(o => o.shopId === 'SHP001'))
   }
@@ -3813,8 +3821,8 @@ export default function ShopOrders() {
                 boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden',
               }}>
                 {[
-                  { label: 'Tạo đơn hàng', onClick: () => setDrawerOpen(true) },
-                  { label: 'Tạo thư, tài liệu', onClick: () => setLetterDrawerOpen(true) },
+                  ...(hasGhnConnection ? [{ label: 'Tạo đơn hàng', onClick: () => setDrawerOpen(true) }] : []),
+                  ...(has247Service ? [{ label: 'Tạo thư, tài liệu', onClick: () => setLetterDrawerOpen(true) }] : []),
                 ].map(item => (
                   <div
                     key={item.label}
@@ -4043,6 +4051,29 @@ function CancelOrderModal({ orders, onClose, onConfirm }: { orders: Order[]; onC
   )
 }
 
+// Chia `total` thành `parts` phần nguyên, tổng các phần luôn bằng đúng total (phần dư gán cho
+// các kiện đầu) — tránh lỗi làm tròn kiểu 250000/3 → 3x83333 ≠ 250000 khi hiển thị trên phiếu in.
+function splitEvenly(total: number, parts: number): number[] {
+  const base = Math.floor(total / parts)
+  const remainder = total - base * parts
+  return Array.from({ length: parts }, (_, i) => base + (i < remainder ? 1 : 0))
+}
+
+// 1 thẻ in thực tế — bình thường 1 order = 1 unit, nhưng khi bật "tách kiện theo sản phẩm"
+// (xem splitOrderIds trong PrintOrderModal) thì 1 order có N sản phẩm nở ra thành N unit, mỗi
+// unit có mã vận đơn phụ riêng để NVC quét từng kiện — KHÔNG tạo order mới trong hệ thống, order
+// gốc trong danh sách/đối soát vẫn nguyên 1 đơn như cũ, tách chỉ có tác dụng ở bản in.
+type PrintUnit = {
+  key: string
+  order: Order
+  trackingCode: string
+  kienLabel: string | null
+  productLine: string
+  weightGram: number
+  cod: number
+  fee: number
+}
+
 // ── Popup in đơn hàng thật — dùng chung cho nút nhanh từng dòng (1 phần tử) và nút hàng loạt
 // (nhiều phần tử). Render đúng dữ liệu THẬT của từng order (không phải mẫu như trong "Cài đặt
 // đơn hàng"). Khổ giấy mặc định + checklist hiển thị field đọc từ printSettingsStore — cùng nguồn
@@ -4053,6 +4084,12 @@ function CancelOrderModal({ orders, onClose, onConfirm }: { orders: Order[]; onC
 function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => void }) {
   const currentShop = allShops.find(s => s.id === 'SHP001')!
   const [paperSize, setPaperSize] = useState(printSettings[orders[0]?.sendKind ?? 'goods'].paperSize)
+  const [splitOrderIds, setSplitOrderIds] = useState<Set<string>>(new Set())
+  const toggleSplit = (id: string) => setSplitOrderIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
   const previewWidth = PAPER_PREVIEW_WIDTH[paperSize] ?? 280
   const barcodeBars = [2,1,3,1,1,2,1,3,2,1,1,2,3,1,2,1,1,3,2,1,1,2,1,3,1,2]
   const QR_SIZE = 9
@@ -4064,15 +4101,36 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
     return (r * 5 + c * 3) % 4 === 0 || (r + c) % 3 === 0
   })
 
+  const multiProductOrders = orders.filter(o => (orderProducts[o.id]?.length ?? 1) > 1)
+
+  const printUnits: PrintUnit[] = orders.flatMap((order): PrintUnit[] => {
+    const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
+    const n = products.length
+    if (n <= 1 || !splitOrderIds.has(order.id)) {
+      return [{
+        key: order.id, order, trackingCode: order.trackingCode, kienLabel: null,
+        productLine: products[0], weightGram: order.weight, cod: order.cod, fee: order.fee,
+      }]
+    }
+    const weights = splitEvenly(order.weight, n)
+    const cods = splitEvenly(order.cod, n)
+    const fees = splitEvenly(order.fee, n)
+    return products.map((p, i) => ({
+      key: `${order.id}-k${i + 1}`, order, trackingCode: `${order.trackingCode}-K${i + 1}`,
+      kienLabel: `Kiện ${i + 1}/${n}`, productLine: p, weightGram: weights[i], cod: cods[i], fee: fees[i],
+    }))
+  })
+
   return (
     <>
-      <style>{'@media print { body * { visibility: hidden; } #print-order-area, #print-order-area * { visibility: visible; } #print-order-area { position: fixed; inset: 0; } }'}</style>
+      <style>{'@media print { body * { visibility: hidden; } #print-order-area, #print-order-area * { visibility: visible; } #print-modal-root { position: static !important; transform: none !important; overflow: visible !important; max-height: none !important; box-shadow: none !important; } #print-order-area { position: static !important; } }'}</style>
       <div
         onClick={onClose}
         className="no-print"
         style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300 }}
       />
       <div
+        id="print-modal-root"
         className="no-print"
         style={{
           position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
@@ -4083,7 +4141,7 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #E5E7EB', flexShrink: 0 }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
-            {orders.length === 1 ? `In đơn hàng — ${orders[0].trackingCode}` : `In ${orders.length} đơn hàng`}
+            {printUnits.length === 1 ? `In đơn hàng — ${printUnits[0].trackingCode}` : `In ${printUnits.length} đơn hàng`}
           </span>
           <span onClick={onClose} style={{ cursor: 'pointer', color: '#6B7280', fontSize: 14 }}>✕</span>
         </div>
@@ -4093,15 +4151,36 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
           <PaperSizePicker value={paperSize} onChange={setPaperSize} />
         </div>
 
+        {/* Tách kiện theo sản phẩm — chỉ hiện khi có đơn ≥2 sản phẩm. Nằm ngoài #print-order-area
+            nên tự động bị ẩn lúc in (rule body * { visibility: hidden } ở trên), không cần class
+            riêng. Bật/tắt chỉ đổi số thẻ sinh ra trong printUnits, không đụng tới order thật. */}
+        {multiProductOrders.length > 0 && (
+          <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Tách kiện theo sản phẩm</span>
+            {multiProductOrders.map(o => {
+              const n = orderProducts[o.id].length
+              return (
+                <div key={o.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ fontSize: 13, color: '#374151' }}>{o.trackingCode} — {n} sản phẩm</span>
+                  <Toggle on={splitOrderIds.has(o.id)} onChange={() => toggleSplit(o.id)} />
+                </div>
+              )
+            })}
+            <span style={{ fontSize: 12, color: '#9CA3AF' }}>
+              Bật để in riêng mỗi sản phẩm thành 1 kiện (1 mã vận đơn phụ/kiện) — khối lượng, COD và phí ship chia đều theo số kiện. Chỉ ảnh hưởng bản in, không tạo đơn mới trong hệ thống.
+            </span>
+          </div>
+        )}
+
         <div style={{ padding: '0 20px 20px', overflowY: 'auto', flex: 1 }}>
           <div id="print-order-area" style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
-            {orders.map(order => {
+            {printUnits.map(unit => {
+              const { order } = unit
               const isGoods = order.sendKind === 'goods'
-              const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
               const cfg = printSettings[order.sendKind]
               return (
                 <div
-                  key={order.id}
+                  key={unit.key}
                   style={{
                     width: previewWidth, background: '#fff', border: '1px solid #E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
                     padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'monospace',
@@ -4112,12 +4191,15 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
                       {currentShop.name}
                     </div>
                   )}
+                  {unit.kienLabel && (
+                    <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#FF5200' }}>{unit.kienLabel}</div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: 1, height: 36 }}>
                         {barcodeBars.map((w, i) => <div key={i} style={{ width: w, background: '#111827' }} />)}
                       </div>
-                      <div style={{ fontSize: 12, color: '#111827', letterSpacing: 1 }}>{order.trackingCode}</div>
+                      <div style={{ fontSize: 12, color: '#111827', letterSpacing: 1 }}>{unit.trackingCode}</div>
                     </div>
                     <div style={{ flexShrink: 0, display: 'grid', gridTemplateColumns: `repeat(${QR_SIZE}, 4px)`, gridTemplateRows: `repeat(${QR_SIZE}, 4px)`, background: '#fff', border: '1px solid #111827', padding: 2 }}>
                       {qrCells.map((filled, i) => <div key={i} style={{ background: filled ? '#111827' : '#fff' }} />)}
@@ -4141,17 +4223,17 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
                   {cfg.showProduct && (
                     <>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>{isGoods ? 'Sản phẩm' : 'Nội dung'}</div>
-                      <div style={{ fontSize: 12, color: '#111827' }}>{products[0]}</div>
+                      <div style={{ fontSize: 12, color: '#111827' }}>{unit.productLine}</div>
                     </>
                   )}
                   {cfg.showWeight && (
-                    <div style={{ fontSize: 12, color: '#111827' }}>Khối lượng: {(order.weight / 1000).toFixed(2)}kg</div>
+                    <div style={{ fontSize: 12, color: '#111827' }}>Khối lượng: {(unit.weightGram / 1000).toFixed(2)}kg</div>
                   )}
-                  {isGoods && cfg.showCOD && order.cod > 0 && (
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>Thu hộ (COD): {order.cod.toLocaleString()}đ</div>
+                  {isGoods && cfg.showCOD && unit.cod > 0 && (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>Thu hộ (COD): {unit.cod.toLocaleString()}đ</div>
                   )}
                   {cfg.showShipFee && (
-                    <div style={{ fontSize: 12, color: '#111827' }}>Phí ship: {order.fee.toLocaleString()}đ</div>
+                    <div style={{ fontSize: 12, color: '#111827' }}>Phí ship: {unit.fee.toLocaleString()}đ</div>
                   )}
                   {cfg.showNote && order.orderNote && (
                     <div style={{ fontSize: 12, color: '#111827' }}>Ghi chú: {order.orderNote}</div>
@@ -4173,7 +4255,7 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
             onClick={() => window.print()}
             style={{ padding: '8px 20px', background: '#FF5200', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff' }}
           >
-            {orders.length > 1 ? `In ${orders.length} đơn` : 'In đơn hàng'}
+            {printUnits.length > 1 ? `In ${printUnits.length} đơn` : 'In đơn hàng'}
           </button>
         </div>
       </div>

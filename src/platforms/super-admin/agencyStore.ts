@@ -139,6 +139,12 @@ export interface ShopConnection {
   agencyId: string
   carrier: string
   shopId: string
+  // Mã shop NỘI BỘ của app (đúng `id` trong shops.json, VD "SHP001") — KHÁC với `shopId` ở trên
+  // (mã Shop ID phía GHN, do shop tự nhập lúc gửi yêu cầu kết nối, không liên quan tới hệ thống
+  // này). Field này là CẦU NỐI duy nhất để biết 1 shop thật trong app đã được duyệt kết nối GHN
+  // hay chưa — dùng ở Web Shop/Agency Admin để ẩn "Tạo đơn hàng"/"Nhập đơn hàng" khi shop chưa
+  // active. Optional vì 2 record demo của AGN002/AGN003 không map vào shop thật nào cả.
+  internalShopId?: string
   name: string
   phone: string
   clientId: string
@@ -151,20 +157,27 @@ export interface ShopConnection {
 
 export const shopConnections: ShopConnection[] = [
   // AGN001 — GHN — active
-  { id: 'sc-001', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148899', name: 'Shop Thời Trang ABC',    phone: '0901234567', clientId: 'cl-5148899', requestedAt: '2025-01-10', status: 'active',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '150', ten: 'Bảng giá Hàng nặng XIAOMI for a Chính' }] },
-  { id: 'sc-002', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148900', name: 'Shop Điện Tử XYZ',       phone: '0912345678', clientId: 'cl-5148900', requestedAt: '2025-01-15', status: 'active',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '162', ten: 'Bảng giá Hàng nặng Điện Tử Standard' }] },
-  { id: 'sc-003', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148901', name: 'Shop Mỹ Phẩm Hà Nội',   phone: '0923456789', clientId: 'cl-5148901', requestedAt: '2025-02-20', status: 'active',   goiCuoc: [{ loai: 'Hàng nặng', id: '201', ten: 'Bảng giá Hàng nặng Mỹ Phẩm Standard' }, { loai: 'Hàng nhẹ', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
-  { id: 'sc-004', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148902', name: 'Shop Giày Dép Fashion',  phone: '0934567890', clientId: 'cl-5148902', requestedAt: '2025-03-05', status: 'active',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '178', ten: 'Bảng giá Hàng nặng Giày Dép Standard' }] },
-  { id: 'sc-005', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148903', name: 'Shop Đồ Gia Dụng 365',   phone: '0945678901', clientId: 'cl-5148903', requestedAt: '2025-03-12', status: 'active',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '421', ten: 'CAM KẾT TỪ 500 ĐƠN - 19,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '195', ten: 'Bảng giá Hàng nặng Gia Dụng Standard' }] },
+  { id: 'sc-001', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148899', internalShopId: 'SHP001', name: 'Shop Thời Trang ABC',    phone: '0901234567', clientId: 'cl-5148899', requestedAt: '2025-01-10', status: 'active',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '380', ten: 'CAM KẾT TỪ 2,000 ĐƠN - 17,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '150', ten: 'Bảng giá Hàng nặng XIAOMI for a Chính' }] },
+  { id: 'sc-002', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148900', internalShopId: 'SHP002', name: 'Shop Điện Tử XYZ',       phone: '0912345678', clientId: 'cl-5148900', requestedAt: '2025-01-15', status: 'active',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '412', ten: 'CAM KẾT TỪ 1,000 ĐƠN - 20,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '162', ten: 'Bảng giá Hàng nặng Điện Tử Standard' }] },
+  { id: 'sc-003', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148901', internalShopId: 'SHP111', name: 'Shop Mỹ Phẩm Hà Nội',   phone: '0923456789', clientId: 'cl-5148901', requestedAt: '2025-02-20', status: 'active',   goiCuoc: [{ loai: 'Hàng nặng', id: '201', ten: 'Bảng giá Hàng nặng Mỹ Phẩm Standard' }, { loai: 'Hàng nhẹ', id: '395', ten: 'CAM KẾT TỪ 500 ĐƠN - 22,000Đ CHO ĐƠN TỪ 1KG' }] },
+  { id: 'sc-004', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148902', internalShopId: 'SHP105', name: 'Shop Giày Dép Fashion',  phone: '0934567890', clientId: 'cl-5148902', requestedAt: '2025-03-05', status: 'active',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '367', ten: 'CAM KẾT TỪ 3,000 ĐƠN - 15,000Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '178', ten: 'Bảng giá Hàng nặng Giày Dép Standard' }] },
+  { id: 'sc-005', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148903', internalShopId: 'SHP113', name: 'Shop Đồ Gia Dụng 365',   phone: '0945678901', clientId: 'cl-5148903', requestedAt: '2025-03-12', status: 'active',   goiCuoc: [{ loai: 'Hàng nhẹ', id: '421', ten: 'CAM KẾT TỪ 500 ĐƠN - 19,500Đ CHO ĐƠN TỪ 1KG' }, { loai: 'Hàng nặng', id: '195', ten: 'Bảng giá Hàng nặng Gia Dụng Standard' }] },
   // AGN001 — GHN — pending
-  { id: 'sc-006', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148910', name: 'Shop Nội Thất Phòng Ngủ', phone: '0956789012', clientId: 'cl-5148910', requestedAt: '2025-05-20', status: 'pending',  goiCuoc: [] },
-  { id: 'sc-007', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148911', name: 'Shop Phụ Kiện Xe Máy',   phone: '0967890123', clientId: 'cl-5148911', requestedAt: '2025-05-22', status: 'pending',  goiCuoc: [] },
+  { id: 'sc-006', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148910', internalShopId: 'SHP016', name: 'Shop Nội Thất Phòng Ngủ', phone: '0956789012', clientId: 'cl-5148910', requestedAt: '2025-05-20', status: 'pending',  goiCuoc: [] },
+  { id: 'sc-007', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148911', internalShopId: 'SHP017', name: 'Shop Phụ Kiện Xe Máy',   phone: '0967890123', clientId: 'cl-5148911', requestedAt: '2025-05-22', status: 'pending',  goiCuoc: [] },
   // AGN001 — GHN — rejected
-  { id: 'sc-008', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148912', name: 'Shop Đồng Hồ Luxury',    phone: '0978901234', clientId: 'cl-5148912', requestedAt: '2025-05-15', status: 'rejected', rejectionReason: 'Thông tin tài khoản không khớp với hồ sơ đại lý', goiCuoc: [] },
-  // AGN002 — GHN — pending
+  { id: 'sc-008', agencyId: 'AGN001', carrier: 'GHN', shopId: '5148912', internalShopId: 'SHP018', name: 'Shop Đồng Hồ Luxury',    phone: '0978901234', clientId: 'cl-5148912', requestedAt: '2025-05-15', status: 'rejected', rejectionReason: 'Thông tin tài khoản không khớp với hồ sơ đại lý', goiCuoc: [] },
+  // AGN002 — GHN — pending (không map shop thật nào trong shops.json)
   { id: 'sc-009', agencyId: 'AGN002', carrier: 'GHN', shopId: '5249001', name: 'Shop Thực Phẩm Sạch',    phone: '0988123456', clientId: 'cl-5249001', requestedAt: '2025-06-10', status: 'pending',  goiCuoc: [] },
   { id: 'sc-010', agencyId: 'AGN003', carrier: 'GHN', shopId: '5349002', name: 'Shop Hoa Tươi Đà Nẵng',  phone: '0977654321', clientId: 'cl-5349002', requestedAt: '2025-06-12', status: 'pending',  goiCuoc: [] },
 ]
+
+/** Shop nội bộ (theo `id` trong shops.json) đã được duyệt kết nối GHN (`status === 'active'`)
+ * hay chưa — dùng để ẩn "Tạo đơn hàng"/"Nhập đơn hàng" (GHN Hàng hoá) khi shop chưa kết nối,
+ * cùng cơ chế với `agencyHubs.length > 0` đã dùng để ẩn "Tạo thư, tài liệu" khi thiếu hub 247Express. */
+export function hasActiveGhnConnection(internalShopId: string): boolean {
+  return shopConnections.some(c => c.internalShopId === internalShopId && c.carrier === 'GHN' && c.status === 'active')
+}
 
 export function addShopRequest(data: { agencyId: string; carrier: string; shopId: string; name: string; phone: string; clientId: string }): ShopConnection {
   const conn: ShopConnection = { ...data, id: `sc-${Date.now()}`, requestedAt: new Date().toISOString().slice(0, 10), status: 'pending', goiCuoc: [] }

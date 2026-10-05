@@ -51,6 +51,9 @@
 | SHOP-ORDER-35 | [Chi tiết: Câu xác nhận hoàn hàng dùng sai chủ ngữ cho đơn Thư](orders/xac-nhan-hoan-hang-cau-xac-nhan-sai-voi-don-thu.md) | draft |
 | SHOP-ORDER-36 | [Cài đặt đơn hàng - Trả hàng: Địa chỉ trả hàng — field tĩnh chưa implement, áp dụng cho cả 2 loại đơn qua 2 cơ chế khác nhau](orders/dia-chi-tra-hang-chua-implement-ap-dung-ca-2-loai-don.md) | draft |
 | SHOP-ORDER-37 | [Tạo mới: Thêm phụ phí đổi địa chỉ](orders/them-phu-phi-doi-dia-chi.md) | draft |
+| SHOP-ORDER-38 | [In đơn hàng: Tách kiện theo sản phẩm](orders/tach-kien-theo-san-pham.md) | draft |
+| SHOP-ORDER-39 | [In đơn hàng: Fix nội dung bị cắt khi in nhiều đơn](orders/fix-noi-dung-bi-cat-khi-in-nhieu-don.md) | draft |
+| SHOP-ORDER-40 | [Chi tiết đơn hàng: Áp dụng cấu hình tuyến](orders/ap-dung-cau-hinh-tuyen.md) | [Draft] |
 
 ## Đối soát
 

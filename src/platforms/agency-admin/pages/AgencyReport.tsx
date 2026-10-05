@@ -11,6 +11,7 @@ import { getShopCodTotal, getShopServiceFeeTotal } from '../../../mock-data/reco
 const C_TEXT_PRIMARY   = '#111827'
 const C_TEXT_SECONDARY = '#6B7280'
 const C_LINK           = '#3B82F6'
+const C_ACTION         = '#FF5200'
 const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
 const C_GOOD           = '#16A34A'
@@ -246,49 +247,61 @@ function buildShopPeriodStats(
 // là lựa chọn CHỦ ĐỘNG đánh đổi khỏi khuyến nghị "không tự sinh quá 8 hue" của skill, theo đúng
 // yêu cầu khớp ảnh mockup của người dùng.
 const SHOP_PALETTE = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948', '#0891b2', '#a16207']
-const C_OTHER = '#898781' // "Khác" — màu de-emphasis (muted ink), nằm ngoài 10 màu định danh ở trên
+// OTHER_ID giữ lại cho table view (dòng "Shop"/"code" styling) dù biểu đồ miền giờ không còn tự
+// gộp shop dư vào "Khác" nữa (người dùng chọn đúng danh sách shop cụ thể, không có khái niệm dư).
 const OTHER_ID = '__other__'
 // Giới hạn số shop được tô màu riêng = 10 — khớp đúng lựa chọn tối đa của dropdown ("10 shop
 // nhiều nhất"). "Khác" chỉ xuất hiện khi SỐ SHOP THỰC TẾ CÓ DOANH THU vượt quá giới hạn đang chọn
 // (kể cả khi chọn "Tất cả shop" mà đại lý có > 10 shop active) — không phải lúc nào cũng có "Khác".
 const MAX_COLORED_SHOPS = 10
 
-type TopLimitKey = 'top5' | 'top10' | 'all'
-const TOP_LIMIT_LABELS: Record<TopLimitKey, string> = { top5: '5 shop nhiều nhất', top10: '10 shop nhiều nhất', all: 'Tất cả shop' }
-const TOP_LIMIT_N: Record<TopLimitKey, number> = { top5: 5, top10: 10, all: Infinity }
-
 type StackEntity = { id: string; name: string; color: string }
 type ShopDayPoint = { date: Date; label: string; values: Record<string, { revenue: number; volume: number }> }
 
-// Xếp hạng shop theo TỔNG doanh thu trong cả khoảng `days` ngày (không đổi theo toggle Doanh
-// thu/Sản lượng) — để identity màu luôn ổn định khi đổi toggle hay khi đổi ngày hover (đúng quy
-// tắc "màu đi theo thực thể, không đi theo thứ hạng tức thời" của dataviz skill).
+// Xếp hạng TOÀN BỘ shop của đại lý theo tổng doanh thu trong khoảng `days` ngày kết thúc tại
+// `endDate` — dùng để (1) chọn sẵn mặc định top 10 shop lúc mới vào trang, (2) sắp thứ tự trong
+// picker "Chọn shop" (shop doanh thu cao hiện trước, dễ tìm). KHÔNG lọc theo ai có/không có doanh
+// thu — trả về đủ mọi shop (shop 0đ xếp cuối) để picker luôn liệt kê được hết.
+function rankShopIdsByRevenue(
+  orders: { createdAt: string; fee: number; shopId: string; paymentMethod?: string; paymentStatus?: string }[],
+  shops: { id: string; name: string }[],
+  endDate: Date,
+  days: number,
+): string[] {
+  const windowStart = startOfDay(new Date(endDate.getTime() - (days - 1) * DAY_MS))
+  const windowEnd = endOfDay(endDate)
+  const totalByShop = new Map<string, number>()
+  for (const o of orders) {
+    const t = new Date(o.createdAt).getTime()
+    if (t < windowStart.getTime() || t > windowEnd.getTime()) continue
+    if (isPrepaidOnline(o)) continue
+    totalByShop.set(o.shopId, (totalByShop.get(o.shopId) ?? 0) + o.fee)
+  }
+  return shops.map((s) => s.id).sort((a, b) => (totalByShop.get(b) ?? 0) - (totalByShop.get(a) ?? 0))
+}
+
+// Dựng chuỗi theo ngày CHỈ cho các shop người dùng đã chọn cụ thể (không còn tự xếp hạng lấy top
+// N + gộp phần dư vào "Khác" — người dùng tự quyết định đủ danh sách, nên không có khái niệm dư ra
+// nữa). `selectedShopIds` giữ ĐÚNG thứ tự người dùng chọn (xem toggleShopSelected) để identity màu
+// ổn định khi tick/untick thêm shop khác (đúng quy tắc "màu đi theo thực thể" của dataviz skill).
 function buildShopStackedSeries(
   orders: { createdAt: string; fee: number; shopId: string; paymentMethod?: string; paymentStatus?: string }[],
   shops: { id: string; name: string }[],
   endDate: Date,
   days: number,
-  topLimitKey: TopLimitKey,
-): { points: ShopDayPoint[]; entities: StackEntity[]; otherCount: number } {
+  selectedShopIds: string[],
+): { points: ShopDayPoint[]; entities: StackEntity[] } {
   const windowStart = startOfDay(new Date(endDate.getTime() - (days - 1) * DAY_MS))
   const windowEnd = endOfDay(endDate)
   const windowOrders = orders.filter((o) => { const t = new Date(o.createdAt).getTime(); return t >= windowStart.getTime() && t <= windowEnd.getTime() })
 
-  const totalByShop = new Map<string, number>()
-  for (const o of windowOrders) {
-    if (isPrepaidOnline(o)) continue
-    totalByShop.set(o.shopId, (totalByShop.get(o.shopId) ?? 0) + o.fee)
-  }
-  const rankedIds = shops.map((s) => s.id).filter((id) => totalByShop.has(id)).sort((a, b) => totalByShop.get(b)! - totalByShop.get(a)!)
-
-  const effectiveN = Math.min(TOP_LIMIT_N[topLimitKey], MAX_COLORED_SHOPS, rankedIds.length)
-  const topIds = rankedIds.slice(0, effectiveN)
-  const topSet = new Set(topIds)
-  const otherCount = rankedIds.length - topIds.length
-  const hasOther = otherCount > 0
-
-  const entities: StackEntity[] = topIds.map((id, i) => ({ id, name: shops.find((s) => s.id === id)!.name, color: SHOP_PALETTE[i] }))
-  if (hasOther) entities.push({ id: OTHER_ID, name: 'Khác', color: C_OTHER })
+  // Cap cứng ở MAX_COLORED_SHOPS — UI picker đã disable checkbox khi chạm mốc này, đây chỉ là lớp
+  // phòng vệ thứ 2 (vd nếu selectedShopIds đến từ nguồn khác trong tương lai).
+  const entities: StackEntity[] = selectedShopIds
+    .filter((id) => shops.some((s) => s.id === id))
+    .slice(0, MAX_COLORED_SHOPS)
+    .map((id, i) => ({ id, name: shops.find((s) => s.id === id)!.name, color: SHOP_PALETTE[i] }))
+  const entityIds = new Set(entities.map((e) => e.id))
 
   const points: ShopDayPoint[] = []
   for (let i = days - 1; i >= 0; i--) {
@@ -299,14 +312,13 @@ function buildShopStackedSeries(
     for (const o of windowOrders) {
       const t = new Date(o.createdAt).getTime()
       if (t < dStart.getTime() || t > dEnd.getTime()) continue
-      const key = topSet.has(o.shopId) ? o.shopId : (hasOther ? OTHER_ID : null)
-      if (!key) continue
-      values[key].revenue += isPrepaidOnline(o) ? 0 : o.fee
-      values[key].volume += 1
+      if (!entityIds.has(o.shopId)) continue
+      values[o.shopId].revenue += isPrepaidOnline(o) ? 0 : o.fee
+      values[o.shopId].volume += 1
     }
     points.push({ date: day, label: fmtDate(day), values })
   }
-  return { points, entities, otherCount }
+  return { points, entities }
 }
 
 // ── UI: badge % tăng/giảm dùng chung cho mọi KPI ──────────────
@@ -441,35 +453,33 @@ function TimeRangeFilter({
   )
 }
 
-// Path 1 rect với 2 góc TRÊN bo tròn, đáy vuông — dùng cho segment TRÊN CÙNG của mỗi cột chồng
-// (xem dataviz skill marks-and-anatomy: "4px rounded data-end, square at the baseline").
-function topRoundedRectPath(x: number, y: number, w: number, h: number, r: number): string {
-  const rr = Math.max(0, Math.min(r, h / 2, w / 2))
-  if (rr <= 0) return `M${x},${y + h} L${x},${y} L${x + w},${y} L${x + w},${y + h} Z`
-  return `M${x},${y + h} L${x},${y + rr} Q${x},${y} ${x + rr},${y} L${x + w - rr},${y} Q${x + w},${y} ${x + w},${y + rr} L${x + w},${y + h} Z`
-}
-
-// ── Biểu đồ cột chồng theo shop — mỗi cột = 1 ngày, mỗi segment màu = 1 shop (tối đa
-// MAX_COLORED_SHOPS màu định danh riêng, phần còn lại gộp "Khác"). Hover 1 cột → bảng chi tiết
-// dưới biểu đồ liệt kê ĐỦ mọi thực thể của đúng ngày đó (đúng quy tắc "1 tooltip, mọi chuỗi" thay
-// vì phải trỏ đúng từng segment mỏng). Vẽ bằng SVG thuần, không thư viện — cùng cách tiếp cận với
-// biểu đồ đường trước đây trong file này. ──────────────────────────────────────────────────────
-function ShopStackedBarChart({ points, entities, metric }: { points: ShopDayPoint[]; entities: StackEntity[]; metric: 'revenue' | 'volume' }) {
+// ── Biểu đồ miền chồng (doanh thu theo shop) + đường tổng sản lượng (trục phải) — gộp 2 chỉ số
+// vào 1 biểu đồ theo yêu cầu người dùng. 2 lựa chọn đã xác nhận rõ với người dùng trước khi làm:
+// (1) VẪN giữ breakdown THEO SHOP, nhưng chỉ cho doanh thu — sản lượng gộp thành 1 đường TỔNG
+// (không tách shop), vì tách cả 2 chỉ số theo shop sẽ ra 10 shop × 2 = 20 chuỗi chồng nhau, không
+// đọc được; (2) dùng 2 trục Y riêng (trái = doanh thu, phải = sản lượng) — đây là lựa chọn CHỦ
+// ĐỘNG đánh đổi khỏi khuyến nghị "không dùng dual-axis" của dataviz skill (rule "One axis", xếp
+// hạng #1 trong anti-patterns), chấp nhận vì là cách duy nhất giữ được cả 2 đơn vị thật (đ và đơn)
+// trên cùng 1 biểu đồ mà vẫn giữ breakdown theo shop cho doanh thu như yêu cầu.
+function ShopRevenueVolumeChart({ points, entities }: { points: ShopDayPoint[]; entities: StackEntity[] }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
   const [tableView, setTableView] = useState(false)
   const n = points.length
-  const totals = points.map((p) => entities.reduce((sum, e) => sum + p.values[e.id][metric], 0))
-  const maxValue = Math.max(1, ...totals)
+  const revenueTotals = points.map((p) => entities.reduce((sum, e) => sum + p.values[e.id].revenue, 0))
+  const volumeTotals = points.map((p) => entities.reduce((sum, e) => sum + p.values[e.id].volume, 0))
+  const maxRevenue = Math.max(1, ...revenueTotals)
+  const maxVolume = Math.max(1, ...volumeTotals)
+  // Màu đường sản lượng dùng C_ACTION (cam, token "action" sẵn có của dự án) — cố ý KHÔNG trùng
+  // bất kỳ màu nào trong SHOP_PALETTE để không bị nhầm là "1 shop nữa".
+  const VOLUME_COLOR = C_ACTION
 
-  const W = 640, H = 240, padL = 56, padR = 16, padT = 16, padB = 28
+  const W = 640, H = 240, padL = 56, padR = 52, padT = 16, padB = 28
   const plotW = W - padL - padR, plotH = H - padT - padB
-  const barSlot = n > 0 ? plotW / n : plotW
-  const barW = Math.min(24, barSlot * 0.6)
-  const GAP = 2 // 2px surface gap giữa các segment chồng (dataviz skill: "surface gap")
-  const xFor = (i: number) => padL + barSlot * i + barSlot / 2
+  const xFor = (i: number) => (n <= 1 ? padL : padL + (i / (n - 1)) * plotW)
+  const yForRevenue = (v: number) => padT + plotH - (v / maxRevenue) * plotH
+  const yForVolume = (v: number) => padT + plotH - (v / maxVolume) * plotH
 
   const gridSteps = [0, 0.25, 0.5, 0.75, 1]
-  const fmtMetric = (v: number) => metric === 'revenue' ? fmtVND(v) : fmtNum(v)
   const xLabelEvery = Math.max(1, Math.ceil(n / 7))
 
   if (tableView) {
@@ -497,7 +507,7 @@ function ShopStackedBarChart({ points, entities, metric }: { points: ShopDayPoin
                   </td>
                   {points.map((p, i) => (
                     <td key={i} style={{ textAlign: 'right', padding: '8px 12px', borderBottom: `1px solid ${C_BORDER}`, color: C_TEXT_PRIMARY, fontVariantNumeric: 'tabular-nums' }}>
-                      {fmtMetric(p.values[e.id][metric])}
+                      {fmtVND(p.values[e.id].revenue)}
                     </td>
                   ))}
                 </tr>
@@ -505,6 +515,20 @@ function ShopStackedBarChart({ points, entities, metric }: { points: ShopDayPoin
               {entities.length === 0 && (
                 <tr><td colSpan={points.length + 1} style={{ padding: '16px 12px', textAlign: 'center', color: C_TEXT_SECONDARY }}>Chưa có shop nào phát sinh doanh thu trong 14 ngày gần nhất.</td></tr>
               )}
+              {/* Tổng sản lượng — KHÔNG tách theo shop (xem comment đầu component), gộp 1 dòng tổng cuối bảng */}
+              <tr>
+                <td style={{ padding: '8px 12px', borderTop: `2px solid ${C_BORDER}` }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 10, height: 2, background: VOLUME_COLOR, borderRadius: 1, flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>Tổng sản lượng</span>
+                  </span>
+                </td>
+                {volumeTotals.map((v, i) => (
+                  <td key={i} style={{ textAlign: 'right', padding: '8px 12px', borderTop: `2px solid ${C_BORDER}`, color: C_TEXT_PRIMARY, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                    {fmtNum(v)} đơn
+                  </td>
+                ))}
+              </tr>
             </tbody>
           </table>
         </div>
@@ -518,44 +542,62 @@ function ShopStackedBarChart({ points, entities, metric }: { points: ShopDayPoin
     )
   }
 
+  // Band miền chồng cho doanh thu theo shop — tích luỹ đáy→đỉnh theo đúng thứ tự entities, mỗi
+  // band là 1 path khép kín (viền trên = tích luỹ tới entity này, viền dưới = tích luỹ entity
+  // trước / baseline 0 cho entity đầu). topPts được giữ lại riêng để vẽ seam trắng phân tách band.
+  let cumulative = points.map(() => 0)
+  const bands = entities.map((e) => {
+    const nextCumulative = points.map((p, i) => cumulative[i] + p.values[e.id].revenue)
+    const topPts = nextCumulative.map((v, i) => [xFor(i), yForRevenue(v)] as const)
+    const bottomPts = cumulative.map((v, i) => [xFor(i), yForRevenue(v)] as const)
+    const path =
+      topPts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ') +
+      ' ' + [...bottomPts].reverse().map(([x, y]) => `L ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ') + ' Z'
+    const topLine = topPts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')
+    const result = { ent: e, path, topLine }
+    cumulative = nextCumulative
+    return result
+  })
+
+  const volumeLinePath = volumeTotals
+    .map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i).toFixed(1)} ${yForVolume(v).toFixed(1)}`)
+    .join(' ')
+  const slotW = n > 0 ? plotW / n : plotW
+
   return (
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
         {gridSteps.map((s) => (
           <g key={s}>
             <line x1={padL} x2={W - padR} y1={padT + plotH * (1 - s)} y2={padT + plotH * (1 - s)} stroke={C_BORDER} strokeWidth={1} />
-            <text x={padL - 8} y={padT + plotH * (1 - s) + 3} fontSize={10} fill={C_TEXT_SECONDARY} textAnchor="end">{fmtMetric(Math.round(maxValue * s))}</text>
+            <text x={padL - 8} y={padT + plotH * (1 - s) + 3} fontSize={10} fill={C_TEXT_SECONDARY} textAnchor="end">{fmtVND(Math.round(maxRevenue * s))}</text>
+            <text x={W - padR + 8} y={padT + plotH * (1 - s) + 3} fontSize={10} fill={VOLUME_COLOR} textAnchor="start">{fmtNum(Math.round(maxVolume * s))}</text>
           </g>
         ))}
 
-        {points.map((p, i) => {
-          const x = xFor(i) - barW / 2
-          let yCursor = padT + plotH
-          const segs = entities.map((e) => {
-            const v = p.values[e.id][metric]
-            const segH = (v / maxValue) * plotH
-            const top = yCursor - segH
-            yCursor = top
-            return { ent: e, v, top, segH }
-          })
-          const lastVisible = [...segs].reverse().find((s) => s.segH > 0)
-          return (
-            <g key={i} opacity={hoverIdx === null || hoverIdx === i ? 1 : 0.55}>
-              {segs.map((seg) => {
-                if (seg.segH <= 0) return null
-                const h = Math.max(0.5, seg.segH - GAP)
-                if (seg === lastVisible) {
-                  return <path key={seg.ent.id} d={topRoundedRectPath(x, seg.top, barW, h, 4)} fill={seg.ent.color} />
-                }
-                return <rect key={seg.ent.id} x={x} y={seg.top} width={barW} height={h} fill={seg.ent.color} />
-              })}
-              <rect
-                x={padL + barSlot * i} y={padT} width={barSlot} height={plotH} fill="transparent"
-                onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
-              />
-            </g>
-          )
-        })}
+        {/* Miền chồng — doanh thu theo shop */}
+        {bands.map(({ ent, path }) => <path key={ent.id} d={path} fill={ent.color} />)}
+        {/* Seam trắng mảnh phân tách từng band — thay cho "surface gap" của biểu đồ cột rời rạc */}
+        {bands.map(({ ent, topLine }) => <path key={`${ent.id}-seam`} d={topLine} fill="none" stroke="#fff" strokeWidth={1.5} />)}
+
+        {/* Đường tổng sản lượng — trục phải, KHÔNG tách theo shop */}
+        <path d={volumeLinePath} fill="none" stroke={VOLUME_COLOR} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {volumeTotals.map((v, i) => (
+          <circle key={i} cx={xFor(i)} cy={yForVolume(v)} r={hoverIdx === i ? 4 : 2.5} fill={VOLUME_COLOR} stroke="#fff" strokeWidth={1} />
+        ))}
+
+        {hoverIdx !== null && (
+          <line x1={xFor(hoverIdx)} x2={xFor(hoverIdx)} y1={padT} y2={padT + plotH} stroke={C_TEXT_SECONDARY} strokeWidth={1} strokeDasharray="3 3" />
+        )}
+
+        {/* Hover hit-area theo từng ngày — crosshair + tooltip dùng chung cho cả 2 chỉ số */}
+        {points.map((_, i) => (
+          <rect
+            key={i}
+            x={padL + slotW * i} y={padT} width={slotW} height={plotH} fill="transparent"
+            onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
+          />
+        ))}
 
         {points.map((p, i) => (
           i % xLabelEvery === 0 || i === n - 1 ? (
@@ -568,13 +610,17 @@ function ShopStackedBarChart({ points, entities, metric }: { points: ShopDayPoin
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 14px', fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 6, padding: '8px 10px', background: C_BG_HEADER, borderRadius: 8 }}>
           <span style={{ width: '100%', textAlign: 'center', fontWeight: 700, color: C_TEXT_PRIMARY, marginBottom: 2 }}>{points[hoverIdx].label}</span>
           {[...entities]
-            .sort((a, b) => points[hoverIdx].values[b.id][metric] - points[hoverIdx].values[a.id][metric])
+            .sort((a, b) => points[hoverIdx].values[b.id].revenue - points[hoverIdx].values[a.id].revenue)
             .map((e) => (
               <span key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ width: 10, height: 2, background: e.color, borderRadius: 1, flexShrink: 0 }} />
-                <b style={{ color: C_TEXT_PRIMARY }}>{fmtMetric(points[hoverIdx].values[e.id][metric])}</b> {e.name}
+                <b style={{ color: C_TEXT_PRIMARY }}>{fmtVND(points[hoverIdx].values[e.id].revenue)}</b> {e.name}
               </span>
             ))}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 10, height: 2, background: VOLUME_COLOR, borderRadius: 1, flexShrink: 0 }} />
+            <b style={{ color: C_TEXT_PRIMARY }}>{fmtNum(volumeTotals[hoverIdx])} đơn</b> Tổng sản lượng
+          </span>
         </div>
       )}
 
@@ -586,6 +632,10 @@ function ShopStackedBarChart({ points, entities, metric }: { points: ShopDayPoin
           </span>
         ))}
         {entities.length === 0 && <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa có shop nào phát sinh doanh thu trong 14 ngày gần nhất.</span>}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C_TEXT_PRIMARY }}>
+          <span style={{ width: 10, height: 2, background: VOLUME_COLOR, borderRadius: 1, flexShrink: 0 }} />
+          Tổng sản lượng (trục phải)
+        </span>
       </div>
 
       <button
@@ -663,12 +713,34 @@ export default function AgencyReport() {
   const aovByWeight      = curWeightKg > 0 ? trend.current / curWeightKg : 0
   const prevAovByWeight  = prevWeightKg > 0 ? trend.previous / prevWeightKg : 0
 
-  // Biểu đồ cột chồng theo shop: luôn 14 ngày gần nhất kết thúc tại anchorDate — độc lập với tab
+  // Biểu đồ miền theo shop: luôn 14 ngày gần nhất kết thúc tại anchorDate — độc lập với tab
   // Ngày/Tuần/Tháng (tab chỉ đổi 6 KPI/bảng), giữ đúng quy ước đã có từ bản biểu đồ đường trước.
-  const [chartMetric, setChartMetric] = useState<'revenue' | 'volume'>('revenue')
-  const [topLimitKey, setTopLimitKey] = useState<TopLimitKey>('top10')
-  const { points: shopStackPoints, entities: shopStackEntities, otherCount: shopStackOtherCount } =
-    buildShopStackedSeries(agencyOrders, shops, anchorDate, 14, topLimitKey)
+  // shopRankedIds dùng để (1) chọn sẵn mặc định top 10 shop khi mount, (2) sắp thứ tự trong picker
+  // "Chọn shop" — tính 1 lần, không đổi theo thao tác chọn/bỏ chọn sau đó.
+  const shopRankedIds = rankShopIdsByRevenue(agencyOrders, shops, anchorDate, 14)
+  const [selectedShopIds, setSelectedShopIds] = useState<Set<string>>(() => new Set(shopRankedIds.slice(0, MAX_COLORED_SHOPS)))
+  const [shopPickerOpen, setShopPickerOpen] = useState(false)
+  const [shopPickerSearch, setShopPickerSearch] = useState('')
+  const shopPickerRef = useRef<HTMLDivElement>(null)
+  const toggleShopSelected = (id: string) => {
+    setSelectedShopIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) { next.delete(id); return next }
+      if (next.size >= MAX_COLORED_SHOPS) return prev // picker đã disable checkbox ở mốc này, double-guard
+      next.add(id)
+      return next
+    })
+  }
+  useEffect(() => {
+    if (!shopPickerOpen) return
+    const handler = (e: MouseEvent) => {
+      if (shopPickerRef.current && !shopPickerRef.current.contains(e.target as Node)) setShopPickerOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [shopPickerOpen])
+  const { points: shopStackPoints, entities: shopStackEntities } =
+    buildShopStackedSeries(agencyOrders, shops, anchorDate, 14, shopRankedIds.filter((id) => selectedShopIds.has(id)))
 
   // Bảng chi tiết — sắp theo doanh thu giảm dần, lọc theo ô tìm kiếm (tên hoặc mã shop).
   const q = search.trim().toLowerCase()
@@ -721,47 +793,77 @@ export default function AgencyReport() {
           <div style={{ flex: '2 1 480px', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Xu hướng doanh thu &amp; sản lượng</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Shop</span>
-                <select
-                  value={topLimitKey}
-                  onChange={(e) => setTopLimitKey(e.target.value as TopLimitKey)}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, position: 'relative' }} ref={shopPickerRef}>
+                <button
+                  onClick={() => setShopPickerOpen((v) => !v)}
                   style={{
-                    padding: '6px 10px', borderRadius: 8, border: `1px solid ${C_BORDER}`, background: '#fff',
-                    fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, cursor: 'pointer', outline: 'none',
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8,
+                    border: `1px solid ${C_BORDER}`, background: '#fff', fontSize: 13, fontWeight: 600,
+                    color: C_TEXT_PRIMARY, cursor: 'pointer', outline: 'none', whiteSpace: 'nowrap',
                   }}
                 >
-                  {(Object.keys(TOP_LIMIT_LABELS) as TopLimitKey[]).map((key) => (
-                    <option key={key} value={key}>{TOP_LIMIT_LABELS[key]}</option>
-                  ))}
-                </select>
-                <div style={{ display: 'flex', gap: 0, border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-                {(['revenue', 'volume'] as const).map((m) => {
-                  const isSelected = chartMetric === m
-                  return (
-                    <button
-                      key={m}
-                      onClick={() => setChartMetric(m)}
-                      style={{
-                        padding: '6px 14px', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                        background: isSelected ? '#111827' : '#fff',
-                        color: isSelected ? '#fff' : C_TEXT_PRIMARY,
-                      }}
-                    >
-                      {m === 'revenue' ? 'Doanh thu' : 'Sản lượng'}
-                    </button>
-                  )
-                })}
-                </div>
+                  Chọn shop ({selectedShopIds.size}/{MAX_COLORED_SHOPS})
+                  <span style={{ fontSize: 10, color: C_TEXT_SECONDARY }}>▼</span>
+                </button>
+                {shopPickerOpen && (
+                  <div style={{
+                    position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 280, maxHeight: 360,
+                    background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 8,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 30, display: 'flex', flexDirection: 'column',
+                  }}>
+                    <div style={{ padding: 8, borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '4px 8px' }}>
+                        <SearchOutlined style={{ fontSize: 12, color: C_TEXT_SECONDARY }} />
+                        <input
+                          autoFocus value={shopPickerSearch} onChange={(e) => setShopPickerSearch(e.target.value)}
+                          placeholder="Tìm shop"
+                          style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontSize: 12, color: C_TEXT_PRIMARY }}
+                        />
+                      </div>
+                      {selectedShopIds.size >= MAX_COLORED_SHOPS && (
+                        <div style={{ fontSize: 11, color: C_BAD, marginTop: 6 }}>Đã chọn tối đa {MAX_COLORED_SHOPS} shop — bỏ chọn bớt để thêm shop khác.</div>
+                      )}
+                    </div>
+                    <div style={{ overflowY: 'auto', padding: 4 }}>
+                      {shopRankedIds
+                        .map((id) => shops.find((s) => s.id === id))
+                        .filter((s): s is NonNullable<typeof s> => {
+                          if (!s) return false
+                          const q = shopPickerSearch.trim().toLowerCase()
+                          return !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
+                        })
+                        .map((s) => {
+                          const checked = selectedShopIds.has(s.id)
+                          const disabled = !checked && selectedShopIds.size >= MAX_COLORED_SHOPS
+                          return (
+                            <label
+                              key={s.id}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 6,
+                                cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.45 : 1,
+                              }}
+                              onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.background = '#F9FAFB' }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                            >
+                              <input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleShopSelected(s.id)} />
+                              <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{s.name}</span>
+                            </label>
+                          )
+                        })}
+                      {shopRankedIds.length === 0 && (
+                        <div style={{ padding: 12, fontSize: 12, color: C_TEXT_SECONDARY, textAlign: 'center' }}>Không tìm thấy shop</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 12 }}>
               6 KPI &amp; Bảng chi tiết đang so với {trend.compareLabel.toLowerCase()}
               <br />
-              Biểu đồ luôn hiện 14 ngày gần nhất, không đổi theo tab
-              {shopStackOtherCount > 0 && <> — {shopStackOtherCount} shop còn lại gộp vào <strong style={{ color: C_TEXT_PRIMARY }}>"Khác"</strong> (tối đa {MAX_COLORED_SHOPS} shop được tô màu riêng)</>}
+              Biểu đồ luôn hiện 14 ngày gần nhất, không đổi theo tab — miền theo shop = doanh thu (trục trái), đường cam = tổng sản lượng (trục phải)
             </div>
-            <ShopStackedBarChart points={shopStackPoints} entities={shopStackEntities} metric={chartMetric} />
+            <ShopRevenueVolumeChart points={shopStackPoints} entities={shopStackEntities} />
           </div>
 
           <div style={{ flex: '1 1 260px', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 18 }}>
