@@ -155,6 +155,30 @@ export function describeSameProvinceRoutePairs(routeName: string): string[] {
     .map((r) => (r.provinces.length === 1 ? `${r.provinces[0]} ↔ ${r.provinces[0]}` : `Cùng 1 tỉnh trong ${r.name}`))
 }
 
+// ─── Variants nhận THẲNG 1 bộ tuyến cụ thể (RouteConfigVersion) làm tham số ────────────────────
+// Dùng khi 1 nơi cần đọc dữ liệu theo 1 bộ tuyến người dùng TỰ CHỌN (vd Agency Admin chọn "Bộ
+// tuyến áp dụng" lúc Tạo bảng giá), KHÔNG phải bộ đang active toàn hệ thống — khác hẳn 3 hàm phía
+// trên (luôn đọc state global `regions`/`routeMatrix`, dùng cho Web Shop/RouteCheck/nơi không có
+// khái niệm "tự chọn bộ"). Thuần, không đụng state global, không ảnh hưởng 3 hàm gốc.
+export function isSameProvinceRouteNameIn(version: RouteConfigVersion, name: string): boolean {
+  return version.regions.some((r) => version.routeMatrix[pairKey(r.id, r.id)] === name)
+}
+
+export function describeSameProvinceRoutePairsIn(version: RouteConfigVersion, routeName: string): string[] {
+  return version.regions
+    .filter((r) => version.routeMatrix[pairKey(r.id, r.id)] === routeName)
+    .map((r) => (r.provinces.length === 1 ? `${r.provinces[0]} ↔ ${r.provinces[0]}` : `Cùng 1 tỉnh trong ${r.name}`))
+}
+
+export function listRouteNamesIn(version: RouteConfigVersion): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const name of Object.values(version.routeMatrix)) {
+    if (!seen.has(name)) { seen.add(name); result.push(name) }
+  }
+  return result
+}
+
 // ─── Versioning — "Danh sách bộ vùng tuyến" ────────────────────────────────────
 // 1 "bộ vùng tuyến" = Vùng miền + Tuyến + Nội/Ngoại thành GỘP CHUNG thành 1 khối BẤT BIẾN: mỗi
 // lần Super Admin bấm "Lưu thay đổi" ở RouteConfig.tsx (dù sửa ở phần nào trong 3 phần trên),
@@ -211,6 +235,38 @@ export const routeConfigVersions: RouteConfigVersion[] = [
 
 let activeVersionId: string = routeConfigVersions[0].id
 
+// ─── Persistence (localStorage) ────────────────────────────────────────────────────────────────
+// Khác cách dùng của orderStore.ts/pricingStore.ts (load()/save() gọi tay mỗi lần cần dữ liệu) —
+// ở đây `routeConfigVersions`/`activeVersionId` vốn đã là state global mutable-in-place của cả
+// file (nhiều nơi import thẳng `regions`/`routeMatrix`/`urbanConfigs` làm live binding), nên chỉ
+// cần RESTORE 1 LẦN lúc module khởi tạo (ngay dưới đây) rồi mọi hàm tạo/đổi bộ tự ghi lại
+// localStorage ngay sau khi đổi (xem `persistRouteConfig()` trong commitNewRouteConfigVersion/
+// setActiveRouteConfigVersion) — không có bộ nào bị mất khi F5 lại trang nữa.
+const STORAGE_KEY = 'ghn_route_config_v1'
+
+function persistRouteConfig(): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ versions: routeConfigVersions, activeVersionId }))
+  } catch {
+    // Ghi thất bại (vd private browsing chặn localStorage) — bỏ qua, không throw để không vỡ UI.
+  }
+}
+
+;(function restorePersistedRouteConfig() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as { versions: RouteConfigVersion[]; activeVersionId: string }
+    if (!Array.isArray(parsed.versions) || parsed.versions.length === 0) return
+    routeConfigVersions.length = 0
+    routeConfigVersions.push(...parsed.versions)
+    const restoredActive = routeConfigVersions.find((v) => v.id === parsed.activeVersionId) ?? routeConfigVersions[routeConfigVersions.length - 1]
+    applyVersionToStore(restoredActive)
+  } catch {
+    // localStorage lỗi/dữ liệu hỏng → giữ nguyên seed mặc định, không throw
+  }
+})()
+
 /** Đồng bộ nội dung 1 bộ vào `regions`/`routeMatrix`/`urbanConfigs` (3 biến export dùng chung
  * toàn app) — GIỮ NGUYÊN identity mảng/object (chỉ đổi nội dung bên trong qua
  * .length = 0/.push()/Object.assign) để mọi nơi đang import trực tiếp 3 biến này (CarrierSetup,
@@ -250,6 +306,7 @@ export function commitNewRouteConfigVersion(
   }
   routeConfigVersions.push(version)
   applyVersionToStore(version)
+  persistRouteConfig()
   return version
 }
 
@@ -259,6 +316,7 @@ export function setActiveRouteConfigVersion(versionId: string): RouteConfigVersi
   const version = routeConfigVersions.find((v) => v.id === versionId)
   if (!version) return null
   applyVersionToStore(version)
+  persistRouteConfig()
   return version
 }
 

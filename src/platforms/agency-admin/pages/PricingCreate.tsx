@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PlusOutlined, DeleteOutlined, ArrowLeftOutlined, InfoCircleOutlined, CloseOutlined } from '@ant-design/icons'
 import {
-  regions as routeRegions,
-  routeMatrix,
-  isSameProvinceRouteName,
-  describeSameProvinceRoutePairs,
-  listRouteNames,
-  urbanConfigs,
+  routeConfigVersions,
+  getActiveRouteConfigVersion,
+  isSameProvinceRouteNameIn,
+  describeSameProvinceRoutePairsIn,
+  listRouteNamesIn,
   type RegionDef,
+  type RouteConfigVersion,
 } from '../../../mock-data/routeConfig'
 import { addPricingTable, type PriceTable, type PriceZone } from '../../../mock-data/pricingStore'
 
@@ -852,11 +852,13 @@ function AddressChangeFeeBlock({ value, onChange }: {
 
 function RouteBlock({
   route,
+  bundle,
   onChange,
   onDelete,
   onOpenZoneGuide,
 }: {
   route: RouteConfig
+  bundle: RouteConfigVersion
   onChange: (updated: RouteConfig) => void
   onDelete: () => void
   onOpenZoneGuide: () => void
@@ -866,7 +868,7 @@ function RouteBlock({
 
   const toggleSection = (sec: 'overweight' | 'surcharge') =>
     setActiveSection((v) => (v === sec ? null : sec))
-  const showLocationScoping = !isSameProvinceRouteName(route.routeName)
+  const showLocationScoping = !isSameProvinceRouteNameIn(bundle, route.routeName)
   const updateSurcharges = (updated: Surcharges) => {
     onChange({ ...route, surcharges: updated })
   }
@@ -945,7 +947,7 @@ function RouteBlock({
             onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
             onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
           >
-            {listRouteNames().map((name) => (
+            {listRouteNamesIn(bundle).map((name) => (
               <option key={name} value={name}>{name}</option>
             ))}
           </select>
@@ -1095,7 +1097,7 @@ function RouteBlock({
               onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
               onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
             >
-              {[{ value: '', label: 'Tất cả' }, ...routeRegions.map((r) => ({ value: r.id, label: r.name }))].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {[{ value: '', label: 'Tất cả' }, ...bundle.regions.map((r) => ({ value: r.id, label: r.name }))].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <input value={route.fromProvince} onChange={(e) => updateField('fromProvince', e.target.value)} placeholder="Tất cả" style={{ ...inputStyle, width: '100%' }} onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')} onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
             <input value={route.fromDistrict} onChange={(e) => updateField('fromDistrict', e.target.value)} placeholder="Tất cả" style={{ ...inputStyle, width: '100%' }} onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')} onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
@@ -1110,7 +1112,7 @@ function RouteBlock({
               onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
               onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
             >
-              {[{ value: '', label: 'Tất cả' }, ...routeRegions.map((r) => ({ value: r.id, label: r.name }))].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {[{ value: '', label: 'Tất cả' }, ...bundle.regions.map((r) => ({ value: r.id, label: r.name }))].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <input value={route.toProvince} onChange={(e) => updateField('toProvince', e.target.value)} placeholder="Tất cả" style={{ ...inputStyle, width: '100%' }} onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')} onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
             <input value={route.toDistrict} onChange={(e) => updateField('toDistrict', e.target.value)} placeholder="Tất cả" style={{ ...inputStyle, width: '100%' }} onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')} onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)} />
@@ -1155,25 +1157,25 @@ function RouteBlock({
 
 // ─── Zone guide modal ─────────────────────────────────────────────────────────
 
-function ZoneGuideModal({ onClose }: { onClose: () => void }) {
-  // Build dynamic guide rows from shared routeConfig store
-  const routeNames = listRouteNames()
+function ZoneGuideModal({ bundle, onClose }: { bundle: RouteConfigVersion; onClose: () => void }) {
+  // Build dynamic guide rows from the SELECTED bundle (không phải store global đang active)
+  const routeNames = listRouteNamesIn(bundle)
 
   type GuideRow = { name: string; pairs: string[] }
   const guideRows: GuideRow[] = routeNames.map((routeName) => {
-    if (isSameProvinceRouteName(routeName)) {
-      return { name: routeName, pairs: describeSameProvinceRoutePairs(routeName) }
+    if (isSameProvinceRouteNameIn(bundle, routeName)) {
+      return { name: routeName, pairs: describeSameProvinceRoutePairsIn(bundle, routeName) }
     }
     // Collect region pairs that map to this route name
     const pairs: string[] = []
     const seen = new Set<string>()
-    for (const [key, name] of Object.entries(routeMatrix)) {
+    for (const [key, name] of Object.entries(bundle.routeMatrix)) {
       if (name !== routeName) continue
       if (seen.has(key)) continue
       seen.add(key)
       const [idA, idB] = key.split('|')
-      const regA = routeRegions.find((r: RegionDef) => r.id === idA)
-      const regB = routeRegions.find((r: RegionDef) => r.id === idB)
+      const regA = bundle.regions.find((r: RegionDef) => r.id === idA)
+      const regB = bundle.regions.find((r: RegionDef) => r.id === idB)
       pairs.push(`${regA?.name ?? idA} ↔ ${regB?.name ?? idB}`)
     }
     return { name: routeName, pairs }
@@ -1202,7 +1204,7 @@ function ZoneGuideModal({ onClose }: { onClose: () => void }) {
           {/* Định nghĩa miền — dynamic */}
           <div style={{ background: C_BG_FORM, border: `1px solid ${C_BORDER}`, borderRadius: 8, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, marginBottom: 2 }}>Định nghĩa miền / vùng</span>
-            {routeRegions.map((region: RegionDef) => (
+            {bundle.regions.map((region: RegionDef) => (
               <div key={region.id} style={{ display: 'flex', alignItems: 'baseline', gap: 6, fontSize: 13 }}>
                 <span style={{ padding: '1px 8px', borderRadius: 20, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#2563EB', fontSize: 12, fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap' }}>
                   {region.name}
@@ -1245,11 +1247,11 @@ function ZoneGuideModal({ onClose }: { onClose: () => void }) {
             <span style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, display: 'block', marginBottom: 8 }}>
               Định nghĩa Nội thành / Ngoại thành (áp dụng khi bật "Tách Nội thành/Ngoại thành" ở 1 tuyến)
             </span>
-            {urbanConfigs.length === 0 ? (
+            {bundle.urbanConfigs.length === 0 ? (
               <div style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Chưa có tỉnh nào được cấu hình Nội thành/Ngoại thành.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {urbanConfigs.map((config) => (
+                {bundle.urbanConfigs.map((config) => (
                   <div key={config.province} style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
                     <div style={{ padding: '8px 16px', background: C_BG_HEADER, fontSize: 13, fontWeight: 700, color: C_TEXT_PRIMARY }}>
                       {config.province}
@@ -1299,11 +1301,17 @@ export default function PricingCreate() {
   // (route theo tuyến + khối lượng) — không còn khái niệm carrier riêng ở bước tạo bảng giá.
   const [name, setName] = useState('')
   const [desc, setDesc] = useState('')
+  // Bộ tuyến áp dụng cho bảng giá NÀY — mặc định chọn sẵn bộ Super Admin đang đặt làm MẶC ĐỊNH
+  // (ưu tiên bộ mặc định đúng theo yêu cầu), người dùng có thể đổi sang bộ khác trong
+  // routeConfigVersions. Chỉ ảnh hưởng bảng giá MỚI TẠO — bảng giá đã lưu trước đó đã chốt cứng
+  // tên tuyến vào từng zone rồi (xem zones[].routeName ở handleSubmit), không bị đổi theo.
+  const [selectedBundleId, setSelectedBundleId] = useState<string>(() => getActiveRouteConfigVersion().id)
+  const selectedBundle = routeConfigVersions.find((v) => v.id === selectedBundleId) ?? getActiveRouteConfigVersion()
   const [showZoneGuide, setShowZoneGuide] = useState(false)
   const [bulkWeight, setBulkWeight] = useState('')
   const [bulkPrice, setBulkPrice] = useState('')
   const [routes, setRoutes] = useState<RouteConfig[]>(() =>
-    listRouteNames().map((name, i) => makeEmptyRoute(name, String(i + 1)))
+    listRouteNamesIn(selectedBundle).map((name, i) => makeEmptyRoute(name, String(i + 1)))
   )
   // Phụ phí đổi địa chỉ dùng chung cho toàn bộ bảng giá, không phụ thuộc tuyến — mức "khác
   // Tỉnh/Thành" đã tự nhạy theo tuyến vì tính theo % cước phí thực tế của đúng tuyến đơn đó.
@@ -1311,8 +1319,17 @@ export default function PricingCreate() {
 
   const canSubmit = name.trim().length > 0
 
+  // Đổi bộ tuyến → tên tuyến của bộ cũ (đang gán cho từng dòng "Danh sách tuyến") có thể không
+  // còn tồn tại trong bộ mới → reset lại danh sách tuyến theo đúng bộ mới, tránh dòng nào đó bị
+  // kẹt giá trị tuyến "mồ côi" không khớp option nào trong <select>.
+  const handleBundleChange = (versionId: string) => {
+    const nextBundle = routeConfigVersions.find((v) => v.id === versionId) ?? getActiveRouteConfigVersion()
+    setSelectedBundleId(nextBundle.id)
+    setRoutes(listRouteNamesIn(nextBundle).map((name, i) => makeEmptyRoute(name, String(i + 1))))
+  }
+
   const addRoute = () => {
-    setRoutes((prev) => [...prev, makeEmptyRoute(listRouteNames()[0] ?? '', Date.now().toString())])
+    setRoutes((prev) => [...prev, makeEmptyRoute(listRouteNamesIn(selectedBundle)[0] ?? '', Date.now().toString())])
   }
 
   const updateRoute = (id: string, updated: RouteConfig) => {
@@ -1344,7 +1361,7 @@ export default function PricingCreate() {
   // thường nhưng chưa chọn thu hẹp) — luôn có giá trị, không để trống gây khó hiểu trên bảng giá.
   const zoneEndpointLabel = (province: string, regionId: string): string => {
     if (province.trim()) return province.trim()
-    const region = routeRegions.find((r) => r.id === regionId)
+    const region = selectedBundle.regions.find((r) => r.id === regionId)
     return region?.name ?? 'Tất cả'
   }
 
@@ -1489,6 +1506,26 @@ export default function PricingCreate() {
               />
             </div>
           </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>Bộ tuyến áp dụng</span>
+            <select
+              value={selectedBundleId}
+              onChange={(e) => handleBundleChange(e.target.value)}
+              style={{ ...inputStyle, maxWidth: 480, width: '100%', cursor: 'pointer' }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
+              onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
+            >
+              {[...routeConfigVersions].reverse().map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.label}{v.id === getActiveRouteConfigVersion().id ? ' (Mặc định)' : ''}
+                </option>
+              ))}
+            </select>
+            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
+              Danh sách tuyến bên dưới lấy theo bộ này. Chỉ áp dụng cho bảng giá đang tạo — đổi bộ sau khi lưu không ảnh hưởng bảng giá đã có.
+            </span>
+          </div>
         </div>
 
         {/* Section 2: Danh sách tuyến */}
@@ -1509,7 +1546,7 @@ export default function PricingCreate() {
             </div>
             <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{routes.length} tuyến</span>
           </div>
-          {showZoneGuide && <ZoneGuideModal onClose={() => setShowZoneGuide(false)} />}
+          {showZoneGuide && <ZoneGuideModal bundle={selectedBundle} onClose={() => setShowZoneGuide(false)} />}
 
           {/* Nhập nhanh đồng giá */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '8px 12px 8px 20px', background: '#F9FAFB', border: `1px solid ${C_BORDER}`, borderRadius: 8, marginTop: 8 }}>
@@ -1553,6 +1590,7 @@ export default function PricingCreate() {
               <RouteBlock
                 key={route.id}
                 route={route}
+                bundle={selectedBundle}
                 onChange={(updated) => updateRoute(route.id, updated)}
                 onDelete={() => deleteRoute(route.id)}
                 onOpenZoneGuide={() => setShowZoneGuide(true)}
