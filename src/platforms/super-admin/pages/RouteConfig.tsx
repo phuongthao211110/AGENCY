@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
-import { PlusOutlined, CloseOutlined, InfoCircleOutlined, LockOutlined } from '@ant-design/icons'
+import { PlusOutlined, CloseOutlined, InfoCircleOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import {
@@ -108,57 +108,21 @@ export default function RouteConfig() {
   const [routeNames, setRouteNames] = useState<string[]>(() =>
     Array.from(new Set(Object.values(routeMatrix)))
   )
-  // Tên tuyến đang bị khoá THỦ CÔNG trong draft hiện tại — xem field `lockedRouteNames` trên
-  // RouteConfigVersion (routeConfig.ts) để biết phạm vi chặn chính xác.
+  // Tên tuyến đang bị khoá — xem field `lockedRouteNames` trên RouteConfigVersion (routeConfig.ts)
+  // để biết phạm vi chặn chính xác. Bấm trực tiếp icon khoá cạnh tên tuyến trong bảng "Cấu hình
+  // tuyến" để đổi — KHÔNG còn modal riêng, mỗi lần bấm lưu NGAY (xem toggleRouteLock bên dưới).
   const [lockedRouteNames, setLockedRouteNames] = useState<Set<string>>(
     () => new Set(getActiveRouteConfigVersion().lockedRouteNames ?? [])
   )
-  // Cấp khoá mịn hơn — khoá đúng 1 CẶP vùng miền (pairKey), độc lập với khoá cả tuyến ở trên.
-  // Xem field `lockedPairKeys` trên RouteConfigVersion (routeConfig.ts).
+  // Cấp khoá mịn hơn — khoá đúng 1 CẶP vùng miền (pairKey), độc lập với khoá cả tuyến ở trên. Bấm
+  // trực tiếp icon khoá cạnh mỗi chip cặp ĐÃ GÁN (checked) trong bảng "Cấu hình tuyến".
   const [lockedPairKeys, setLockedPairKeys] = useState<Set<string>>(
     () => new Set(getActiveRouteConfigVersion().lockedPairKeys ?? [])
   )
-  // Modal "Khoá tuyến" — TÁCH RIÊNG khỏi bảng "Cấu hình tuyến" chính: bảng chính chỉ còn HIỂN THỊ
-  // trạng thái khoá (input/chip/nút xoá bị disable khi khoá), không còn icon bấm khoá/mở khoá lẫn
-  // trong đó nữa — toàn bộ thao tác khoá/mở khoá (cả tuyến lẫn từng cặp) chuyển hết vào đây, lưu
-  // bằng 1 nút "Lưu thay đổi" RIÊNG, độc lập với draft Vùng miền/Tuyến/Nội-Ngoại thành đang dở.
-  const [lockModalOpen, setLockModalOpen] = useState(false)
-  const [lockDraftRouteNames, setLockDraftRouteNames] = useState<Set<string>>(new Set())
-  const [lockDraftPairKeys, setLockDraftPairKeys] = useState<Set<string>>(new Set())
-
-  const openLockModal = () => {
-    setLockDraftRouteNames(new Set(lockedRouteNames))
-    setLockDraftPairKeys(new Set(lockedPairKeys))
-    setLockModalOpen(true)
-  }
-
-  // Khoá/mở khoá tuyến chỉ sửa lockedRouteNames/lockedPairKeys TẠI CHỖ trên bộ ĐANG ÁP DỤNG —
-  // KHÔNG sinh bộ vùng tuyến mới (khác 3 nút Lưu kia, vốn đổi regions/routeMatrix/urbanConfigs nên
-  // cần giữ bản cũ trong lịch sử). Xem updateActiveVersionLocks() trong routeConfig.ts.
-  const commitLockDraft = () => {
-    const updated = updateActiveVersionLocks(Array.from(lockDraftRouteNames), Array.from(lockDraftPairKeys))
-    setActiveVersion(updated)
-    setLockedRouteNames(new Set(lockDraftRouteNames))
-    setLockedPairKeys(new Set(lockDraftPairKeys))
-    setLockModalOpen(false)
-  }
-
-  const toggleLockDraftRoute = (name: string) => {
-    setLockDraftRouteNames((prev) => {
-      const next = new Set(prev)
-      if (next.has(name)) next.delete(name)
-      else next.add(name)
-      return next
-    })
-  }
-
-  const toggleLockDraftPair = (key: string) => {
-    setLockDraftPairKeys((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
+  const [toast, setToast] = useState<string | null>(null)
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast((prev) => (prev === msg ? null : prev)), 2000)
   }
   const [urbanDraft, setUrbanDraft] = useState<UrbanConfig[]>(() =>
     urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
@@ -168,6 +132,30 @@ export default function RouteConfig() {
   // "có thay đổi chưa lưu" cho CẢ 3 draft, và làm nguồn "giữ nguyên" cho 2 phần không lưu khi chỉ
   // lưu 1 phần. Chung 1 state vì cả 3 nút Lưu đều cập nhật nó khi có version mới.
   const [activeVersion, setActiveVersion] = useState<RouteConfigVersion>(() => getActiveRouteConfigVersion())
+
+  // Khoá/mở khoá tuyến (cả tuyến hoặc riêng 1 cặp) LƯU NGAY — sửa lockedRouteNames/lockedPairKeys
+  // TẠI CHỖ trên bộ ĐANG ÁP DỤNG, không sinh bộ vùng tuyến mới (khác 3 nút Lưu kia, vốn đổi
+  // regions/routeMatrix/urbanConfigs nên cần giữ bản cũ trong lịch sử). Xem updateActiveVersionLocks()
+  // trong routeConfig.ts. Gọi trực tiếp từ icon khoá cạnh tên tuyến / cạnh mỗi chip cặp đã gán.
+  const toggleRouteLock = (name: string) => {
+    const next = new Set(lockedRouteNames)
+    if (next.has(name)) next.delete(name)
+    else next.add(name)
+    const updated = updateActiveVersionLocks(Array.from(next), Array.from(lockedPairKeys))
+    setActiveVersion(updated)
+    setLockedRouteNames(next)
+    showToast('Lưu thay đổi thành công')
+  }
+
+  const togglePairLock = (key: string) => {
+    const next = new Set(lockedPairKeys)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    const updated = updateActiveVersionLocks(Array.from(lockedRouteNames), Array.from(next))
+    setActiveVersion(updated)
+    setLockedPairKeys(next)
+    showToast('Lưu thay đổi thành công')
+  }
 
   const [selectedUrbanProvince, setSelectedUrbanProvince] = useState<string | null>(
     () => urbanConfigs[0]?.province ?? null
@@ -390,13 +378,6 @@ export default function RouteConfig() {
     setUrbanDraft(urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) })))
   }
 
-  // Dữ liệu cho modal "Khoá tuyến" — dựa trên bộ ĐANG ÁP DỤNG (activeVersion), KHÔNG dựa trên
-  // matrixDraft/regionsDraft đang dở ở trên, vì modal lưu độc lập (xem commitLockDraft). "Nội
-  // Tỉnh" không hiện trong modal — không khoá được (vốn đã luôn áp dụng cho mọi miền, không có gì
-  // để "giữ cố định" thêm).
-  const lockModalRouteNames = Array.from(new Set(Object.values(activeVersion.routeMatrix))).filter((n) => n !== 'Nội Tỉnh')
-  const lockModalRegionPairs = activeVersion.regions.flatMap((a, i) => activeVersion.regions.slice(i).map((b) => [a, b] as const))
-
   return (
     <ConfigProvider theme={superAdminTheme}>
       <div style={{ padding: 20, background: '#fff', minHeight: '100vh' }}>
@@ -421,17 +402,6 @@ export default function RouteConfig() {
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <button
-              onClick={openLockModal}
-              title="Quản lý khoá tuyến/cặp miền — tách riêng khỏi chỉnh sửa vùng & tuyến"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-                background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6,
-                cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: C_TEXT_PRIMARY,
-              }}
-            >
-              <LockOutlined style={{ fontSize: 12 }} /> Khoá tuyến
-            </button>
             <button
               onClick={() => window.location.reload()}
               title="Tải lại toàn bộ dữ liệu về trạng thái mẫu ban đầu (mất mọi thay đổi trong phiên này)"
@@ -669,18 +639,33 @@ export default function RouteConfig() {
                           </span>
                         ) : (
                           <>
-                            <input
-                              value={name}
-                              onChange={(e) => handleRenameTuyen(name, e.target.value)}
-                              placeholder="Tên tuyến"
-                              disabled={isLocked}
-                              title={isLocked ? 'Tuyến đã khoá — mở khoá để đổi tên' : undefined}
-                              style={{
-                                ...inputStyle, fontWeight: 700, width: '100%', borderColor: nameError ? '#EF4444' : C_BORDER,
-                                background: isLocked ? '#F3F4F6' : '#fff', color: isLocked ? C_TEXT_SECONDARY : C_TEXT_PRIMARY,
-                                cursor: isLocked ? 'not-allowed' : 'text',
-                              }}
-                            />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <input
+                                value={name}
+                                onChange={(e) => handleRenameTuyen(name, e.target.value)}
+                                placeholder="Tên tuyến"
+                                disabled={isLocked}
+                                title={isLocked ? 'Tuyến đã khoá — mở khoá để đổi tên' : undefined}
+                                style={{
+                                  ...inputStyle, fontWeight: 700, width: '100%', borderColor: nameError ? '#EF4444' : C_BORDER,
+                                  background: isLocked ? '#F3F4F6' : '#fff', color: isLocked ? C_TEXT_SECONDARY : C_TEXT_PRIMARY,
+                                  cursor: isLocked ? 'not-allowed' : 'text',
+                                }}
+                              />
+                              <button
+                                onClick={() => toggleRouteLock(name)}
+                                title={isLocked ? 'Mở khoá cả tuyến này' : 'Khoá cả tuyến — không cho đổi tên hay thêm/bớt cặp miền khỏi tuyến này'}
+                                style={{
+                                  flexShrink: 0, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  borderRadius: 6, cursor: 'pointer', fontSize: 12,
+                                  background: isLocked ? '#FEE2E2' : '#F3F4F6',
+                                  border: `1px solid ${isLocked ? '#FCA5A5' : C_BORDER}`,
+                                  color: isLocked ? '#DC2626' : '#9CA3AF',
+                                }}
+                              >
+                                {isLocked ? <LockOutlined /> : <UnlockOutlined />}
+                              </button>
+                            </div>
                             {nameError && <span style={{ fontSize: 11, color: '#EF4444' }}>{nameError}</span>}
                           </>
                         )}
@@ -708,22 +693,43 @@ export default function RouteConfig() {
                             const chipDisabled = isLocked || blockedByOtherLock || pairLocked
                             const chipLabel = a.id === b.id ? a.name.replace(' (Đặc biệt)', '') : `${a.name} ↔ ${b.name}`
                             return (
-                              <button
+                              <div
                                 key={key}
-                                onClick={() => handleToggleChip(name, a.id, b.id)}
-                                disabled={chipDisabled}
-                                title={pairLocked ? `Cặp "${chipLabel}" đã bị khoá riêng — mở khoá ở "Khoá tuyến" để đổi` : blockedByOtherLock ? `Cặp này đang thuộc tuyến "${owner}" đã khoá` : isLocked ? 'Tuyến đã khoá' : undefined}
                                 style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 14,
-                                  fontSize: 12, fontWeight: checked ? 600 : 400, cursor: chipDisabled ? 'not-allowed' : 'pointer',
-                                  background: pairLocked ? '#FEF2F2' : checked ? '#FFF4ED' : '#F9FAFB',
+                                  display: 'inline-flex', alignItems: 'center', borderRadius: 14, overflow: 'hidden',
                                   border: `1px solid ${pairLocked ? '#FCA5A5' : checked ? '#FDBA74' : C_BORDER}`,
-                                  color: pairLocked ? '#DC2626' : checked ? '#FF5200' : '#9CA3AF',
                                   opacity: chipDisabled && !pairLocked ? 0.5 : 1,
                                 }}
                               >
-                                {chipLabel}
-                              </button>
+                                {/* Icon khoá riêng cặp này — chỉ hiện khi cặp ĐÃ GÁN cho tuyến này (checked),
+                                    khoá 1 cặp không gán vào đâu là vô nghĩa. */}
+                                {checked && (
+                                  <button
+                                    onClick={() => togglePairLock(key)}
+                                    title={pairLocked ? 'Mở khoá riêng cặp này' : 'Khoá riêng cặp này — không cho đổi sang tuyến khác dù tuyến không bị khoá'}
+                                    style={{
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, alignSelf: 'stretch',
+                                      border: 'none', borderRight: `1px solid ${pairLocked ? '#FCA5A5' : '#FDBA74'}`, cursor: 'pointer',
+                                      background: pairLocked ? '#FEE2E2' : '#FFEAD9', color: pairLocked ? '#DC2626' : '#FF5200', fontSize: 11,
+                                    }}
+                                  >
+                                    {pairLocked ? <LockOutlined /> : <UnlockOutlined />}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleToggleChip(name, a.id, b.id)}
+                                  disabled={chipDisabled}
+                                  title={pairLocked ? `Cặp "${chipLabel}" đã bị khoá riêng — bấm icon khoá cạnh chip để mở` : blockedByOtherLock ? `Cặp này đang thuộc tuyến "${owner}" đã khoá` : isLocked ? 'Tuyến đã khoá' : undefined}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: 'none',
+                                    fontSize: 12, fontWeight: checked ? 600 : 400, cursor: chipDisabled ? 'not-allowed' : 'pointer',
+                                    background: pairLocked ? '#FEF2F2' : checked ? '#FFF4ED' : '#F9FAFB',
+                                    color: pairLocked ? '#DC2626' : checked ? '#FF5200' : '#9CA3AF',
+                                  }}
+                                >
+                                  {chipLabel}
+                                </button>
+                              </div>
                             )
                           })
                         )}
@@ -942,91 +948,16 @@ export default function RouteConfig() {
 
       </div>
 
-      {/* ── Modal "Khoá tuyến" — TÁCH RIÊNG khỏi "Cấu hình tuyến" ở trên, lưu bằng 1 nút Lưu
-          RIÊNG, độc lập với draft Vùng miền/Tuyến/Nội-Ngoại thành đang dở. ── */}
-      {lockModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 10, width: 'min(900px, 92vw)', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: `1px solid ${C_BORDER}` }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY }}>Khoá tuyến</span>
-              <button
-                onClick={() => setLockModalOpen(false)}
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: C_TEXT_SECONDARY, lineHeight: 1 }}
-              >
-                ✕
-              </button>
-            </div>
-            <div style={{ padding: '10px 20px 0', fontSize: 12.5, color: C_TEXT_SECONDARY }}>
-              Đã khoá {lockDraftRouteNames.size + lockDraftPairKeys.size}. Bấm vào tên tuyến để khoá/mở khoá CẢ tuyến, bấm vào 1 cặp vùng miền để khoá/mở khoá riêng cặp đó.
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px 20px' }}>
-              {lockModalRouteNames.length === 0 ? (
-                <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, textAlign: 'center', padding: '24px 0' }}>Chưa có tuyến nào ngoài "Nội Tỉnh" để khoá.</div>
-              ) : (
-                <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', padding: '8px 12px', background: C_BG_HEADER, fontSize: 12, color: C_TEXT_SECONDARY, fontWeight: 600 }}>
-                    <div style={{ flex: '0 0 200px' }}>Tên tuyến</div>
-                    <div style={{ flex: 1 }}>Cặp vùng miền</div>
-                  </div>
-                  {lockModalRouteNames.map((routeName, i) => {
-                    const routeLocked = lockDraftRouteNames.has(routeName)
-                    const pairs = lockModalRegionPairs.filter(([a, b]) => activeVersion.routeMatrix[pairKey(a.id, b.id)] === routeName)
-                    return (
-                      <div
-                        key={routeName}
-                        style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 12px', borderTop: i === 0 ? 'none' : `1px solid ${C_BORDER}` }}
-                      >
-                        <div style={{ flex: '0 0 200px' }}>
-                          <button
-                            onClick={() => toggleLockDraftRoute(routeName)}
-                            title={routeLocked ? 'Mở khoá cả tuyến này' : 'Khoá cả tuyến — không cho đổi tên hay thêm/bớt cặp miền khỏi tuyến này'}
-                            style={{
-                              padding: '4px 10px', borderRadius: 14, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                              background: routeLocked ? '#FEF2F2' : '#fff',
-                              border: `1px solid ${routeLocked ? '#DC2626' : '#FDBA74'}`,
-                              color: routeLocked ? '#DC2626' : '#FF5200',
-                            }}
-                          >
-                            {routeName}
-                          </button>
-                        </div>
-                        <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {pairs.map(([a, b]) => {
-                            const key = pairKey(a.id, b.id)
-                            const pairLocked = lockDraftPairKeys.has(key)
-                            const label = a.id === b.id ? a.name.replace(' (Đặc biệt)', '') : `${a.name} ↔ ${b.name}`
-                            return (
-                              <button
-                                key={key}
-                                onClick={() => toggleLockDraftPair(key)}
-                                title={pairLocked ? 'Mở khoá riêng cặp này' : 'Khoá riêng cặp này — không cho đổi sang tuyến khác dù tuyến không bị khoá'}
-                                style={{
-                                  padding: '4px 10px', borderRadius: 14, fontSize: 12, fontWeight: pairLocked ? 600 : 400, cursor: 'pointer',
-                                  background: pairLocked ? '#FEF2F2' : '#fff',
-                                  border: `1px solid ${pairLocked ? '#DC2626' : '#93C5FD'}`,
-                                  color: pairLocked ? '#DC2626' : '#1D4ED8',
-                                }}
-                              >
-                                {label}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 20px', borderTop: `1px solid ${C_BORDER}` }}>
-              <button
-                onClick={commitLockDraft}
-                style={{ padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, color: '#fff', background: '#FF5200', cursor: 'pointer' }}
-              >
-                Lưu thay đổi
-              </button>
-            </div>
-          </div>
+      {/* Toast "Lưu thay đổi thành công" — hiện khi khoá/mở khoá tuyến (xem toggleRouteLock/
+          togglePairLock), tự ẩn sau 2s. Khoá tuyến lưu NGAY, không qua bước xác nhận/nút Lưu riêng
+          nữa (khác 3 cụm Vùng miền/Tuyến/Nội-Ngoại thành vẫn theo cơ chế draft + Lưu thay đổi). */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 200,
+          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 8,
+          background: '#111827', color: '#fff', fontSize: 13, fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+        }}>
+          ✅ {toast}
         </div>
       )}
     </ConfigProvider>
