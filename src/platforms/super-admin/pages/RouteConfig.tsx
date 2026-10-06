@@ -10,6 +10,7 @@ import {
   urbanConfigs,
   pairKey,
   commitNewRouteConfigVersion,
+  updateActiveVersionLocks,
   getActiveRouteConfigVersion,
   type RegionDef,
   type UrbanConfig,
@@ -131,15 +132,12 @@ export default function RouteConfig() {
     setLockModalOpen(true)
   }
 
-  // Lưu khoá dựa trên bộ ĐANG ÁP DỤNG (activeVersion.regions/routeMatrix/urbanConfigs) — KHÔNG
-  // đụng gì tới matrixDraft/regionsDraft/urbanDraft đang dở ở 3 phần kia, giống đúng cách 3 nút Lưu
-  // khác trên trang này đều độc lập với nhau.
+  // Khoá/mở khoá tuyến chỉ sửa lockedRouteNames/lockedPairKeys TẠI CHỖ trên bộ ĐANG ÁP DỤNG —
+  // KHÔNG sinh bộ vùng tuyến mới (khác 3 nút Lưu kia, vốn đổi regions/routeMatrix/urbanConfigs nên
+  // cần giữ bản cũ trong lịch sử). Xem updateActiveVersionLocks() trong routeConfig.ts.
   const commitLockDraft = () => {
-    const newVersion = commitNewRouteConfigVersion(
-      activeVersion.regions, activeVersion.routeMatrix, activeVersion.urbanConfigs,
-      undefined, Array.from(lockDraftRouteNames), Array.from(lockDraftPairKeys),
-    )
-    setActiveVersion(newVersion)
+    const updated = updateActiveVersionLocks(Array.from(lockDraftRouteNames), Array.from(lockDraftPairKeys))
+    setActiveVersion(updated)
     setLockedRouteNames(new Set(lockDraftRouteNames))
     setLockedPairKeys(new Set(lockDraftPairKeys))
     setLockModalOpen(false)

@@ -4,6 +4,7 @@ import { ConfigProvider } from 'antd'
 import { EditOutlined } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { routeConfigVersions, getActiveRouteConfigVersion, setActiveRouteConfigVersion } from '../../../mock-data/routeConfig'
+import { loadPricing } from '../../../mock-data/pricingStore'
 
 const C_TEXT_PRIMARY   = '#111827'
 const C_TEXT_SECONDARY = '#6B7280'
@@ -24,6 +25,17 @@ export default function RouteConfigList() {
   // sẽ tự đọc lại đúng dữ liệu mới nhất từ store, không cần cơ chế subscribe riêng.
   const [versions] = useState(() => [...routeConfigVersions])
   const [expandedVersionId, setExpandedVersionId] = useState<string | null>(null)
+  // Đếm số bảng giá đang truy vết TỪNG bộ (PriceTable.routeBundleId) — THUẦN HIỂN THỊ, không phải
+  // cảnh báo chặn khoá/xoá (bộ tuyến không có nút xoá, và khoá tuyến không đọc field này) — chỉ
+  // giúp Super Admin biết bộ này từng được dùng để tạo bao nhiêu bảng giá trước khi đổi gì đó.
+  const [pricingCountByBundle] = useState(() => {
+    const counts = new Map<string, number>()
+    for (const pt of loadPricing() as { routeBundleId?: string }[]) {
+      if (!pt.routeBundleId) continue
+      counts.set(pt.routeBundleId, (counts.get(pt.routeBundleId) ?? 0) + 1)
+    }
+    return counts
+  })
   // "Bộ đang áp dụng" KHÔNG còn chắc là bộ cuối mảng — Super Admin có thể bấm "Đặt làm mặc định"
   // cho 1 bộ cũ hơn, nên theo dõi riêng qua state, đổi ngay khi bấm (không cần điều hướng lại trang).
   const [activeVersion, setActiveVersionState] = useState(() => getActiveRouteConfigVersion())
@@ -90,6 +102,7 @@ export default function RouteConfigList() {
                     </span>
                     <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
                       {new Date(v.createdAt).toLocaleString('vi-VN')} · {v.regions.length} vùng miền · {routeNameCount} tuyến · {v.urbanConfigs.length} tỉnh có Nội/Ngoại thành
+                      {(pricingCountByBundle.get(v.id) ?? 0) > 0 && <> · {pricingCountByBundle.get(v.id)} bảng giá đang dùng bộ này</>}
                     </span>
                     <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                       <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Mặc định</span>

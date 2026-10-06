@@ -10,6 +10,7 @@ import {
   CloseOutlined,
 } from '@ant-design/icons'
 import { loadPricing } from '../../../mock-data/pricingStore'
+import { getActiveRouteConfigVersion, routeLockStatusIn } from '../../../mock-data/routeConfig'
 import { agenciesList, shopConnections, addShopRequest, carrierRequests, addCarrierRequest, clientHubs247, type ClientHub247 } from '../../super-admin/agencyStore'
 import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import AgencyServices from './AgencyServices'
@@ -591,6 +592,22 @@ function TabPricingMerged() {
       (pt.name.toLowerCase().includes(search.toLowerCase()) || (pt.description ?? '').toLowerCase().includes(search.toLowerCase()))
   )
 
+  // Trạng thái khoá CẤP BẢNG GIÁ — tổng hợp (lấy mức nặng nhất) từ mọi zone trong bảng, theo bộ
+  // tuyến ĐANG ACTIVE TOÀN HỆ THỐNG hiện tại (giống PricingDetail.tsx) — chỉ cần 1 zone bị khoá là
+  // cả bảng giá hiện badge, để thấy ngay ở danh sách mà không cần mở từng bảng ra xem. THUẦN HIỂN
+  // THỊ — không chặn tạo/sửa/dùng bảng giá này ở đâu cả.
+  const activeBundle = getActiveRouteConfigVersion()
+  const priceTableLockStatus = (pt: { zones?: { routeName?: string }[] }): 'full' | 'partial' | 'none' => {
+    let worst: 'full' | 'partial' | 'none' = 'none'
+    for (const zone of pt.zones ?? []) {
+      if (!zone.routeName) continue
+      const status = routeLockStatusIn(activeBundle, zone.routeName)
+      if (status === 'full') return 'full'
+      if (status === 'partial') worst = 'partial'
+    }
+    return worst
+  }
+
   return (
     <>
       {/* Toolbar */}
@@ -633,6 +650,7 @@ function TabPricingMerged() {
         {filtered.length === 0 ? (
           <div style={{ padding: '24px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy kết quả</div>
         ) : filtered.map((pt: any) => {
+          const lockStatus = priceTableLockStatus(pt)
           return (
             <React.Fragment key={pt.id}>
               <div
@@ -647,6 +665,26 @@ function TabPricingMerged() {
                       style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px', cursor: 'pointer' }}
                     >{pt.name}</span>
                   </div>
+                  {/* Bộ tuyến đã chọn lúc tạo — thuần hiển thị/truy vết (xem PriceTable.routeBundleLabel).
+                      Bảng giá tạo trước khi có field này sẽ không hiện badge. */}
+                  {pt.routeBundleLabel && (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: C_TEXT_SECONDARY, background: C_BG_HEADER, borderRadius: 10, padding: '1px 8px', width: 'fit-content' }}>
+                      Bộ tuyến: {pt.routeBundleLabel}
+                    </span>
+                  )}
+                  {/* Bảng giá có ÍT NHẤT 1 zone dùng tuyến đang bị Super Admin khoá — thuần hiển thị,
+                      không chặn mở/dùng bảng giá này (xem AGA-CARRIER-23). "full" ưu tiên hơn "partial"
+                      nếu bảng có cả 2 loại zone. */}
+                  {lockStatus !== 'none' && (
+                    <span
+                      title={lockStatus === 'full'
+                        ? 'Bảng giá này có ít nhất 1 tuyến đang bị Super Admin khoá CẢ TUYẾN.'
+                        : 'Bảng giá này có ít nhất 1 tuyến đang bị Super Admin khoá 1 vài cặp vùng miền.'}
+                      style={{ fontSize: 11, fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '1px 8px', width: 'fit-content' }}
+                    >
+                      {lockStatus === 'full' ? '🔒 Có tuyến bị khoá' : '🔒 Có tuyến bị khoá 1 phần'}
+                    </span>
+                  )}
                 </div>
                 <div style={{ flex: '1 0 0', minWidth: 110, padding: '6px 8px' }}>
                   <span style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>

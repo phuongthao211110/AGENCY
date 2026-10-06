@@ -46,6 +46,13 @@ export interface PriceTable {
   description?: string
   status: 'active' | 'inactive'
   createdAt: string
+  // Truy vết bộ tuyến (RouteConfigVersion) đã chọn lúc tạo bảng giá này — THUẦN HIỂN THỊ/TRUY VẾT,
+  // KHÔNG dùng để tính phí (fee vẫn match theo zones[].from/to như cũ, xem pricingCalc.ts). Lưu cả
+  // id lẫn label vì routeConfigVersions bất biến sau khi tạo (label không bao giờ đổi) — không cần
+  // tra cứu lại lúc hiển thị nếu không muốn. Bảng giá tạo TRƯỚC khi có field này sẽ không có —
+  // vẫn hoạt động bình thường, chỉ là không truy vết được nguồn gốc bộ tuyến.
+  routeBundleId?: string
+  routeBundleLabel?: string
   zones: PriceZone[]
   weights: PriceWeight[]
   prices: number[][]

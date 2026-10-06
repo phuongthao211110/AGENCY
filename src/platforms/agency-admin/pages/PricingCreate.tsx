@@ -7,6 +7,7 @@ import {
   isSameProvinceRouteNameIn,
   describeSameProvinceRoutePairsIn,
   listRouteNamesIn,
+  routeLockStatusIn,
   type RegionDef,
   type RouteConfigVersion,
 } from '../../../mock-data/routeConfig'
@@ -947,10 +948,30 @@ function RouteBlock({
             onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
             onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
           >
-            {listRouteNamesIn(bundle).map((name) => (
-              <option key={name} value={name}>{name}</option>
-            ))}
+            {listRouteNamesIn(bundle).map((name) => {
+              const lockStatus = routeLockStatusIn(bundle, name)
+              const suffix = lockStatus === 'full' ? ' 🔒 (Đã khoá)' : lockStatus === 'partial' ? ' 🔒 (1 số cặp bị khoá)' : ''
+              return <option key={name} value={name}>{name}{suffix}</option>
+            })}
           </select>
+          {/* Huệ thị khoá cho đúng tuyến ĐANG CHỌN — vì <select> đã đóng chỉ hiện value, không thấy
+              lại được hậu tố "(Đã khoá)" trong option đã chọn, nên cần nhắc lại rõ ngay dưới. Phân
+              biệt 2 cấp: "full" = cả tuyến bị khoá, "partial" = chỉ 1/vài cặp vùng miền BÊN TRONG
+              tuyến này bị khoá (dù tên tuyến không hề bị khoá) — trước đây chỉ xử lý "full" nên
+              khoá-từng-cặp không hiện gì, đây là chỗ bù khoảng trống đó. Thuần hiển thị, KHÔNG chặn
+              chọn/sửa giá tuyến này ở đây. */}
+          {routeLockStatusIn(bundle, route.routeName) !== 'none' && (
+            <span
+              title={
+                routeLockStatusIn(bundle, route.routeName) === 'full'
+                  ? `Tuyến "${route.routeName}" đang bị Super Admin khoá trong Cấu hình vùng & tuyến — vẫn chọn được bình thường, chỉ để bạn biết trước.`
+                  : `1 hoặc vài cặp vùng miền BÊN TRONG tuyến "${route.routeName}" đang bị Super Admin khoá (tên tuyến vẫn mở) — vẫn chọn được bình thường, chỉ để bạn biết trước.`
+              }
+              style={{ fontSize: 11, fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '2px 8px', width: 'fit-content' }}
+            >
+              {routeLockStatusIn(bundle, route.routeName) === 'full' ? '🔒 Tuyến đang bị khoá' : '🔒 1 số cặp trong tuyến này đang bị khoá'}
+            </span>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <Toggle on={route.splitUrbanRural} onToggle={() => updateField('splitUrbanRural', !route.splitUrbanRural)} />
             <span
@@ -1230,8 +1251,18 @@ function ZoneGuideModal({ bundle, onClose }: { bundle: RouteConfigVersion; onClo
                 key={row.name}
                 style={{ display: 'grid', gridTemplateColumns: '170px 1fr', borderTop: `1px solid ${C_BORDER}`, background: rowIdx % 2 === 0 ? '#fff' : C_BG_FORM }}
               >
-                <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, borderRight: `1px solid ${C_BORDER}` }}>
-                  {row.name}
+                <div style={{ padding: '10px 16px', fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY, borderRight: `1px solid ${C_BORDER}`, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span>{row.name}</span>
+                  {routeLockStatusIn(bundle, row.name) !== 'none' && (
+                    <span
+                      title={routeLockStatusIn(bundle, row.name) === 'full'
+                        ? 'Super Admin đang khoá CẢ tuyến này trong Cấu hình vùng & tuyến.'
+                        : 'Super Admin đang khoá 1 vài cặp vùng miền BÊN TRONG tuyến này (tên tuyến vẫn mở).'}
+                      style={{ fontSize: 10, fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '1px 6px', width: 'fit-content' }}
+                    >
+                      {routeLockStatusIn(bundle, row.name) === 'full' ? '🔒 Đã khoá' : '🔒 1 số cặp bị khoá'}
+                    </span>
+                  )}
                 </div>
                 <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {row.pairs.map((p, i) => (
@@ -1402,6 +1433,10 @@ export default function PricingCreate() {
       description: desc.trim() || undefined,
       status: 'active',
       createdAt: new Date().toISOString().slice(0, 10),
+      // Truy vết bộ tuyến đã chọn ở dropdown "Bộ tuyến áp dụng" — thuần hiển thị/truy vết, không
+      // ảnh hưởng cách tính phí (xem comment ở PriceTable.routeBundleId trong pricingStore.ts).
+      routeBundleId: selectedBundle.id,
+      routeBundleLabel: selectedBundle.label,
       zones,
       weights,
       prices,

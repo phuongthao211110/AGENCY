@@ -16,6 +16,8 @@ import {
   listRouteNames,
   findRegionOf,
   resolveRouteName,
+  getActiveRouteConfigVersion,
+  routeLockStatusIn,
   type RegionDef,
 } from '../../../mock-data/routeConfig'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
@@ -46,6 +48,7 @@ type RouteCheckResult = {
   bgColor: string
   fromRegion?: RegionDef
   toRegion?: RegionDef
+  lockStatus: 'full' | 'partial' | 'none'
 } | null
 
 function buildResult(fromProvince: string, toProvince: string): RouteCheckResult {
@@ -57,15 +60,22 @@ function buildResult(fromProvince: string, toProvince: string): RouteCheckResult
   const description = fromProvince === toProvince
     ? `Giao hàng trong cùng tỉnh/thành phố — ${fromProvince}`
     : `Giao hàng giữa ${fromRegion?.name ?? '—'} và ${toRegion?.name ?? '—'}`
-  return { route: routeName, description, color, bgColor: bg, fromRegion, toRegion }
+  const lockStatus = routeLockStatusIn(getActiveRouteConfigVersion(), routeName)
+  return { route: routeName, description, color, bgColor: bg, fromRegion, toRegion, lockStatus }
 }
 
-// Danh sách tuyến kèm cặp miền áp dụng — dựa trên routeMatrix hiện tại (dynamic).
-type GuideRow = { name: string; pairs: string[] }
+// Danh sách tuyến kèm cặp miền áp dụng — dựa trên routeMatrix hiện tại (dynamic). `lockStatus` =
+// Agency Admin xem ĐƯỢC tuyến nào Super Admin đang khoá (trước đây chỉ Super Admin tự thấy trong
+// màn "Chỉnh sửa vùng & tuyến" của mình — đại lý không có cách nào biết) — THUẦN HIỂN THỊ, không
+// chặn gì thêm ở đây (Kiểm tra tuyến vốn đã là công cụ chỉ-xem). "full" = cả tuyến bị khoá, "partial"
+// = chỉ 1/vài cặp vùng miền BÊN TRONG tuyến bị khoá (tên tuyến vẫn mở) — xem routeLockStatusIn.
+type GuideRow = { name: string; pairs: string[]; lockStatus: 'full' | 'partial' | 'none' }
 function buildGuideRows(): GuideRow[] {
+  const activeBundle = getActiveRouteConfigVersion()
   return listRouteNames().map((routeName) => {
+    const lockStatus = routeLockStatusIn(activeBundle, routeName)
     if (isSameProvinceRouteName(routeName)) {
-      return { name: routeName, pairs: describeSameProvinceRoutePairs(routeName) }
+      return { name: routeName, pairs: describeSameProvinceRoutePairs(routeName), lockStatus }
     }
     const pairs: string[] = []
     const seen = new Set<string>()
@@ -77,7 +87,7 @@ function buildGuideRows(): GuideRow[] {
       const regB = regions.find((r) => r.id === idB)
       pairs.push(`${regA?.name ?? idA} ↔ ${regB?.name ?? idB}`)
     }
-    return { name: routeName, pairs }
+    return { name: routeName, pairs, lockStatus }
   })
 }
 
@@ -348,8 +358,20 @@ export default function RouteCheck() {
             <CheckCircleFilled style={{ fontSize: 24, color: result.color, marginTop: 1 }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 2 }}>Kết quả phân loại tuyến</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: result.color, marginBottom: 4 }}>
-                {result.route}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: result.color }}>
+                  {result.route}
+                </span>
+                {result.lockStatus !== 'none' && (
+                  <span
+                    title={result.lockStatus === 'full'
+                      ? 'Super Admin đang khoá CẢ tuyến này trong Cấu hình vùng & tuyến.'
+                      : 'Super Admin đang khoá 1 vài cặp vùng miền BÊN TRONG tuyến này (tên tuyến vẫn mở).'}
+                    style={{ fontSize: 11, fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '2px 8px' }}
+                  >
+                    {result.lockStatus === 'full' ? '🔒 Đang bị khoá' : '🔒 1 số cặp bị khoá'}
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: 13, color: '#374151', marginBottom: 12 }}>{result.description}</div>
 
@@ -544,7 +566,19 @@ export default function RouteCheck() {
                     {i + 1}
                   </span>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: c.color }}>{row.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: c.color }}>{row.name}</span>
+                      {row.lockStatus !== 'none' && (
+                        <span
+                          title={row.lockStatus === 'full'
+                            ? 'Super Admin đang khoá CẢ tuyến này trong Cấu hình vùng & tuyến.'
+                            : 'Super Admin đang khoá 1 vài cặp vùng miền BÊN TRONG tuyến này (tên tuyến vẫn mở).'}
+                          style={{ fontSize: 10, fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '1px 6px' }}
+                        >
+                          {row.lockStatus === 'full' ? '🔒 Đã khoá' : '🔒 1 số cặp bị khoá'}
+                        </span>
+                      )}
+                    </div>
                     {row.pairs.map((p, pi) => (
                       <div key={pi} style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{p}</div>
                     ))}

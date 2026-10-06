@@ -7,7 +7,7 @@ import {
   SwapRightOutlined,
 } from '@ant-design/icons'
 import { loadPricing } from '../../../mock-data/pricingStore'
-import { listRouteNames } from '../../../mock-data/routeConfig'
+import { listRouteNames, getActiveRouteConfigVersion, routeLockStatusIn } from '../../../mock-data/routeConfig'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C_TEXT_PRIMARY   = '#111827'
@@ -140,11 +140,20 @@ export default function PricingDetail() {
               <div style={{ height: 1, background: C_BORDER }} />
               {(() => {
                 const liveRouteNames = listRouteNames()
+                // Huệ thị khoá — THUẦN HIỂN THỊ, không chặn gì thật vì trang này chưa có chỗ nào cho
+                // sửa giá (toàn bộ PricingDetail.tsx là read-only, xem comment đầu file). Đọc từ bộ
+                // tuyến ĐANG ÁP DỤNG (không phải routeBundleId riêng của bảng giá này, nếu có) — "khoá
+                // tuyến X" được hiểu là 1 trạng thái sống của hệ thống hiện tại, không gắn với lịch sử
+                // bộ nào đã tạo ra bảng giá này.
+                const activeBundle = getActiveRouteConfigVersion()
                 return (pt.zones as { from?: string; to?: string; label: string; routeName?: string }[]).map((zone, idx) => {
                   // routeName chỉ có ở zone tạo qua PricingCreate.tsx sau khi nối vào routeConfig.ts
                   // (xem pricingStore.ts) — zone seed cũ (không có field này) luôn coi là còn hợp lệ,
                   // vì chưa từng được gắn với 1 tuyến Super Admin cụ thể nào để mà "mất" được.
                   const routeDeleted = !!zone.routeName && !liveRouteNames.includes(zone.routeName)
+                  // "full" = cả tuyến bị khoá, "partial" = chỉ 1/vài cặp vùng miền BÊN TRONG tuyến
+                  // này bị khoá (tên tuyến vẫn mở) — xem comment routeLockStatusIn trong routeConfig.ts.
+                  const routeLockStatus = zone.routeName ? routeLockStatusIn(activeBundle, zone.routeName) : 'none'
                   return (
                     <div key={idx}>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -158,6 +167,16 @@ export default function PricingDetail() {
                               style={{ fontSize: 11, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '2px 8px' }}
                             >
                               ⚠ Tuyến đã bị xoá
+                            </span>
+                          )}
+                          {routeLockStatus !== 'none' && (
+                            <span
+                              title={routeLockStatus === 'full'
+                                ? `Tuyến "${zone.routeName}" đang bị Super Admin khoá CẢ TUYẾN trong Cấu hình vùng & tuyến.`
+                                : `1 vài cặp vùng miền BÊN TRONG tuyến "${zone.routeName}" đang bị Super Admin khoá (tên tuyến vẫn mở).`}
+                              style={{ fontSize: 11, fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '2px 8px' }}
+                            >
+                              {routeLockStatus === 'full' ? '🔒 Tuyến đang bị khoá' : '🔒 1 số cặp trong tuyến bị khoá'}
                             </span>
                           )}
                         </div>

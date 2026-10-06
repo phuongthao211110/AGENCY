@@ -2301,7 +2301,7 @@
             "Dropdown \"Vùng\" trong phần \"Thu hẹp phạm vi\" cũng lấy danh sách tên miền động từ cấu hình Super Admin."
           ],
           "systemFlow": [
-            "`PricingCreate.tsx` import trực tiếp `regions`, `routeMatrix`, `isSameProvinceRouteName`, `describeSameProvinceRoutePairs`, `listRouteNames`, `urbanConfigs` từ `../../../mock-data/routeConfig.ts` — cùng module store mà Super Admin dùng để cấu hình Vùng & Tuyến (`RouteConfig.tsx`), không có bản sao/hardcode riêng cho Agency Admin.",
+            "`PricingCreate.tsx` đọc dữ liệu tuyến THÔNG QUA 1 `RouteConfigVersion` cụ thể (`selectedBundle`) do dropdown \"Bộ tuyến áp dụng\" xác định (xem AGA-CARRIER-22) — không còn import thẳng state global `regions`, `routeMatrix`, `urbanConfigs` hay 3 hàm gốc `isSameProvinceRouteName`/`describeSameProvinceRoutePairs`/`listRouteNames` vào `PricingCreate.tsx`. Thay vào đó, `RouteBlock` và `ZoneGuideModal` nhận prop `bundle: RouteConfigVersion` và gọi 3 hàm thuần `isSameProvinceRouteNameIn(bundle, x)`, `describeSameProvinceRoutePairsIn(bundle, x)`, `listRouteNamesIn(bundle)` — cùng module `routeConfig.ts` nhưng qua các hàm không phụ thuộc state global.",
             "Dropdown \"Tuyến\" (mỗi `RouteBlock`) render `listRouteNames().map(name => <option>)` — hàm này (trong `routeConfig.ts`) duyệt `Object.values(routeMatrix)`, khử trùng lặp, trả về danh sách tên tuyến DUY NHẤT theo đúng thứ tự khai báo trong `routeMatrix`.",
             "`handleRouteNameChange(newRouteName)`: đổi `route.routeName` VÀ reset đồng thời cả 8 field `fromRegion/fromProvince/fromDistrict/fromWard/toRegion/toProvince/toDistrict/toWard` về rỗng — tránh giữ lại phạm vi thu hẹp của tuyến cũ khi đổi sang tuyến khác.",
             "`showLocationScoping = !isSameProvinceRouteName(route.routeName)` — `isSameProvinceRouteName(name)` kiểm tra `regions.some(r => routeMatrix[pairKey(r.id, r.id)] === name)`, tức tên tuyến có khớp giá trị nằm trên ĐƯỜNG CHÉO của ma trận tuyến (cặp cùng 1 miền) hay không, với BẤT KỲ miền nào — diagonal value nằm ngay trong `routeMatrix` như mọi cặp khác, Super Admin có thể đổi tên độc lập từng miền qua đúng cơ chế chip toggle dùng chung với mọi tuyến khác.",
@@ -2327,9 +2327,10 @@
           "notes": [
             "Story này viết lại từ đầu để khớp code HIỆN TẠI, thay cho nội dung cũ đã LỖI THỜI trong hệ thống Document: bản cũ mô tả cơ chế \"mỗi miền tự đặt 1 tên nội tỉnh riêng\" qua biến `sameProvinceRouteByRegion` — biến này ĐÃ BỊ GỠ BỎ hoàn toàn khỏi `routeConfig.ts` trong lần redesign gần nhất (xem GSA-ROUTE-3). Nay \"Nội Tỉnh\" chỉ là 1 tên GỢI Ý mặc định cho mọi đường chéo `routeMatrix`, Super Admin có thể tách riêng từng miền sang tên khác bất kỳ lúc nào qua đúng cơ chế chip/toggle dùng chung với mọi tuyến khác — không còn UI đặc biệt riêng cho \"Nội Tỉnh\" (xem GSA-ROUTE-3, phần \"Cấu hình tuyến\").",
             "Xem GSA-ROUTE-3 (Cấu hình tuyến, phía Super Admin) để hiểu cơ chế chip toggle gán tuyến cho từng cặp miền — đây là NGUỒN dữ liệu mà story này tiêu thụ (đọc), không mô tả lại cách cấu hình.",
-            "Toàn bộ dữ liệu Vùng & Tuyến lưu ở bộ nhớ trong phiên (module-level state, không backend) — reload toàn trang (F5, tab mới) sẽ về lại dữ liệu seed ban đầu, mọi thay đổi Super Admin đã làm trong phiên trước đó sẽ mất.",
+            "Toàn bộ dữ liệu Vùng & Tuyến (`routeConfigVersions`, `activeVersionId`) nay được persist qua `localStorage` (key `ghn_route_config_v1`) — F5 trang lại vẫn giữ đầy đủ mọi bộ tuyến đã tạo và bộ đang là mặc định. Xem AGA-CARRIER-22 để biết cơ chế persist và tính năng chọn bộ tuyến khi tạo bảng giá.",
             "Khoảng trống tài liệu đã biết (nay đã lấp): `agency-admin.json` đã có sẵn story ID `AGA-CARRIER-19` từ trước (tên cũ \"Dùng chung cấu hình vùng & tuyến\") nhưng CHƯA từng có file `.md` tương ứng và CHƯA xuất hiện trong `docs/agency-admin/README.md` — story này thay thế nội dung cũ, đổi tên theo đúng yêu cầu, và bổ sung file `.md` + dòng README còn thiếu.",
-            "Không nhầm với AGA-CARRIER-16 (\"Tách giá Nội thành/Ngoại thành theo tuyến\" — mô tả toggle `splitUrbanRural` và 2 ô nhập GIÁ `basePriceUrban`/`basePriceRural`): story đó tập trung vào GIÁ theo khu vực, còn story này tập trung vào ĐỊNH NGHĨA tuyến/miền lấy từ đâu."
+            "Không nhầm với AGA-CARRIER-16 (\"Tách giá Nội thành/Ngoại thành theo tuyến\" — mô tả toggle `splitUrbanRural` và 2 ô nhập GIÁ `basePriceUrban`/`basePriceRural`): story đó tập trung vào GIÁ theo khu vực, còn story này tập trung vào ĐỊNH NGHĨA tuyến/miền lấy từ đâu.",
+            "Tính năng chọn BỘ TUYẾN áp dụng khi tạo bảng giá (dropdown \"Bộ tuyến áp dụng\" trong card \"Thông tin cơ bản\") được document tại AGA-CARRIER-22 — đọc story đó để hiểu cách `PricingCreate.tsx` xác định `selectedBundle` và reset \"Danh sách tuyến\" khi đổi bộ."
           ]
         },
         {
@@ -2413,6 +2414,88 @@
             "Giới hạn đã biết (chưa xử lý): phụ phí Giao trả 1 phần/Bảo hiểm/Thu hộ/Giao thất bại vẫn cấu hình theo TỪNG tuyến trong form (đúng theo quyết định trước đó — xem AGA-CARRIER-19 Notes, KHÔNG gộp các phụ phí này về 1 mối như \"Phụ phí đổi địa chỉ\"), nhưng pricing.json chỉ có 1 object surcharges DÙNG CHUNG cho cả bảng — nên khi lưu, chỉ tuyến ĐẦU TIÊN trong danh sách được giữ đúng cấu hình phụ phí; các tuyến còn lại bị bỏ qua phần này. Cần mở rộng schema (surcharges theo từng zone) nếu muốn lưu đúng và đủ.",
             "Phạm vi đã cố ý KHÔNG đổi: các trang chỉ đọc pricing.json để hiển thị tên bảng giá (không tạo/sửa) — ShopCreate.tsx, AgencyOrders.tsx, ServiceDetail.tsx, ShopDetail.tsx, src/platforms/shop/pages/Pricing.tsx — CHƯA đổi sang pricingStore.ts, vẫn đọc dữ liệu seed tĩnh. Không ảnh hưởng tính đúng đắn của story này (các trang đó không liên quan tới việc tạo bảng giá mới), nhưng nếu muốn toàn hệ thống nhất quán 100% thì cần đổi nốt các trang này ở 1 story riêng.",
             "pricingStore.ts dùng đúng pattern seed + backfill + localStorage như orderStore.ts/shopStore.ts — dữ liệu KHÔNG có backend thật, reload trình duyệt khác/xoá localStorage sẽ mất bảng giá đã tạo, chỉ còn lại 7 bảng giá seed gốc trong pricing.json."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-22",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Chọn bộ tuyến áp dụng",
+          "status": "draft",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn chọn bộ tuyến nào sẽ áp dụng cho bảng giá đang tạo (thay vì luôn dùng bộ tuyến mặc định global), để có thể tạo bảng giá theo đúng cấu hình tuyến mà Super Admin đã thiết kế cho kịch bản giá cụ thể đó.",
+          "userFlow": [
+            "Vào \"Thiết lập NVC\" → tab Bảng giá → \"Thêm bảng giá\".",
+            "Trong card \"Thông tin cơ bản\", ngay bên dưới ô \"Mô tả\", có dropdown \"Bộ tuyến áp dụng\" liệt kê tất cả bộ tuyến Super Admin đã tạo; bộ đang là mặc định hệ thống có hậu tố \" (Mặc định)\" trong tên.",
+            "Dropdown mặc định chọn sẵn BỘ TUYẾN ĐANG LÀ MẶC ĐỊNH HỆ THỐNG (bộ Super Admin đặt \"Đặt làm mặc định\") — không phải bộ gần nhất tạo nếu bộ đó khác bộ mặc định.",
+            "Có dòng chú thích nhỏ ngay dưới dropdown: \"Danh sách tuyến bên dưới lấy theo bộ này. Chỉ áp dụng cho bảng giá đang tạo — đổi bộ sau khi lưu không ảnh hưởng bảng giá đã có.\"",
+            "Đổi dropdown sang bộ khác → toàn bộ \"Danh sách tuyến\" bên dưới reset và populate lại theo danh sách tuyến của bộ vừa chọn (tên tuyến mỗi dòng đổi theo bộ mới, dữ liệu giá đã nhập bị xoá trắng).",
+            "Modal \"Bảng mô tả tuyến dịch vụ\" (nút \"Định nghĩa tuyến\" đầu khối và icon (i) cạnh toggle \"Tách Nội thành/Ngoại thành\") cũng phản ánh đúng bộ tuyến đang chọn ở dropdown.",
+            "Bấm \"Tạo bảng giá\" → bảng giá được lưu với `routeName` mỗi zone chốt cứng dạng chuỗi theo bộ tuyến đã chọn tại thời điểm lưu; bảng giá đã tồn tại trước đó KHÔNG bị đổi theo."
+          ],
+          "systemFlow": [
+            "`PricingCreate.tsx` thêm state `selectedBundleId` khởi tạo bằng `getActiveRouteConfigVersion().id` (bộ Super Admin đang đặt làm mặc định); derive `selectedBundle = routeConfigVersions.find(v => v.id === selectedBundleId) ?? getActiveRouteConfigVersion()`.",
+            "Dropdown \"Bộ tuyến áp dụng\" render `routeConfigVersions` (mới nhất lên đầu); item có `id === getActiveRouteConfigVersion().id` thêm hậu tố \" (Mặc định)\" vào label.",
+            "`handleBundleChange(versionId)`: đổi `selectedBundleId` VÀ reset `routes` thành `listRouteNamesIn(newBundle).map((name, i) => makeEmptyRoute(name, String(i + 1)))` — tên tuyến 2 bộ có thể khác nhau, giữ nguyên route cũ sẽ bị \"mồ côi\" (giá trị không khớp option nào trong `<select>` của bộ mới).",
+            "`RouteBlock` và `ZoneGuideModal` nhận thêm prop `bundle: RouteConfigVersion` — mọi chỗ đọc state global (`routeRegions`, `routeMatrix`, `urbanConfigs`, hàm gốc `isSameProvinceRouteName`/`describeSameProvinceRoutePairs`/`listRouteNames`) đổi thành đọc từ `bundle` qua 3 hàm thuần mới: `isSameProvinceRouteNameIn(bundle, x)`, `describeSameProvinceRoutePairsIn(bundle, x)`, `listRouteNamesIn(bundle)`.",
+            "`routeConfig.ts` bổ sung 3 hàm thuần nhận `RouteConfigVersion` làm tham số — `isSameProvinceRouteNameIn`, `describeSameProvinceRoutePairsIn`, `listRouteNamesIn` — không đụng 3 hàm gốc tương ứng (vẫn đọc global state, dùng cho Web Shop và RouteCheck).",
+            "`routeConfigVersions` và `activeVersionId` nay persist qua `localStorage` (key `ghn_route_config_v1`): lưu lúc `commitNewRouteConfigVersion()` / `setActiveRouteConfigVersion()`, khôi phục 1 lần lúc module khởi tạo (IIFE ngay sau khai báo `activeVersionId`) — F5 trang lại vẫn đầy đủ bộ tuyến đã tạo.",
+            "`handleSubmit()` tiếp tục lưu `routeName` mỗi zone dạng chuỗi (theo bộ đã chọn, không lưu thêm id bộ tuyến) — schema `PriceTable`/`PriceZone` không thay đổi; bảng giá cũ không bị tác động."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Card \"Thông tin cơ bản\" trong form Tạo bảng giá có dropdown \"Bộ tuyến áp dụng\" liệt kê đủ tất cả bộ tuyến Super Admin đã tạo; bộ đang là mặc định hệ thống có thêm hậu tố \" (Mặc định)\".",
+            "AC2: Dropdown mặc định chọn sẵn bộ tuyến là MẶC ĐỊNH HỆ THỐNG (bộ Super Admin đặt \"Đặt làm mặc định\") — không phải bộ mới nhất tạo gần đây nếu bộ đó không phải bộ mặc định.",
+            "AC3: Đổi dropdown sang bộ khác → toàn bộ \"Danh sách tuyến\" RESET và populate lại theo danh sách tuyến của bộ vừa chọn; dữ liệu giá đã nhập ở các dòng cũ bị xoá trắng.",
+            "AC4: Modal \"Bảng mô tả tuyến dịch vụ\" (nút \"Định nghĩa tuyến\" và icon (i) cạnh toggle) phản ánh đúng bộ tuyến đang chọn ở dropdown — tên vùng/miền và cấu hình tuyến khớp đúng bộ đó, không phải bộ global.",
+            "AC5: Bảng giá đã lưu trước khi có tính năng này (và bảng giá mới lưu với bộ A) KHÔNG bị ảnh hưởng nếu sau đó người dùng chọn bộ B — `routeName` trong mỗi zone đã chốt cứng dạng chuỗi tại thời điểm lưu.",
+            "AC6: Sau khi Super Admin tạo bộ tuyến mới rồi F5 lại trang → bộ mới vẫn xuất hiện trong dropdown (persist localStorage hoạt động) — không bị mất như trước khi có persist.",
+            "AC7: Khi Super Admin chưa từng tạo thêm bộ tuyến nào (chỉ có 1 bộ mặc định duy nhất) → dropdown hiện đúng 1 bộ đó có hậu tố \" (Mặc định)\", không ẩn dropdown hay báo lỗi."
+          ],
+          "notes": [
+            "Phạm vi thay đổi CHỈ ảnh hưởng bảng giá MỚI TẠO — bảng giá đã lưu trước đó (cả seed gốc lẫn bảng tạo qua AGA-CARRIER-21) KHÔNG đổi theo vì `routeName` đã chốt cứng dạng chuỗi.",
+            "Xem AGA-CARRIER-19 để hiểu dropdown \"Tuyến\" (mỗi dòng trong \"Danh sách tuyến\") lấy danh sách tên tuyến từ đâu — story này bổ sung cấp độ chọn BỘ TUYẾN, không thay thế cơ chế dropdown tuyến từng dòng đó.",
+            "3 hàm gốc `isSameProvinceRouteName()`, `describeSameProvinceRoutePairs()`, `listRouteNames()` (đọc state global) KHÔNG bị thay đổi — Web Shop (`CreateOrderDrawer`, `CreateLetterDrawer`) và RouteCheck.tsx vẫn dùng hàm gốc, đọc đúng bộ tuyến global đang active."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-23",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Agency Admin xem được tuyến/cặp vùng miền đang bị Super Admin khoá",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn thấy được tuyến nào (hoặc cặp vùng miền nào trong tuyến) đang bị Super Admin khoá ngay tại những nơi tôi đang thao tác — khi tạo bảng giá, khi xem chi tiết bảng giá, và khi kiểm tra tuyến — để tôi chủ động nắm được cấu hình nào đang bị hạn chế mà không cần hỏi Super Admin.",
+          "userFlow": [
+            "Tạo bảng giá — Vào \"Thiết lập NVC\" → tab Bảng giá → \"Thêm bảng giá\". Trong phần \"Danh sách tuyến\", mỗi dropdown \"Tuyến\" hiển thị hậu tố trạng thái khoá: \"(Đã khoá)\" cho tuyến bị khoá toàn bộ, \"(1 số cặp bị khoá)\" cho tuyến bị khoá 1 phần.",
+            "Sau khi chọn 1 tuyến bị khoá và đóng dropdown, 1 badge vàng hiện ngay dưới dropdown để nhắc trạng thái khoá của tuyến đang chọn.",
+            "Mở modal \"Bảng mô tả tuyến dịch vụ\" (nút \"Định nghĩa tuyến\" hoặc icon (i) cạnh toggle Nội/Ngoại thành) → bảng mô tả tuyến trong modal cũng hiển thị badge khoá cạnh mỗi tên tuyến.",
+            "Xem chi tiết bảng giá đã tạo — Vào chi tiết 1 bảng giá; trong card \"Tuyến vận chuyển\", mỗi zone có tên tuyến kèm badge khoá nếu tuyến đó đang bị khoá theo bộ tuyến active hiện tại.",
+            "Kiểm tra tuyến — Vào công cụ \"Kiểm tra tuyến\" (mục Công cụ trong sidebar); badge khoá hiện trong cả khung kết quả phân loại (sau khi nhập địa chỉ và bấm \"Kiểm tra tuyến\") và bảng tổng quan \"N Tuyến hiện tại\" (luôn hiển thị sẵn).",
+            "Tất cả badge là thông tin tham khảo — Agency Admin vẫn có thể chọn và dùng tuyến đang bị khoá bình thường, không bị chặn."
+          ],
+          "systemFlow": [
+            "`routeConfig.ts` thêm hàm thuần `routeLockStatusIn(version: RouteConfigVersion, routeName: string): 'full' | 'partial' | 'none'`: trả về `'full'` nếu `routeName` nằm trong `lockedRouteNames[]` hoặc 100% cặp miền của tuyến đó nằm trong `lockedPairKeys[]`; trả về `'partial'` nếu ít nhất 1 nhưng chưa đủ 100% cặp bị khoá; trả về `'none'` nếu không bị khoá theo bất kỳ cơ chế nào.",
+            "`PricingCreate.tsx` gọi `routeLockStatusIn(selectedBundle, routeName)` trong render mỗi `<option>` dropdown \"Tuyến\" (thêm hậu tố text) và badge bên dưới dropdown; `selectedBundle` là bộ đang chọn ở \"Bộ tuyến áp dụng\" (AGA-CARRIER-22), không phải bộ global.",
+            "`ZoneGuideModal` nhận `bundle` prop từ `PricingCreate.tsx`; gọi `routeLockStatusIn(bundle, name)` cho mỗi hàng trong bảng mô tả tuyến — đồng nhất với dropdown.",
+            "`PricingDetail.tsx` gọi `routeLockStatusIn(getActiveRouteConfigVersion(), zone.routeName)` cho mỗi zone trong card \"Tuyến vận chuyển\"; đọc bộ ĐANG ACTIVE TOÀN HỆ THỐNG.",
+            "`RouteCheck.tsx` gọi `routeLockStatusIn(getActiveRouteConfigVersion(), routeName)` cho 2 vị trí: tên tuyến trong khung kết quả phân loại và mỗi hàng tuyến trong bảng tổng quan.",
+            "Không có logic nào chặn hoặc disable thao tác — hàm chỉ được gọi để render badge, không gắn vào điều kiện cho phép/từ chối hành động nào."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Ở trang \"Tạo bảng giá\", dropdown \"Tuyến\" mỗi dòng trong \"Danh sách tuyến\" hiển thị hậu tố: tuyến khoá toàn bộ → \" 🔒 (Đã khoá)\"; tuyến khoá 1 phần → \" 🔒 (1 số cặp bị khoá)\"; tuyến không bị khoá → không hậu tố.",
+            "AC2: Sau khi chọn 1 tuyến bị khoá rồi đóng dropdown, badge hiện ngay bên dưới: khoá full → \"🔒 Tuyến đang bị khoá\"; khoá partial → \"🔒 1 số cặp trong tuyến này đang bị khoá\"; không bị khoá → không hiển thị badge.",
+            "AC3: Modal \"Bảng mô tả tuyến dịch vụ\" (mở qua nút \"Định nghĩa tuyến\" hoặc icon (i) cạnh toggle) hiển thị badge khoá cùng quy tắc AC1 cạnh mỗi tên tuyến trong bảng mô tả.",
+            "AC4: Badge khoá ở PricingCreate (AC1–AC3) đọc theo bộ tuyến ĐANG CHỌN ở dropdown \"Bộ tuyến áp dụng\" (AGA-CARRIER-22). Đổi sang bộ khác → badge và hậu tố cập nhật theo trạng thái khoá của bộ vừa chọn.",
+            "AC5: Ở trang xem chi tiết bảng giá (PricingDetail), trong card \"Tuyến vận chuyển\", mỗi zone hiển thị badge khoá (cùng quy tắc full/partial ở AC1) cạnh tên tuyến; đọc theo bộ tuyến ĐANG ACTIVE TOÀN HỆ THỐNG.",
+            "AC6: Ở công cụ \"Kiểm tra tuyến\" (RouteCheck), badge khoá hiển thị đúng ở 2 vị trí: khung kết quả phân loại (cạnh tên tuyến trả về) và bảng tổng quan \"N Tuyến hiện tại\" (cạnh mỗi tên tuyến trong danh sách).",
+            "AC7: Khoá RIÊNG từng cặp vùng miền trong 1 tuyến (không bấm khoá tên tuyến) → badge hiện \"partial\"; khi đủ 100% cặp của tuyến bị khoá theo cách này → badge tự động nâng lên \"full\".",
+            "AC8: Toàn bộ badge là thông tin tham khảo — không chặn Agency Admin chọn tuyến bị khoá, không chặn tạo bảng giá, không chặn sử dụng RouteCheck với tuyến bị khoá."
+          ],
+          "notes": [
+            "Hàm `routeLockStatusIn()` xử lý cả 2 cấp khoá độc lập: `lockedRouteNames[]` (khoá cả tên tuyến) và `lockedPairKeys[]` (khoá riêng từng cặp miền). Trước khi có hàm này, code chỉ kiểm tra `lockedRouteNames` nên khoá cặp riêng lẻ không được phản chiếu — đây là gap thật được phát hiện qua UAT.",
+            "Quy tắc \"100% cặp bị khoá riêng lẻ = coi như full\" được thiết kế để không đánh giá thấp mức độ ảnh hưởng: nếu mọi cặp đều bị khoá thì về bản chất tuyến không còn cặp nào tự do.",
+            "`PricingDetail.tsx` là trang read-only (không có chức năng sửa giá — xem AGA-CARRIER-19) nên badge khoá ở đây thuần tham khảo.",
+            "Khoá tuyến không ảnh hưởng đơn hàng đã tạo, không ảnh hưởng tính phí — chỉ là rào chắn edit-time cho Super Admin (xem AGA-CARRIER-19). Badge phản chiếu thông tin này cho Agency Admin.",
+            "Xem AGA-CARRIER-22 để hiểu cơ chế \"Bộ tuyến áp dụng\" — story này đọc trạng thái khoá theo ĐÚNG BỘ đang chọn ở PricingCreate, không đọc bộ global.",
+            "Web Shop không có bất kỳ hiển thị nào về tuyến bị khoá — nằm ngoài phạm vi story này."
           ]
         }
       ]

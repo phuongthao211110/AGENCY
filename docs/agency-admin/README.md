@@ -127,3 +127,5 @@
 | [AGENCY] Thiết lập NVC - Tạo bảng giá: Định nghĩa tuyến theo cấu hình Super Admin | [tao-bang-gia-dinh-nghia-tuyen-theo-sa.md](./carrier-setup/tao-bang-gia-dinh-nghia-tuyen-theo-sa.md) | — | [Draft] |
 | [AGENCY] Thiết lập NVC - Tạo bảng giá: Thêm tuyến theo cấu hình Super Admin | [tao-bang-gia-them-tuyen-theo-sa.md](./carrier-setup/tao-bang-gia-them-tuyen-theo-sa.md) | — | [Draft] |
 | [AGENCY] Thiết lập NVC - Tạo bảng giá: Lưu bảng giá thật, đồng bộ tuyến với Super Admin & Web Shop | [tao-bang-gia-luu-that-dong-bo-tuyen.md](./carrier-setup/tao-bang-gia-luu-that-dong-bo-tuyen.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Tạo bảng giá: Chọn bộ tuyến áp dụng | [chon-bo-tuyen-ap-dung-tao-bang-gia.md](./carrier-setup/chon-bo-tuyen-ap-dung-tao-bang-gia.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Agency Admin xem được tuyến/cặp vùng miền đang bị Super Admin khoá | [xem-tuyen-cap-vung-mien-bi-khoa.md](./carrier-setup/xem-tuyen-cap-vung-mien-bi-khoa.md) | — | [Draft] |

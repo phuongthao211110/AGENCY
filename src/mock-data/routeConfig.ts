@@ -179,6 +179,25 @@ export function listRouteNamesIn(version: RouteConfigVersion): string[] {
   return result
 }
 
+// Khoá có 2 cấp ĐỘC LẬP (xem comment RouteConfigVersion.lockedRouteNames/lockedPairKeys): khoá CẢ
+// tuyến (routeName nằm trong lockedRouteNames) vs khoá RIÊNG 1 cặp vùng miền bên trong tuyến đó
+// (pairKey nằm trong lockedPairKeys, dù tên tuyến không hề bị khoá). Nơi hiển thị cho Agency Admin
+// (PricingCreate/PricingDetail/RouteCheck) cần phân biệt rõ 2 trường hợp — trước đây chỉ kiểm tra
+// lockedRouteNames nên khoá-từng-cặp không hiện gì cả, đây là hàm bù cho khoảng trống đó.
+export function routeLockStatusIn(version: RouteConfigVersion, routeName: string): 'full' | 'partial' | 'none' {
+  if ((version.lockedRouteNames ?? []).includes(routeName)) return 'full'
+  const lockedPairKeys = new Set(version.lockedPairKeys ?? [])
+  const pairKeysOfRoute = Object.entries(version.routeMatrix).filter(([, name]) => name === routeName).map(([key]) => key)
+  if (pairKeysOfRoute.length === 0) return 'none'
+  const lockedCount = pairKeysOfRoute.filter((key) => lockedPairKeys.has(key)).length
+  if (lockedCount === 0) return 'none'
+  // Khoá đủ MỌI cặp đang thuộc tuyến này (dù chưa ai bấm khoá CẢ tuyến qua lockedRouteNames) — về
+  // bản chất tuyến đó không còn cặp nào dùng được nữa, coi tương đương "full" để Agency Admin thấy
+  // đúng mức độ nghiêm trọng, không bị hiểu nhầm là "chỉ ảnh hưởng 1 phần, vẫn còn dùng được".
+  if (lockedCount === pairKeysOfRoute.length) return 'full'
+  return 'partial'
+}
+
 // ─── Versioning — "Danh sách bộ vùng tuyến" ────────────────────────────────────
 // 1 "bộ vùng tuyến" = Vùng miền + Tuyến + Nội/Ngoại thành GỘP CHUNG thành 1 khối BẤT BIẾN: mỗi
 // lần Super Admin bấm "Lưu thay đổi" ở RouteConfig.tsx (dù sửa ở phần nào trong 3 phần trên),
@@ -322,6 +341,25 @@ export function setActiveRouteConfigVersion(versionId: string): RouteConfigVersi
 
 export function getActiveRouteConfigVersion(): RouteConfigVersion {
   return routeConfigVersions.find((v) => v.id === activeVersionId) ?? routeConfigVersions[routeConfigVersions.length - 1]
+}
+
+/** Cập nhật 2 cấp khoá (lockedRouteNames/lockedPairKeys) của bộ ĐANG ÁP DỤNG TẠI CHỖ — KHÁC
+ * commitNewRouteConfigVersion() (dùng khi sửa Vùng miền/Tuyến/Nội-Ngoại thành, vì những thay đổi
+ * đó ảnh hưởng cách tính zone/phí nên cần giữ lại bản cũ trong lịch sử). Khoá/mở khoá tuyến không
+ * đổi bất kỳ cấu hình zone/phí nào — chỉ là rào chắn edit-time cho Super Admin — nên không sinh
+ * thêm 1 bộ mới trong routeConfigVersions mỗi lần khoá, tránh lịch sử phình to vô nghĩa và tránh
+ * lệch "bộ đã dùng lúc tạo bảng giá" (routeBundleId) khỏi trạng thái khoá thật đang áp dụng. */
+export function updateActiveVersionLocks(lockedRouteNames: string[], lockedPairKeys: string[]): RouteConfigVersion {
+  const current = getActiveRouteConfigVersion()
+  const updated: RouteConfigVersion = {
+    ...current,
+    lockedRouteNames: [...lockedRouteNames],
+    lockedPairKeys: [...lockedPairKeys],
+  }
+  const idx = routeConfigVersions.findIndex((v) => v.id === current.id)
+  if (idx !== -1) routeConfigVersions[idx] = updated
+  persistRouteConfig()
+  return updated
 }
 
 // ─── Query functions ──────────────────────────────────────────────────────────
