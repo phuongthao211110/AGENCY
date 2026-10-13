@@ -1,9 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
-import { EditOutlined, SearchOutlined } from '@ant-design/icons'
+import { CopyOutlined, SearchOutlined } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
-import { routeConfigVersions, getActiveRouteConfigVersion, setActiveRouteConfigVersion } from '../../../mock-data/routeConfig'
+import {
+  routeConfigVersions,
+  getActiveRouteConfigVersion,
+  setActiveRouteConfigVersion,
+  duplicateRouteConfigVersion,
+  deleteDraftVersion,
+  type RouteConfigVersion,
+} from '../../../mock-data/routeConfig'
 import { loadPricing } from '../../../mock-data/pricingStore'
 import { Pagination } from '../components/ApprovalWidgets'
 
@@ -13,6 +20,10 @@ const C_LINK           = '#3B82F6'
 const C_ACTION         = '#FF5200'
 const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
+const C_PUB            = '#12784A'
+const C_PUB_BG         = '#DCF3E7'
+const C_DRAFT          = '#8A6100'
+const C_DRAFT_BG       = '#FDF3D9'
 
 function cell(children: React.ReactNode, flex = '1 0 0', minWidth = 160, align: 'left' | 'right' | 'center' = 'left') {
   return (
@@ -22,22 +33,31 @@ function cell(children: React.ReactNode, flex = '1 0 0', minWidth = 160, align: 
   )
 }
 
-// ── "Vùng & Tuyến" — trang riêng, tách khỏi trang chỉnh sửa (RouteConfig.tsx). Chỉ đọc
-// `routeConfigVersions` (lịch sử BẤT BIẾN mọi bộ đã tạo qua commitNewRouteConfigVersion) — không
-// sửa được gì ở đây, kể cả bộ "Đang áp dụng" (chỉ bật/tắt mặc định qua toggle). Muốn sửa nội dung
-// (rồi tự sinh bộ mới khi lưu) → bấm nút sang trang /super-admin/route-config/edit. ─────────────
+function StatusBadge({ status }: { status: RouteConfigVersion['status'] }) {
+  const pub = status === 'published'
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10, flexShrink: 0,
+      color: pub ? C_PUB : C_DRAFT, background: pub ? C_PUB_BG : C_DRAFT_BG,
+    }}>
+      {pub ? 'Đã phát hành' : 'Nháp'}
+    </span>
+  )
+}
+
+// ── "Vùng & Tuyến" — trang riêng, tách khỏi trang chỉnh sửa (RouteConfig.tsx). Mỗi bộ có 2 trạng
+// thái: Nháp (sửa thoải mái, chưa chọn được ở bảng giá) / Đã phát hành (khoá cứng Vùng miền/Tuyến,
+// chọn được ở bảng giá) — KHÔNG có trạng thái "Đã huỷ". Cách DUY NHẤT tạo bộ mới là "Nhân bản" từ
+// 1 bộ có sẵn — không có "tạo bộ trống từ đầu". ─────────────────────────────────────────────────
 export default function RouteConfigList() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
-  // Seed 1 lần lúc mount — mỗi lần điều hướng tới trang này (route đổi → component remount)
-  // sẽ tự đọc lại đúng dữ liệu mới nhất từ store, không cần cơ chế subscribe riêng.
-  const [versions] = useState(() => [...routeConfigVersions].reverse())
+  // Khác bản trước (seed 1 lần, không đổi) — giờ cần setter vì Nhân bản/Xoá thay đổi danh sách
+  // ngay tại trang này, không điều hướng đi đâu cả.
+  const [versions, setVersions] = useState(() => [...routeConfigVersions].reverse())
   const [expandedVersionId, setExpandedVersionId] = useState<string | null>(null)
-  // Đếm số bảng giá đang truy vết TỪNG bộ (PriceTable.routeBundleId) — THUẦN HIỂN THỊ, không phải
-  // cảnh báo chặn khoá/xoá (bộ tuyến không có nút xoá, và khoá tuyến không đọc field này) — chỉ
-  // giúp Super Admin biết bộ này từng được dùng để tạo bao nhiêu bảng giá trước khi đổi gì đó.
   const [pricingCountByBundle] = useState(() => {
     const counts = new Map<string, number>()
     for (const pt of loadPricing() as { routeBundleId?: string }[]) {
@@ -46,17 +66,33 @@ export default function RouteConfigList() {
     }
     return counts
   })
-  // "Bộ đang áp dụng" KHÔNG còn chắc là bộ cuối mảng — Super Admin có thể bấm bật mặc định cho 1
-  // bộ cũ hơn, nên theo dõi riêng qua state, đổi ngay khi bấm (không cần điều hướng lại trang).
   const [activeVersion, setActiveVersionState] = useState(() => getActiveRouteConfigVersion())
 
-  const handleSetDefault = (versionId: string, label: string) => {
+  const handleSetDefault = (version: RouteConfigVersion) => {
+    if (version.status !== 'published') return // Nháp không bao giờ áp dụng được — double-guard, UI đã disable
     const ok = window.confirm(
-      `Đặt "${label}" làm bộ vùng tuyến MẶC ĐỊNH? Toàn bộ ứng dụng (bảng giá, tạo đơn, kiểm tra tuyến...) sẽ dùng ngay dữ liệu của bộ này thay cho bộ đang áp dụng hiện tại.`
+      `Áp dụng "${version.label}" cho TOÀN HỆ THỐNG? Toàn bộ ứng dụng (bảng giá, tạo đơn, kiểm tra tuyến...) sẽ dùng ngay dữ liệu của bộ này thay cho bộ đang áp dụng hiện tại.`
     )
     if (!ok) return
-    const applied = setActiveRouteConfigVersion(versionId)
+    const applied = setActiveRouteConfigVersion(version.id)
     if (applied) setActiveVersionState(applied)
+  }
+
+  const handleDuplicate = (source: RouteConfigVersion) => {
+    const label = window.prompt('Tên bộ nháp mới:', `${source.label} (bản sao)`)
+    if (label === null) return // bấm Huỷ ở prompt
+    const created = duplicateRouteConfigVersion(source.id, label)
+    if (!created) return
+    setVersions((prev) => [created, ...prev])
+    navigate(`/super-admin/route-config/edit/${created.id}`)
+  }
+
+  const handleDelete = (version: RouteConfigVersion) => {
+    const ok = window.confirm(`Xoá hẳn bộ Nháp "${version.label}"? Không thể khôi phục lại.`)
+    if (!ok) return
+    const deleted = deleteDraftVersion(version.id)
+    if (!deleted) return
+    setVersions((prev) => prev.filter((v) => v.id !== version.id))
   }
 
   const filtered = versions.filter((v) => v.label.toLowerCase().includes(search.trim().toLowerCase()))
@@ -77,14 +113,15 @@ export default function RouteConfigList() {
             </p>
           </div>
           <button
-            onClick={() => navigate('/super-admin/route-config/edit')}
+            onClick={() => handleDuplicate(activeVersion)}
+            title="Tạo 1 bộ Nháp mới bằng cách sao chép toàn bộ nội dung bộ đang áp dụng — cách duy nhất để tạo bộ mới"
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', flexShrink: 0,
               background: C_ACTION, border: 'none', borderRadius: 6,
               cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff',
             }}
           >
-            <EditOutlined style={{ fontSize: 12 }} /> Chỉnh sửa vùng &amp; tuyến
+            <CopyOutlined style={{ fontSize: 12 }} /> Nhân bản bộ đang áp dụng
           </button>
         </div>
 
@@ -107,18 +144,20 @@ export default function RouteConfigList() {
         {/* Table */}
         <div style={{ flex: '1 0 0', overflow: 'hidden', padding: '0 16px' }}>
           <div style={{ height: '100%', overflowY: 'auto', overflowX: 'auto' }}>
-            <div style={{ minWidth: 960 }}>
+            <div style={{ minWidth: 1120 }}>
               {/* Header */}
               <div style={{ display: 'flex', background: C_BG_HEADER, alignItems: 'center' }}>
-                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Tên</span>, '0 0 220px', 220)}
-                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Vùng miền</span>, '1 0 0', 260)}
-                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Tuyến</span>, '1 0 0', 260)}
-                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Hiển thị mặc định</span>, '0 0 150px', 150, 'center')}
+                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Tên</span>, '0 0 240px', 240)}
+                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Vùng miền</span>, '1 0 0', 220)}
+                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Tuyến</span>, '1 0 0', 220)}
+                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Hiển thị mặc định</span>, '0 0 140px', 140, 'center')}
+                {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>Thao tác</span>, '0 0 220px', 220, 'right')}
               </div>
               <div style={{ height: 1, background: C_BORDER }} />
 
               {paginated.map((v) => {
                 const isActive = v.id === activeVersion.id
+                const isPublished = v.status === 'published'
                 const isExpanded = expandedVersionId === v.id
                 const regionNames = v.regions.map((r) => r.name || '(chưa đặt tên)')
                 const routeNames  = Array.from(new Set(Object.values(v.routeMatrix)))
@@ -133,39 +172,70 @@ export default function RouteConfigList() {
                       {cell(
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                           <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, lineHeight: '20px' }}>{v.label}</span>
-                          <span style={{ fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>
-                            {isActive ? 'Đang áp dụng' : 'Lịch sử'}
-                            {(pricingCountByBundle.get(v.id) ?? 0) > 0 && <> · {pricingCountByBundle.get(v.id)} bảng giá</>}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C_TEXT_SECONDARY, lineHeight: '16px' }}>
+                            <StatusBadge status={v.status} />
+                            {isActive && <span style={{ color: '#FF5200', fontWeight: 600 }}>Đang áp dụng</span>}
+                            {(pricingCountByBundle.get(v.id) ?? 0) > 0 && <>· {pricingCountByBundle.get(v.id)} bảng giá</>}
                           </span>
                         </div>,
-                        '0 0 220px', 220
+                        '0 0 240px', 240
                       )}
                       {cell(
                         <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {regionNames.join(', ')}
                         </span>,
-                        '1 0 0', 260
+                        '1 0 0', 220
                       )}
                       {cell(
                         <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {routeNames.join(', ')}
                         </span>,
-                        '1 0 0', 260
+                        '1 0 0', 220
                       )}
                       {cell(
                         <div
-                          onClick={(e) => { e.stopPropagation(); if (!isActive) handleSetDefault(v.id, v.label) }}
-                          title={isActive ? 'Bộ đang áp dụng — không thể tự tắt, muốn đổi thì bật mặc định cho 1 bộ khác' : 'Bật để đặt bộ này làm mặc định'}
+                          onClick={(e) => { e.stopPropagation(); if (!isActive && isPublished) handleSetDefault(v) }}
+                          title={
+                            isActive ? 'Bộ đang áp dụng — không thể tự tắt, muốn đổi thì bật mặc định cho 1 bộ khác'
+                              : !isPublished ? 'Bộ Nháp chưa phát hành — không áp dụng được'
+                              : 'Bật để áp dụng bộ này cho toàn hệ thống'
+                          }
                           style={{
                             width: 36, height: 20, borderRadius: 10, flexShrink: 0,
-                            cursor: isActive ? 'not-allowed' : 'pointer',
+                            cursor: isActive || !isPublished ? 'not-allowed' : 'pointer',
                             background: isActive ? '#16A34A' : '#D1D5DB',
+                            opacity: !isPublished && !isActive ? 0.4 : 1,
                             position: 'relative', transition: 'background 0.2s',
                           }}
                         >
                           <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, transition: 'left 0.2s', left: isActive ? 18 : 2, boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }} />
                         </div>,
-                        '0 0 150px', 150, 'center'
+                        '0 0 140px', 140, 'center'
+                      )}
+                      {cell(
+                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => navigate(`/super-admin/route-config/edit/${v.id}`)}
+                            style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', fontSize: 12, fontWeight: 600, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => handleDuplicate(v)}
+                            style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', fontSize: 12, fontWeight: 600, color: C_TEXT_PRIMARY, cursor: 'pointer' }}
+                          >
+                            Nhân bản
+                          </button>
+                          {!isPublished && (
+                            <button
+                              onClick={() => handleDelete(v)}
+                              style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #FCA5A5', background: '#fff', fontSize: 12, fontWeight: 600, color: '#DC2626', cursor: 'pointer' }}
+                            >
+                              Xoá
+                            </button>
+                          )}
+                        </div>,
+                        '0 0 220px', 220, 'right'
                       )}
                     </div>
 

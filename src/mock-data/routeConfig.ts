@@ -208,10 +208,19 @@ export function routeLockStatusIn(version: RouteConfigVersion, routeName: string
 // vì vậy KHÔNG còn đồng nghĩa với "bộ tạo gần nhất" nữa — theo dõi qua `activeVersionId` riêng,
 // không suy ra từ vị trí cuối mảng.
 
+// 'draft' = vừa nhân bản ra, sửa được Vùng miền/Tuyến/Nội-Ngoại thành/khoá tuyến thoải mái, CHƯA
+// chọn được ở bảng giá. 'published' = đã phát hành — khoá VĨNH VIỄN cấu trúc Vùng miền/Tuyến (không
+// có đường quay lại), nhưng Nội-Ngoại thành và khoá/mở tuyến vẫn sửa được bình thường; bắt đầu chọn
+// được ở bảng giá và bật "Áp dụng cho toàn hệ thống". KHÔNG có trạng thái "Đã huỷ" (cố ý bỏ theo
+// yêu cầu) — bộ Nháp không dùng nữa thì xoá hẳn qua deleteDraftVersion(), bộ Đã phát hành thì không
+// bao giờ xoá được, chỉ tồn tại mãi trong lịch sử (đã có bảng giá tham chiếu, không thể gỡ bỏ).
+export type RouteConfigStatus = 'draft' | 'published'
+
 export interface RouteConfigVersion {
   id: string
   version: number
   label: string
+  status: RouteConfigStatus
   createdAt: string
   regions: RegionDef[]
   routeMatrix: Record<string, string>
@@ -245,6 +254,7 @@ export const routeConfigVersions: RouteConfigVersion[] = [
     id: 'rcv_seed',
     version: 1,
     label: 'Bộ mặc định',
+    status: 'published',
     createdAt: '2026-01-01T00:00:00.000Z',
     regions: cloneRegions(regions),
     routeMatrix: { ...routeMatrix },
@@ -277,6 +287,9 @@ function persistRouteConfig(): void {
     if (!raw) return
     const parsed = JSON.parse(raw) as { versions: RouteConfigVersion[]; activeVersionId: string }
     if (!Array.isArray(parsed.versions) || parsed.versions.length === 0) return
+    // Dữ liệu cũ (lưu trước khi có trạng thái Nháp/Đã phát hành) không có field `status` — coi như
+    // 'published' vì trước đây MỌI bộ đã lưu đều chọn được ở bảng giá ngay, tương đương "phát hành".
+    for (const v of parsed.versions) if (!v.status) v.status = 'published'
     routeConfigVersions.length = 0
     routeConfigVersions.push(...parsed.versions)
     const restoredActive = routeConfigVersions.find((v) => v.id === parsed.activeVersionId) ?? routeConfigVersions[routeConfigVersions.length - 1]
@@ -300,66 +313,112 @@ function applyVersionToStore(version: RouteConfigVersion): void {
   activeVersionId = version.id
 }
 
-/**
- * Tạo 1 bộ vùng tuyến MỚI từ draft (regions + routeMatrix + urbanConfigs) Super Admin vừa chỉnh
- * trên RouteConfig.tsx, đẩy vào routeConfigVersions, rồi áp dụng NGAY làm bộ đang dùng.
- */
-export function commitNewRouteConfigVersion(
-  draftRegions: RegionDef[],
-  draftRouteMatrix: Record<string, string>,
-  draftUrbanConfigs: UrbanConfig[],
-  label?: string,
-  lockedRouteNames?: string[],
-  lockedPairKeys?: string[],
-): RouteConfigVersion {
-  const version: RouteConfigVersion = {
-    id: `rcv_${Date.now()}`,
-    version: routeConfigVersions.length + 1,
-    label: label?.trim() || `Bộ #${routeConfigVersions.length + 1}`,
-    createdAt: new Date().toISOString(),
-    regions: cloneRegions(draftRegions),
-    routeMatrix: { ...draftRouteMatrix },
-    urbanConfigs: cloneUrbanConfigs(draftUrbanConfigs),
-    lockedPairKeys: lockedPairKeys ? [...lockedPairKeys] : [],
-    lockedRouteNames: lockedRouteNames ? [...lockedRouteNames] : [],
-  }
-  routeConfigVersions.push(version)
-  applyVersionToStore(version)
-  persistRouteConfig()
-  return version
-}
-
-/** "Bật mặc định" 1 bộ ĐÃ CÓ SẴN trong lịch sử (kể cả bộ cũ hơn bộ đang áp dụng) — không tạo bộ
- * mới, chỉ đổi con trỏ `activeVersionId` và đồng bộ dữ liệu bộ đó vào store dùng chung. */
-export function setActiveRouteConfigVersion(versionId: string): RouteConfigVersion | null {
-  const version = routeConfigVersions.find((v) => v.id === versionId)
-  if (!version) return null
-  applyVersionToStore(version)
-  persistRouteConfig()
-  return version
-}
-
 export function getActiveRouteConfigVersion(): RouteConfigVersion {
   return routeConfigVersions.find((v) => v.id === activeVersionId) ?? routeConfigVersions[routeConfigVersions.length - 1]
 }
 
-/** Cập nhật 2 cấp khoá (lockedRouteNames/lockedPairKeys) của bộ ĐANG ÁP DỤNG TẠI CHỖ — KHÁC
- * commitNewRouteConfigVersion() (dùng khi sửa Vùng miền/Tuyến/Nội-Ngoại thành, vì những thay đổi
- * đó ảnh hưởng cách tính zone/phí nên cần giữ lại bản cũ trong lịch sử). Khoá/mở khoá tuyến không
- * đổi bất kỳ cấu hình zone/phí nào — chỉ là rào chắn edit-time cho Super Admin — nên không sinh
- * thêm 1 bộ mới trong routeConfigVersions mỗi lần khoá, tránh lịch sử phình to vô nghĩa và tránh
- * lệch "bộ đã dùng lúc tạo bảng giá" (routeBundleId) khỏi trạng thái khoá thật đang áp dụng. */
-export function updateActiveVersionLocks(lockedRouteNames: string[], lockedPairKeys: string[]): RouteConfigVersion {
-  const current = getActiveRouteConfigVersion()
-  const updated: RouteConfigVersion = {
-    ...current,
-    lockedRouteNames: [...lockedRouteNames],
-    lockedPairKeys: [...lockedPairKeys],
+/** Cách DUY NHẤT để tạo 1 bộ mới — nhân bản TOÀN BỘ nội dung (Vùng miền/Tuyến/Nội-Ngoại
+ * thành/khoá) của 1 bộ bất kỳ (Nháp hay Đã phát hành đều nhân bản được) thành 1 bộ NHÁP mới. Không
+ * có khái niệm "tạo bộ trống từ đầu" — luôn phải nhân bản từ 1 bộ đã có để đảm bảo cấu trúc cơ bản
+ * đầy đủ. Bộ mới KHÔNG tự động áp dụng/active — chỉ nằm trong lịch sử, Super Admin tự bấm "Áp dụng
+ * cho toàn hệ thống" ở Danh sách bộ vùng tuyến khi đã sửa+phát hành xong. */
+export function duplicateRouteConfigVersion(sourceId: string, label?: string): RouteConfigVersion | null {
+  const source = routeConfigVersions.find((v) => v.id === sourceId)
+  if (!source) return null
+  const version: RouteConfigVersion = {
+    id: `rcv_${Date.now()}`,
+    version: routeConfigVersions.length + 1,
+    label: label?.trim() || `${source.label} (bản sao)`,
+    status: 'draft',
+    createdAt: new Date().toISOString(),
+    regions: cloneRegions(source.regions),
+    routeMatrix: { ...source.routeMatrix },
+    urbanConfigs: cloneUrbanConfigs(source.urbanConfigs),
+    lockedRouteNames: [...(source.lockedRouteNames ?? [])],
+    lockedPairKeys: [...(source.lockedPairKeys ?? [])],
   }
-  const idx = routeConfigVersions.findIndex((v) => v.id === current.id)
-  if (idx !== -1) routeConfigVersions[idx] = updated
+  routeConfigVersions.push(version)
+  persistRouteConfig()
+  return version
+}
+
+/** Sửa Vùng miền + Tuyến (routeMatrix) của 1 bộ TẠI CHỖ (không sinh bộ mới) — chỉ hợp lệ khi bộ
+ * đang là 'draft' (đúng bảng quyền thao tác: Đã phát hành thì khoá cứng 2 phần này, muốn sửa phải
+ * nhân bản ra bộ nháp mới). Trả về null nếu bộ không tồn tại hoặc không còn là nháp — caller
+ * (RouteConfig.tsx) tự ẩn/disable UI tương ứng, hàm này chỉ là lớp phòng vệ dữ liệu thứ 2. */
+export function updateDraftStructure(id: string, draftRegions: RegionDef[], draftRouteMatrix: Record<string, string>): RouteConfigVersion | null {
+  const idx = routeConfigVersions.findIndex((v) => v.id === id)
+  if (idx === -1 || routeConfigVersions[idx].status !== 'draft') return null
+  const updated: RouteConfigVersion = { ...routeConfigVersions[idx], regions: cloneRegions(draftRegions), routeMatrix: { ...draftRouteMatrix } }
+  routeConfigVersions[idx] = updated
+  if (id === activeVersionId) applyVersionToStore(updated)
   persistRouteConfig()
   return updated
+}
+
+/** Sửa Nội/Ngoại thành của 1 bộ TẠI CHỖ — cho phép ở CẢ 2 trạng thái Nháp và Đã phát hành (khác
+ * Vùng miền/Tuyến ở trên), đúng bảng quyền thao tác. */
+export function updateVersionUrbanConfigs(id: string, draftUrbanConfigs: UrbanConfig[]): RouteConfigVersion | null {
+  const idx = routeConfigVersions.findIndex((v) => v.id === id)
+  if (idx === -1) return null
+  const updated: RouteConfigVersion = { ...routeConfigVersions[idx], urbanConfigs: cloneUrbanConfigs(draftUrbanConfigs) }
+  routeConfigVersions[idx] = updated
+  if (id === activeVersionId) applyVersionToStore(updated)
+  persistRouteConfig()
+  return updated
+}
+
+/** Khoá/mở khoá tuyến của 1 bộ TẠI CHỖ — cho phép ở CẢ 2 trạng thái (đúng bảng quyền thao tác), áp
+ * dụng cho ĐÚNG bộ đang xem/sửa chứ không chỉ bộ đang áp dụng (khác bản `updateActiveVersionLocks`
+ * cũ) — vì Super Admin phải khoá/mở tuyến được cả ở 1 bộ Đã phát hành nhưng CHƯA phải bộ active. */
+export function updateVersionLocks(id: string, lockedRouteNames: string[], lockedPairKeys: string[]): RouteConfigVersion | null {
+  const idx = routeConfigVersions.findIndex((v) => v.id === id)
+  if (idx === -1) return null
+  const updated: RouteConfigVersion = { ...routeConfigVersions[idx], lockedRouteNames: [...lockedRouteNames], lockedPairKeys: [...lockedPairKeys] }
+  routeConfigVersions[idx] = updated
+  if (id === activeVersionId) applyVersionToStore(updated)
+  persistRouteConfig()
+  return updated
+}
+
+/** Phát hành 1 bộ NHÁP — khoá VĨNH VIỄN cấu trúc Vùng miền/Tuyến (không có đường quay lại; muốn sửa
+ * tiếp phải nhân bản ra bộ nháp khác). Validate tối thiểu: phải có ít nhất 1 tuyến tên "Nội Tỉnh"
+ * (tuyến mặc định bắt buộc của mọi bộ). KHÔNG tự động áp dụng/active. */
+export function publishRouteConfigVersion(id: string): { ok: true; version: RouteConfigVersion } | { ok: false; error: string } {
+  const idx = routeConfigVersions.findIndex((v) => v.id === id)
+  if (idx === -1) return { ok: false, error: 'Không tìm thấy bộ này.' }
+  const current = routeConfigVersions[idx]
+  if (current.status !== 'draft') return { ok: false, error: 'Bộ này không còn ở trạng thái Nháp.' }
+  if (!Object.values(current.routeMatrix).includes('Nội Tỉnh')) {
+    return { ok: false, error: 'Bộ phải có ít nhất 1 tuyến tên "Nội Tỉnh" trước khi phát hành.' }
+  }
+  const updated: RouteConfigVersion = { ...current, status: 'published' }
+  routeConfigVersions[idx] = updated
+  persistRouteConfig()
+  return { ok: true, version: updated }
+}
+
+/** Xoá HẲN 1 bộ NHÁP khỏi lịch sử (thay cho trạng thái "Đã huỷ" đã bỏ) — chỉ cho phép xoá Nháp, vì
+ * Nháp chưa từng chọn được ở bảng giá nên an toàn, không orphan dữ liệu ai. Bộ Đã phát hành không
+ * bao giờ xoá được (có thể đã có bảng giá tham chiếu, phải giữ lịch sử bất biến vĩnh viễn). */
+export function deleteDraftVersion(id: string): boolean {
+  const idx = routeConfigVersions.findIndex((v) => v.id === id)
+  if (idx === -1 || routeConfigVersions[idx].status !== 'draft') return false
+  routeConfigVersions.splice(idx, 1)
+  persistRouteConfig()
+  return true
+}
+
+/** "Áp dụng cho toàn hệ thống" 1 bộ ĐÃ PHÁT HÀNH — không tạo bộ mới, chỉ đổi con trỏ
+ * `activeVersionId` và đồng bộ dữ liệu bộ đó vào store dùng chung. Chỉ nhận bộ 'published' — bộ
+ * Nháp không bao giờ áp dụng được (đúng bảng quyền thao tác "Được chọn trong bảng giá"/"Bật hiển
+ * thị mặc định" chỉ ✓ ở Đã phát hành). */
+export function setActiveRouteConfigVersion(versionId: string): RouteConfigVersion | null {
+  const version = routeConfigVersions.find((v) => v.id === versionId)
+  if (!version || version.status !== 'published') return null
+  applyVersionToStore(version)
+  persistRouteConfig()
+  return version
 }
 
 // ─── Query functions ──────────────────────────────────────────────────────────

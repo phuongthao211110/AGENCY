@@ -149,6 +149,30 @@ function getComparisonRanges(preset: PeriodPreset, anchor: Date, custom: { from:
   }
 }
 
+// BUG ĐÃ PHÁT HIỆN (chưa sửa ở lần review trước — sửa ở đây): gọi lại getComparisonRanges(preset,
+// trend.prevEnd) để suy ra "kỳ trước của kỳ trước" (dùng tính Khách quay lại của chính Kỳ trước,
+// xem shopStatsPrev bên dưới) chỉ ĐÚNG với 8/10 preset. Với 'lastWeek'/'lastMonth', preset đó tự
+// "lùi 1 ngày để thoát khỏi kỳ hiện tại rồi lấy TRỌN kỳ trước" — bước lùi 1 ngày này vô tình lùi dư
+// thêm NGUYÊN 1 kỳ nữa khi anchor đưa vào vốn đã nằm đúng ranh giới cuối kỳ (trend.prevEnd luôn là
+// Chủ nhật/ngày cuối tháng với 2 preset này), ví dụ "Tuần trước" sẽ tính nhầm lùi 2 tuần thay vì 1.
+// Hàm này tính TRỰC TIẾP "kỳ liền trước" từ trend.prevStart — không gọi lại case 'lastWeek'/
+// 'lastMonth' nên không dính lại đúng bug đó; dùng startOfWeek/startOfMonth THUẦN (không có bước
+// "lùi 1 ngày" đặc biệt) nên an toàn với mọi anchor, kể cả anchor rơi đúng ranh giới kỳ.
+function getCycleBeforePrev(preset: PeriodPreset, prevStart: Date, prevEnd: Date, anchorForOthers: Date, custom: { from: Date; to: Date } | null): Range {
+  if (preset === 'lastWeek') {
+    const cPrevEnd   = endOfDay(new Date(prevStart.getTime() - DAY_MS))
+    const cPrevStart = startOfWeek(cPrevEnd)
+    return { curStart: prevStart, curEnd: prevEnd, prevStart: cPrevStart, prevEnd: cPrevEnd, compareLabel: '' }
+  }
+  if (preset === 'lastMonth') {
+    const cPrevEnd   = endOfDay(new Date(prevStart.getTime() - DAY_MS))
+    const cPrevStart = startOfMonth(cPrevEnd)
+    return { curStart: prevStart, curEnd: prevEnd, prevStart: cPrevStart, prevEnd: cPrevEnd, compareLabel: '' }
+  }
+  // 8 preset còn lại (rolling ngày + to-date tuần/tháng) đã xác nhận ĐÚNG khi gọi lại theo cách cũ.
+  return getComparisonRanges(preset, anchorForOthers, custom)
+}
+
 function computePeriodComparison(orders: { createdAt: string; fee: number }[], preset: PeriodPreset, anchor: Date, custom: { from: Date; to: Date } | null = null) {
   const { curStart, curEnd, prevStart, prevEnd, compareLabel } = getComparisonRanges(preset, anchor, custom)
   const current  = sumFeeInRange(orders, curStart, curEnd)
@@ -479,7 +503,10 @@ function ShopRevenueVolumeChart({ points, entities }: { points: ShopDayPoint[]; 
   const yForRevenue = (v: number) => padT + plotH - (v / maxRevenue) * plotH
   const yForVolume = (v: number) => padT + plotH - (v / maxVolume) * plotH
 
-  const gridSteps = [0, 0.25, 0.5, 0.75, 1]
+  // Giảm từ 5 xuống 3 mốc (0% / 50% / 100%) — 5 mốc cũ ra toàn số lẻ không tròn (vd 151.000 /
+  // 113.250 / 75.500 / 37.750 đ) vì chỉ là chia đều tuyến tính theo maxRevenue/maxVolume thực tế,
+  // không làm tròn — càng nhiều mốc càng rối mắt khi trục đã dày đặc dữ liệu (filter 30/60/90 ngày).
+  const gridSteps = [0, 0.5, 1]
   const xLabelEvery = Math.max(1, Math.ceil(n / 7))
 
   if (tableView) {
@@ -513,7 +540,7 @@ function ShopRevenueVolumeChart({ points, entities }: { points: ShopDayPoint[]; 
                 </tr>
               ))}
               {entities.length === 0 && (
-                <tr><td colSpan={points.length + 1} style={{ padding: '16px 12px', textAlign: 'center', color: C_TEXT_SECONDARY }}>Chưa có shop nào phát sinh doanh thu trong 14 ngày gần nhất.</td></tr>
+                <tr><td colSpan={points.length + 1} style={{ padding: '16px 12px', textAlign: 'center', color: C_TEXT_SECONDARY }}>Chưa có shop nào phát sinh doanh thu trong {n} ngày gần nhất.</td></tr>
               )}
               {/* Tổng sản lượng — KHÔNG tách theo shop (xem comment đầu component), gộp 1 dòng tổng cuối bảng */}
               <tr>
@@ -631,7 +658,7 @@ function ShopRevenueVolumeChart({ points, entities }: { points: ShopDayPoint[]; 
             {e.name}
           </span>
         ))}
-        {entities.length === 0 && <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa có shop nào phát sinh doanh thu trong 14 ngày gần nhất.</span>}
+        {entities.length === 0 && <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>Chưa có shop nào phát sinh doanh thu trong {n} ngày gần nhất.</span>}
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C_TEXT_PRIMARY }}>
           <span style={{ width: 10, height: 2, background: VOLUME_COLOR, borderRadius: 1, flexShrink: 0 }} />
           Tổng sản lượng (trục phải)
@@ -648,23 +675,85 @@ function ShopRevenueVolumeChart({ points, entities }: { points: ShopDayPoint[]; 
   )
 }
 
-// ── Sparkline dạng đường cho khối "Khách hàng" — 1 chuỗi, không cần legend/trục (tiêu đề phía
-// trên đã nói rõ đang vẽ gì). Line 2px + vùng tô mờ 10% + chấm tròn ở điểm cuối (hôm nay), đúng
-// mark spec dataviz skill cho sparkline — thay cho bản cột cũ theo yêu cầu đổi sang biểu đồ đường.
-function MiniLineSparkline({ values, color }: { values: number[]; color: string }) {
-  const max = Math.max(1, ...values)
-  const n = values.length
-  const W = 220, H = 40, pad = 4
-  const xFor = (i: number) => n <= 1 ? 0 : (i / (n - 1)) * W
-  const yFor = (v: number) => H - pad - (v / max) * (H - pad * 2)
-  const linePath = values.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i).toFixed(1)} ${yFor(v).toFixed(1)}`).join(' ')
-  const areaPath = `${linePath} L ${xFor(n - 1).toFixed(1)} ${H} L ${xFor(0).toFixed(1)} ${H} Z`
+// Ngưỡng gộp tuần cho 2 biểu đồ "Khách hàng" — CHỈ áp dụng ở đây, KHÔNG áp dụng cho
+// ShopRevenueVolumeChart (biểu đồ "Xu hướng" vẫn giữ nguyên theo ngày dù filter dài, vì nó rộng
+// hơn nhiều nên vẫn đọc được). Card "Khách hàng" hẹp hơn, 60-90 cột/ngày dồn vào cùng bề rộng vẫn
+// quá dày — nên khi trendDays > 30 (đúng mốc filter "60 ngày trước"/"90 ngày trước"), gộp theo
+// TUẦN (7 ngày/cột) thay vì theo ngày, giảm còn ~9-13 cột thay vì 60-90 cột.
+const WEEKLY_BUCKET_THRESHOLD = 30
+
+// `calc(start, end)` tính giá trị cho 1 khoảng [start,end] — gọi đúng 1 lần/ngày khi trendDays nhỏ,
+// hoặc đúng 1 lần/tuần (gộp 7 ngày) khi trendDays > ngưỡng. Nhãn luôn là ngày CUỐI của mỗi cột.
+function buildCustomerPoints(trendDays: number, curEnd: Date, calc: (start: Date, end: Date) => number): { label: string; value: number }[] {
+  if (trendDays <= WEEKLY_BUCKET_THRESHOLD) {
+    return Array.from({ length: trendDays }, (_, i) => {
+      const day = new Date(curEnd.getTime() - (trendDays - 1 - i) * DAY_MS)
+      return { label: fmtDate(day), value: calc(startOfDay(day), endOfDay(day)) }
+    })
+  }
+  const windowStart = startOfDay(new Date(curEnd.getTime() - (trendDays - 1) * DAY_MS))
+  const bucketCount = Math.ceil(trendDays / 7)
+  return Array.from({ length: bucketCount }, (_, b) => {
+    const isLast = b === bucketCount - 1
+    const bucketStart = startOfDay(new Date(windowStart.getTime() + b * 7 * DAY_MS))
+    const bucketEnd = isLast ? endOfDay(curEnd) : endOfDay(new Date(windowStart.getTime() + ((b + 1) * 7 - 1) * DAY_MS))
+    return { label: fmtDate(bucketEnd), value: calc(bucketStart, bucketEnd) }
+  })
+}
+
+// ── Biểu đồ CỘT cho khối "Khách hàng" — cùng LOGIC HIỂN THỊ với ShopRevenueVolumeChart (biểu đồ
+// "Xu hướng doanh thu & sản lượng") thay vì sparkline trơn không nhãn: có nhãn ngày trục X (cùng
+// công thức xLabelEvery = ẩn bớt nhãn tránh chồng chữ, luôn ép hiện nhãn điểm CUỐI), có hit-zone
+// hover từng cột hiện tooltip giá trị đúng ngày/tuần đó (thay cho việc chỉ tô đậm cột cuối). Mỗi
+// cột = 1 ngày (filter ≤30 ngày) hoặc 1 tuần (filter >30 ngày) — xem buildCustomerPoints ở trên.
+function CustomerTrendChart({ points, color, unit }: { points: { label: string; value: number }[]; color: string; unit: string }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+  const n = points.length
+  const max = Math.max(1, ...points.map((p) => p.value))
+  const W = 460, H = 110, padL = 2, padR = 2, padT = 8, padB = 16
+  const plotW = W - padL - padR, plotH = H - padT - padB
+  const slotW = plotW / n
+  const gap = n > 40 ? 0.5 : n > 15 ? 1 : 2
+  const barW = Math.max(0.6, slotW - gap)
+  const xLabelEvery = Math.max(1, Math.ceil(n / 7)) // cùng công thức ~7 nhãn với ShopRevenueVolumeChart
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-      <path d={areaPath} fill={color} opacity={0.1} stroke="none" />
-      <path d={linePath} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={xFor(n - 1)} cy={yFor(values[n - 1])} r={4} fill={color} stroke="#fff" strokeWidth={1.5} />
-    </svg>
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+        <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} stroke={C_BORDER} strokeWidth={1} />
+        {points.map((p, i) => {
+          const x = padL + i * slotW + gap / 2
+          const h = Math.max(1, (p.value / max) * plotH)
+          const y = padT + plotH - h
+          const isLast = i === n - 1
+          const isHover = hoverIdx === i
+          return (
+            <rect
+              key={i} x={x} y={y} width={barW} height={h}
+              rx={Math.min(2, barW / 2)} fill={color} opacity={isHover || isLast ? 1 : 0.5}
+            />
+          )
+        })}
+        {points.map((_, i) => (
+          <rect
+            key={`hit-${i}`} x={padL + i * slotW} y={padT} width={slotW} height={plotH} fill="transparent"
+            onMouseEnter={() => setHoverIdx(i)} onMouseLeave={() => setHoverIdx(null)}
+          />
+        ))}
+        {points.map((p, i) => (
+          i % xLabelEvery === 0 || i === n - 1 ? (
+            <text key={`lbl-${i}`} x={padL + i * slotW + slotW / 2} y={H - 4} fontSize={8} fill={C_TEXT_SECONDARY} textAnchor="middle">
+              {p.label}
+            </text>
+          ) : null
+        ))}
+      </svg>
+      <div style={{ height: 16, fontSize: 11, color: C_TEXT_SECONDARY, textAlign: 'center' }}>
+        {hoverIdx !== null
+          ? <><b style={{ color: C_TEXT_PRIMARY }}>{points[hoverIdx].label}</b>: {points[hoverIdx].value} {unit}</>
+          : ' '}
+      </div>
+    </div>
   )
 }
 
@@ -689,7 +778,7 @@ export default function AgencyReport() {
   const periodAnchor = period === 'custom' ? (customRange?.to ?? anchorDate) : anchorDate
 
   const trend = computePeriodComparison(agencyOrders, period, periodAnchor, customRange)
-  const prevCycle = getComparisonRanges(period, trend.prevEnd, customRange)
+  const prevCycle = getCycleBeforePrev(period, trend.prevStart, trend.prevEnd, trend.prevEnd, customRange)
 
   // ── 6 KPI đầu trang: Doanh thu/Sản lượng/AOV theo cân/AOV theo sản lượng/KH OB/KH Re-active —
   // TẤT CẢ đều = TỔNG CỘNG của bảng "Chi tiết theo shop" bên dưới (Σ từng shop), để 2 khối này
@@ -704,6 +793,16 @@ export default function AgencyReport() {
   const prevTotalNewCust  = shopStatsPrev.reduce((sum, s) => sum + s.newCustomers, 0)
   const prevTotalReactive = shopStatsPrev.reduce((sum, s) => sum + s.reactiveCustomers, 0)
 
+  // TẤT CẢ biểu đồ trên trang (2 sparkline "Khách hàng" + biểu đồ miền "Xu hướng doanh thu & sản
+  // lượng") đều BÁM THEO ĐÚNG curStart→curEnd của filter "Thời gian" đang chọn — KHÔNG độn thêm
+  // ngày nào ngoài kỳ đang xem (trước đây có sàn tối thiểu 7 ngày cho filter "Hôm nay"/"Hôm qua",
+  // nhưng gây hiểu nhầm vì biểu đồ hiện ra những ngày không thuộc kỳ đang chọn trong khi KPI vẫn chỉ
+  // tính đúng 1 ngày — bỏ hẳn để trung thực tuyệt đối với filter: "Hôm nay" chỉ còn đúng 1 điểm/chấm,
+  // không ra đường). startOfDay(curEnd) TRƯỚC khi trừ — curEnd là endOfDay (23:59:59.999), nếu trừ
+  // trực tiếp cho curStart (00:00:00.000) rồi Math.round sẽ tự làm tròn LÊN 1 do phần dư .999ms,
+  // cộng thêm +1 ở sau nữa thành đếm dư nguyên 1 ngày (vd "30 ngày trước" ra 31 thay vì đúng 30).
+  const trendDays = Math.round((startOfDay(trend.curEnd).getTime() - trend.curStart.getTime()) / DAY_MS) + 1
+
   const curOrders  = agencyOrders.filter((o) => { const t = new Date(o.createdAt).getTime(); return t >= trend.curStart.getTime() && t <= trend.curEnd.getTime() })
   const prevOrders = agencyOrders.filter((o) => { const t = new Date(o.createdAt).getTime(); return t >= trend.prevStart.getTime() && t <= trend.prevEnd.getTime() })
   const curWeightKg  = curOrders.reduce((sum, o) => sum + o.weight, 0) / 1000
@@ -713,11 +812,12 @@ export default function AgencyReport() {
   const aovByWeight      = curWeightKg > 0 ? trend.current / curWeightKg : 0
   const prevAovByWeight  = prevWeightKg > 0 ? trend.previous / prevWeightKg : 0
 
-  // Biểu đồ miền theo shop: luôn 14 ngày gần nhất kết thúc tại anchorDate — độc lập với tab
-  // Ngày/Tuần/Tháng (tab chỉ đổi 6 KPI/bảng), giữ đúng quy ước đã có từ bản biểu đồ đường trước.
-  // shopRankedIds dùng để (1) chọn sẵn mặc định top 10 shop khi mount, (2) sắp thứ tự trong picker
-  // "Chọn shop" — tính 1 lần, không đổi theo thao tác chọn/bỏ chọn sau đó.
-  const shopRankedIds = rankShopIdsByRevenue(agencyOrders, shops, anchorDate, 14)
+  // Biểu đồ miền theo shop: trendDays ngày kết thúc tại trend.curEnd — bám đúng filter "Thời gian"
+  // đang chọn (xem trendDays ở trên). shopRankedIds dùng để (1) chọn sẵn mặc định top 10 shop khi
+  // mount, (2) sắp thứ tự trong picker "Chọn shop" — tính 1 lần, không đổi theo thao tác chọn/bỏ
+  // chọn sau đó (đổi filter sau khi đã chọn tay thì thứ tự/mặc định không tính lại, chỉ dữ liệu
+  // trong biểu đồ mới cập nhật — tránh xáo trộn lựa chọn người dùng đã tự chọn).
+  const shopRankedIds = rankShopIdsByRevenue(agencyOrders, shops, trend.curEnd, trendDays)
   const [selectedShopIds, setSelectedShopIds] = useState<Set<string>>(() => new Set(shopRankedIds.slice(0, MAX_COLORED_SHOPS)))
   const [shopPickerOpen, setShopPickerOpen] = useState(false)
   const [shopPickerSearch, setShopPickerSearch] = useState('')
@@ -740,7 +840,7 @@ export default function AgencyReport() {
     return () => document.removeEventListener('mousedown', handler)
   }, [shopPickerOpen])
   const { points: shopStackPoints, entities: shopStackEntities } =
-    buildShopStackedSeries(agencyOrders, shops, anchorDate, 14, shopRankedIds.filter((id) => selectedShopIds.has(id)))
+    buildShopStackedSeries(agencyOrders, shops, trend.curEnd, trendDays, shopRankedIds.filter((id) => selectedShopIds.has(id)))
 
   // Bảng chi tiết — sắp theo doanh thu giảm dần, lọc theo ô tìm kiếm (tên hoặc mã shop).
   const q = search.trim().toLowerCase()
@@ -788,9 +888,12 @@ export default function AgencyReport() {
           <CompactKpiCard flexBasis="300px" label="AOV theo sản lượng" value={`${fmtVND(aovByVolume)}/đơn`} deltaPct={pctDelta(aovByVolume, prevAovByVolume)} />
         </div>
 
-        {/* Xu hướng (trái) + Khách hàng (phải) */}
-        <div style={{ display: 'flex', gap: 12, padding: '0 16px 12px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '2 1 480px', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 16 }}>
+        {/* Xu hướng doanh thu & sản lượng — FULL WIDTH riêng 1 hàng (trước đây chung hàng với
+            "Khách hàng" theo tỉ lệ 2:1, ép card "Khách hàng" quá hẹp nên 60-90 cột/ngày bị dồn
+            mảnh dính nhìn rối — tách riêng để "Khách hàng" bên dưới cũng được rộng ngang y hệt,
+            cùng mật độ cột/pixel với biểu đồ này dù cùng vẽ tới 90 điểm). */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Xu hướng doanh thu &amp; sản lượng</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, position: 'relative' }} ref={shopPickerRef}>
@@ -861,55 +964,66 @@ export default function AgencyReport() {
             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginBottom: 12 }}>
               6 KPI &amp; Bảng chi tiết đang so với {trend.compareLabel.toLowerCase()}
               <br />
-              Biểu đồ luôn hiện 14 ngày gần nhất, không đổi theo tab — miền theo shop = doanh thu (trục trái), đường cam = tổng sản lượng (trục phải)
+              Biểu đồ hiện đúng {fmtNum(trendDays)} ngày của kỳ đang chọn ở filter "Thời gian" — miền theo shop = doanh thu (trục trái), đường cam = tổng sản lượng (trục phải)
             </div>
             <ShopRevenueVolumeChart points={shopStackPoints} entities={shopStackEntities} />
           </div>
+        </div>
 
-          <div style={{ flex: '1 1 260px', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 18 }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Khách hàng</span>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 600 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 4, background: '#0D9488' }} /> Khách hàng mới
-                </span>
-                <DeltaBadge pct={pctDelta(totalNewCust, prevTotalNewCust)} />
+        {/* Khách hàng — FULL WIDTH riêng 1 hàng, 2 chart con (Khách hàng mới / Khách quay lại) nằm
+            NGANG nhau thay vì xếp dọc trong 1 cột hẹp — mỗi chart con giờ rộng ngang bằng khoảng
+            nửa trang, cùng mật độ cột/pixel với ShopRevenueVolumeChart dù cùng vẽ tới 90 điểm. */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <span style={{ fontSize: 15, fontWeight: 700, color: C_TEXT_PRIMARY }}>Khách hàng</span>
+              <div style={{ fontSize: 11.5, color: C_TEXT_SECONDARY, marginTop: 2 }}>
+                2 biểu đồ bên dưới vẽ đúng {fmtNum(trendDays)} ngày của kỳ đang chọn, kết thúc tại {fmtDate(trend.curEnd)}
+                {trendDays > WEEKLY_BUCKET_THRESHOLD ? ' — mỗi cột gộp theo TUẦN (>30 ngày) để tránh quá nhiều cột' : ''}.
               </div>
-              <span style={{ fontSize: 11.5, color: C_TEXT_SECONDARY, lineHeight: 1.4 }}>
-                Khách đặt đơn lần đầu tiên trong kỳ này
-              </span>
-              <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY, marginTop: 4 }}>{fmtNum(totalNewCust)} KH</span>
-              <MiniLineSparkline
-                color="#0D9488"
-                values={Array.from({ length: 7 }, (_, i) => {
-                  const day = new Date(anchorDate.getTime() - (6 - i) * DAY_MS)
-                  return countNewCustomers(agencyOrders, startOfDay(day), endOfDay(day))
-                })}
-              />
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 600 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 4, background: '#7C3AED' }} /> Khách quay lại
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 600 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 4, background: '#0D9488' }} /> Khách hàng mới
+                  </span>
+                  <DeltaBadge pct={pctDelta(totalNewCust, prevTotalNewCust)} />
+                </div>
+                <span style={{ fontSize: 11.5, color: C_TEXT_SECONDARY, lineHeight: 1.4 }}>
+                  Khách đặt đơn lần đầu tiên trong kỳ này
                 </span>
-                <DeltaBadge pct={pctDelta(totalReactive, prevTotalReactive)} />
+                <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY, marginTop: 4 }}>{fmtNum(totalNewCust)} KH</span>
+                <CustomerTrendChart
+                  color="#0D9488"
+                  unit="KH"
+                  points={buildCustomerPoints(trendDays, trend.curEnd, (start, end) => countNewCustomers(agencyOrders, start, end))}
+                />
               </div>
-              <span style={{ fontSize: 11.5, color: C_TEXT_SECONDARY, lineHeight: 1.4 }}>
-                Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp
-              </span>
-              <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY, marginTop: 4 }}>{fmtNum(totalReactive)} KH</span>
-              <MiniLineSparkline
-                color="#7C3AED"
-                values={Array.from({ length: 7 }, (_, i) => {
-                  const day = new Date(anchorDate.getTime() - (6 - i) * DAY_MS)
-                  const dStart = startOfDay(day), dEnd = endOfDay(day)
-                  const pStart = startOfDay(new Date(dStart.getTime() - DAY_MS))
-                  const pEnd   = endOfDay(new Date(dStart.getTime() - DAY_MS))
-                  return countReactiveCustomers(agencyOrders, dStart, dEnd, pStart, pEnd)
-                })}
-              />
+
+              <div style={{ flex: '1 1 320px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C_TEXT_PRIMARY, fontWeight: 600 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 4, background: '#7C3AED' }} /> Khách quay lại
+                  </span>
+                  <DeltaBadge pct={pctDelta(totalReactive, prevTotalReactive)} />
+                </div>
+                <span style={{ fontSize: 11.5, color: C_TEXT_SECONDARY, lineHeight: 1.4 }}>
+                  Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp
+                </span>
+                <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY, marginTop: 4 }}>{fmtNum(totalReactive)} KH</span>
+                {/* Mỗi cột = khách quay lại của ĐÚNG ngày đó, so với ĐÚNG kỳ trước của filter đang
+                    chọn (trend.prevStart/prevEnd) — KHÔNG tự chế "1 ngày liền trước" riêng cho mỗi
+                    cột như bản trước. Bản cũ khiến hầu như ngày nào cũng ra "quay lại" (vì khách
+                    demo không mua liên tục mỗi ngày), mâu thuẫn với số lớn "0 KH" tính theo đúng
+                    kỳ trước thật của filter — giờ cả số lớn và từng cột dùng CHUNG 1 định nghĩa
+                    "kỳ trước", cộng dồn các cột sẽ khớp đúng số lớn phía trên. */}
+                <CustomerTrendChart
+                  color="#7C3AED"
+                  unit="KH"
+                  points={buildCustomerPoints(trendDays, trend.curEnd, (start, end) => countReactiveCustomers(agencyOrders, start, end, trend.prevStart, trend.prevEnd))}
+                />
+              </div>
             </div>
           </div>
         </div>

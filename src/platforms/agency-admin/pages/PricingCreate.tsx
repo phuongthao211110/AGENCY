@@ -1551,7 +1551,9 @@ export default function PricingCreate() {
               onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
               onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
             >
-              {[...routeConfigVersions].reverse().map((v) => (
+              {/* Chỉ hiện bộ ĐÃ PHÁT HÀNH — bộ Nháp chưa chọn được ở bảng giá (đúng bảng quyền
+                  thao tác, xem routeConfig.ts: RouteConfigStatus). */}
+              {[...routeConfigVersions].filter((v) => v.status === 'published').reverse().map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.label}{v.id === getActiveRouteConfigVersion().id ? ' (Mặc định)' : ''}
                 </option>

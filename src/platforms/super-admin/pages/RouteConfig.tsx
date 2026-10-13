@@ -1,17 +1,16 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { VIETNAM_PROVINCES } from '../../../mock-data/vietnam-provinces'
 import {
-  regions,
-  routeMatrix,
-  urbanConfigs,
+  routeConfigVersions,
   pairKey,
-  commitNewRouteConfigVersion,
-  updateActiveVersionLocks,
-  getActiveRouteConfigVersion,
+  updateDraftStructure,
+  updateVersionUrbanConfigs,
+  updateVersionLocks,
+  publishRouteConfigVersion,
   type RegionDef,
   type UrbanConfig,
   type RouteConfigVersion,
@@ -21,6 +20,10 @@ const C_TEXT_PRIMARY   = '#111827'
 const C_TEXT_SECONDARY = '#6B7280'
 const C_BORDER         = '#E5E7EB'
 const C_BG_HEADER      = '#F3F4F6'
+const C_PUB            = '#12784A'
+const C_PUB_BG         = '#DCF3E7'
+const C_DRAFT          = '#8A6100'
+const C_DRAFT_BG       = '#FDF3D9'
 
 // Full canonical list — all Vietnam provinces
 const ALL_PROVINCES = VIETNAM_PROVINCES.map((p) => p.name)
@@ -94,30 +97,37 @@ function UrbanCategoryColumn({
 
 export default function RouteConfig() {
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+
+  // Bộ đang xem/sửa — xác định qua :id trên URL (KHÁC bản trước luôn sửa "bộ đang áp dụng"). Nếu
+  // không tìm thấy (id sai/đã xoá), fallback bộ đầu tiên để không crash trang.
+  const [bundle, setBundle] = useState<RouteConfigVersion>(
+    () => routeConfigVersions.find((v) => v.id === id) ?? routeConfigVersions[0]
+  )
+  const isPublished = bundle.status === 'published'
 
   // ── Vùng miền, Tuyến, Nội/Ngoại thành mỗi phần có 1 DRAFT + nút Lưu/Huỷ RIÊNG — lưu phần nào
-  // chỉ tạo bộ vùng tuyến mới từ ĐÚNG phần đó + 2 phần còn lại lấy nguyên theo bộ ĐANG ÁP DỤNG
-  // (không lẫn thay đổi CHƯA lưu ở phần khác vào cùng 1 bộ) — KHÁC bản trước (gộp cả 3 phần
-  // thành 1 draft, 1 nút Lưu duy nhất). Deep-copy để React nhận diện mutation qua setState.
+  // chỉ sửa TẠI CHỖ đúng phần đó trên CHÍNH bộ đang xem (không sinh bộ mới nữa — khác bản trước).
+  // Deep-copy để React nhận diện mutation qua setState.
   const [regionsDraft, setRegionsDraft] = useState<RegionDef[]>(() =>
-    regions.map((r) => ({ ...r, provinces: [...r.provinces] }))
+    bundle.regions.map((r) => ({ ...r, provinces: [...r.provinces] }))
   )
-  const [matrixDraft, setMatrixDraft] = useState<Record<string, string>>(() => ({ ...routeMatrix }))
+  const [matrixDraft, setMatrixDraft] = useState<Record<string, string>>(() => ({ ...bundle.routeMatrix }))
   // Danh sách tên tuyến (Bước 2) — độc lập với matrixDraft để 1 tuyến mới thêm vẫn hiện được dù
   // chưa tick cặp miền nào (matrixDraft chỉ lưu các cặp ĐÃ gán).
   const [routeNames, setRouteNames] = useState<string[]>(() =>
-    Array.from(new Set(Object.values(routeMatrix)))
+    Array.from(new Set(Object.values(bundle.routeMatrix)))
   )
   // Tên tuyến đang bị khoá — xem field `lockedRouteNames` trên RouteConfigVersion (routeConfig.ts)
   // để biết phạm vi chặn chính xác. Bấm trực tiếp icon khoá cạnh tên tuyến trong bảng "Cấu hình
-  // tuyến" để đổi — KHÔNG còn modal riêng, mỗi lần bấm lưu NGAY (xem toggleRouteLock bên dưới).
+  // tuyến" để đổi — lưu NGAY, cho phép ở CẢ Nháp lẫn Đã phát hành (khác Vùng miền/Tuyến).
   const [lockedRouteNames, setLockedRouteNames] = useState<Set<string>>(
-    () => new Set(getActiveRouteConfigVersion().lockedRouteNames ?? [])
+    () => new Set(bundle.lockedRouteNames ?? [])
   )
   // Cấp khoá mịn hơn — khoá đúng 1 CẶP vùng miền (pairKey), độc lập với khoá cả tuyến ở trên. Bấm
   // trực tiếp icon khoá cạnh mỗi chip cặp ĐÃ GÁN (checked) trong bảng "Cấu hình tuyến".
   const [lockedPairKeys, setLockedPairKeys] = useState<Set<string>>(
-    () => new Set(getActiveRouteConfigVersion().lockedPairKeys ?? [])
+    () => new Set(bundle.lockedPairKeys ?? [])
   )
   const [toast, setToast] = useState<string | null>(null)
   const showToast = (msg: string) => {
@@ -125,24 +135,18 @@ export default function RouteConfig() {
     setTimeout(() => setToast((prev) => (prev === msg ? null : prev)), 2000)
   }
   const [urbanDraft, setUrbanDraft] = useState<UrbanConfig[]>(() =>
-    urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
+    bundle.urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) }))
   )
-  // Theo dõi bộ vùng tuyến ĐANG ÁP DỤNG (KHÔNG chắc là bộ tạo gần nhất — Super Admin có thể đã
-  // "Đặt làm mặc định" cho 1 bộ cũ hơn ở trang "Danh sách bộ vùng tuyến") — dùng làm mốc so sánh
-  // "có thay đổi chưa lưu" cho CẢ 3 draft, và làm nguồn "giữ nguyên" cho 2 phần không lưu khi chỉ
-  // lưu 1 phần. Chung 1 state vì cả 3 nút Lưu đều cập nhật nó khi có version mới.
-  const [activeVersion, setActiveVersion] = useState<RouteConfigVersion>(() => getActiveRouteConfigVersion())
 
-  // Khoá/mở khoá tuyến (cả tuyến hoặc riêng 1 cặp) LƯU NGAY — sửa lockedRouteNames/lockedPairKeys
-  // TẠI CHỖ trên bộ ĐANG ÁP DỤNG, không sinh bộ vùng tuyến mới (khác 3 nút Lưu kia, vốn đổi
-  // regions/routeMatrix/urbanConfigs nên cần giữ bản cũ trong lịch sử). Xem updateActiveVersionLocks()
-  // trong routeConfig.ts. Gọi trực tiếp từ icon khoá cạnh tên tuyến / cạnh mỗi chip cặp đã gán.
+  // Khoá/mở khoá tuyến (cả tuyến hoặc riêng 1 cặp) LƯU NGAY trên CHÍNH bộ đang xem — cho phép ở
+  // cả Nháp lẫn Đã phát hành (xem bảng quyền thao tác), không đụng Vùng miền/Tuyến nên không bị
+  // chặn bởi isPublished. Gọi trực tiếp từ icon khoá cạnh tên tuyến / cạnh mỗi chip cặp đã gán.
   const toggleRouteLock = (name: string) => {
     const next = new Set(lockedRouteNames)
     if (next.has(name)) next.delete(name)
     else next.add(name)
-    const updated = updateActiveVersionLocks(Array.from(next), Array.from(lockedPairKeys))
-    setActiveVersion(updated)
+    const updated = updateVersionLocks(bundle.id, Array.from(next), Array.from(lockedPairKeys))
+    if (updated) setBundle(updated)
     setLockedRouteNames(next)
     showToast('Lưu thay đổi thành công')
   }
@@ -151,14 +155,14 @@ export default function RouteConfig() {
     const next = new Set(lockedPairKeys)
     if (next.has(key)) next.delete(key)
     else next.add(key)
-    const updated = updateActiveVersionLocks(Array.from(lockedRouteNames), Array.from(next))
-    setActiveVersion(updated)
+    const updated = updateVersionLocks(bundle.id, Array.from(lockedRouteNames), Array.from(next))
+    if (updated) setBundle(updated)
     setLockedPairKeys(next)
     showToast('Lưu thay đổi thành công')
   }
 
   const [selectedUrbanProvince, setSelectedUrbanProvince] = useState<string | null>(
-    () => urbanConfigs[0]?.province ?? null
+    () => bundle.urbanConfigs[0]?.province ?? null
   )
   const [addProvinceMenuOpen, setAddProvinceMenuOpen] = useState(false)
   const [urbanSearchNoi, setUrbanSearchNoi] = useState('')
@@ -172,11 +176,9 @@ export default function RouteConfig() {
   const selectedUrbanConfig     = urbanDraft.find((u) => u.province === selectedUrbanProvince) ?? null
 
   // 3 cờ "có thay đổi chưa lưu" ĐỘC LẬP — mỗi cụm nút Lưu/Huỷ chỉ nhìn đúng 1 cờ của phần mình.
-  const hasRegionChanges = JSON.stringify(regionsDraft) !== JSON.stringify(activeVersion.regions)
-  const hasTuyenChanges  = JSON.stringify(matrixDraft) !== JSON.stringify(activeVersion.routeMatrix)
-    || JSON.stringify([...lockedRouteNames].sort()) !== JSON.stringify([...(activeVersion.lockedRouteNames ?? [])].sort())
-    || JSON.stringify([...lockedPairKeys].sort()) !== JSON.stringify([...(activeVersion.lockedPairKeys ?? [])].sort())
-  const hasUrbanChanges  = JSON.stringify(urbanDraft) !== JSON.stringify(activeVersion.urbanConfigs)
+  const hasRegionChanges = JSON.stringify(regionsDraft) !== JSON.stringify(bundle.regions)
+  const hasTuyenChanges  = JSON.stringify(matrixDraft) !== JSON.stringify(bundle.routeMatrix)
+  const hasUrbanChanges  = JSON.stringify(urbanDraft) !== JSON.stringify(bundle.urbanConfigs)
 
   // Validate tên vùng miền: trùng tên (không phân biệt hoa/thường) với vùng miền khác. Dòng chưa
   // đặt tên (vừa bấm "+ Thêm vùng miền", chưa gõ gì) không báo lỗi — chỉ validate khi đã có tên.
@@ -193,26 +195,28 @@ export default function RouteConfig() {
   const tuyenNameError = (name: string): string | null =>
     name.trim().length < 2 ? 'Ít nhất 2 ký tự' : null
 
-  // Mọi cặp miền có thể có (kể cả đường chéo = cùng miền, khác tỉnh) — LƯU Ý: dựa trên
-  // `regionsDraft` (có thể có vùng miền vừa thêm/sửa NHƯNG CHƯA LƯU) — nếu lưu "Cấu hình tuyến"
-  // trong lúc "Cấu hình vùng miền" còn thay đổi chưa lưu, cặp tick ở đây vẫn tính theo vùng miền
-  // NHÁP (chưa lưu) chứ không phải bộ đang áp dụng; xem Notes ở story GSA-ROUTE-14b.
+  // Mọi cặp miền có thể có (kể cả đường chéo = cùng miền, khác tỉnh) — dựa trên `regionsDraft`
+  // (có thể có vùng miền vừa thêm/sửa NHƯNG CHƯA LƯU).
   const allRegionPairs = regionsDraft.flatMap((a, i) => regionsDraft.slice(i).map((b) => [a, b] as const))
   const unconfiguredPairs = allRegionPairs.filter(([a, b]) => !matrixDraft[pairKey(a.id, b.id)])
 
-  // ── Handlers — CHỈ sửa draft cục bộ, không đụng store dùng chung nữa ───────────────────────
+  // ── Handlers — CHỈ sửa draft cục bộ; Vùng miền/Tuyến bị chặn hẳn khi bộ đã phát hành (cấu trúc
+  // khoá vĩnh viễn, muốn sửa phải Nhân bản ra bộ nháp mới ở "Danh sách bộ vùng tuyến"). ──────────
 
   const handleAddRegion = () => {
+    if (isPublished) return
     const newRegion: RegionDef = { id: `region_${Date.now()}`, name: '', provinces: [] }
     setRegionsDraft((prev) => [...prev, newRegion])
     setMatrixDraft((prev) => ({ ...prev, [pairKey(newRegion.id, newRegion.id)]: 'Nội Tỉnh' }))
   }
 
   const handleRenameRegion = (id: string, name: string) => {
+    if (isPublished) return
     setRegionsDraft((prev) => prev.map((r) => (r.id === id ? { ...r, name } : r)))
   }
 
   const handleDeleteRegion = (id: string) => {
+    if (isPublished) return
     setRegionsDraft((prev) => prev.filter((r) => r.id !== id))
     setMatrixDraft((prev) => {
       const next = { ...prev }
@@ -224,6 +228,7 @@ export default function RouteConfig() {
   }
 
   const handleAssignProvince = (province: string, regionId: string) => {
+    if (isPublished) return
     setRegionsDraft((prev) =>
       prev.map((r) => ({ ...r, provinces: r.provinces.filter((p) => p !== province) }))
         .map((r) => (r.id === regionId ? { ...r, provinces: [...r.provinces, province] } : r))
@@ -231,6 +236,7 @@ export default function RouteConfig() {
   }
 
   const handleRemoveProvince = (province: string, regionId: string) => {
+    if (isPublished) return
     setRegionsDraft((prev) =>
       prev.map((r) =>
         r.id === regionId ? { ...r, provinces: r.provinces.filter((p) => p !== province) } : r
@@ -239,21 +245,21 @@ export default function RouteConfig() {
   }
 
   const cancelRegionsDraft = () => {
-    setRegionsDraft(activeVersion.regions.map((r) => ({ ...r, provinces: [...r.provinces] })))
+    setRegionsDraft(bundle.regions.map((r) => ({ ...r, provinces: [...r.provinces] })))
   }
 
-  // Lưu RIÊNG "Cấu hình vùng miền" — Tuyến/Nội-Ngoại thành lấy nguyên theo bộ đang áp dụng
-  // (bỏ qua mọi thay đổi CHƯA lưu ở 2 phần đó, nếu có). Có xác nhận trước khi lưu — hạn chế tạo
-  // hàng loạt bộ gần giống hệt nhau nếu Super Admin bấm Lưu nhiều lần liên tiếp cho các chỉnh sửa nhỏ.
+  // Lưu RIÊNG "Cấu hình vùng miền" TẠI CHỖ trên CHÍNH bộ đang xem — Tuyến ở cùng bước lưu (2 phần
+  // này dùng chung 1 hàm updateDraftStructure vì routeMatrix phụ thuộc regions). Nội-Ngoại thành
+  // không bị ảnh hưởng. KHÔNG còn tạo bộ mới — chỉ còn gọi được khi bundle đang là Nháp.
   const commitRegionsDraft = () => {
-    const ok = window.confirm('Lưu thay đổi Vùng miền sẽ tạo 1 bộ vùng tuyến MỚI (giữ nguyên Tuyến/Nội-Ngoại thành hiện tại). Tiếp tục?')
-    if (!ok) return
-    const newVersion = commitNewRouteConfigVersion(regionsDraft, activeVersion.routeMatrix, activeVersion.urbanConfigs, undefined, activeVersion.lockedRouteNames, activeVersion.lockedPairKeys)
-    setActiveVersion(newVersion)
-    setRegionsDraft(regions.map((r) => ({ ...r, provinces: [...r.provinces] })))
+    const updated = updateDraftStructure(bundle.id, regionsDraft, matrixDraft)
+    if (!updated) return
+    setBundle(updated)
+    showToast('Lưu thay đổi thành công')
   }
 
   const handleAddTuyen = () => {
+    if (isPublished) return
     // routeNames dedupe qua Set (giữ nguyên hành vi cũ tránh hiện trùng tên) — nếu đã có dòng
     // trống trước đó, thêm khoảng trắng để 2 dòng trống không bị Set gộp làm 1 (trim() vẫn coi
     // là rỗng nên validate "Ít nhất 2 ký tự" không bị ảnh hưởng).
@@ -264,7 +270,7 @@ export default function RouteConfig() {
   }
 
   const handleRenameTuyen = (oldName: string, newName: string) => {
-    if (oldName === 'Nội Tỉnh' || lockedRouteNames.has(oldName)) return
+    if (isPublished || oldName === 'Nội Tỉnh' || lockedRouteNames.has(oldName)) return
     setMatrixDraft((prev) => {
       const next = { ...prev }
       for (const key of Object.keys(next)) {
@@ -278,7 +284,7 @@ export default function RouteConfig() {
   // "Nội Tỉnh" không xoá được — đây là tên gợi ý mặc định cho cặp "đường chéo" (cùng miền) của
   // MỌI miền, Super Admin tách 1 miền sang tên khác bằng cách bấm chip, không xoá cả dòng.
   const handleDeleteTuyen = (name: string) => {
-    if (name === 'Nội Tỉnh' || lockedRouteNames.has(name)) return
+    if (isPublished || name === 'Nội Tỉnh' || lockedRouteNames.has(name)) return
     // Tuyến đang chứa ít nhất 1 cặp bị khoá RIÊNG (dù bản thân tuyến không bị khoá) — chặn xoá để
     // tránh orphan khoá (xoá tuyến sẽ tự gỡ gán cặp đó khỏi mọi tuyến, phá mất ý nghĩa đã khoá).
     const hasLockedPair = Object.entries(matrixDraft).some(([key, routeName]) => routeName === name && lockedPairKeys.has(key))
@@ -294,7 +300,7 @@ export default function RouteConfig() {
   }
 
   const handleToggleChip = (routeName: string, regionIdA: string, regionIdB: string) => {
-    if (lockedRouteNames.has(routeName)) return
+    if (isPublished || lockedRouteNames.has(routeName)) return
     const key = pairKey(regionIdA, regionIdB)
     // Cặp bị khoá RIÊNG (lockedPairKeys) — không cho đổi cặp này sang tuyến khác, bất kể tuyến
     // hiện đang gán/tuyến đích có bị khoá cả tuyến hay không. Đây là cấp khoá mịn hơn, độc lập.
@@ -311,26 +317,21 @@ export default function RouteConfig() {
     })
   }
 
-
   const cancelTuyenDraft = () => {
-    setMatrixDraft({ ...activeVersion.routeMatrix })
-    setRouteNames(Array.from(new Set(Object.values(activeVersion.routeMatrix))))
-    setLockedRouteNames(new Set(activeVersion.lockedRouteNames ?? []))
-    setLockedPairKeys(new Set(activeVersion.lockedPairKeys ?? []))
+    setMatrixDraft({ ...bundle.routeMatrix })
+    setRouteNames(Array.from(new Set(Object.values(bundle.routeMatrix))))
   }
 
-  // Lưu RIÊNG "Cấu hình tuyến" — Vùng miền/Nội-Ngoại thành lấy nguyên theo bộ đang áp dụng.
-  // Có xác nhận trước khi lưu — hạn chế tạo hàng loạt bộ gần giống hệt nhau.
+  // Lưu RIÊNG "Cấu hình tuyến" TẠI CHỖ — dùng chung updateDraftStructure với Vùng miền (routeMatrix
+  // phụ thuộc đúng bộ regions hiện tại của bundle, không phải regionsDraft có thể đang dở ở trên).
   const commitTuyenDraft = () => {
-    const ok = window.confirm('Lưu thay đổi Tuyến sẽ tạo 1 bộ vùng tuyến MỚI (giữ nguyên Vùng miền/Nội-Ngoại thành hiện tại). Tiếp tục?')
-    if (!ok) return
-    const newVersion = commitNewRouteConfigVersion(activeVersion.regions, matrixDraft, activeVersion.urbanConfigs, undefined, Array.from(lockedRouteNames), Array.from(lockedPairKeys))
-    setActiveVersion(newVersion)
-    setMatrixDraft({ ...routeMatrix })
-    setRouteNames(Array.from(new Set(Object.values(routeMatrix))))
+    const updated = updateDraftStructure(bundle.id, bundle.regions, matrixDraft)
+    if (!updated) return
+    setBundle(updated)
+    showToast('Lưu thay đổi thành công')
   }
 
-  // ── Nội thành / Ngoại thành — draft + Lưu/Huỷ RIÊNG, độc lập với Vùng miền/Tuyến ở trên. ──
+  // ── Nội thành / Ngoại thành — draft + Lưu/Huỷ RIÊNG, cho phép ở CẢ Nháp lẫn Đã phát hành. ──
 
   const handleAddUrbanProvinceDraft = (name: string) => {
     if (!name) return
@@ -365,17 +366,33 @@ export default function RouteConfig() {
   }
 
   const cancelUrbanDraft = () => {
-    setUrbanDraft(activeVersion.urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) })))
+    setUrbanDraft(bundle.urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) })))
   }
 
-  // Lưu RIÊNG "Cấu hình nội & ngoại thành" — Vùng miền/Tuyến lấy nguyên theo bộ đang áp dụng.
-  // Có xác nhận trước khi lưu — hạn chế tạo hàng loạt bộ gần giống hệt nhau.
+  // Lưu RIÊNG "Cấu hình nội & ngoại thành" TẠI CHỖ — cho phép bất kể Nháp hay Đã phát hành.
   const commitUrbanDraft = () => {
-    const ok = window.confirm('Lưu thay đổi Nội & ngoại thành sẽ tạo 1 bộ vùng tuyến MỚI (giữ nguyên Vùng miền/Tuyến hiện tại). Tiếp tục?')
+    const updated = updateVersionUrbanConfigs(bundle.id, urbanDraft)
+    if (!updated) return
+    setBundle(updated)
+    showToast('Lưu thay đổi thành công')
+  }
+
+  // Phát hành bộ Nháp — validate ở routeConfig.ts (phải có tuyến "Nội Tỉnh"), khoá vĩnh viễn Vùng
+  // miền/Tuyến sau khi thành công. KHÔNG tự động áp dụng — Super Admin tự bật ở Danh sách sau.
+  const handlePublish = () => {
+    if (hasRegionChanges || hasTuyenChanges) {
+      window.alert('Bạn đang có thay đổi Vùng miền/Tuyến chưa lưu — hãy Lưu hoặc Huỷ bỏ trước khi phát hành.')
+      return
+    }
+    const ok = window.confirm(`Phát hành bộ "${bundle.label}"? Sau khi phát hành, KHÔNG thể sửa Vùng miền/Tuyến nữa — muốn sửa phải nhân bản ra bộ nháp mới. Hành động này không có đường quay lại.`)
     if (!ok) return
-    const newVersion = commitNewRouteConfigVersion(activeVersion.regions, activeVersion.routeMatrix, urbanDraft, undefined, activeVersion.lockedRouteNames, activeVersion.lockedPairKeys)
-    setActiveVersion(newVersion)
-    setUrbanDraft(urbanConfigs.map((u) => ({ ...u, wards: u.wards.map((w) => ({ ...w })) })))
+    const result = publishRouteConfigVersion(bundle.id)
+    if (!result.ok) {
+      window.alert(result.error)
+      return
+    }
+    setBundle(result.version)
+    showToast('Đã phát hành — cấu trúc Vùng miền/Tuyến đã khoá vĩnh viễn')
   }
 
   return (
@@ -394,14 +411,37 @@ export default function RouteConfig() {
             >
               ← Danh sách bộ vùng tuyến
             </button>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: C_TEXT_PRIMARY, margin: 0 }}>
-              Chỉnh sửa vùng &amp; tuyến
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: C_TEXT_PRIMARY, margin: 0 }}>
+                Chỉnh sửa: {bundle.label}
+              </h1>
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 10,
+                color: isPublished ? C_PUB : C_DRAFT,
+                background: isPublished ? C_PUB_BG : C_DRAFT_BG,
+              }}>
+                {isPublished ? 'Đã phát hành' : 'Nháp'}
+              </span>
+            </div>
             <p style={{ fontSize: 12.5, color: C_TEXT_SECONDARY, margin: '2px 0 0' }}>
-              Đang chỉnh trên bộ vùng tuyến đang áp dụng — bấm "Lưu thay đổi" sẽ tự sinh ra 1 bộ MỚI, bộ hiện tại vẫn giữ nguyên trong lịch sử, không bị sửa đè.
+              {isPublished
+                ? 'Bộ đã phát hành — Vùng miền/Tuyến bị khoá vĩnh viễn. Vẫn sửa được Nội-Ngoại thành và khoá/mở từng tuyến.'
+                : 'Bộ Nháp — mọi thay đổi lưu TẠI CHỖ trên chính bộ này, không sinh bộ mới. Bấm "Phát hành" khi đã sửa xong.'}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {!isPublished && (
+              <button
+                onClick={handlePublish}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px',
+                  background: '#FF5200', border: 'none', borderRadius: 6,
+                  cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: '#fff',
+                }}
+              >
+                🚀 Phát hành
+              </button>
+            )}
             <button
               onClick={() => window.location.reload()}
               title="Tải lại toàn bộ dữ liệu về trạng thái mẫu ban đầu (mất mọi thay đổi trong phiên này)"
@@ -415,6 +455,16 @@ export default function RouteConfig() {
             </button>
           </div>
         </div>
+
+        {/* ── Banner "đã khoá cấu trúc" khi bộ đã phát hành ── */}
+        {isPublished && (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: C_PUB_BG, color: C_TEXT_PRIMARY, borderRadius: 8, padding: '12px 14px', fontSize: 13.5, marginTop: 10 }}>
+            <span>🔒</span>
+            <span>
+              <b style={{ color: C_PUB }}>Bộ đã phát hành.</b> Không sửa được Vùng miền và Tuyến. Bạn vẫn có thể khoá/mở tuyến và chỉnh Nội/Ngoại thành. Muốn thay đổi cấu trúc thì nhân bản bộ này ở "Danh sách bộ vùng tuyến".
+            </span>
+          </div>
+        )}
 
         {/* ── Giải thích khái niệm — miền / cặp miền / tuyến ── */}
         <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
@@ -447,11 +497,11 @@ export default function RouteConfig() {
         </div>
 
         {/* ── Cấu hình vùng miền ── */}
-        <div style={{ ...cardStyle, marginTop: 12 }}>
+        <div style={{ ...cardStyle, marginTop: 12, opacity: isPublished ? 0.75 : 1 }}>
           <div>
             <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>🗺️ Cấu hình vùng miền</span>
             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
-              Đã điền sẵn theo quy tắc GHN hiện tại — chỉ cần sửa khi có ngoại lệ.
+              {isPublished ? 'Đã khoá — bộ đã phát hành.' : 'Đã điền sẵn theo quy tắc GHN hiện tại — chỉ cần sửa khi có ngoại lệ.'}
             </div>
           </div>
 
@@ -480,9 +530,12 @@ export default function RouteConfig() {
                       value={region.name}
                       onChange={(e) => handleRenameRegion(region.id, e.target.value)}
                       placeholder="Tên vùng miền"
+                      disabled={isPublished}
                       style={{
                         ...inputStyle, fontWeight: 700, width: '100%',
                         borderColor: nameError ? '#EF4444' : C_BORDER,
+                        background: isPublished ? '#F3F4F6' : '#fff',
+                        cursor: isPublished ? 'not-allowed' : 'text',
                       }}
                     />
                     {nameError && <span style={{ fontSize: 11, color: '#EF4444' }}>{nameError}</span>}
@@ -499,14 +552,16 @@ export default function RouteConfig() {
                           }}
                         >
                           {p}
-                          <CloseOutlined
-                            style={{ fontSize: 10, cursor: 'pointer' }}
-                            onClick={() => handleRemoveProvince(p, region.id)}
-                          />
+                          {!isPublished && (
+                            <CloseOutlined
+                              style={{ fontSize: 10, cursor: 'pointer' }}
+                              onClick={() => handleRemoveProvince(p, region.id)}
+                            />
+                          )}
                         </span>
                       ))}
                     </div>
-                    {unassignedList.length > 0 && (
+                    {!isPublished && unassignedList.length > 0 && (
                       <select
                         value=""
                         onChange={(e) => { if (e.target.value) handleAssignProvince(e.target.value, region.id) }}
@@ -522,28 +577,32 @@ export default function RouteConfig() {
                     {provinceError && <span style={{ fontSize: 11, color: '#EF4444' }}>{provinceError}</span>}
                   </div>
 
-                  <button
-                    onClick={() => handleDeleteRegion(region.id)}
-                    style={{ border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', flexShrink: 0 }}
-                    title="Xoá miền"
-                  >
-                    <CloseOutlined />
-                  </button>
+                  {!isPublished && (
+                    <button
+                      onClick={() => handleDeleteRegion(region.id)}
+                      style={{ border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', flexShrink: 0 }}
+                      title="Xoá miền"
+                    >
+                      <CloseOutlined />
+                    </button>
+                  )}
                 </div>
               )
             })}
           </div>
 
-          <button
-            onClick={handleAddRegion}
-            style={{
-              alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-              background: '#111827', border: 'none', borderRadius: 6,
-              cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff',
-            }}
-          >
-            <PlusOutlined style={{ fontSize: 12 }} /> Thêm vùng miền
-          </button>
+          {!isPublished && (
+            <button
+              onClick={handleAddRegion}
+              style={{
+                alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+                background: '#111827', border: 'none', borderRadius: 6,
+                cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff',
+              }}
+            >
+              <PlusOutlined style={{ fontSize: 12 }} /> Thêm vùng miền
+            </button>
+          )}
 
           {unassignedList.length > 0 && (
             <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
@@ -551,44 +610,44 @@ export default function RouteConfig() {
             </span>
           )}
 
-          {/* Lưu RIÊNG "Vùng miền" — Tuyến/Nội-Ngoại thành KHÔNG bị ảnh hưởng, vẫn giữ nguyên
-              theo bộ đang áp dụng cho tới khi tự lưu riêng ở đúng khối của chúng. */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingTop: 10, borderTop: `1px solid ${C_BORDER}`, marginTop: 4 }}>
-            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
-              {hasRegionChanges ? 'Có thay đổi chưa lưu ở Vùng miền — bấm "Lưu thay đổi" sẽ tạo 1 bộ vùng tuyến MỚI (chỉ áp dụng phần Vùng miền, giữ nguyên Tuyến/Nội-Ngoại thành hiện tại).' : 'Đã lưu — không có thay đổi nào ở Vùng miền.'}
-            </span>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              <button
-                onClick={cancelRegionsDraft}
-                disabled={!hasRegionChanges}
-                style={{
-                  padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, fontSize: 13, fontWeight: 600,
-                  background: '#fff', color: hasRegionChanges ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
-                  cursor: hasRegionChanges ? 'pointer' : 'default', opacity: hasRegionChanges ? 1 : 0.6,
-                }}
-              >
-                ✕ Huỷ bỏ
-              </button>
-              <button
-                onClick={commitRegionsDraft}
-                disabled={!hasRegionChanges}
-                style={{
-                  padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, color: '#fff',
-                  background: hasRegionChanges ? '#FF5200' : '#D1D5DB', cursor: hasRegionChanges ? 'pointer' : 'default',
-                }}
-              >
-                💾 Lưu thay đổi (tạo bộ mới)
-              </button>
+          {!isPublished && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingTop: 10, borderTop: `1px solid ${C_BORDER}`, marginTop: 4 }}>
+              <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
+                {hasRegionChanges ? 'Có thay đổi chưa lưu ở Vùng miền.' : 'Đã lưu — không có thay đổi nào ở Vùng miền.'}
+              </span>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button
+                  onClick={cancelRegionsDraft}
+                  disabled={!hasRegionChanges}
+                  style={{
+                    padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, fontSize: 13, fontWeight: 600,
+                    background: '#fff', color: hasRegionChanges ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                    cursor: hasRegionChanges ? 'pointer' : 'default', opacity: hasRegionChanges ? 1 : 0.6,
+                  }}
+                >
+                  ✕ Huỷ bỏ
+                </button>
+                <button
+                  onClick={commitRegionsDraft}
+                  disabled={!hasRegionChanges}
+                  style={{
+                    padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, color: '#fff',
+                    background: hasRegionChanges ? '#FF5200' : '#D1D5DB', cursor: hasRegionChanges ? 'pointer' : 'default',
+                  }}
+                >
+                  💾 Lưu thay đổi
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* ── Cấu hình tuyến ── */}
-        <div style={{ ...cardStyle, marginTop: 12 }}>
+        <div style={{ ...cardStyle, marginTop: 12, opacity: isPublished ? 0.75 : 1 }}>
           <div>
             <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>🔀 Cấu hình tuyến</span>
             <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 2 }}>
-              Nhiều dòng có thể dùng chung 1 tuyến nếu muốn tính cùng 1 mức giá
+              {isPublished ? 'Gán cặp miền đã khoá — chỉ còn icon khoá/mở khoá tuyến dùng được.' : 'Nhiều dòng có thể dùng chung 1 tuyến nếu muốn tính cùng 1 mức giá'}
             </div>
           </div>
 
@@ -644,12 +703,12 @@ export default function RouteConfig() {
                                 value={name}
                                 onChange={(e) => handleRenameTuyen(name, e.target.value)}
                                 placeholder="Tên tuyến"
-                                disabled={isLocked}
-                                title={isLocked ? 'Tuyến đã khoá — mở khoá để đổi tên' : undefined}
+                                disabled={isPublished || isLocked}
+                                title={isLocked ? 'Tuyến đã khoá — mở khoá để đổi tên' : isPublished ? 'Bộ đã phát hành — không sửa được' : undefined}
                                 style={{
                                   ...inputStyle, fontWeight: 700, width: '100%', borderColor: nameError ? '#EF4444' : C_BORDER,
-                                  background: isLocked ? '#F3F4F6' : '#fff', color: isLocked ? C_TEXT_SECONDARY : C_TEXT_PRIMARY,
-                                  cursor: isLocked ? 'not-allowed' : 'text',
+                                  background: (isPublished || isLocked) ? '#F3F4F6' : '#fff', color: (isPublished || isLocked) ? C_TEXT_SECONDARY : C_TEXT_PRIMARY,
+                                  cursor: (isPublished || isLocked) ? 'not-allowed' : 'text',
                                 }}
                               />
                               <button
@@ -690,7 +749,7 @@ export default function RouteConfig() {
                             const owner = matrixDraft[key]
                             const pairLocked = lockedPairKeys.has(key)
                             const blockedByOtherLock = !checked && !!owner && owner !== name && lockedRouteNames.has(owner)
-                            const chipDisabled = isLocked || blockedByOtherLock || pairLocked
+                            const chipDisabled = isPublished || isLocked || blockedByOtherLock || pairLocked
                             const chipLabel = a.id === b.id ? a.name.replace(' (Đặc biệt)', '') : `${a.name} ↔ ${b.name}`
                             return (
                               <div
@@ -702,7 +761,7 @@ export default function RouteConfig() {
                                 }}
                               >
                                 {/* Icon khoá riêng cặp này — chỉ hiện khi cặp ĐÃ GÁN cho tuyến này (checked),
-                                    khoá 1 cặp không gán vào đâu là vô nghĩa. */}
+                                    khoá 1 cặp không gán vào đâu là vô nghĩa. Dùng được bất kể isPublished. */}
                                 {checked && (
                                   <button
                                     onClick={() => togglePairLock(key)}
@@ -719,7 +778,7 @@ export default function RouteConfig() {
                                 <button
                                   onClick={() => handleToggleChip(name, a.id, b.id)}
                                   disabled={chipDisabled}
-                                  title={pairLocked ? `Cặp "${chipLabel}" đã bị khoá riêng — bấm icon khoá cạnh chip để mở` : blockedByOtherLock ? `Cặp này đang thuộc tuyến "${owner}" đã khoá` : isLocked ? 'Tuyến đã khoá' : undefined}
+                                  title={pairLocked ? `Cặp "${chipLabel}" đã bị khoá riêng — bấm icon khoá cạnh chip để mở` : blockedByOtherLock ? `Cặp này đang thuộc tuyến "${owner}" đã khoá` : isLocked ? 'Tuyến đã khoá' : isPublished ? 'Bộ đã phát hành — không sửa được' : undefined}
                                   style={{
                                     display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: 'none',
                                     fontSize: 12, fontWeight: checked ? 600 : 400, cursor: chipDisabled ? 'not-allowed' : 'pointer',
@@ -735,7 +794,7 @@ export default function RouteConfig() {
                         )}
                       </div>
                       <div style={{ flex: '0 0 28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
-                        {!isNoiTinh && (
+                        {!isNoiTinh && !isPublished && (
                           <button
                             onClick={() => handleDeleteTuyen(name)}
                             disabled={isLocked || hasLockedPair}
@@ -753,16 +812,18 @@ export default function RouteConfig() {
             </div>
           )}
 
-          <button
-            onClick={handleAddTuyen}
-            style={{
-              alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-              background: '#111827', border: 'none', borderRadius: 6,
-              cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff',
-            }}
-          >
-            <PlusOutlined style={{ fontSize: 12 }} /> Thêm tuyến
-          </button>
+          {!isPublished && (
+            <button
+              onClick={handleAddTuyen}
+              style={{
+                alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+                background: '#111827', border: 'none', borderRadius: 6,
+                cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff',
+              }}
+            >
+              <PlusOutlined style={{ fontSize: 12 }} /> Thêm tuyến
+            </button>
+          )}
 
           {unconfiguredPairs.length > 0 && (
             <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
@@ -770,40 +831,40 @@ export default function RouteConfig() {
             </span>
           )}
 
-          {/* Lưu RIÊNG "Tuyến" — Vùng miền/Nội-Ngoại thành KHÔNG bị ảnh hưởng, vẫn giữ nguyên
-              theo bộ đang áp dụng cho tới khi tự lưu riêng ở đúng khối của chúng. */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingTop: 10, borderTop: `1px solid ${C_BORDER}`, marginTop: 4 }}>
-            <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
-              {hasTuyenChanges ? 'Có thay đổi chưa lưu ở Tuyến — bấm "Lưu thay đổi" sẽ tạo 1 bộ vùng tuyến MỚI (chỉ áp dụng phần Tuyến, giữ nguyên Vùng miền/Nội-Ngoại thành hiện tại).' : `Đang áp dụng: ${activeVersion.label}`}
-            </span>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              <button
-                onClick={cancelTuyenDraft}
-                disabled={!hasTuyenChanges}
-                style={{
-                  padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, fontSize: 13, fontWeight: 600,
-                  background: '#fff', color: hasTuyenChanges ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
-                  cursor: hasTuyenChanges ? 'pointer' : 'default', opacity: hasTuyenChanges ? 1 : 0.6,
-                }}
-              >
-                ✕ Huỷ bỏ
-              </button>
-              <button
-                onClick={commitTuyenDraft}
-                disabled={!hasTuyenChanges}
-                style={{
-                  padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, color: '#fff',
-                  background: hasTuyenChanges ? '#FF5200' : '#D1D5DB', cursor: hasTuyenChanges ? 'pointer' : 'default',
-                }}
-              >
-                💾 Lưu thay đổi (tạo bộ mới)
-              </button>
+          {!isPublished && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingTop: 10, borderTop: `1px solid ${C_BORDER}`, marginTop: 4 }}>
+              <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
+                {hasTuyenChanges ? 'Có thay đổi chưa lưu ở Tuyến.' : `Đang sửa: ${bundle.label}`}
+              </span>
+              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <button
+                  onClick={cancelTuyenDraft}
+                  disabled={!hasTuyenChanges}
+                  style={{
+                    padding: '7px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, fontSize: 13, fontWeight: 600,
+                    background: '#fff', color: hasTuyenChanges ? C_TEXT_PRIMARY : C_TEXT_SECONDARY,
+                    cursor: hasTuyenChanges ? 'pointer' : 'default', opacity: hasTuyenChanges ? 1 : 0.6,
+                  }}
+                >
+                  ✕ Huỷ bỏ
+                </button>
+                <button
+                  onClick={commitTuyenDraft}
+                  disabled={!hasTuyenChanges}
+                  style={{
+                    padding: '7px 16px', borderRadius: 6, border: 'none', fontSize: 13, fontWeight: 600, color: '#fff',
+                    background: hasTuyenChanges ? '#FF5200' : '#D1D5DB', cursor: hasTuyenChanges ? 'pointer' : 'default',
+                  }}
+                >
+                  💾 Lưu thay đổi
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* ── Cấu hình nội & ngoại thành — sidebar chọn tỉnh + 2 cột checklist, draft + Lưu/Huỷ
-            RIÊNG (urbanDraft), độc lập với Vùng miền/Tuyến phía trên. ── */}
+            RIÊNG (urbanDraft). Luôn sửa được kể cả khi bộ đã phát hành. ── */}
         <div style={{ ...cardStyle, marginTop: 12, padding: 0, gap: 0, overflow: 'hidden' }}>
           <div style={{ padding: '20px 20px 12px' }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>🏙️ Cấu hình nội &amp; ngoại thành</span>
@@ -912,8 +973,8 @@ export default function RouteConfig() {
             </div>
           </div>
 
-          {/* Lưu RIÊNG "Nội & ngoại thành" — Vùng miền/Tuyến KHÔNG bị ảnh hưởng, vẫn giữ nguyên
-              theo bộ đang áp dụng cho tới khi tự lưu riêng ở đúng khối của chúng. */}
+          {/* Lưu RIÊNG "Nội & ngoại thành" — Vùng miền/Tuyến KHÔNG bị ảnh hưởng. Luôn hiện, kể cả
+              khi bộ đã phát hành (đúng bảng quyền thao tác). */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: `1px solid ${C_BORDER}`, background: C_BG_HEADER }}>
             <button
               onClick={cancelUrbanDraft}
@@ -941,16 +1002,14 @@ export default function RouteConfig() {
                 background: hasUrbanChanges ? '#FF5200' : '#D1D5DB', cursor: hasUrbanChanges ? 'pointer' : 'default',
               }}
             >
-              💾 Lưu thay đổi (tạo bộ mới)
+              💾 Lưu thay đổi
             </button>
           </div>
         </div>
 
       </div>
 
-      {/* Toast "Lưu thay đổi thành công" — hiện khi khoá/mở khoá tuyến (xem toggleRouteLock/
-          togglePairLock), tự ẩn sau 2s. Khoá tuyến lưu NGAY, không qua bước xác nhận/nút Lưu riêng
-          nữa (khác 3 cụm Vùng miền/Tuyến/Nội-Ngoại thành vẫn theo cơ chế draft + Lưu thay đổi). */}
+      {/* Toast "Lưu thay đổi thành công" — hiện khi khoá/mở khoá tuyến hoặc phát hành, tự ẩn sau 2s. */}
       {toast && (
         <div style={{
           position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 200,

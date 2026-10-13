@@ -65,7 +65,7 @@ export default function App() {
           <Route path="agencies/:id" element={<AgencyDetail />} />
           <Route path="hubs-247" element={<Hubs247 />} />
           <Route path="route-config" element={<RouteConfigList />} />
-          <Route path="route-config/edit" element={<RouteConfig />} />
+          <Route path="route-config/edit/:id" element={<RouteConfig />} />
           <Route path="settings" element={<SuperAdminSettings />}>
             <Route path="account" element={<AccountInfo />} />
             <Route path="users" element={<UserManagement />} />

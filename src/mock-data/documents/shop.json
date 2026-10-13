@@ -1175,44 +1175,46 @@
         {
           "id": "SHOP-ORDER-38",
           "jiraKey": "",
-          "title": "[WEB SHOP] Đơn hàng - In đơn hàng: Tách kiện theo sản phẩm",
+          "title": "[WEB SHOP] Đơn hàng - In vận đơn: Tách kiện theo sản phẩm",
           "status": "draft",
-          "userStory": "Là chủ shop có đơn hàng nhiều sản phẩm (ví dụ đơn trên 20kg gồm 2 loại hàng), tôi muốn tách bản in thành nhiều thẻ vận đơn riêng — mỗi sản phẩm 1 kiện — để dán mã lên từng thùng khi đóng gói, mà không cần tạo đơn mới thật trong hệ thống.",
+          "userStory": "Là chủ shop có đơn hàng nhiều sản phẩm (ví dụ đơn gồm 2 loại hàng), tôi muốn bật 1 lựa chọn DUY NHẤT để tách bản in thành nhiều thẻ vận đơn riêng — mỗi sản phẩm 1 kiện — rồi bấm thẳng khổ giấy là in ngay, để dán mã lên từng thùng khi đóng gói mà không cần tạo đơn mới thật trong hệ thống và không phải thao tác qua nhiều bước.",
           "userFlow": [
-            "Mở modal \"In đơn hàng\" (nút In nhanh ở 1 dòng trong danh sách, hoặc chọn nhiều đơn rồi bấm \"In vận đơn\")",
-            "Nếu trong batch sắp in có ít nhất 1 đơn có ≥2 sản phẩm, modal hiện thêm khối \"Tách kiện theo sản phẩm\" ngay trên vùng xem trước thẻ in",
-            "Mỗi đơn đủ điều kiện có 1 dòng \"{mã đơn} — {N} sản phẩm\" kèm toggle bật/tắt riêng; có dòng ghi chú giải thích \"chỉ ảnh hưởng bản in, không tạo đơn mới\"",
-            "Bật toggle cho 1 đơn → vùng xem trước và đếm số đơn cập nhật ngay: đơn đó nở thành N thẻ (\"Kiện 1/N\", \"Kiện 2/N\"...), mỗi thẻ hiện đúng 1 sản phẩm + khối lượng/COD/phí đã chia đều theo số kiện; thẻ có thêm nhãn cam ghi \"Kiện {i}/{N}\"",
-            "Tắt toggle → thẻ gộp lại thành 1, thông tin trở về nguyên như ban đầu",
-            "Bấm \"In\" → in đúng số thẻ đang thấy trong preview (bao gồm cả các kiện đã tách)"
+            "Mở modal \"In vận đơn\" (nút In nhanh ở 1 dòng trong danh sách, hoặc chọn nhiều đơn rồi bấm \"In vận đơn\")",
+            "Dòng đầu modal luôn hiện \"Vui lòng chọn khổ giấy để in vận đơn\"",
+            "Nếu trong batch sắp in có ít nhất 1 đơn có ≥2 sản phẩm, modal hiện thêm 1 checkbox DUY NHẤT \"Mỗi phiếu in chỉ có 1 sản phẩm\" (kèm mô tả \"Khi bật, mỗi sản phẩm sẽ được in trên một phiếu in vận đơn riêng.\") — áp dụng chung cho TOÀN BỘ đơn đủ điều kiện trong batch, không có toggle riêng theo từng đơn",
+            "Bật checkbox → vùng xem trước cập nhật ngay: mọi đơn ≥2 sản phẩm trong batch đều nở thành N thẻ (\"Kiện 1/N\", \"Kiện 2/N\"...), mỗi thẻ hiện đúng 1 sản phẩm + khối lượng/COD/phí đã chia đều theo số kiện; thẻ có thêm nhãn cam ghi \"Kiện {i}/{N}\". Đơn chỉ 1 sản phẩm không bị ảnh hưởng",
+            "Tắt checkbox → mọi thẻ đã tách gộp lại thành 1, thông tin trở về nguyên như ban đầu",
+            "Bấm thẳng 1 trong 3 nút khổ giấy (\"In khổ A5\" / \"In khổ 52 × 70 mm\" / \"In khổ 80 × 80 mm\") → in LUÔN đúng số thẻ đang thấy trong preview tại thời điểm đó (bao gồm cả các kiện đã tách nếu checkbox đang bật) — không còn bước chọn khổ giấy rồi bấm thêm nút \"In\" riêng"
           ],
           "systemFlow": [
             "splitEvenly(total: number, parts: number): number[] — hàm module-scope trong Orders.tsx, khai báo ngay trước function PrintOrderModal: chia 1 số nguyên thành parts phần, tổng luôn bằng đúng total — phần dư gán cho các phần ĐẦU (tránh lỗi làm tròn)",
             "type PrintUnit — module-scope, cùng file: đại diện cho 1 thẻ in thực tế; field: key, order, trackingCode, kienLabel (string|null), productLine (string|null), weightGram, cod, fee",
-            "splitOrderIds: Set<string> — state cục bộ trong PrintOrderModal, mặc định new Set(), reset mỗi lần mở modal, KHÔNG persist qua printSettingsStore hoặc localStorage",
-            "multiProductOrders = orders.filter(o => (orderProducts[o.id]?.length ?? 1) > 1) — danh sách đơn đủ điều kiện hiện toggle (có ≥2 sản phẩm trong orderProducts)",
-            "Khối UI \"Tách kiện theo sản phẩm\" render ngay trên #print-order-area, chỉ khi multiProductOrders.length > 0; với mỗi order đủ điều kiện render 1 dòng toggle riêng",
-            "printUnits: PrintUnit[] = orders.flatMap(o => ...): đơn có ≤1 sản phẩm HOẶC toggle chưa bật → 1 unit, trackingCode gốc, kienLabel: null; đơn có ≥2 sản phẩm VÀ toggle bật → N units, mỗi unit: trackingCode = \"${o.trackingCode}-K${i+1}\", kienLabel = \"Kiện ${i+1}/${N}\", productLine = orderProducts[o.id][i], weightGram/cod/fee = phần tử tương ứng từ splitEvenly",
-            "Toàn bộ phần render thẻ in đổi từ orders.map sang printUnits.map(unit => ...) — dùng unit.order cho field không đổi theo kiện; dùng unit.trackingCode/productLine/weightGram/cod/fee cho số liệu đổi theo kiện; render thêm dòng nhãn cam unit.kienLabel khi khác null",
-            "Header modal và nút \"In\" dùng printUnits.length thay vì orders.length"
+            "splitAllProducts: boolean (dòng 4089) — state cục bộ DUY NHẤT trong PrintOrderModal, mặc định false, reset mỗi lần mở modal, KHÔNG persist qua printSettingsStore hoặc localStorage. Thay thế hoàn toàn Set<string> theo từng đơn của bản trước",
+            "multiProductOrders = orders.filter(o => (orderProducts[o.id]?.length ?? 1) > 1) (dòng 4108) — chỉ dùng để quyết định CÓ HIỆN checkbox hay không, không còn dùng để render danh sách toggle riêng từng đơn",
+            "printUnits: PrintUnit[] (dòng 4110-4126) = orders.flatMap(order => ...): đơn có ≤1 sản phẩm HOẶC !splitAllProducts → 1 unit, trackingCode gốc, kienLabel: null; đơn có ≥2 sản phẩm VÀ splitAllProducts === true → N units, mỗi unit: trackingCode = \"${order.trackingCode}-K${i+1}\", kienLabel = \"Kiện ${i+1}/${n}\", productLine = products[i], weightGram/cod/fee = phần tử tương ứng từ splitEvenly",
+            "Toàn bộ phần render thẻ in dùng printUnits.map(unit => ...) (dòng 4193+) — unit.order cho field không đổi theo kiện; unit.trackingCode/productLine/weightGram/cod/fee cho số liệu đổi theo kiện; render thêm dòng nhãn cam unit.kienLabel khi khác null",
+            "Header modal dùng printUnits.length thay vì orders.length (dòng 4148)",
+            "handlePrintWithSize(size: string) (dòng 4094-4097): setPaperSize(size) rồi gọi window.print() sau 2 lần requestAnimationFrame lồng nhau — đợi React re-render xong previewWidth mới trước khi in, tránh in nhầm khổ giấy cũ do setState bất đồng bộ. Gắn trực tiếp vào onClick của mỗi nút trong PAPER_SIZES.map (dòng 4176-4187) — không còn PaperSizePicker và không còn nút \"In đơn hàng\"/\"In N đơn\" ở cuối modal"
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Khối \"Tách kiện theo sản phẩm\" chỉ hiện trong modal In đơn hàng khi có ≥1 đơn trong batch sắp in có ≥2 sản phẩm — không hiện khi tất cả đơn đều chỉ có 1 sản phẩm.",
-            "AC2: Mỗi đơn đủ điều kiện có 1 toggle riêng kèm dòng \"{mã đơn} — {N} sản phẩm\"; bật/tắt từng đơn độc lập nhau — bật đơn này không ảnh hưởng đơn khác.",
-            "AC3: Toggle mặc định TẮT cho mọi đơn mỗi khi mở modal — không persist giữa các lần mở.",
-            "AC4: Bật toggle đơn có N sản phẩm → modal hiện đúng N thẻ riêng, mỗi thẻ có nhãn cam \"Kiện {i}/{N}\", mã vận đơn dạng {mã gốc}-K{i}, đúng 1 sản phẩm tương ứng của kiện đó.",
+            "AC1: Checkbox \"Mỗi phiếu in chỉ có 1 sản phẩm\" chỉ hiện trong modal In vận đơn khi có ≥1 đơn trong batch sắp in có ≥2 sản phẩm — không hiện khi tất cả đơn đều chỉ có 1 sản phẩm.",
+            "AC2: Checkbox là 1 lựa chọn DUY NHẤT áp dụng cho TOÀN BỘ đơn đủ điều kiện (≥2 sản phẩm) trong batch — không có toggle riêng theo từng đơn, không có cách bật tách kiện cho đơn A mà giữ nguyên đơn B trong cùng 1 lượt in.",
+            "AC3: Checkbox mặc định TẮT mỗi khi mở modal — không persist giữa các lần mở.",
+            "AC4: Bật checkbox khi batch có đơn N sản phẩm → modal hiện đúng N thẻ riêng cho đơn đó, mỗi thẻ có nhãn cam \"Kiện {i}/{N}\", mã vận đơn dạng {mã gốc}-K{i}, đúng 1 sản phẩm tương ứng của kiện đó; đơn chỉ 1 sản phẩm trong cùng batch không bị tách.",
             "AC5: Khối lượng/COD/phí ship được chia đều theo số kiện — tổng các kiện bằng đúng giá trị đơn gốc (không sai lệch do làm tròn: phần dư gán cho kiện đầu).",
-            "AC6: Tắt toggle lại → 1 thẻ gốc được khôi phục ngay, mã vận đơn trở về mã gốc (không có hậu tố -K{i}).",
-            "AC7: Header modal và nút \"In\" hiển thị đúng tổng số thẻ sẽ in (tính cả kiện đã tách), không cố định theo số đơn ban đầu.",
+            "AC6: Tắt checkbox lại → mọi thẻ đã tách được gộp về 1 thẻ gốc ngay, mã vận đơn trở về mã gốc (không có hậu tố -K{i}).",
+            "AC7: Header modal hiển thị đúng tổng số thẻ sẽ in (tính cả kiện đã tách), không cố định theo số đơn ban đầu.",
             "AC8: Tách kiện KHÔNG tạo đơn mới thật, KHÔNG thay đổi dữ liệu đơn gốc trong danh sách, KHÔNG ảnh hưởng đối soát hoặc COD — chỉ ảnh hưởng bản in lần đó.",
-            "AC9: Dòng ghi chú \"chỉ ảnh hưởng bản in, không tạo đơn mới\" hiện trong khối toggle."
+            "AC9: Mô tả \"Khi bật, mỗi sản phẩm sẽ được in trên một phiếu in vận đơn riêng.\" hiện ngay dưới tiêu đề checkbox.",
+            "AC10: Bấm 1 trong 3 nút khổ giấy kích hoạt in NGAY LẬP TỨC với đúng trạng thái tách kiện và đúng khổ giấy vừa bấm — không cần thao tác xác nhận nào thêm, không còn nút \"In đơn hàng\"/\"In N đơn\" riêng ở cuối modal."
           ],
           "notes": [
-            "Tính năng chỉ chia đều vì data model orderProducts là Record<string, string[]> — mảng chuỗi hiển thị, không có field số liệu riêng từng sản phẩm. Nếu 2 sản phẩm nặng khác nhau thực tế (VD áo 0,1kg + giày 2kg), bản in chia đều sẽ sai tỷ lệ thật — trade-off đã được xác nhận với người dùng.",
-            "Toggle không persist là cố ý: nhiều đơn có nhiều sản phẩm vẫn đóng chung 1 thùng (không cần tách kiện), nên không mặc định bật trong Cài đặt đơn hàng để tránh tách nhầm mỗi lần in.",
-            "UAT bằng Playwright trên đơn GHN00123461 (2 sản phẩm: Quần Jean + Áo Polo, khối lượng 0,4kg, COD 175.000đ): bật toggle → ra đúng 2 thẻ Kiện 1/2 và Kiện 2/2, mã -K1/-K2, khối lượng 0,2kg/0,2kg, COD 87.500đ/87.500đ. Test thêm với khối lượng 22kg → chia đúng 11kg/11kg.",
-            "Bug fix đồng thời: bug cắt nội dung khi in nhiều đơn (SHOP-ORDER-39) phải được fix cùng phiên — nếu không, tách 2+ kiện sẽ ngay lập tức bị compound bug đó cắt mất kiện sau kiện đầu tiên."
+            "Redesign từ bản trước: bản gốc dùng danh sách toggle RIÊNG TỪNG ĐƠN (\"{mã đơn} — {N} sản phẩm\" + Toggle) và khổ giấy là 1 picker chọn-rồi-bấm-nút-\"In\"-riêng. Bản này đơn giản hoá thành 1 checkbox global (khớp thiết kế Figma) + 3 nút khổ giấy bấm-là-in-luôn — đổi lại mất khả năng tách kiện CHỌN LỌC từng đơn trong 1 lượt in nhiều đơn (giờ là tất-cả-hoặc-không-gì cho mọi đơn ≥2 sản phẩm cùng batch).",
+            "Tính năng chỉ chia đều vì data model orderProducts là Record<string, string[]> — mảng chuỗi hiển thị, không có field số liệu riêng từng sản phẩm. Nếu 2 sản phẩm nặng khác nhau thực tế (VD áo 0,1kg + giày 2kg), bản in chia đều sẽ sai tỷ lệ thật — trade-off đã được xác nhận với người dùng (giữ nguyên từ bản trước).",
+            "Checkbox không persist là cố ý: nhiều đơn có nhiều sản phẩm vẫn đóng chung 1 thùng (không cần tách kiện), nên không mặc định bật trong Cài đặt đơn hàng để tránh tách nhầm mỗi lần in.",
+            "Bug fix đi kèm trước đó: bug cắt nội dung khi in nhiều đơn (SHOP-ORDER-39) đã fix cùng phiên với bản gốc — nếu không, tách 2+ kiện sẽ ngay lập tức bị compound bug đó cắt mất kiện sau kiện đầu tiên.",
+            "Không liên quan tới card \"In vận đơn\" ở \"Cài đặt đơn hàng\" (SHOP-ORDER-22) — đó là màn CẤU HÌNH mặc định (khổ giấy mặc định + tự động in), hoàn toàn tách biệt khỏi modal hành động nhanh \"In vận đơn\" mà story này mô tả."
           ]
         },
         {
@@ -1252,36 +1254,41 @@
         {
           "id": "SHOP-ORDER-40",
           "jiraKey": "",
-          "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Áp dụng cấu hình tuyến",
+          "title": "[WEB SHOP] Đơn hàng - Tạo đơn mới: Áp dụng cấu hình tuyến",
           "status": "draft",
-          "userStory": "Là chủ shop, khi xem chi tiết 1 đơn hàng hoá, tôi muốn thấy tuyến vận chuyển đang áp dụng cho đơn đó (dựa trên địa chỉ gửi/nhận và cấu hình \"Vùng & Tuyến\" hiện hành của Super Admin), để hiểu rõ đơn của mình được tính phí theo tuyến nào và phát hiện sớm nếu tuyến chưa được cấu hình đúng.",
+          "userStory": "Là chủ shop, khi tạo đơn hàng hoá mới và đang so sánh các dịch vụ vận chuyển, tôi muốn thấy tuyến đang được dùng để tính phí cho từng dịch vụ, để chọn dịch vụ phù hợp TRƯỚC KHI tạo đơn — thay vì chỉ biết sau khi đơn đã được tạo.",
           "userFlow": [
-            "Mở chi tiết 1 đơn hàng hoá (sendKind = 'goods') → trong card \"Phí vận chuyển\", ngay sau dòng \"Phí ship: {order.fee}đ\", thấy thêm 1 dòng \"Tuyến áp dụng: Tuyến 1\" (hoặc tên tuyến đang active trong cấu hình).",
-            "Nếu địa chỉ gửi/nhận chưa được gán vùng, hoặc cặp vùng chưa có tuyến trong cấu hình hiện hành → dòng vẫn hiện \"Tuyến áp dụng: ...\" với text fallback rõ ràng thay vì để trống.",
-            "Mở chi tiết đơn Thư (sendKind = 'letter') → dòng \"Tuyến áp dụng\" KHÔNG xuất hiện."
+            "Mở \"Tạo đơn mới\" (CreateOrderDrawer) cho đơn Hàng hoá, chọn tỉnh người nhận.",
+            "Ở khối \"Chọn dịch vụ\", mỗi dịch vụ đang hiển thị dòng \"Phí ship: {fee}đ\" → thêm ngay bên dưới 1 dòng nhỏ \"Tuyến: {tên tuyến}\" cho đúng dịch vụ đó.",
+            "Dịch vụ nào chưa gán bảng giá, hoặc địa chỉ gửi/nhận chưa khớp được zone nào trong bảng giá → dòng \"Tuyến\" vẫn hiện, với text fallback rõ ràng thay vì để trống.",
+            "Đổi tỉnh người nhận → dòng \"Tuyến\" của TẤT CẢ dịch vụ trong danh sách cập nhật lại ngay, đồng bộ với \"Phí ship\" (cả 2 đang tính lại mỗi lần render theo cùng cơ chế).",
+            "Mở \"Tạo đơn Thư\" (CreateLetterDrawer, 247Express) → KHÔNG có dòng \"Tuyến\" nào xuất hiện."
           ],
           "systemFlow": [
-            "Cần import resolveRouteName từ src/mock-data/routeConfig.ts và parseProvinceFromAddress từ src/mock-data/pricingCalc.ts vào Orders.tsx — đây là lần đầu tiên 2 module này được nối với Orders.tsx (Web Shop).",
-            "Tại vị trí render card \"Phí vận chuyển\" trong Orders.tsx (khoảng dòng 3061-3102, bên trong nhánh order.sendKind !== 'letter' đã có sẵn từ dòng ~3066), cần tính: fromProvince = parseProvinceFromAddress(order.senderAddress), toProvince = parseProvinceFromAddress(order.receiverAddress), routeName = resolveRouteName(fromProvince, toProvince).",
-            "Sau dòng hiển thị \"Phí ship: {order.fee}đ\" (dòng ~3089-3101), cần render thêm 1 dòng: \"Tuyến áp dụng: {routeName ?? '<text fallback>'}\".",
-            "Điều kiện render: vị trí thêm đã nằm trong nhánh order.sendKind !== 'letter' — không cần thêm điều kiện mới, đơn Thư tự động bị loại trừ.",
-            "resolveRouteName đọc trực tiếp routeMatrix và regions từ state module-scope trong routeConfig.ts — không cần truyền params hay quản lý version, luôn phản ánh cấu hình hiện hành của Super Admin."
+            "Không cần import gì mới — toàn bộ dữ liệu cần thiết đã có sẵn trong CreateOrderDrawer (Orders.tsx): fromProvince, rcvProvince, hàm resolveZoneIndex (dòng 93) và loadPricing() đã import sẵn ở đầu file.",
+            "Sửa đúng vị trí đang render từng dịch vụ trong khối \"Chọn dịch vụ\" (serviceGroups.map(...), khoảng dòng 1817-1849) — nơi đang tính const fee = shopFeeFromPriceTable(cheapestInGroup(group), weightGram, fromProvince, rcvProvince) (dòng 1820).",
+            "Ngay dưới dòng đó, tính thêm (dùng ĐÚNG service của group qua cheapestInGroup(group) — không phải service đầu tiên trong group): const service = cheapestInGroup(group); const priceTable = service.priceTableId ? (loadPricing() as any[]).find(p => p.id === service.priceTableId) : null; const zoneIndex = priceTable ? resolveZoneIndex(priceTable, fromProvince, rcvProvince) : -1; const zone = zoneIndex >= 0 ? priceTable?.zones?.[zoneIndex] : undefined; const appliedRouteName = zone?.routeName ?? zone?.label.",
+            "Render thêm 1 dòng nhỏ ngay dưới \"Phí ship: {fee}đ\" trong cùng card dịch vụ: \"Tuyến: {appliedRouteName ?? 'Chưa xác định'}\".",
+            "KHÔNG đổi shopFeeFromPriceTable/resolveZoneIndex — chỉ đọc thêm priceTable.zones[zoneIndex] để lấy tên hiển thị, không ảnh hưởng số liệu phí đang tính.",
+            "CreateLetterDrawer (247Express, từ dòng ~1963) KHÔNG áp dụng thay đổi này — bảng giá 247Express có zones dạng {label} (ước lượng theo miền qua PROVINCE_REGION), không có from/to/routeName, nên không có khái niệm \"tuyến\" để hiển thị."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Mở chi tiết đơn hàng hoá → trong card \"Phí vận chuyển\", có 1 dòng \"Tuyến áp dụng: {tên tuyến}\" ngay sau dòng phí ship — tên tuyến khớp với cấu hình \"Vùng & Tuyến\" hiện hành trong Super Admin.",
-            "AC2: resolveRouteName trả về null (tỉnh gửi/nhận chưa được gán vùng, hoặc cặp vùng chưa có tuyến) → dòng \"Tuyến áp dụng\" vẫn hiện với text fallback rõ ràng — không được hiển thị rỗng hoặc undefined.",
-            "AC3: Mở chi tiết đơn Thư (sendKind = 'letter') → KHÔNG có dòng \"Tuyến áp dụng\" trong card \"Dịch vụ\".",
-            "AC4: Dòng \"Tuyến áp dụng\" chỉ phản ánh tuyến được phân tích từ địa chỉ thực tế của đơn — không tính lại order.fee, không thay đổi bất kỳ giá trị nào đã lưu trong đơn.",
-            "AC5: Sau khi Super Admin thay đổi cấu hình \"Vùng & Tuyến\" → mở lại chi tiết đơn → tên tuyến phản ánh đúng cấu hình mới nhất (vì resolveRouteName đọc trực tiếp state hiện hành, không cache)."
+            "AC1: Trong \"Tạo đơn mới\" (Hàng hoá), mỗi dịch vụ trong khối \"Chọn dịch vụ\" hiển thị thêm 1 dòng \"Tuyến: {tên tuyến}\" ngay dưới dòng \"Phí ship\" của chính dịch vụ đó.",
+            "AC2: Tên tuyến hiển thị lấy từ zone.routeName (fallback zone.label nếu routeName chưa có) của ĐÚNG zone mà resolveZoneIndex trả về cho dịch vụ đó — không phải zone đầu tiên hay tuyến ngẫu nhiên trong bảng giá.",
+            "AC3: Dịch vụ chưa gán bảng giá (priceTableId rỗng/không tìm thấy), hoặc không khớp được zone nào → dòng \"Tuyến\" hiện fallback rõ ràng (ví dụ \"Chưa xác định\") — không để trống hoặc hiện undefined.",
+            "AC4: Đổi tỉnh người nhận → dòng \"Tuyến\" của mọi dịch vụ trong danh sách cập nhật lại tương ứng, cùng nhịp với \"Phí ship\" đang cập nhật (cả 2 tính lại mỗi render).",
+            "AC5: Mở \"Tạo đơn Thư\" (CreateLetterDrawer) → không có dòng \"Tuyến\" nào xuất hiện ở bất kỳ đâu trong form.",
+            "AC6: Tính năng thuần hiển thị — không thay đổi feeShipping/totalShipping/buildOrder(), không thêm field mới vào Order (Order vẫn không lưu routeName, giữ đúng nguyên tắc đơn hàng không cần truy vết tuyến)."
           ],
           "notes": [
-            "PLANNING SPEC — CHƯA CÓ CODE: Story này mô tả tính năng SẮP làm, chưa có dòng nào trong Orders.tsx, routeConfig.ts hay pricingCalc.ts được sửa tại thời điểm viết. Cần frontend-dev triển khai sau khi story được approve.",
-            "Tính năng THUẦN HIỂN THỊ — không đổi logic tính phí, không tính lại order.fee. Giá trị fee đã lưu từ lúc tạo đơn giữ nguyên.",
-            "Chỉ áp dụng cho đơn Hàng hoá — đơn Thư đi qua 247Express dùng hệ thống hub riêng, không liên quan routeMatrix. Quy ước phân nhánh theo sendKind đã tồn tại trong cùng card (dòng ~3066 trong Orders.tsx hiện có order.sendKind !== 'letter').",
-            "resolveRouteName và findRegionOf đã có sẵn trong routeConfig.ts; parseProvinceFromAddress đã có sẵn trong pricingCalc.ts (đã dùng ở AgencyOrdersImport.tsx) — không cần viết hàm mới.",
-            "Text fallback chính xác khi tuyến chưa xác định cần được đồng thuận với PM/design trước khi code — AC2 chỉ yêu cầu phải có fallback, không quy định chữ cụ thể.",
-            "Dev cần kiểm tra circular dependency khi import pricingCalc.ts vào Orders.tsx lần đầu."
+            "PLANNING SPEC — CHƯA CÓ CODE: Story này mô tả tính năng SẮP làm, chưa có dòng nào trong Orders.tsx được sửa tại thời điểm viết. Cần frontend-dev triển khai sau khi story được approve.",
+            "Khác biệt so với bản doc trước (đã sai): bản cũ định hướng lấy \"tuyến áp dụng\" qua resolveRouteName() — đọc cấu hình \"Vùng & Tuyến\" ĐANG ACTIVE của Super Admin trong routeConfig.ts — và hiển thị ở màn CHI TIẾT đơn đã tạo. Đọc lại code thực tế cho thấy phí ship lúc TẠO đơn (shopFeeFromPriceTable/resolveZoneIndex) hoàn toàn KHÔNG dùng routeConfig.ts — chỉ tra theo priceTable.zones (dữ liệu đã đóng băng lúc Agency Admin tạo bảng giá, xem AGA-CARRIER-22/23). Vì vậy bản doc này chuyển sang lấy tên tuyến từ đúng zone.routeName/zone.label của bảng giá đang dùng để tính phí — khớp 100% với tuyến THỰC SỰ áp dụng, thay vì 1 tên tuyến khác có thể đã đổi trong cấu hình global kể từ lúc bảng giá được tạo.",
+            "Đặt ở màn \"Tạo đơn mới\" (trước khi submit) thay vì \"Chi tiết đơn\" (sau khi đã tạo) — giúp shop so sánh tuyến/phí giữa các dịch vụ TRƯỚC khi quyết định, hữu ích hơn so với chỉ biết sau khi đơn đã tạo xong.",
+            "zone.routeName là field traceability mới thêm gần đây (xem AGA-CARRIER-22) — chỉ có ở bảng giá tạo SAU khi field này tồn tại; bảng giá cũ hơn sẽ undefined, phải fallback zone.label.",
+            "Không áp dụng cho CreateLetterDrawer/247Express — bảng giá loại này không có cấu trúc zones dạng route-based (from/to), chỉ ước lượng theo miền qua PROVINCE_REGION — không có khái niệm \"tuyến\" như GHN để hiển thị.",
+            "Khối \"Chọn dịch vụ\" hiện render mỗi SERVICE GROUP 1 dòng duy nhất, dùng dịch vụ rẻ nhất trong group (cheapestInGroup) — tuyến hiển thị bắt buộc phải tính trên ĐÚNG service đó, không phải service đầu tiên trong group.",
+            "Text fallback chính xác khi chưa xác định được tuyến cần đồng thuận với PM/design trước khi code — AC3 chỉ yêu cầu phải có fallback, không quy định chữ cụ thể."
           ]
         }
       ]

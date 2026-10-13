@@ -4084,13 +4084,17 @@ type PrintUnit = {
 function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => void }) {
   const currentShop = allShops.find(s => s.id === 'SHP001')!
   const [paperSize, setPaperSize] = useState(printSettings[orders[0]?.sendKind ?? 'goods'].paperSize)
-  const [splitOrderIds, setSplitOrderIds] = useState<Set<string>>(new Set())
-  const toggleSplit = (id: string) => setSplitOrderIds(prev => {
-    const next = new Set(prev)
-    next.has(id) ? next.delete(id) : next.add(id)
-    return next
-  })
+  // Tách kiện theo sản phẩm — 1 checkbox DUY NHẤT áp dụng cho CẢ lượt in (khớp thiết kế "Mỗi phiếu
+  // in chỉ có 1 sản phẩm"), không còn bật/tắt riêng từng đơn như bản trước.
+  const [splitAllProducts, setSplitAllProducts] = useState(false)
   const previewWidth = PAPER_PREVIEW_WIDTH[paperSize] ?? 280
+  // Bấm thẳng 1 khổ giấy = in luôn (khác bản trước: chọn khổ rồi phải bấm thêm nút "In" riêng).
+  // Đợi 2 lần requestAnimationFrame để React kịp re-render với paperSize mới (đổi previewWidth)
+  // trước khi gọi window.print(), tránh in nhầm khổ giấy cũ do setState là bất đồng bộ.
+  const handlePrintWithSize = (size: string) => {
+    setPaperSize(size)
+    requestAnimationFrame(() => requestAnimationFrame(() => window.print()))
+  }
   const barcodeBars = [2,1,3,1,1,2,1,3,2,1,1,2,3,1,2,1,1,3,2,1,1,2,1,3,1,2]
   const QR_SIZE = 9
   const isFinder = (r: number, c: number) =>
@@ -4106,7 +4110,7 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
   const printUnits: PrintUnit[] = orders.flatMap((order): PrintUnit[] => {
     const products = orderProducts[order.id] || ['Sản phẩm - SL: 1']
     const n = products.length
-    if (n <= 1 || !splitOrderIds.has(order.id)) {
+    if (n <= 1 || !splitAllProducts) {
       return [{
         key: order.id, order, trackingCode: order.trackingCode, kienLabel: null,
         productLine: products[0], weightGram: order.weight, cod: order.cod, fee: order.fee,
@@ -4146,31 +4150,43 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
           <span onClick={onClose} style={{ cursor: 'pointer', color: '#6B7280', fontSize: 14 }}>✕</span>
         </div>
 
-        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Khổ giấy in</span>
-          <PaperSizePicker value={paperSize} onChange={setPaperSize} />
-        </div>
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Vui lòng chọn khổ giấy để in vận đơn</span>
 
-        {/* Tách kiện theo sản phẩm — chỉ hiện khi có đơn ≥2 sản phẩm. Nằm ngoài #print-order-area
-            nên tự động bị ẩn lúc in (rule body * { visibility: hidden } ở trên), không cần class
-            riêng. Bật/tắt chỉ đổi số thẻ sinh ra trong printUnits, không đụng tới order thật. */}
-        {multiProductOrders.length > 0 && (
-          <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Tách kiện theo sản phẩm</span>
-            {multiProductOrders.map(o => {
-              const n = orderProducts[o.id].length
-              return (
-                <div key={o.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ fontSize: 13, color: '#374151' }}>{o.trackingCode} — {n} sản phẩm</span>
-                  <Toggle on={splitOrderIds.has(o.id)} onChange={() => toggleSplit(o.id)} />
-                </div>
-              )
-            })}
-            <span style={{ fontSize: 12, color: '#9CA3AF' }}>
-              Bật để in riêng mỗi sản phẩm thành 1 kiện (1 mã vận đơn phụ/kiện) — khối lượng, COD và phí ship chia đều theo số kiện. Chỉ ảnh hưởng bản in, không tạo đơn mới trong hệ thống.
-            </span>
+          {/* Tách kiện theo sản phẩm — 1 checkbox áp dụng cho CẢ lượt in, chỉ hiện khi có ít nhất
+              1 đơn ≥2 sản phẩm trong lượt in này. Nằm ngoài #print-order-area nên tự động bị ẩn
+              lúc in (rule body * { visibility: hidden } ở trên). Bật/tắt chỉ đổi số thẻ sinh ra
+              trong printUnits, không đụng tới order thật. */}
+          {multiProductOrders.length > 0 && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: 12, background: '#F9FAFB', borderRadius: 8 }}>
+              <input
+                type="checkbox"
+                checked={splitAllProducts}
+                onChange={e => setSplitAllProducts(e.target.checked)}
+                style={{ marginTop: 2, flexShrink: 0 }}
+              />
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Mỗi phiếu in chỉ có 1 sản phẩm</span>
+                <span style={{ fontSize: 12, color: '#6B7280' }}>Khi bật, mỗi sản phẩm sẽ được in trên một phiếu in vận đơn riêng.</span>
+              </span>
+            </label>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {PAPER_SIZES.map(p => (
+              <button
+                key={p.value}
+                onClick={() => handlePrintWithSize(p.value)}
+                style={{
+                  flex: '1 1 auto', padding: '10px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                  background: '#FF5200', color: '#fff', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap',
+                }}
+              >
+                In khổ {p.label}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         <div style={{ padding: '0 20px 20px', overflowY: 'auto', flex: 1 }}>
           <div id="print-order-area" style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
@@ -4244,18 +4260,14 @@ function PrintOrderModal({ orders, onClose }: { orders: Order[]; onClose: () => 
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '16px 20px', borderTop: '1px solid #E5E7EB', flexShrink: 0 }}>
+        {/* Không còn nút "In" riêng ở đây — bấm thẳng 1 trong 3 nút khổ giấy ở trên là in luôn
+            (xem handlePrintWithSize), khớp thiết kế. Chỉ còn "Đóng" để huỷ. */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '16px 20px', borderTop: '1px solid #E5E7EB', flexShrink: 0 }}>
           <button
             onClick={onClose}
             style={{ padding: '8px 20px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#374151' }}
           >
             Đóng
-          </button>
-          <button
-            onClick={() => window.print()}
-            style={{ padding: '8px 20px', background: '#FF5200', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff' }}
-          >
-            {printUnits.length > 1 ? `In ${printUnits.length} đơn` : 'In đơn hàng'}
           </button>
         </div>
       </div>
