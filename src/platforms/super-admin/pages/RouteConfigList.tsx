@@ -40,7 +40,7 @@ function StatusBadge({ status }: { status: RouteConfigVersion['status'] }) {
       fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10, flexShrink: 0,
       color: pub ? C_PUB : C_DRAFT, background: pub ? C_PUB_BG : C_DRAFT_BG,
     }}>
-      {pub ? 'Đã phát hành' : 'Nháp'}
+      {pub ? 'Hoạt động' : 'Nháp'}
     </span>
   )
 }

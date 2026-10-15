@@ -129,3 +129,4 @@
 | [AGENCY] Thiết lập NVC - Tạo bảng giá: Lưu bảng giá thật, đồng bộ tuyến với Super Admin & Web Shop | [tao-bang-gia-luu-that-dong-bo-tuyen.md](./carrier-setup/tao-bang-gia-luu-that-dong-bo-tuyen.md) | — | [Draft] |
 | [AGENCY] Thiết lập NVC - Tạo bảng giá: Chọn bộ tuyến áp dụng | [chon-bo-tuyen-ap-dung-tao-bang-gia.md](./carrier-setup/chon-bo-tuyen-ap-dung-tao-bang-gia.md) | — | [Draft] |
 | [AGENCY] Thiết lập NVC - Agency Admin xem được tuyến/cặp vùng miền đang bị Super Admin khoá | [xem-tuyen-cap-vung-mien-bi-khoa.md](./carrier-setup/xem-tuyen-cap-vung-mien-bi-khoa.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Tạo bảng giá: Chỉ chọn được bộ tuyến Đã phát hành | [chi-chi-chon-bo-tuyen-da-phat-hanh.md](./carrier-setup/chi-chi-chon-bo-tuyen-da-phat-hanh.md) | — | [Draft] |

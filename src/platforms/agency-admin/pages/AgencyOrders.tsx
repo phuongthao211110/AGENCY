@@ -117,7 +117,18 @@ function rowStatus(order: Order): { label: string; color: string } {
   if (order.sendKind === 'letter' && order.dispatchStatus === 'pending_agency') {
     return { label: 'Chờ xử lý', color: '#F59E0B' }
   }
-  return ROW_STATUS_STYLE[order.status] ?? { label: order.status, color: '#6B7280' }
+  const base = ROW_STATUS_STYLE[order.status] ?? { label: order.status, color: '#6B7280' }
+  // Đơn "Đơn nháp" (status 'pending') có 2 lý do KHÁC NHAU: nháp thật (Shop chưa hoàn tất) hoặc
+  // đang bị giữ vì chờ GHN xác nhận thanh toán (xem orderStore.ts). Không phân biệt dễ khiến đại
+  // lý tưởng nhầm là nháp bỏ quên rồi huỷ/giục shop, trong khi đơn này không cần đại lý làm gì —
+  // chỉ chờ Super Admin duyệt. Đồng bộ nhãn với rowStatus() của Web Shop (Orders.tsx).
+  if (order.status === 'pending' && order.paymentApprovalStatus === 'pending_review') {
+    return { ...base, label: `${base.label} · Chờ GHN xác nhận`, color: '#3B82F6' }
+  }
+  if (order.status === 'pending' && order.paymentApprovalStatus === 'rejected') {
+    return { ...base, label: `${base.label} · GHN từ chối xác nhận`, color: '#EF4444' }
+  }
+  return base
 }
 
 const EXPORT_CARRIER_LABEL: Record<string, string> = { GHN: 'Giao hàng nhanh', '247EXPRESS': '247Express' }
@@ -3235,6 +3246,10 @@ export default function AgencyOrders() {
 // ── Popup xác nhận huỷ đơn — dùng chung cho cả nút nhanh từng dòng (1 phần tử) và nút hàng
 // loạt trên thanh "Đã chọn N" (nhiều phần tử). Drawer chi tiết dùng banner inline riêng. ──
 function CancelOrderModal({ orders, onClose, onConfirm }: { orders: Order[]; onClose: () => void; onConfirm: () => void }) {
+  // Cảnh báo riêng khi trong danh sách huỷ có đơn đang chờ GHN xác nhận thanh toán — huỷ vẫn hợp
+  // lệ (nếu sau đó GHN xác nhận đã nhận tiền, hệ thống tự nhắc "Chờ hoàn tiền" cho Shop), nhưng đại
+  // lý cần biết rõ đây KHÔNG phải đơn nháp bỏ quên thông thường trước khi bấm Xác nhận huỷ.
+  const pendingApprovalCount = orders.filter(o => o.paymentApprovalStatus === 'pending_review').length
   return (
     <>
       <div
@@ -3257,6 +3272,11 @@ function CancelOrderModal({ orders, onClose, onConfirm }: { orders: Order[]; onC
             <>Bạn chắc chắn muốn huỷ <span style={{ fontWeight: 700, color: '#3B82F6' }}>{orders.length} đơn</span> đã chọn? Thao tác này không thể hoàn tác.</>
           )}
         </div>
+        {pendingApprovalCount > 0 && (
+          <div style={{ fontSize: 13, color: '#B45309', background: '#FEF3C7', borderRadius: 6, padding: '8px 12px', lineHeight: '18px' }}>
+            ⚠ {pendingApprovalCount === 1 ? '1 đơn' : `${pendingApprovalCount} đơn`} trong số này đang chờ GHN xác nhận thanh toán — không phải đơn nháp bỏ quên. Nếu GHN xác nhận đã nhận tiền SAU KHI huỷ, hệ thống sẽ tự nhắc hoàn tiền cho Shop.
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button
             onClick={onClose}

@@ -179,21 +179,16 @@ export function listRouteNamesIn(version: RouteConfigVersion): string[] {
   return result
 }
 
-// Khoá có 2 cấp ĐỘC LẬP (xem comment RouteConfigVersion.lockedRouteNames/lockedPairKeys): khoá CẢ
-// tuyến (routeName nằm trong lockedRouteNames) vs khoá RIÊNG 1 cặp vùng miền bên trong tuyến đó
-// (pairKey nằm trong lockedPairKeys, dù tên tuyến không hề bị khoá). Nơi hiển thị cho Agency Admin
-// (PricingCreate/PricingDetail/RouteCheck) cần phân biệt rõ 2 trường hợp — trước đây chỉ kiểm tra
-// lockedRouteNames nên khoá-từng-cặp không hiện gì cả, đây là hàm bù cho khoảng trống đó.
+// Khoá chỉ có 1 cấp: khoá RIÊNG 1 cặp vùng miền cụ thể (pairKey nằm trong lockedPairKeys) — không
+// có khái niệm khoá "cả tuyến" (đã bỏ). Một tuyến được coi là khoá "full" khi MỌI cặp đang thuộc
+// tuyến đó đều bị khoá riêng (không còn cặp nào dùng được), "partial" khi chỉ 1 phần, "none" khi
+// chưa cặp nào bị khoá.
 export function routeLockStatusIn(version: RouteConfigVersion, routeName: string): 'full' | 'partial' | 'none' {
-  if ((version.lockedRouteNames ?? []).includes(routeName)) return 'full'
   const lockedPairKeys = new Set(version.lockedPairKeys ?? [])
   const pairKeysOfRoute = Object.entries(version.routeMatrix).filter(([, name]) => name === routeName).map(([key]) => key)
   if (pairKeysOfRoute.length === 0) return 'none'
   const lockedCount = pairKeysOfRoute.filter((key) => lockedPairKeys.has(key)).length
   if (lockedCount === 0) return 'none'
-  // Khoá đủ MỌI cặp đang thuộc tuyến này (dù chưa ai bấm khoá CẢ tuyến qua lockedRouteNames) — về
-  // bản chất tuyến đó không còn cặp nào dùng được nữa, coi tương đương "full" để Agency Admin thấy
-  // đúng mức độ nghiêm trọng, không bị hiểu nhầm là "chỉ ảnh hưởng 1 phần, vẫn còn dùng được".
   if (lockedCount === pairKeysOfRoute.length) return 'full'
   return 'partial'
 }
@@ -225,17 +220,10 @@ export interface RouteConfigVersion {
   regions: RegionDef[]
   routeMatrix: Record<string, string>
   urbanConfigs: UrbanConfig[]
-  // Tên các TUYẾN (giá trị trong routeMatrix) đang bị Super Admin khoá THỦ CÔNG trong bộ này —
-  // khoá 1 tuyến = không cho đổi tên tuyến đó, không cho thêm/bớt cặp miền khỏi/vào tuyến đó (dù
-  // thao tác từ chip của CHÍNH tuyến đó hay từ chip của 1 tuyến KHÁC đang cố "giành" cặp miền đi),
-  // không cho xoá tuyến đó. KHÁC với tính năng khoá CẢ BỘ đã bỏ — đây khoá TỪNG TUYẾN riêng lẻ bên
-  // trong 1 bộ, không ảnh hưởng gì tới việc đặt bộ này làm mặc định. Carry-forward sang bộ mới khi
-  // lưu phần Vùng miền/Nội-Ngoại thành (không đụng Tuyến) để không bị mất khoá ngoài ý muốn.
-  lockedRouteNames?: string[]
-  // Cấp khoá THỨ 2, MỊN HƠN — khoá đúng 1 CẶP VÙNG MIỀN cụ thể (pairKey(a,b)), độc lập với khoá cả
-  // tuyến ở trên: khoá 1 cặp = không cho đổi cặp đó sang tuyến khác (dù route đang gán nó có bị
-  // khoá hay không), nhưng CÁC CẶP KHÁC cùng tuyến vẫn tự do sửa bình thường. Muốn xoá nguyên tuyến
-  // đang chứa 1 cặp bị khoá kiểu này → cũng bị chặn (xem handleDeleteTuyen), tránh orphan khoá.
+  // Khoá đúng 1 CẶP VÙNG MIỀN cụ thể (pairKey(a,b)) — KHÔNG có khái niệm khoá "cả tuyến" (cố ý bỏ
+  // theo yêu cầu, chỉ giữ khoá mịn ở cấp từng cặp). Khoá 1 cặp = không cho đổi cặp đó sang tuyến
+  // khác, nhưng CÁC CẶP KHÁC cùng tuyến vẫn tự do sửa bình thường. Muốn xoá nguyên tuyến đang chứa
+  // 1 cặp bị khoá → cũng bị chặn (xem handleDeleteTuyen), tránh orphan khoá.
   lockedPairKeys?: string[]
 }
 
@@ -334,7 +322,6 @@ export function duplicateRouteConfigVersion(sourceId: string, label?: string): R
     regions: cloneRegions(source.regions),
     routeMatrix: { ...source.routeMatrix },
     urbanConfigs: cloneUrbanConfigs(source.urbanConfigs),
-    lockedRouteNames: [...(source.lockedRouteNames ?? [])],
     lockedPairKeys: [...(source.lockedPairKeys ?? [])],
   }
   routeConfigVersions.push(version)
@@ -368,13 +355,14 @@ export function updateVersionUrbanConfigs(id: string, draftUrbanConfigs: UrbanCo
   return updated
 }
 
-/** Khoá/mở khoá tuyến của 1 bộ TẠI CHỖ — cho phép ở CẢ 2 trạng thái (đúng bảng quyền thao tác), áp
- * dụng cho ĐÚNG bộ đang xem/sửa chứ không chỉ bộ đang áp dụng (khác bản `updateActiveVersionLocks`
- * cũ) — vì Super Admin phải khoá/mở tuyến được cả ở 1 bộ Đã phát hành nhưng CHƯA phải bộ active. */
-export function updateVersionLocks(id: string, lockedRouteNames: string[], lockedPairKeys: string[]): RouteConfigVersion | null {
+/** Khoá/mở khoá riêng từng cặp vùng miền của 1 bộ TẠI CHỖ — cho phép ở CẢ 2 trạng thái (đúng bảng
+ * quyền thao tác), áp dụng cho ĐÚNG bộ đang xem/sửa chứ không chỉ bộ đang áp dụng (khác bản
+ * `updateActiveVersionLocks` cũ) — vì Super Admin phải khoá/mở được cả ở 1 bộ Đã phát hành nhưng
+ * CHƯA phải bộ active. */
+export function updateVersionLocks(id: string, lockedPairKeys: string[]): RouteConfigVersion | null {
   const idx = routeConfigVersions.findIndex((v) => v.id === id)
   if (idx === -1) return null
-  const updated: RouteConfigVersion = { ...routeConfigVersions[idx], lockedRouteNames: [...lockedRouteNames], lockedPairKeys: [...lockedPairKeys] }
+  const updated: RouteConfigVersion = { ...routeConfigVersions[idx], lockedPairKeys: [...lockedPairKeys] }
   routeConfigVersions[idx] = updated
   if (id === activeVersionId) applyVersionToStore(updated)
   persistRouteConfig()
@@ -396,6 +384,29 @@ export function publishRouteConfigVersion(id: string): { ok: true; version: Rout
   routeConfigVersions[idx] = updated
   persistRouteConfig()
   return { ok: true, version: updated }
+}
+
+/** Đổi tên hiển thị (label) của 1 bộ — KHÔNG ảnh hưởng cấu trúc, nên cho phép ở CẢ Nháp lẫn Đã
+ * phát hành (khác đổi tên 1 TUYẾN bên trong bộ, cái đó vẫn khoá cứng khi đã phát hành). */
+export function renameRouteConfigVersion(id: string, newLabel: string): RouteConfigVersion | null {
+  const idx = routeConfigVersions.findIndex((v) => v.id === id)
+  if (idx === -1) return null
+  const trimmed = newLabel.trim()
+  if (!trimmed) return null
+  const updated: RouteConfigVersion = { ...routeConfigVersions[idx], label: trimmed }
+  routeConfigVersions[idx] = updated
+  persistRouteConfig()
+  return updated
+}
+
+/** Gộp Phát hành + Áp dụng toàn hệ thống thành 1 hành động cho bộ NHÁP — validate như
+ * `publishRouteConfigVersion`, rồi áp dụng luôn làm mặc định toàn hệ thống trong CÙNG 1 bước (không
+ * còn đường "chỉ Phát hành mà không Áp dụng ngay" — Super Admin xác nhận 1 lần duy nhất). */
+export function publishAndApplyRouteConfigVersion(id: string): { ok: true; version: RouteConfigVersion } | { ok: false; error: string } {
+  const result = publishRouteConfigVersion(id)
+  if (!result.ok) return result
+  const applied = setActiveRouteConfigVersion(result.version.id)
+  return applied ? { ok: true, version: applied } : result
 }
 
 /** Xoá HẲN 1 bộ NHÁP khỏi lịch sử (thay cho trạng thái "Đã huỷ" đã bỏ) — chỉ cho phép xoá Nháp, vì

@@ -33,11 +33,25 @@ export interface Order {
   paymentMethod?: 'cash' | 'momo' | 'bank_transfer'
   // Chỉ có ý nghĩa khi paymentMethod === 'momo' | 'bank_transfer'. 'not_required' = trả tiền mặt
   // (mặc định, không qua luồng thanh toán online). 'pending' = đã tạo mã/QR, chờ thanh toán.
-  // 'paid' = đã bấm "Tôi đã thanh toán".
-  // 'failed' = QR hết hạn (15 phút) mà chưa thanh toán — phải tạo QR mới để thử lại.
+  // 'paid' = Shop đã bấm "Tôi đã thanh toán" (TỰ KHAI — xem `paymentApprovalStatus` để biết GHN
+  // đã thực sự xác nhận nhận được tiền hay chưa).
+  // 'failed' = QR hết hạn (15 phút) mà chưa thanh toán, HOẶC GHN từ chối xác nhận — phải tạo mã
+  // mới/thanh toán lại để thử lại.
   paymentStatus?: 'not_required' | 'pending' | 'paid' | 'failed'
   // ISO timestamp lúc bấm "Tôi đã thanh toán" — chỉ set khi paymentStatus chuyển sang 'paid'.
   paymentPaidAt?: string
+  // Lớp DUYỆT của Super Admin (GHN) — ngăn Shop tự khai "đã thanh toán" (paymentStatus='paid')
+  // nhưng thực tế chưa chuyển tiền. Chỉ phát sinh khi paymentMethod là 'momo'/'bank_transfer'.
+  // 'pending_review' = Shop đã bấm "Tôi đã thanh toán", đơn bị GIỮ ở status 'pending' (đơn nháp),
+  // KHÔNG được gửi NVC cho tới khi Super Admin xác nhận. 'confirmed' = Super Admin đã xác nhận
+  // nhận được tiền — đơn tự động được đẩy đi tiếp (xem `approveOrderPayment`). 'rejected' = Super
+  // Admin xác nhận KHÔNG nhận được tiền — Shop phải thanh toán lại từ đầu.
+  paymentApprovalStatus?: 'pending_review' | 'confirmed' | 'rejected'
+  // Lý do từ chối — bắt buộc nhập khi Super Admin bấm "Từ chối" (theo đúng pattern RejectInput
+  // của AgencyRequestsView.tsx).
+  paymentApprovalRejectedReason?: string
+  paymentApprovedAt?: string
+  paymentApprovedBy?: string | null
   status: string
   createdAt: string
   // Optional fields present in some JSON entries
@@ -138,6 +152,10 @@ export function loadOrders(): Order[] {
 
 function saveOrders(orders: Order[]): void {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(orders)) } catch { /* storage unavailable */ }
+  // Báo cho các component KHÔNG trực tiếp gọi hàm này (VD: badge số đơn chờ duyệt trên sidebar
+  // SuperAdminLayout) biết dữ liệu đơn hàng vừa đổi, để tự re-render mà không cần điều hướng trang —
+  // mọi hàm ghi (addOrder, updateOrder, approveOrderPayment...) đều đi qua đây nên phát 1 chỗ là đủ.
+  try { window.dispatchEvent(new Event('ghn-orders-changed')) } catch { /* no window (SSR/test) */ }
 }
 
 export function addOrder(order: Order): Order[] {
@@ -188,4 +206,92 @@ export function updateOrder(orderId: string, patch: Partial<Order>): Order[] {
     saveOrders(orders)
   }
   return orders
+}
+
+// Super Admin xác nhận đã THỰC SỰ nhận được tiền từ Shop (phí ship thanh toán qua MoMo/chuyển
+// khoản) — chỉ hợp lệ khi đơn đang 'pending_review'. Đơn đang bị giữ ở status 'pending' (đơn
+// nháp) do gate phía Web Shop (xem SHOP-ORDER-43/saveEdit) sẽ được TỰ ĐỘNG đẩy sang 'pickup'
+// ngay khi duyệt — Shop không cần quay lại bấm gì thêm.
+export function approveOrderPayment(orderId: string, approvedBy: string): Order[] {
+  const orders = loadOrders()
+  const idx = orders.findIndex(o => o.id === orderId)
+  if (idx !== -1 && orders[idx].paymentApprovalStatus === 'pending_review') {
+    orders[idx] = {
+      ...orders[idx],
+      paymentApprovalStatus: 'confirmed',
+      paymentApprovedAt: new Date().toISOString(),
+      paymentApprovedBy: approvedBy,
+      status: orders[idx].status === 'pending' ? 'pickup' : orders[idx].status,
+    }
+    saveOrders(orders)
+    appendActionHistory(orderId, approvedBy, 'GHN xác nhận đã nhận thanh toán', '-', 'Đã duyệt — đơn chuyển sang chờ bàn giao')
+  }
+  return orders
+}
+
+// Super Admin xác nhận KHÔNG nhận được tiền — Shop phải thanh toán lại từ đầu (`paymentStatus`
+// lùi về 'failed', giống hành vi hết hạn QR, để tái dùng đúng luồng "Tạo mã mới"/"Thanh toán lại"
+// đã có sẵn). Đơn vẫn giữ nguyên status 'pending' (đơn nháp) — không tự xoá/huỷ đơn.
+export function rejectOrderPayment(orderId: string, rejectedBy: string, reason: string): Order[] {
+  const orders = loadOrders()
+  const idx = orders.findIndex(o => o.id === orderId)
+  if (idx !== -1 && orders[idx].paymentApprovalStatus === 'pending_review') {
+    orders[idx] = {
+      ...orders[idx],
+      paymentApprovalStatus: 'rejected',
+      paymentApprovalRejectedReason: reason,
+      paymentStatus: 'failed',
+      paymentApprovedBy: rejectedBy,
+    }
+    saveOrders(orders)
+    appendActionHistory(orderId, rejectedBy, 'GHN từ chối xác nhận thanh toán', '-', reason)
+  }
+  return orders
+}
+
+// Ghi 1 dòng vào "Lịch sử thao tác" (tab action của OrderDetailDrawer) — trước đây actionHistory
+// chỉ được seed 1 LẦN lúc tạo đơn rồi không bao giờ được thêm nữa (mọi cập nhật sau đó qua
+// updateOrder() đều bỏ qua field này), khiến tab Lịch sử thao tác mãi trống/không phản ánh thao
+// tác thật của shop (sửa thông tin, thanh toán, huỷ đơn...). Hàm này là điểm ghi DUY NHẤT dùng
+// chung cho mọi thao tác xảy ra SAU khi đơn đã tồn tại trong store.
+export function appendActionHistory(
+  orderId: string,
+  operator: string,
+  action: string,
+  oldContent = '-',
+  newContent = '-',
+): Order[] {
+  const orders = loadOrders()
+  const idx = orders.findIndex(o => o.id === orderId)
+  if (idx !== -1) {
+    const now = new Date()
+    const entry = {
+      date: now.toISOString().slice(0, 10),
+      time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`,
+      operator,
+      action,
+      oldContent,
+      newContent,
+    }
+    orders[idx] = { ...orders[idx], actionHistory: [entry, ...(orders[idx].actionHistory ?? [])] }
+    saveOrders(orders)
+  }
+  return orders
+}
+
+// ── Công tắc tổng: tạm chặn Shop tạo đơn mới ─────────────────────────────────
+// Super Admin dùng khi phát hiện bất thường (nhiều đơn tự khai thanh toán nhưng chưa xác minh
+// được, nghi ngờ gian lận...) và muốn dừng dòng đơn mới đổ vào trong lúc xử lý — KHÔNG ảnh hưởng
+// đơn đã tạo trước đó (đơn cũ vẫn tiếp tục xử lý/duyệt bình thường, chỉ chặn tạo đơn MỚI).
+const CREATION_BLOCKED_KEY = 'ghn_order_creation_blocked'
+
+export function isOrderCreationBlocked(): boolean {
+  try { return localStorage.getItem(CREATION_BLOCKED_KEY) === '1' } catch { return false }
+}
+
+export function setOrderCreationBlocked(blocked: boolean): void {
+  try { localStorage.setItem(CREATION_BLOCKED_KEY, blocked ? '1' : '0') } catch { /* storage unavailable */ }
+  // Dùng chung sự kiện với saveOrders() — mọi nơi đang lắng nghe 'ghn-orders-changed' (VD badge
+  // sidebar Super Admin) đều tự re-render ngay khi công tắc này đổi, không cần thêm event riêng.
+  try { window.dispatchEvent(new Event('ghn-orders-changed')) } catch { /* no window (SSR/test) */ }
 }

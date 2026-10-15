@@ -65,8 +65,11 @@ _Chưa có stories_
 | [GSA] Vùng & Tuyến: Thêm tỉnh | [them-tinh.md](./route-config/them-tinh.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Thiết lập lại | [thiet-lap-lai.md](./route-config/thiet-lap-lai.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Chỉnh sửa vùng/ tuyến/ tỉnh | [chinh-sua-vung-tuyen-tinh.md](./route-config/chinh-sua-vung-tuyen-tinh.md) | — | [Draft] |
-| [GSA] Vùng & Tuyến: Bộ vùng tuyến — mỗi lần lưu tạo 1 bộ mới, không sửa đè | [bo-vung-tuyen-versioning.md](./route-config/bo-vung-tuyen-versioning.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Vòng đời Nháp/Hoạt động | [bo-vung-tuyen-versioning.md](./route-config/bo-vung-tuyen-versioning.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Danh sách bộ vùng tuyến | [danh-sach-bo-vung-tuyen.md](./route-config/danh-sach-bo-vung-tuyen.md) | — | [Draft] |
-| [GSA] Vùng & Tuyến: Đặt bộ vùng tuyến làm mặc định | [dat-bo-vung-tuyen-mac-dinh.md](./route-config/dat-bo-vung-tuyen-mac-dinh.md) | — | [Draft] |
-| [GSA] Vùng & Tuyến: Trang "Chỉnh sửa vùng & tuyến" — 1 draft chung cho 3 phần | [trang-chinh-sua-mot-draft-chung.md](./route-config/trang-chinh-sua-mot-draft-chung.md) | — | [Draft] |
-| [GSA] Vùng & Tuyến: Khoá tuyến | [khoa-tuyen.md](./route-config/khoa-tuyen.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Áp dụng bộ cho toàn hệ thống | [dat-bo-vung-tuyen-mac-dinh.md](./route-config/dat-bo-vung-tuyen-mac-dinh.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Trang sửa bộ vùng tuyến theo id | [trang-chinh-sua-mot-draft-chung.md](./route-config/trang-chinh-sua-mot-draft-chung.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Khoá riêng cặp vùng miền | [khoa-tuyen.md](./route-config/khoa-tuyen.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Nhân bản bộ vùng tuyến | [nhan-ban-bo-vung-tuyen.md](./route-config/nhan-ban-bo-vung-tuyen.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Xoá bộ Nháp | [xoa-bo-nhap.md](./route-config/xoa-bo-nhap.md) | — | [Draft] |
+| [GSA] Vùng & Tuyến: Đổi tên bộ vùng tuyến | [doi-ten-bo-vung-tuyen.md](./route-config/doi-ten-bo-vung-tuyen.md) | — | [Draft] |

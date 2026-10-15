@@ -1290,6 +1290,246 @@
             "Khối \"Chọn dịch vụ\" hiện render mỗi SERVICE GROUP 1 dòng duy nhất, dùng dịch vụ rẻ nhất trong group (cheapestInGroup) — tuyến hiển thị bắt buộc phải tính trên ĐÚNG service đó, không phải service đầu tiên trong group.",
             "Text fallback chính xác khi chưa xác định được tuyến cần đồng thuận với PM/design trước khi code — AC3 chỉ yêu cầu phải có fallback, không quy định chữ cụ thể."
           ]
+        },
+        {
+          "id": "SHOP-ORDER-41",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Tạo đơn: Chọn phương thức thanh toán phí ship",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi tạo đơn Hàng hoá và tôi là người trả phí ship, tôi muốn chọn cách thanh toán phí ship (Tiền mặt / MoMo / Chuyển khoản ngân hàng) để linh hoạt theo hoàn cảnh tài chính của mình.",
+          "userFlow": [
+            "Mở \"Tạo đơn mới\" (CreateOrderDrawer), section \"Dịch vụ\".",
+            "Khi người trả ship = \"Shop trả ship\" (effectiveFeePayer === 'sender'), phía trên danh sách dịch vụ hiển thị nhóm \"Hình thức thanh toán phí ship\" với 3 pill-button: Tiền mặt / Thanh toán qua MoMo / Chuyển khoản ngân hàng.",
+            "Mặc định: \"Tiền mặt\" được chọn.",
+            "Shop bấm chọn 1 trong 3 lựa chọn → pill đang chọn đổi nền cam #FF5200 chữ trắng, các pill còn lại nền xám #F3F4F6.",
+            "Khi người trả ship = \"Khách trả ship\" (effectiveFeePayer === 'receiver') → picker ẩn hoàn toàn."
+          ],
+          "systemFlow": [
+            "PaymentMethodPicker (dòng 1008–1035) render 3 pill-button, chỉ xuất hiện khi effectiveFeePayer === 'sender' (dòng 1803).",
+            "Khi shop bấm pill, handleSelectPaymentMethod(m) (dòng 1307–1311) chạy: setPaymentMethod(m); m !== 'cash' → setPaymentStatus('pending'); m === 'cash' → setPaymentStatus('not_required'); reset paymentPaidAt về undefined.",
+            "paymentMethod và paymentStatus lưu trong state cục bộ của CreateOrderDrawer, truyền vào buildOrder() khi tạo đơn thật sự."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Khi người trả ship = \"Shop trả ship\", form tạo đơn hiển thị nhóm \"Hình thức thanh toán phí ship\" với đúng 3 lựa chọn: Tiền mặt / Thanh toán qua MoMo / Chuyển khoản ngân hàng.",
+            "AC2: Mặc định khi mở form: \"Tiền mặt\" được chọn, paymentStatus = 'not_required'.",
+            "AC3: Pill đang được chọn có nền #FF5200, chữ trắng; các pill khác nền #F3F4F6, chữ #4B5563.",
+            "AC4: Chọn \"Thanh toán qua MoMo\" hoặc \"Chuyển khoản ngân hàng\" → paymentStatus chuyển sang 'pending' ngay (chưa mở modal, chưa tạo đơn).",
+            "AC5: Chọn lại \"Tiền mặt\" → paymentStatus chuyển về 'not_required'.",
+            "AC6: Khi người trả ship = \"Khách trả ship\" → picker ẩn hoàn toàn. Shop không thể chọn phương thức thanh toán online vì phí ship do GHN thu hộ từ người nhận khi giao."
+          ],
+          "notes": [
+            "PROTOTYPE THUẦN — không có SDK MoMo hay cổng thanh toán ngân hàng thật. Toàn bộ là mô phỏng UI.",
+            "effectiveFeePayer = formComponents.cod ? feePayer : 'sender' — khi Super Admin tắt COD, effectiveFeePayer bị ép về 'sender', picker hiện mà không cần shop chọn.",
+            "Chỉ áp dụng cho CreateOrderDrawer (đơn Hàng hoá). CreateLetterDrawer (247Express) không có tính năng này."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-42",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Modal thanh toán online (QR MoMo / chuyển khoản ngân hàng)",
+          "status": "draft",
+          "userStory": "Là chủ shop đã chọn thanh toán phí ship qua MoMo hoặc chuyển khoản ngân hàng, tôi muốn thấy QR code hoặc thông tin chuyển khoản rõ ràng và có đủ thời gian để hoàn tất, để đảm bảo thanh toán trước khi đơn đi vào hệ thống.",
+          "userFlow": [
+            "Modal OnlinePaymentModal mở khi shop bấm \"Tạo đơn\" (xem SHOP-ORDER-43) hoặc \"Lưu thay đổi\" trên đơn nháp chưa thanh toán (xem SHOP-ORDER-43).",
+            "MoMo: Modal hiển thị QR giả lập tĩnh (FakeMomoQr, 160×160px) + số tiền phí ship lớn ở giữa + mã đơn tham chiếu.",
+            "Chuyển khoản: Modal hiển thị bảng 5 dòng — Ngân hàng / Số tài khoản / Chủ tài khoản / Số tiền / Nội dung chuyển khoản (= mã tracking đơn).",
+            "Đếm ngược 15 phút hiển thị bên dưới QR/bảng, định dạng MM:SS màu cam #FF5200.",
+            "Chưa hết giờ: nút \"Đóng\" (ghost) và nút \"Tôi đã thanh toán\" (cam).",
+            "Hết 15 phút: QR mờ (opacity 0.3) / bảng CK mờ (opacity 0.4), dòng đỏ \"Mã [QR/chuyển khoản] đã hết hạn — thanh toán thất bại\", chỉ còn 1 nút \"Tạo QR mới\" (MoMo) hoặc \"Tạo mã mới\" (CK).",
+            "Bấm \"Tôi đã thanh toán\" → đơn được tạo hoặc trạng thái được lưu, modal đóng.",
+            "Bấm \"Đóng\" hoặc nút X góc trên phải → modal đóng, trạng thái không đổi.",
+            "Bấm \"Tạo QR mới\"/\"Tạo mã mới\" → đồng hồ reset về 15:00, paymentStatus về 'pending'."
+          ],
+          "systemFlow": [
+            "OnlinePaymentModal (dòng 1116–1230): nhận props open, method, amount, orderRef, onConfirmPaid, onClose, onExpire, onRetry.",
+            "COUNTDOWN_SECONDS = 15 * 60 (dòng 1126). useEffect reset về COUNTDOWN_SECONDS mỗi khi open chuyển sang true (dòng 1131–1133).",
+            "method === 'momo' → render FakeMomoQr (SVG tĩnh seed cố định, dòng 1056–1077) + số tiền phí.",
+            "method === 'bank_transfer' → render BankTransferInfo (dòng 1087–1110): dữ liệu từ DEMO_BANK_INFO (dòng 1081–1085, Vietcombank cố định) + amount + orderRef làm nội dung CK.",
+            "Interval đếm ngược 1 giây: khi secondsLeft <= 1 → setExpired(true), gọi onExpire?.().",
+            "onExpire → paymentStatus: 'failed' (CreateOrderDrawer: handlePaymentExpire dòng 1406; OrderDetailDrawer: handlePaymentExpireInDetail dòng 2622).",
+            "\"Tôi đã thanh toán\" → onConfirmPaid() → paymentStatus: 'paid' + paymentPaidAt = new Date().toISOString().",
+            "\"Đóng\" / X → onClose() → modal đóng, không đổi state.",
+            "regenerateCode() (dòng 1155–1159): reset secondsLeft, setExpired(false), gọi onRetry?.() → paymentStatus: 'pending'."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Modal \"Thanh toán phí ship qua MoMo\" hiện QR giả lập tĩnh 160×160px và số tiền phí ship (font >= 22px) ở trung tâm, cùng dòng \"Mã đơn tham chiếu\" phía trên.",
+            "AC2: Modal \"Thanh toán phí ship qua chuyển khoản ngân hàng\" hiện bảng đủ 5 dòng: Ngân hàng / Số tài khoản / Chủ tài khoản / Số tiền / Nội dung chuyển khoản. Số tiền và Nội dung CK đổi màu #3B82F6 để nhấn mạnh.",
+            "AC3: Đếm ngược bắt đầu từ 15:00, giảm dần 1 giây/lần khi modal đang mở. Đếm ngược reset về 15:00 mỗi khi modal đóng và mở lại.",
+            "AC4: Hết 15 phút → QR/bảng CK mờ đi, hiện dòng đỏ \"Mã [QR/chuyển khoản] đã hết hạn — thanh toán thất bại\", thay 2 nút cũ bằng 1 nút \"Tạo QR mới\" (MoMo) hoặc \"Tạo mã mới\" (CK).",
+            "AC5: Bấm \"Tôi đã thanh toán\" → modal đóng, paymentStatus = 'paid', paymentPaidAt ghi ISO timestamp.",
+            "AC6: Bấm \"Đóng\" (nút hoặc nút X góc trên phải) → modal đóng, paymentStatus KHÔNG đổi (vẫn 'pending').",
+            "AC7: Bấm \"Tạo QR mới\"/\"Tạo mã mới\" → đồng hồ reset về 15:00, QR/bảng CK sáng trở lại, paymentStatus = 'pending'."
+          ],
+          "notes": [
+            "PROTOTYPE THUẦN — FakeMomoQr là hình SVG tĩnh giả lập, không phải QR thật từ SDK MoMo. DEMO_BANK_INFO là dữ liệu giả lập (Vietcombank 0071000123456 / CTY TNHH GHN AGENCY DEMO), không có tài khoản thật.",
+            "Modal dùng chung cho CreateOrderDrawer (đơn chưa tồn tại trong store) lẫn OrderDetailDrawer (đơn đã có trong store). Callback onConfirmPaid, onExpire, onRetry khác nhau giữa 2 context nhưng component OnlinePaymentModal giống hệt nhau."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-43",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Chặn tạo đơn/xác nhận gửi đơn khi chưa thanh toán online",
+          "status": "draft",
+          "userStory": "Là chủ shop đã chọn thanh toán phí ship qua MoMo hoặc chuyển khoản, tôi muốn hệ thống chặn và nhắc tôi hoàn tất thanh toán trước khi đơn được tạo hoặc xác nhận gửi, để phí ship được thanh toán trước khi đơn đi vào luồng xử lý.",
+          "userFlow": [
+            "Tạo đơn mới: Shop chọn MoMo/CK, bấm \"Tạo đơn\" → modal thanh toán mở thay vì tạo đơn ngay. Bấm \"Tôi đã thanh toán\" → đơn mới được tạo vào store, drawer đóng. Bấm \"Đóng\" → modal đóng, đơn chưa được tạo, shop quay lại form.",
+            "Xác nhận gửi đơn nháp: Shop mở chi tiết đơn \"Đơn nháp\" (status='pending') có paymentMethod = momo/bank_transfer, vào edit mode, đổi trạng thái sang khác 'pending', bấm \"Lưu thay đổi\" → modal thanh toán mở. Bấm \"Tôi đã thanh toán\" → paymentStatus cập nhật 'paid' vào store, trạng thái đơn đổi theo draft. Bấm \"Đóng\" → modal đóng, đơn vẫn giữ 'pending'."
+          ],
+          "systemFlow": [
+            "handleCreate() (dòng 1388–1395): kiểm tra paymentMethod !== 'cash' && paymentStatus !== 'paid' → setPaymentModalOpen(true) và return sớm, không gọi addOrder().",
+            "handlePaymentPaid() (dòng 1397–1404): ghi paymentStatus: 'paid' + paymentPaidAt, đóng modal, gọi addOrder(buildOrder('paid', paidAt)) → đơn mới vào store, onClose() đóng drawer.",
+            "saveEdit() trong OrderDetailDrawer (dòng 2603–2611): tính leavingDraft = order.status === 'pending' && draft.status !== 'pending' VÀ onlineUnpaid = (paymentMethod === 'momo' || 'bank_transfer') && paymentStatus !== 'paid' → nếu cả 2 đều true, setPaymentModalOpen(true) và return sớm.",
+            "handlePaymentPaidInDetail() (dòng 2614–2620): updateOrder(order.id, { paymentStatus: 'paid', paymentPaidAt }) → đóng modal → commitSave(draft.status).",
+            "Đơn tiền mặt hoặc đã paymentStatus === 'paid' → không qua modal, tạo/lưu đơn ngay."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Shop chọn MoMo/CK và bấm \"Tạo đơn\" khi paymentStatus !== 'paid' → modal thanh toán mở, đơn chưa xuất hiện trong danh sách.",
+            "AC2: Trong modal, bấm \"Tôi đã thanh toán\" → đơn mới xuất hiện trong danh sách với paymentStatus = 'paid' và paymentPaidAt có giá trị.",
+            "AC3: Trong modal, bấm \"Đóng\" → modal đóng, đơn vẫn chưa được tạo, form tạo đơn vẫn còn mở.",
+            "AC4: Shop chọn tiền mặt → bấm \"Tạo đơn\" tạo đơn ngay, không mở modal.",
+            "AC5: Shop đã thanh toán (paymentStatus === 'paid') rồi bấm \"Tạo đơn\" → tạo đơn ngay, không mở modal lần 2.",
+            "AC6: Đơn nháp (status='pending') có paymentMethod = momo/bank_transfer, chưa thanh toán → bấm \"Lưu thay đổi\" để chuyển trạng thái → modal thanh toán mở, trạng thái đơn chưa đổi.",
+            "AC7: Xác nhận thanh toán trong OrderDetailDrawer → paymentStatus cập nhật 'paid' vào store ngay, trạng thái đơn đổi theo draft.status, đơn không còn là nháp.",
+            "AC8: Chỉ chặn khi đơn nháp ĐANG rời trạng thái 'pending' (leavingDraft = true). Cập nhật thông tin đơn mà giữ nguyên trạng thái 'pending' → không mở modal."
+          ],
+          "notes": [
+            "PROTOTYPE THUẦN — không có SDK/gateway thanh toán thật. Đây là mô phỏng luồng chặn thuần UI.",
+            "handleCreate() và saveEdit() là 2 điểm gate duy nhất chặn tạo/xác nhận đơn. Không có cơ chế validate phía server."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-44",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Badge trạng thái thanh toán ở danh sách đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop nhìn vào danh sách đơn hàng, tôi muốn thấy rõ trạng thái thanh toán phí ship của các đơn đã chọn MoMo hoặc chuyển khoản, để biết đơn nào cần hoàn tất thanh toán và đơn nào đã xong.",
+          "userFlow": [
+            "Danh sách đơn hàng hiển thị từng dòng (TRow).",
+            "Cột \"Phí ship\" (phía phải): nếu đơn có paymentMethod = 'momo' hoặc 'bank_transfer', hiển thị badge nhỏ dưới dòng \"Shop trả\"/\"Khách trả\".",
+            "Badge màu sắc khác nhau theo paymentStatus.",
+            "Đơn paymentMethod = 'cash' hoặc không có field → không hiển thị badge."
+          ],
+          "systemFlow": [
+            "paymentBadge(order) (dòng 1041–1048): trả về null nếu paymentMethod không phải 'momo' hoặc 'bank_transfer'.",
+            "Badge theo paymentStatus: 'paid' → \"Đã thanh toán {MoMo/chuyển khoản}\", chữ #00C853, nền #D9F7E5; 'pending' → \"Chờ thanh toán {MoMo/chuyển khoản}\", chữ #F59E0B, nền #FEF3C7; 'failed' → \"Thanh toán thất bại\", chữ #EF4444, nền #FEE2E2.",
+            "TRow (dòng 3464, 3546–3553): const payBadge = paymentBadge(order) → nếu payBadge khác null, render span pill trong cột Phí ship (font 11px, padding 1px 6px, borderRadius 8)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Đơn paymentMethod = 'momo' + paymentStatus = 'paid' → badge xanh \"Đã thanh toán MoMo\" trong cột Phí ship.",
+            "AC2: Đơn paymentMethod = 'bank_transfer' + paymentStatus = 'paid' → badge xanh \"Đã thanh toán chuyển khoản\".",
+            "AC3: paymentStatus = 'pending' → badge vàng \"Chờ thanh toán MoMo\" hoặc \"Chờ thanh toán chuyển khoản\".",
+            "AC4: paymentStatus = 'failed' → badge đỏ \"Thanh toán thất bại\" (không kèm tên kênh).",
+            "AC5: Đơn paymentMethod = 'cash' hoặc không có paymentMethod → không hiển thị badge.",
+            "AC6: Badge nằm trong cột \"Phí ship\", dưới dòng \"Shop trả\"/\"Khách trả\", dạng pill nhỏ (font 11px). Không hiện ở cột khác."
+          ],
+          "notes": [
+            "PROTOTYPE THUẦN — badge phản ánh state mock data trong localStorage, không kết nối gateway thanh toán thật.",
+            "Màu badge tái sử dụng bộ màu đã có sẵn trong file (không bịa mã màu mới): xanh #D9F7E5/#00C853 (cùng badge TLHH), vàng #FEF3C7/#F59E0B (cùng ROW_STATUS_STYLE.returning), đỏ #FEE2E2/#EF4444 (cùng ROW_STATUS_STYLE.cancelled).",
+            "Text badge phân biệt \"MoMo\" và \"chuyển khoản\" theo đúng paymentMethod của từng đơn — không dùng nhãn chung cho cả 2."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-45",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Hiển thị và thao tác lại thanh toán trong Chi tiết đơn",
+          "status": "draft",
+          "userStory": "Là chủ shop xem chi tiết một đơn hàng, tôi muốn thấy phương thức và trạng thái thanh toán phí ship, và nếu đơn nháp chưa thanh toán, tôi muốn hoàn tất thanh toán ngay tại đây mà không cần tạo lại đơn.",
+          "userFlow": [
+            "Mở chi tiết đơn (OrderDetailDrawer), tab \"Thông tin\".",
+            "Section \"Ghi chú & thông tin khác\": dòng \"Thanh toán\" hiển thị phương thức (\"Thanh toán qua MoMo\" / \"Thanh toán qua chuyển khoản ngân hàng\" / \"Thanh toán Tiền mặt (Thu hộ COD)\").",
+            "Nếu phương thức là MoMo hoặc CK: hiện thêm dòng \"Trạng thái MoMo/chuyển khoản: {label}\" màu tương ứng.",
+            "Nếu đã thanh toán (paymentStatus = 'paid'): dòng trạng thái kèm thêm thời điểm thanh toán (vd: \"09:45 ngày 13/10\" từ formatPaidAt(order.paymentPaidAt)).",
+            "Đơn nháp (status='pending') chưa thanh toán online: vào edit mode, đổi status, bấm \"Lưu thay đổi\" → modal thanh toán mở (xem SHOP-ORDER-43). Xác nhận xong → đơn cập nhật trạng thái và paymentStatus vào store."
+          ],
+          "systemFlow": [
+            "Tab \"Thông tin\" (dòng 3027–3047): dòng \"Thanh toán\" luôn hiện, đọc order.paymentMethod.",
+            "Nếu order.paymentMethod === 'momo' || 'bank_transfer': render thêm dòng \"Trạng thái {methodLabel}\": Text = paymentBadge(order)?.label, màu = paymentBadge(order)?.color. Nếu paymentStatus === 'paid' && paymentPaidAt: thêm suffix \"· {formatPaidAt(order.paymentPaidAt)}\" (màu C_TEXT_SECONDARY, fontWeight 400).",
+            "OnlinePaymentModal (dòng 3278–3287) trong OrderDetailDrawer: amount = order.fee, orderRef = order.trackingCode.",
+            "onConfirmPaid = handlePaymentPaidInDetail (dòng 2614–2620): updateOrder(order.id, { paymentStatus: 'paid', paymentPaidAt }) rồi commitSave(draft.status).",
+            "onExpire = handlePaymentExpireInDetail (dòng 2622–2626): updateOrder(order.id, { paymentStatus: 'failed' }).",
+            "onRetry = handlePaymentRetryInDetail (dòng 2628–2632): updateOrder(order.id, { paymentStatus: 'pending' }).",
+            "Khác CreateOrderDrawer (state cục bộ): OrderDetailDrawer dùng updateOrder() ngay khi expire/retry — thay đổi persist vào store dù chưa xác nhận thanh toán xong."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Tab \"Thông tin\" của mọi đơn đều hiển thị dòng \"Thanh toán\" với đúng phương thức.",
+            "AC2: Đơn paymentMethod = 'cash': dòng \"Thanh toán\" hiện \"Thanh toán Tiền mặt (Thu hộ COD)\", không có dòng trạng thái MoMo/CK bên dưới.",
+            "AC3: Đơn paymentMethod = 'momo'/'bank_transfer': hiện thêm dòng \"Trạng thái MoMo/chuyển khoản: {badge text}\" đúng màu từ paymentBadge().",
+            "AC4: Khi paymentStatus = 'paid' và paymentPaidAt có giá trị → dòng trạng thái kèm suffix thời điểm thanh toán định dạng HH:mm ngày DD/MM.",
+            "AC5: Đơn nháp (status='pending') có online payment chưa thanh toán → vào edit mode, đổi status sang bất kỳ trạng thái nào khác 'pending', bấm \"Lưu thay đổi\" → modal thanh toán mở thay vì lưu ngay.",
+            "AC6: Xác nhận \"Tôi đã thanh toán\" trong modal → paymentStatus đổi sang 'paid' và persist vào store (không mất khi reload), trạng thái đơn cũng cập nhật theo draft.status.",
+            "AC7: Hết thời gian đếm ngược trong modal → paymentStatus đổi sang 'failed' và persist vào store, đơn vẫn giữ trạng thái 'pending'.",
+            "AC8: Bấm \"Tạo QR mới\"/\"Tạo mã mới\" → paymentStatus đổi về 'pending' và persist vào store, đếm ngược reset."
+          ],
+          "notes": [
+            "PROTOTYPE THUẦN — không có SDK/gateway thanh toán thật. QR giả lập, thông tin CK là DEMO_BANK_INFO.",
+            "Khác CreateOrderDrawer (state cục bộ, chỉ gọi addOrder() lúc xác nhận thanh toán): OrderDetailDrawer dùng updateOrder() ngay cả khi expire/retry — thay đổi persist vào store dù chưa xác nhận xong.",
+            "Không có nút \"Thanh toán ngay\" riêng biệt trong giao diện chi tiết đơn. Modal chỉ mở khi shop bấm \"Lưu thay đổi\" trong edit mode với điều kiện đơn đang nháp và chưa thanh toán online."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-46",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Tự reset phương thức thanh toán khi đổi người trả ship",
+          "status": "draft",
+          "userStory": "Là chủ shop đang tạo đơn, khi tôi thay đổi người trả phí ship từ \"Shop trả\" sang \"Khách trả\", tôi muốn lựa chọn thanh toán online (MoMo/CK) tự động bị xoá, để tránh đơn được tạo ra có dữ liệu paymentMethod không phù hợp với feePayer.",
+          "userFlow": [
+            "Trong form tạo đơn, shop chọn \"Thanh toán qua MoMo\" hoặc \"Chuyển khoản ngân hàng\".",
+            "Shop đổi người trả ship sang \"Khách trả ship\" (feePayer = 'receiver').",
+            "Hệ thống tự động reset paymentMethod về 'cash', paymentStatus về 'not_required', xoá paymentPaidAt.",
+            "Picker thanh toán ẩn đi (vì effectiveFeePayer !== 'sender').",
+            "Shop chuyển lại \"Shop trả ship\" → picker hiện trở lại, mặc định là \"Tiền mặt\"."
+          ],
+          "systemFlow": [
+            "useEffect (dòng 1315–1322) trong CreateOrderDrawer: watch effectiveFeePayer.",
+            "Điều kiện trigger: effectiveFeePayer === 'receiver' && paymentMethod !== 'cash'.",
+            "Nếu đúng: setPaymentMethod('cash'); setPaymentStatus('not_required'); setPaymentPaidAt(undefined).",
+            "Khi effectiveFeePayer === 'sender': không làm gì (picker hiện trở lại với giá trị đã reset về 'cash')."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Shop chọn MoMo/CK, rồi đổi người trả sang \"Khách trả ship\" → paymentMethod tự về 'cash', paymentStatus về 'not_required', picker ẩn.",
+            "AC2: Đổi lại sang \"Shop trả ship\" → picker hiện lại với \"Tiền mặt\" được chọn (không phục hồi lựa chọn MoMo/CK cũ).",
+            "AC3: Shop đang chọn \"Tiền mặt\" rồi đổi sang \"Khách trả ship\" → picker ẩn, không có side effect thêm (không trigger reset vì paymentMethod đã là 'cash').",
+            "AC4: Reset không mở modal thanh toán — chỉ đổi state cục bộ trong form."
+          ],
+          "notes": [
+            "PROTOTYPE THUẦN — không có SDK/gateway thật.",
+            "effectiveFeePayer = formComponents.cod ? feePayer : 'sender'. Nếu Super Admin đã tắt COD thì effectiveFeePayer luôn là 'sender' bất kể feePayer — useEffect này sẽ không bao giờ trigger trong trường hợp đó.",
+            "Chỉ áp dụng trong CreateOrderDrawer (state cục bộ trước khi tạo đơn). Đơn đã tạo trong store không có cơ chế tương tự vì feePayer đã được lưu cố định vào Order."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-47",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Nhắc hoàn tiền khi huỷ đơn đã thanh toán online",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi một đơn đã thanh toán phí ship qua MoMo hoặc chuyển khoản bị huỷ, tôi muốn thấy nhắc nhở \"Chờ hoàn tiền\" trong danh sách đơn, để biết cần liên hệ đại lý hoặc GHN để được hoàn lại khoản đã trả.",
+          "userFlow": [
+            "Đơn đã thanh toán online (paymentStatus = 'paid') bị huỷ (status = 'cancelled').",
+            "Trong danh sách đơn, cột trạng thái hiển thị \"Đã huỷ · Chờ hoàn tiền\" thay vì chỉ \"Đã huỷ\".",
+            "Đơn bị huỷ mà chưa thanh toán (paymentStatus = 'pending'/'failed'/'not_required') → trạng thái chỉ là \"Đã huỷ\" bình thường."
+          ],
+          "systemFlow": [
+            "rowStatus(order) (dòng 2484–2495): lấy base label từ ROW_STATUS_STYLE[order.status].",
+            "Kiểm tra: order.status === 'cancelled' && (order.paymentMethod === 'momo' || order.paymentMethod === 'bank_transfer') && order.paymentStatus === 'paid' → trả về { ...base, label: base.label + ' · Chờ hoàn tiền' }.",
+            "TRow (dòng 3490–3491): rowStatus(order).label hiển thị trong cột mã đơn/trạng thái, màu rowStatus(order).color (#EF4444)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Đơn status='cancelled' + paymentMethod='momo'/'bank_transfer' + paymentStatus='paid' → nhãn trạng thái trong danh sách là \"Đã huỷ · Chờ hoàn tiền\", màu #EF4444.",
+            "AC2: Đơn status='cancelled' + paymentMethod='cash' → nhãn chỉ là \"Đã huỷ\", không có suffix.",
+            "AC3: Đơn status='cancelled' + paymentMethod='momo'/'bank_transfer' + paymentStatus='pending' hoặc 'failed' → nhãn chỉ là \"Đã huỷ\" (chưa thanh toán, không cần hoàn tiền).",
+            "AC4: Đơn status khác 'cancelled' (dù paymentStatus = 'paid') → không hiện suffix \"Chờ hoàn tiền\"."
+          ],
+          "notes": [
+            "PROTOTYPE THUẦN — không có quy trình hoàn tiền thật. Đây CHỈ là nhắc nhở hiển thị trong UI. Hệ thống không gửi request hoàn tiền đến MoMo hay ngân hàng, không tạo ticket support tự động, không tính lại công nợ đối soát.",
+            "Chỉ áp dụng cho danh sách đơn (TRow). Giao diện chi tiết đơn (OrderDetailDrawer) không hiện suffix \"Chờ hoàn tiền\" — chỉ hiện trạng thái thanh toán qua paymentBadge()."
+          ]
         }
       ]
     },

@@ -7,64 +7,58 @@ figma: https://www.figma.com/design/G33IlXebyXXGxZbbYbKECr/-GSA--GHN-SUPER-ADMIN
 status: draft
 ---
 
-# [GSA] Vùng & Tuyến: Khoá tuyến
+# [GSA] Vùng & Tuyến: Khoá riêng cặp vùng miền
 
 ## User Story
 
-Là GHN Super Admin, tôi muốn khoá CẢ MỘT tuyến hoặc khoá RIÊNG một cặp vùng miền trong một modal "Khoá tuyến" tách biệt hoàn toàn khỏi bảng "Cấu hình tuyến", để chốt cứng những tuyến/cặp quan trọng (tránh bị đổi tên, gán nhầm, hay xoá nhầm) mà không làm rối thao tác chỉnh sửa tuyến hàng ngày ở bảng chính.
+Là GHN Super Admin, tôi muốn khoá RIÊNG một cặp vùng miền cụ thể trực tiếp trong bảng "Cấu hình tuyến" bằng icon khoá inline — và thao tác này có hiệu lực ngay lập tức trên đúng bộ đang xem (dù Nháp hay Hoạt động), để chốt cứng những cặp quan trọng mà không cần mở modal riêng, không cần tạo thêm bộ mới, và không phải khoá cứng cả tuyến chỉ vì 1 cặp cần giữ nguyên.
 
 ## User Flow
 
-1. Tại trang "Chỉnh sửa vùng & tuyến" (`/super-admin/route-config/edit`, xem GSA-ROUTE-14), bấm nút "🔒 Khoá tuyến" ở header, cạnh nút "↻ Thiết lập lại" → mở modal "Khoá tuyến".
-2. Modal hiện dòng phụ đề "Đã khoá N. Bấm vào tên tuyến để khoá/mở khoá CẢ tuyến, bấm vào 1 cặp vùng miền để khoá/mở khoá riêng cặp đó." (N = tổng số tuyến đã khoá cả + số cặp đã khoá riêng, cộng chung 1 số).
-3. Bảng trong modal liệt kê MỌI tuyến hiện có NGOẠI TRỪ "Nội Tỉnh" (không khoá được), mỗi dòng gồm: pill cam "Tên tuyến" (bấm để toggle khoá CẢ tuyến) | các pill viền xanh dương "Cặp vùng miền" thuộc tuyến đó (bấm để toggle khoá RIÊNG từng cặp).
-4. Bấm vào pill tên tuyến → nếu đang chưa khoá thì chuyển sang viền/chữ đỏ (đã khoá cả tuyến); bấm lại → mở khoá, về lại màu cam.
-5. Bấm vào pill 1 cặp vùng miền → tương tự, toggle khoá riêng CẶP đó (không phụ thuộc tuyến có bị khoá cả hay không).
-6. Bấm ✕ ở góc phải trên → đóng modal, KHÔNG lưu thay đổi vừa chọn.
-7. Bấm "Lưu thay đổi" (cam, góc phải dưới) → lưu các thay đổi khoá, đóng modal. Quay lại bảng "Cấu hình tuyến" chính sẽ thấy input tên/chip/nút xoá của tuyến hoặc cặp vừa khoá chuyển sang trạng thái disabled (xám), dòng tuyến bị khoá cả có nền đỏ nhạt.
+1. Mở trang sửa bộ vùng tuyến (GSA-ROUTE-14), vào khối "🔀 Cấu hình tuyến".
+2. Dòng tuyến chỉ liệt kê các chip cho cặp vùng miền ĐÃ ĐƯỢC GÁN cho đúng tuyến đó (chip viền xanh dương nhạt) — cặp chưa gán KHÔNG hiện ở đây (xem GSA-ROUTE-3, gộp vào khối "chưa được gán tuyến" cuối bảng với dropdown gán riêng). Mỗi chip đã gán có 1 icon khoá nhỏ gắn liền bên trái.
+3. Bấm icon khoá cạnh 1 chip → toggle khoá RIÊNG đúng cặp đó. Trạng thái đổi NGAY LẬP TỨC, không có bước xác nhận, không có nút Lưu riêng — lưu thẳng vào bộ đang xem qua `updateVersionLocks`.
+4. Chip đang khoá chuyển hẳn sang viền đỏ + icon khoá đặc màu đỏ; chip chưa khoá giữ viền xanh dương + icon khoá mở màu xanh dương.
+5. Khoá 1 cặp KHÔNG ảnh hưởng gì tới các cặp khác trong CÙNG tuyến, và KHÔNG ảnh hưởng tới tên tuyến — tên tuyến vẫn sửa/xoá được bình thường (trừ khi bộ Hoạt động, lúc đó Vùng miền/Tuyến khoá cứng vì lý do khác — xem GSA-ROUTE-14). Không có khái niệm "khoá cả tuyến" trong hệ thống.
+6. Thao tác khoá/mở khoá hoạt động ở CẢ 2 trạng thái Nháp và Hoạt động — đây là ngoại lệ được cho phép (khối Vùng miền + Tuyến bị khoá cho bộ Hoạt động, nhưng thao tác khoá/mở cặp thì vẫn dùng được). Ngoài ra, thao tác này còn hoạt động ĐỘC LẬP với chế độ Xem/Sửa của khối "Cấu hình tuyến" (`tuyenEditing`) — icon khoá bấm được dù khối Tuyến đang ở chế độ Xem (chưa bấm "✏️ Chỉnh sửa"). Xem GSA-ROUTE-14 AC8.
 
 ## System Flow
 
-1. Modal dùng 2 draft cục bộ riêng — `lockDraftRouteNames: Set<string>`, `lockDraftPairKeys: Set<string>` — khởi tạo (`openLockModal`) từ state khoá hiện tại (`lockedRouteNames`, `lockedPairKeys`) mỗi lần mở modal, KHÔNG liên quan đến `regionsDraft`/`matrixDraft`/`urbanDraft` đang dở ở 3 khối chính.
-2. Dữ liệu hiển thị trong modal (danh sách tên tuyến, cặp vùng miền thuộc từng tuyến) lấy từ bộ ĐANG ÁP DỤNG (`activeVersion.regions`/`activeVersion.routeMatrix`) — không lấy từ `matrixDraft` đang sửa dở ở bảng "Cấu hình tuyến" chính (nếu Super Admin đang có thay đổi chưa lưu ở đó).
-3. `toggleLockDraftRoute(name)` / `toggleLockDraftPair(key)` — chỉ add/remove phần tử trong 2 Set draft cục bộ, không ghi gì ra ngoài cho tới khi bấm "Lưu thay đổi".
-4. `commitLockDraft()` — gọi `commitNewRouteConfigVersion(activeVersion.regions, activeVersion.routeMatrix, activeVersion.urbanConfigs, undefined, Array.from(lockDraftRouteNames), Array.from(lockDraftPairKeys))`: tạo 1 bộ vùng tuyến MỚI giữ NGUYÊN y hệt `regions`/`routeMatrix`/`urbanConfigs` của bộ đang áp dụng, CHỈ thay đổi 2 field `lockedRouteNames`/`lockedPairKeys` — độc lập hoàn toàn với 3 nút "Lưu thay đổi" khác của khối Vùng miền/Tuyến/Nội-Ngoại thành (xem GSA-ROUTE-14).
-5. Sau khi commit, cập nhật `activeVersion` bằng bộ mới, đồng bộ `lockedRouteNames`/`lockedPairKeys` (state dùng cho bảng chính) theo đúng 2 draft vừa lưu, rồi đóng modal.
-6. Đóng modal bằng ✕ chỉ `setLockModalOpen(false)`, không gọi `commitLockDraft` — mọi toggle trong phiên mở modal bị bỏ.
-7. Bảng "Cấu hình tuyến" chính đọc trực tiếp `lockedRouteNames`/`lockedPairKeys` để quyết định disable input tên tuyến, chip gán cặp, và nút xoá tuyến — KHÔNG còn bất kỳ icon/nút khoá-mở khoá nào nằm trong bảng chính nữa (đã gỡ bỏ hoàn toàn, chuyển hết logic toggle vào modal này).
-8. `hasTuyenChanges` (cờ bật nút Huỷ bỏ/Lưu thay đổi của khối "Cấu hình tuyến" chính) có so sánh thêm `lockedRouteNames`/`lockedPairKeys` hiện tại với bộ đang áp dụng — nhưng việc LƯU thật của 2 field này chỉ xảy ra qua `commitLockDraft`, không qua nút Lưu của khối "Cấu hình tuyến".
+1. `togglePairLock(key)` — add/remove `key` trong `lockedPairKeys` set, gọi ngay `updateVersionLocks(bundle.id, Array.from(next))`. Không qua draft, không tạo bộ mới.
+2. `updateVersionLocks(id, lockedPairKeys)` — tìm bộ theo `id`, cập nhật field `lockedPairKeys` TẠI CHỖ, persist vào localStorage. Hợp lệ với cả `'draft'` lẫn `'published'`.
+3. Sau khi lưu thành công, component cập nhật `lockedPairKeys` state để UI phản ánh ngay — icon và chip liên quan đổi màu/disabled.
+4. Áp dụng cho ĐÚNG BỘ ĐANG XEM (`bundle.id`) — không chỉ bộ đang active toàn hệ thống. Super Admin khoá/mở được cả ở bộ Hoạt động chưa phải active.
+5. Dòng tuyến chỉ render `assignedPairs = allRegionPairs.filter(([a,b]) => matrixDraft[pairKey(a.id,b.id)] === name)` — không duyệt toàn bộ `allRegionPairs` cho mỗi dòng (tránh hiện hàng loạt chip xám "chưa gán" rối mắt). Tuyến chưa có cặp nào hiện dòng chữ nghiêng "Chưa có cặp vùng miền nào".
+6. `handleToggleChip(routeName, regionIdA, regionIdB)` — chỉ chặn khi `isPublished` hoặc `lockedPairKeys.has(key)`; KHÔNG còn nhánh kiểm tra "route đang bị khoá" (đã bỏ hẳn khái niệm này khỏi codebase).
+7. `handleRenameTuyen`/`handleDeleteTuyen` — chỉ chặn khi `isPublished` (và `'Nội Tỉnh'` cho rename) hoặc `hasLockedPair` (cho xoá, xem AC5); không còn nhánh kiểm tra khoá cả tuyến.
+
+## Tác động đa nền tảng
+
+| Platform | Thay đổi |
+|---|---|
+| **Agency Admin** — Tạo bảng giá | Dropdown "Tuyến" trong PricingCreate.tsx hiện badge khoá (full/partial/none) theo bộ tuyến đang chọn, tính từ `routeLockStatusIn()` — "full" khi 100% cặp của tuyến đó đều nằm trong `lockedPairKeys`, "partial" khi chỉ 1 phần, "none" khi chưa cặp nào bị khoá. Tuyến bị khoá vẫn chọn được, badge chỉ để tham khảo (xem AGA-CARRIER-23). |
 
 ## Acceptance Criteria
 
-**AC1:** Nút "🔒 Khoá tuyến" nằm ở header trang "Chỉnh sửa vùng & tuyến", cạnh nút "↻ Thiết lập lại" — bấm vào mở modal "Khoá tuyến", không điều hướng sang trang khác.
+**AC1:** Dòng tuyến chỉ hiện chip cho cặp ĐÃ GÁN (viền xanh dương `#BFDBFE`, chữ/icon `#3B82F6`) — không còn hiện chip cho cặp chưa gán. Mỗi chip đã gán có icon khoá nhỏ gắn liền bên trái.
 
-**AC2:** Modal hiện dòng "Đã khoá {N}..." với N = số tuyến đã khoá cả + số cặp đã khoá riêng (cộng chung thành 1 số duy nhất).
+**AC2:** Bấm icon khoá cạnh 1 chip → toggle khoá riêng đúng cặp đó NGAY LẬP TỨC, không có bước xác nhận, không có nút Lưu riêng.
 
-**AC3:** Bảng trong modal liệt kê mọi tuyến hiện có của bộ ĐANG ÁP DỤNG, trừ "Nội Tỉnh" — không hiện "Nội Tỉnh" vì tuyến này không khoá được ở bất kỳ cấp nào.
+**AC3:** Khoá/mở khoá lưu NGAY, áp dụng cho đúng bộ đang xem theo `bundle.id`.
 
-**AC4:** Bấm vào pill tên tuyến → toggle khoá/mở khoá CẢ tuyến đó: khi khoá, pill chuyển viền/chữ màu đỏ; khi mở khoá, trở về viền/chữ màu cam.
+**AC4:** Thao tác khoá/mở khoá hoạt động ở CẢ bộ Nháp lẫn bộ Hoạt động, VÀ ở cả 2 chế độ Xem/Sửa của khối "Cấu hình tuyến" (không bị gate bởi `tuyenEditing`).
 
-**AC5:** Bấm vào pill 1 cặp vùng miền → toggle khoá/mở khoá RIÊNG đúng cặp đó, độc lập với trạng thái khoá cả tuyến đang chứa cặp này: khi khoá, pill chuyển viền/chữ màu đỏ; khi mở khoá, trở về viền/chữ xanh dương.
+**AC5:** Cặp bị khoá: chip của đúng cặp đó disabled (không cho đổi sang tuyến khác, không gỡ được khi đang Sửa), nhưng tên tuyến và mọi chip khác của tuyến chứa cặp đó vẫn tự do sửa/gỡ bình thường (nếu bộ còn là Nháp và khối Tuyến đang ở chế độ Sửa).
 
-**AC6:** Bấm ✕ đóng modal → mọi toggle vừa bấm trong phiên mở modal này bị HUỶ BỎ, không ảnh hưởng tới bảng "Cấu hình tuyến" chính.
+**AC6:** Tuyến chứa ít nhất 1 cặp bị khoá → nút xoá tuyến đó disabled (tránh orphan khoá: xoá tuyến sẽ tự gỡ gán mọi cặp của tuyến, kể cả cặp đang khoá).
 
-**AC7:** Bấm "Lưu thay đổi" → tạo đúng 1 bộ vùng tuyến MỚI, giữ nguyên y hệt dữ liệu vùng miền/tuyến/nội-ngoại thành của bộ đang áp dụng, CHỈ thay đổi danh sách tuyến bị khoá cả và danh sách cặp bị khoá riêng theo đúng lựa chọn vừa toggle trong modal; modal tự đóng sau khi lưu.
+**AC7:** Cặp vùng miền CHƯA được gán vào tuyến nào không hiện ở bất kỳ dòng tuyến nào — gộp riêng vào khối "X cặp vùng miền chưa được gán tuyến" cuối bảng (ẩn hẳn khi bộ Hoạt động), mỗi cặp có dropdown "Gán vào tuyến..." để chọn gán.
 
-**AC8:** Hành động "Lưu thay đổi" của modal "Khoá tuyến" HOÀN TOÀN ĐỘC LẬP với draft đang sửa dở (nếu có) ở 3 khối Vùng miền/Tuyến/Nội-Ngoại thành của bảng chính — bấm Lưu ở modal không làm mất, không gộp, và không bị ảnh hưởng bởi thay đổi chưa lưu ở 3 khối đó.
-
-**AC9:** Sau khi lưu khoá, tại bảng "Cấu hình tuyến" chính: input tên của tuyến bị khoá cả chuyển disabled (nền xám, không gõ được); mọi chip cặp vùng miền thuộc tuyến đó (dù bấm từ chip của chính tuyến này hay từ chip của tuyến KHÁC đang cố gán cặp đó) đều disabled; nút xoá (✕) của tuyến đó disabled.
-
-**AC10:** Sau khi khoá riêng 1 cặp vùng miền (không khoá cả tuyến): chip của đúng cặp đó disabled ở MỌI tuyến (không cho đổi cặp này sang tuyến khác), nhưng các chip/cặp khác và input tên của tuyến đang chứa cặp này vẫn hoạt động bình thường nếu bản thân tuyến không bị khoá cả.
-
-**AC11:** Dòng tuyến đang bị khoá cả tuyến trong bảng "Cấu hình tuyến" chính hiển thị nền đỏ nhạt (`#FEF2F2`) để nhận biết trực quan, dù không bấm thao tác khoá/mở khoá được tại đó.
-
-**AC12:** Tuyến đang chứa ít nhất 1 cặp vùng miền bị khoá RIÊNG (dù bản thân tuyến không bị khoá cả) → nút xoá (✕) của tuyến đó tại bảng chính vẫn bị disabled, kèm tooltip giải thích cần mở khoá cặp đó trước khi xoá — tránh xoá tuyến làm mất gán của cặp đã khoá riêng (orphan khoá).
-
-**AC13:** Bảng "Cấu hình tuyến" chính KHÔNG còn bất kỳ icon hay nút bấm khoá/mở khoá nào nằm trực tiếp trong từng dòng tuyến hoặc từng chip cặp — mọi thao tác thay đổi trạng thái khoá chỉ thực hiện được qua modal "Khoá tuyến".
+**AC8:** Không có bất kỳ nút/icon nào để khoá "cả 1 tuyến" — chỉ khoá được ở cấp từng cặp vùng miền. Xoá/đổi tên tuyến chỉ bị chặn bởi `isPublished` hoặc bởi AC6, không có trạng thái "tuyến đã khoá" nào khác.
 
 ## Notes
 
-- Story này là bản TÁCH RA sau phản hồi người dùng: ý tưởng ban đầu là đặt icon khoá/mở khoá lẫn ngay trong từng dòng tuyến và từng chip của bảng "Cấu hình tuyến" chính, nhưng sau phản hồi muốn tách hẳn thành 1 khu vực/modal độc lập để bảng chính gọn hơn, không lẫn 2 loại thao tác (sửa cấu hình vs. khoá) cùng 1 chỗ — nên toàn bộ phần khoá được rút ra thành modal "Khoá tuyến" mô tả trong story này, bảng chính chỉ còn hiển thị trạng thái (disabled + nền đỏ nhạt).
-- 2 cấp khoá độc lập với nhau: khoá CẢ TUYẾN (`lockedRouteNames`) chặn đổi tên/thêm-bớt bất kỳ cặp nào khỏi/vào tuyến đó và chặn xoá tuyến; khoá RIÊNG 1 CẶP (`lockedPairKeys`) chặn đổi cặp đó sang tuyến khác bất kể tuyến nguồn/đích có khoá cả hay không, và khiến tuyến chứa cặp đó không xoá được dù bản thân tuyến không khoá cả.
-- "Nội Tỉnh" không khoá được ở cấp nào — không hiện trong modal này (hành vi giữ nguyên từ trước khi có tính năng khoá: không đổi tên, không xoá được).
-- Dữ liệu modal lấy từ bộ ĐANG ÁP DỤNG, không phải từ draft đang sửa dở ở bảng "Cấu hình tuyến" — nếu Super Admin đang có thay đổi tuyến/cặp chưa lưu ở bảng chính, modal "Khoá tuyến" sẽ không phản ánh các thay đổi nháp đó cho tới khi được lưu thật.
+- **Đã bỏ hẳn tính năng khoá CẢ TUYẾN** theo yêu cầu — trước đây có 2 cấp khoá độc lập (khoá cả tuyến qua `lockedRouteNames` + khoá riêng từng cặp qua `lockedPairKeys`), giờ CHỈ còn đúng 1 cấp: khoá riêng từng cặp. Đã xoá field `lockedRouteNames` khỏi `RouteConfigVersion`, hàm `toggleRouteLock`, và icon khoá cạnh tên tuyến khỏi `RouteConfig.tsx`. `updateVersionLocks()` đổi chữ ký từ `(id, lockedRouteNames, lockedPairKeys)` còn `(id, lockedPairKeys)`.
+- Quyết định này KHÁC với artifact thiết kế gốc (chỉ mô tả 1 công tắc khoá/tuyến, không có khoá riêng từng cặp) — Super Admin chủ động chọn giữ lại khoá-theo-cặp (mịn hơn spec) thay vì công tắc khoá cả tuyến (thô hơn spec).
+- `routeLockStatusIn()` (dùng cho badge ở Agency Admin) không đổi logic tính "full" — trước đây đã có nhánh tự suy ra "full" khi 100% cặp bị khoá dù không ai bấm khoá cả tuyến, nên bỏ `lockedRouteNames` không làm mất khả năng hiện "full" cho Agency Admin.
+- Story này viết lại từ 2 bản trước: bản gốc mô tả khoá qua modal riêng (đã thay bằng icon inline), bản thứ 2 có cả khoá-cả-tuyến lẫn khoá-riêng-từng-cặp (nay bỏ khoá-cả-tuyến).

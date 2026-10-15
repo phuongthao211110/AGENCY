@@ -24,11 +24,10 @@ Là Agency Admin, tôi muốn thấy được tuyến nào (hoặc cặp vùng m
 
 ## System Flow
 
-1. `routeConfig.ts` thêm hàm thuần `routeLockStatusIn(version: RouteConfigVersion, routeName: string): 'full' | 'partial' | 'none'`:
-   - Trả về `'full'` nếu `routeName` nằm trong `version.lockedRouteNames[]`
-   - Trả về `'full'` nếu 100% cặp miền của tuyến đó đều nằm trong `version.lockedPairKeys[]` (kể cả khi không ai bấm khoá tên tuyến — khoá từng cặp đủ hết thì tương đương)
+1. `routeConfig.ts` có hàm thuần `routeLockStatusIn(version: RouteConfigVersion, routeName: string): 'full' | 'partial' | 'none'` — Super Admin chỉ khoá được ở cấp TỪNG CẶP vùng miền (`lockedPairKeys[]`), không có khái niệm khoá cả tên tuyến (xem GSA-ROUTE-15):
+   - Trả về `'full'` nếu 100% cặp miền của tuyến đó đều nằm trong `version.lockedPairKeys[]`
    - Trả về `'partial'` nếu có ít nhất 1 nhưng chưa đủ 100% cặp của tuyến bị khoá qua `lockedPairKeys[]`
-   - Trả về `'none'` nếu tuyến không bị khoá theo bất kỳ cơ chế nào
+   - Trả về `'none'` nếu tuyến không có cặp nào bị khoá
 2. `PricingCreate.tsx` gọi `routeLockStatusIn(selectedBundle, routeName)` trong render mỗi `<option>` của dropdown "Tuyến" (thêm hậu tố text) và trong render badge ngay dưới dropdown; `selectedBundle` là bộ tuyến đang chọn ở dropdown "Bộ tuyến áp dụng" (xem AGA-CARRIER-22), không phải bộ global.
 3. `ZoneGuideModal` nhận `bundle` prop từ `PricingCreate.tsx`; gọi `routeLockStatusIn(bundle, name)` cho mỗi hàng trong bảng mô tả tuyến — đồng nhất với dropdown.
 4. `PricingDetail.tsx` gọi `routeLockStatusIn(getActiveRouteConfigVersion(), zone.routeName)` cho mỗi zone trong card "Tuyến vận chuyển"; đọc bộ ĐANG ACTIVE TOÀN HỆ THỐNG vì trang này không có khái niệm "chọn bộ".
@@ -38,7 +37,7 @@ Là Agency Admin, tôi muốn thấy được tuyến nào (hoặc cặp vùng m
 ## Acceptance Criteria
 
 **AC1:** Ở trang "Tạo bảng giá", dropdown "Tuyến" của mỗi dòng trong "Danh sách tuyến" hiển thị hậu tố động:
-- Tuyến bị khoá toàn bộ (`lockedRouteNames` chứa tên tuyến, HOẶC 100% cặp miền của tuyến đều nằm trong `lockedPairKeys`): hậu tố " 🔒 (Đã khoá)"
+- Tuyến bị khoá toàn bộ (100% cặp miền của tuyến đều nằm trong `lockedPairKeys`): hậu tố " 🔒 (Đã khoá)"
 - Tuyến bị khoá 1 phần (ít nhất 1 nhưng chưa đủ 100% cặp trong `lockedPairKeys`): hậu tố " 🔒 (1 số cặp bị khoá)"
 - Tuyến không bị khoá: hiển thị bình thường, không hậu tố
 
@@ -63,7 +62,7 @@ Là Agency Admin, tôi muốn thấy được tuyến nào (hoặc cặp vùng m
 
 ## Notes
 
-- Hàm `routeLockStatusIn()` xử lý cả 2 cấp khoá độc lập: `lockedRouteNames[]` (khoá cả tên tuyến) và `lockedPairKeys[]` (khoá riêng từng cặp miền). Trước khi có hàm này, code chỉ kiểm tra `lockedRouteNames` nên khoá cặp riêng lẻ không được phản chiếu — đây là gap thật được phát hiện qua UAT.
+- Hàm `routeLockStatusIn()` chỉ xử lý 1 cấp khoá: `lockedPairKeys[]` (khoá riêng từng cặp miền) — tính năng khoá cả tên tuyến đã bị bỏ hẳn (xem GSA-ROUTE-15).
 - Quy tắc "100% cặp bị khoá riêng lẻ = coi như full" được thiết kế để không đánh giá thấp mức độ ảnh hưởng: nếu mọi cặp đều bị khoá thì về bản chất tuyến không còn cặp nào tự do.
 - `PricingDetail.tsx` là trang read-only (không có chức năng sửa giá — xem AGA-CARRIER-19) nên badge khoá ở đây thuần tham khảo.
 - Khoá tuyến không ảnh hưởng đơn hàng đã tạo, không ảnh hưởng tính phí — chỉ là rào chắn edit-time cho Super Admin (xem AGA-CARRIER-19). Badge phản chiếu thông tin này cho Agency Admin.

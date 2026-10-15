@@ -7,41 +7,51 @@ figma: https://www.figma.com/design/G33IlXebyXXGxZbbYbKECr/-GSA--GHN-SUPER-ADMIN
 status: draft
 ---
 
-# [GSA] Vùng & Tuyến: Bộ vùng tuyến — mỗi lần lưu tạo 1 bộ mới, không sửa đè
+# [GSA] Vùng & Tuyến: Vòng đời Nháp/Hoạt động
 
 ## User Story
 
-Là GHN Super Admin, tôi muốn mỗi lần chỉnh sửa Vùng miền/Tuyến/Nội-Ngoại thành và lưu lại, hệ thống tự tạo ra 1 "bộ vùng tuyến" MỚI thay vì sửa đè lên bộ đang dùng, để lịch sử cấu hình cũ luôn được giữ lại nguyên vẹn, có thể xem lại hoặc áp dụng lại bất cứ lúc nào.
+Là GHN Super Admin, tôi muốn mỗi "bộ vùng tuyến" có trạng thái rõ ràng — Nháp (đang soạn, chưa dùng được trong bảng giá) hoặc Hoạt động (khoá cấu trúc, dùng được trong bảng giá và có thể áp dụng toàn hệ thống) — để biết bộ nào đã sẵn sàng và bộ nào vẫn đang chỉnh sửa.
 
 ## User Flow
 
-1. Mỗi khi bấm "Lưu thay đổi" ở trang "Chỉnh sửa vùng & tuyến" (xem GSA-ROUTE-14), hệ thống KHÔNG sửa đè dữ liệu hiện tại — tạo hẳn 1 "bộ" mới, đặt tên tự động "Bộ #N", ghi thời điểm tạo, và NGAY LẬP TỨC áp dụng bộ đó cho toàn hệ thống (thay thế bộ đang dùng trước đó).
-2. Bộ vừa bị thay thế KHÔNG mất đi — vẫn còn nguyên trong "Danh sách bộ vùng tuyến" (GSA-ROUTE-12), chỉ chuyển trạng thái từ "Đang áp dụng" sang "Đã khoá" (không sửa lại được nữa, chỉ xem).
-3. Super Admin có thể quay lại áp dụng 1 bộ CŨ bất kỳ trong lịch sử bất cứ lúc nào (xem GSA-ROUTE-13 "Đặt làm mặc định") mà không cần tạo bộ mới trùng nội dung.
+1. Cách DUY NHẤT tạo bộ mới là Nhân bản (xem GSA-ROUTE-16) từ 1 bộ có sẵn — Nháp hay Hoạt động đều nhân bản được. Bộ mới luôn bắt đầu ở trạng thái Nháp. Không có "tạo bộ trống từ đầu".
+2. Bộ Nháp: Vùng miền + Tuyến sửa được tự do qua bản nháp cục bộ. Bấm "💾 Lưu thay đổi" → ghi TẠI CHỖ trên chính bộ Nháp đó, không sinh bộ mới.
+3. Bộ Nháp: Nội/Ngoại thành và khoá/mở tuyến cũng sửa được tự do.
+4. Khi đã sửa xong, bấm "⚡ Áp dụng toàn bộ hệ thống" (xem GSA-ROUTE-13) để đồng thời phát hành bộ Nháp sang Hoạt động VÀ áp dụng ngay làm bộ active. Hành động 1 chiều — không có đường quay lại Nháp.
+5. Bộ Hoạt động: Vùng miền + Tuyến khoá VĨNH VIỄN — banner thông báo rõ, mọi input/chip liên quan đều disabled. Vẫn sửa được Nội/Ngoại thành và khoá/mở tuyến. Muốn thay đổi cấu trúc → nhân bản bộ này thành bộ Nháp mới.
+6. Bộ Hoạt động: có thể "Áp dụng cho toàn hệ thống" (xem GSA-ROUTE-13) và chọn được trong dropdown "Bộ tuyến áp dụng" khi Agency Admin tạo bảng giá.
+7. Bộ Nháp không dùng nữa → có thể Xoá hẳn (xem GSA-ROUTE-18). Bộ Hoạt động không bao giờ xoá được — lịch sử giữ vĩnh viễn.
 
 ## System Flow
 
-1. `RouteConfigVersion` = { id, version, label, createdAt, regions, routeMatrix, urbanConfigs } — snapshot ĐẦY ĐỦ của cả 3 phần (Vùng miền + Tuyến + Nội/Ngoại thành) tại 1 thời điểm.
-2. `routeConfigVersions: RouteConfigVersion[]` — mảng lưu TOÀN BỘ lịch sử, seed sẵn 1 phần tử "Bộ mặc định" (`id: 'rcv_seed'`) khi ứng dụng khởi động.
-3. `commitNewRouteConfigVersion(draftRegions, draftRouteMatrix, draftUrbanConfigs, label?)` — tạo `RouteConfigVersion` mới (`id: rcv_${Date.now()}`, `version: routeConfigVersions.length + 1`, label mặc định `Bộ #${N}` nếu không truyền), đẩy vào cuối `routeConfigVersions`, rồi gọi `applyVersionToStore()` để đồng bộ NGAY vào 3 biến dùng chung toàn app.
-4. `applyVersionToStore(version)` — ghi đè NỘI DUNG (không đổi identity) của 3 biến export `regions`/`routeMatrix`/`urbanConfigs` bằng `.length = 0` + `.push()`/`Object.assign()` — nhờ vậy mọi nơi khác trong app (CarrierSetup, PricingCreate, Web Shop Orders, RouteCheck...) đang import trực tiếp 3 biến này TỰ ĐỘNG thấy dữ liệu mới nhất ngay lập tức, không cần sửa lại import ở bất kỳ file nào khác; đồng thời cập nhật con trỏ `activeVersionId` = id của bộ vừa áp dụng.
-5. "Bộ đang áp dụng" xác định qua `getActiveRouteConfigVersion()` — tìm phần tử trong `routeConfigVersions` có `id === activeVersionId`, KHÔNG suy ra từ vị trí cuối mảng (vì Super Admin có thể áp dụng lại 1 bộ cũ hơn — xem GSA-ROUTE-13).
-6. Không có hàm mutate rời nào (như `renameRegion()`, `setRouteName()` phiên bản cũ) ghi trực tiếp vào `regions`/`routeMatrix`/`urbanConfigs` nữa — CÁCH DUY NHẤT thay đổi 3 biến này là qua `commitNewRouteConfigVersion()` hoặc `setActiveRouteConfigVersion()` (GSA-ROUTE-13).
+1. `RouteConfigStatus = 'draft' | 'published'` — chỉ 2 trạng thái, không có 'cancelled' hay trạng thái thứ 3 nào khác.
+2. `RouteConfigVersion.status` — field bắt buộc trên mỗi bộ. Bộ seed ban đầu (`rcv_seed`) có `status: 'published'`.
+3. Dữ liệu cũ trong localStorage (trước khi có field `status`) không có field này → restore logic tự gán `status = 'published'` (an toàn vì mọi bộ cũ đã từng chọn được ở bảng giá, tương đương "phát hành").
+4. `updateDraftStructure(id, regions, routeMatrix)` — chỉ hợp lệ khi `status === 'draft'`. Ghi TẠI CHỖ vào đúng phần tử trong `routeConfigVersions`, không tạo phần tử mới. Trả `null` nếu không tìm thấy hoặc bộ không còn là Nháp.
+5. `updateVersionUrbanConfigs(id, urbanConfigs)` và `updateVersionLocks(id, lockedPairKeys)` — cho phép ở CẢ 2 trạng thái, luôn lưu TẠI CHỖ. (`updateVersionLocks` chỉ khoá RIÊNG từng cặp vùng miền — không có khái niệm khoá cả tuyến, xem GSA-ROUTE-15.)
+6. `publishRouteConfigVersion(id)` — chuyển `status` từ `'draft'` sang `'published'`, validate phải có tuyến "Nội Tỉnh". Không tự động áp dụng bộ vừa phát hành.
+7. `setActiveRouteConfigVersion(id)` — chỉ nhận bộ `status === 'published'`, trả `null` cho Nháp.
+8. `duplicateRouteConfigVersion(sourceId, label)` — cách DUY NHẤT tạo bộ mới, luôn trả về bộ `status: 'draft'`.
+9. `deleteDraftVersion(id)` — chỉ xoá Nháp, trả `false` nếu gọi với bộ Hoạt động.
 
 ## Acceptance Criteria
 
-**AC1:** Bấm "Lưu thay đổi" ở trang chỉnh sửa → tạo đúng 1 bộ mới trong `routeConfigVersions`, KHÔNG xoá hay sửa nội dung bất kỳ bộ nào đã có trước đó.
+**AC1:** Mỗi bộ vùng tuyến có đúng 2 trạng thái: Nháp và Hoạt động. Không có trạng thái thứ 3.
 
-**AC2:** Bộ mới tạo được áp dụng NGAY LẬP TỨC — mọi nơi khác trong app (bảng giá, tạo đơn, kiểm tra tuyến...) đọc đúng dữ liệu của bộ mới, không cần tải lại trang.
+**AC2:** Bộ Nháp: Vùng miền + Tuyến sửa được qua draft cục bộ; "💾 Lưu thay đổi" ghi TẠI CHỖ trên chính bộ đó — tổng số bộ trong danh sách KHÔNG tăng sau khi lưu.
 
-**AC3:** Mỗi bộ có `version` tăng dần tuyệt đối theo thứ tự tạo (KHÔNG trùng, KHÔNG tái sử dụng số cũ dù bộ đó sau này bị thay thế).
+**AC3:** Bộ Hoạt động: Vùng miền + Tuyến khoá VĨNH VIỄN — mọi input, chip gán cặp miền đều disabled; banner thông báo hiển thị rõ ràng trên trang sửa.
 
-**AC4:** Bộ bị thay thế (không còn là "đang áp dụng") vẫn giữ nguyên 100% nội dung (`regions`/`routeMatrix`/`urbanConfigs`) trong `routeConfigVersions` — xem lại được đầy đủ ở GSA-ROUTE-12, không bị xoá hay rút gọn.
+**AC4:** Cả 2 trạng thái đều cho phép sửa Nội/Ngoại thành (`updateVersionUrbanConfigs`) và khoá/mở tuyến (`updateVersionLocks`) — lưu TẠI CHỖ, không sinh bộ mới.
 
-**AC5:** Không tồn tại đường nào trong code cho phép sửa trực tiếp nội dung 1 bộ ĐÃ TẠO (không có hàm public nào nhận `versionId` + dữ liệu mới rồi ghi đè in-place vào đúng bộ đó).
+**AC5:** Nút "⚡ Áp dụng toàn bộ hệ thống" chỉ xuất hiện khi bộ đang là Nháp. Sau khi thực hiện thành công, bộ chuyển sang Hoạt động và không có đường quay lại Nháp.
+
+**AC6:** Dropdown "Bộ tuyến áp dụng" trong Agency Admin (PricingCreate.tsx) chỉ hiện bộ Hoạt động — bộ Nháp không bao giờ xuất hiện trong dropdown này.
+
+**AC7:** Bộ Hoạt động không bao giờ có nút "Xoá" — lịch sử giữ vĩnh viễn. Chỉ bộ Nháp mới xoá được.
 
 ## Notes
 
-- **Đây là tính năng nền tảng cho toàn bộ khu vực "Vùng & Tuyến"** — mọi thao tác chỉnh sửa Vùng miền (GSA-ROUTE-2), Tuyến (GSA-ROUTE-3), Nội/Ngoại thành (GSA-ROUTE-4) giờ đều đi qua cơ chế versioning này thay vì ghi trực tiếp vào store như mô tả trong 3 story đó — **3 story đó hiện mô tả ĐÚNG các thao tác/field (thêm/sửa/xoá vùng, tuyến, tỉnh...) nhưng SAI phần "khi nào thì lưu"** (mô tả cũ: ghi thẳng vào store mỗi lần đổi; thực tế mới: chỉ ghi khi bấm "Lưu thay đổi", và ghi thành bộ mới) — cần cập nhật lại phần đó khi rà soát, chưa xử lý trong phạm vi 4 story mới này.
-- Tương tự, GSA-ROUTE-6 (Thêm vùng), GSA-ROUTE-7 (Thêm tuyến), GSA-ROUTE-8 (Thêm tỉnh), GSA-ROUTE-9 (Thiết lập lại), GSA-ROUTE-10 (Chỉnh sửa vùng/tuyến/tỉnh) đều mô tả cơ chế TRƯỚC khi có versioning — hành vi THÊM/SỬA/XOÁ từng field cụ thể (tick chip, nhập tên...) không đổi, nhưng đường lưu đã đổi hoàn toàn.
-- Không có "known gap" nào về mặt dữ liệu — mọi bộ đều là dữ liệu thật do Super Admin nhập, không dùng công thức demo cố định.
+- Story này viết lại từ bản cũ (GSA-ROUTE-11 "Bộ vùng tuyến — mỗi lần lưu tạo 1 bộ mới, không sửa đè"). Bản cũ dùng `commitNewRouteConfigVersion` và không có khái niệm trạng thái Nháp/Hoạt động — đã bị thay thế hoàn toàn.
+- Các story liên quan: GSA-ROUTE-16 (Nhân bản), GSA-ROUTE-13 (Áp dụng toàn hệ thống — gộp phát hành + áp dụng), GSA-ROUTE-18 (Xoá nháp).

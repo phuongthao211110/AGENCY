@@ -2471,7 +2471,7 @@
             "Tất cả badge là thông tin tham khảo — Agency Admin vẫn có thể chọn và dùng tuyến đang bị khoá bình thường, không bị chặn."
           ],
           "systemFlow": [
-            "`routeConfig.ts` thêm hàm thuần `routeLockStatusIn(version: RouteConfigVersion, routeName: string): 'full' | 'partial' | 'none'`: trả về `'full'` nếu `routeName` nằm trong `lockedRouteNames[]` hoặc 100% cặp miền của tuyến đó nằm trong `lockedPairKeys[]`; trả về `'partial'` nếu ít nhất 1 nhưng chưa đủ 100% cặp bị khoá; trả về `'none'` nếu không bị khoá theo bất kỳ cơ chế nào.",
+            "`routeConfig.ts` có hàm thuần `routeLockStatusIn(version: RouteConfigVersion, routeName: string): 'full' | 'partial' | 'none'` — Super Admin chỉ khoá được ở cấp TỪNG CẶP vùng miền (không có khoá cả tên tuyến, xem GSA-ROUTE-15): trả về `'full'` nếu 100% cặp miền của tuyến đó nằm trong `lockedPairKeys[]`; trả về `'partial'` nếu ít nhất 1 nhưng chưa đủ 100% cặp bị khoá; trả về `'none'` nếu tuyến không có cặp nào bị khoá.",
             "`PricingCreate.tsx` gọi `routeLockStatusIn(selectedBundle, routeName)` trong render mỗi `<option>` dropdown \"Tuyến\" (thêm hậu tố text) và badge bên dưới dropdown; `selectedBundle` là bộ đang chọn ở \"Bộ tuyến áp dụng\" (AGA-CARRIER-22), không phải bộ global.",
             "`ZoneGuideModal` nhận `bundle` prop từ `PricingCreate.tsx`; gọi `routeLockStatusIn(bundle, name)` cho mỗi hàng trong bảng mô tả tuyến — đồng nhất với dropdown.",
             "`PricingDetail.tsx` gọi `routeLockStatusIn(getActiveRouteConfigVersion(), zone.routeName)` cho mỗi zone trong card \"Tuyến vận chuyển\"; đọc bộ ĐANG ACTIVE TOÀN HỆ THỐNG.",
@@ -2490,12 +2490,40 @@
             "AC8: Toàn bộ badge là thông tin tham khảo — không chặn Agency Admin chọn tuyến bị khoá, không chặn tạo bảng giá, không chặn sử dụng RouteCheck với tuyến bị khoá."
           ],
           "notes": [
-            "Hàm `routeLockStatusIn()` xử lý cả 2 cấp khoá độc lập: `lockedRouteNames[]` (khoá cả tên tuyến) và `lockedPairKeys[]` (khoá riêng từng cặp miền). Trước khi có hàm này, code chỉ kiểm tra `lockedRouteNames` nên khoá cặp riêng lẻ không được phản chiếu — đây là gap thật được phát hiện qua UAT.",
+            "Hàm `routeLockStatusIn()` chỉ xử lý 1 cấp khoá: `lockedPairKeys[]` (khoá riêng từng cặp miền) — tính năng khoá cả tên tuyến đã bị bỏ hẳn (xem GSA-ROUTE-15).",
             "Quy tắc \"100% cặp bị khoá riêng lẻ = coi như full\" được thiết kế để không đánh giá thấp mức độ ảnh hưởng: nếu mọi cặp đều bị khoá thì về bản chất tuyến không còn cặp nào tự do.",
             "`PricingDetail.tsx` là trang read-only (không có chức năng sửa giá — xem AGA-CARRIER-19) nên badge khoá ở đây thuần tham khảo.",
             "Khoá tuyến không ảnh hưởng đơn hàng đã tạo, không ảnh hưởng tính phí — chỉ là rào chắn edit-time cho Super Admin (xem AGA-CARRIER-19). Badge phản chiếu thông tin này cho Agency Admin.",
             "Xem AGA-CARRIER-22 để hiểu cơ chế \"Bộ tuyến áp dụng\" — story này đọc trạng thái khoá theo ĐÚNG BỘ đang chọn ở PricingCreate, không đọc bộ global.",
             "Web Shop không có bất kỳ hiển thị nào về tuyến bị khoá — nằm ngoài phạm vi story này."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-24",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Chỉ chọn được bộ tuyến Đã phát hành",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn dropdown \"Bộ tuyến áp dụng\" (xem AGA-CARRIER-22) khi tạo bảng giá chỉ hiện các bộ vùng tuyến đã phát hành — không hiện bộ Nháp đang soạn dở — để không vô tình gắn bảng giá vào 1 bộ tuyến chưa hoàn chỉnh.",
+          "userFlow": [
+            "Agency Admin vào \"Tạo bảng giá\" → mở dropdown \"Bộ tuyến áp dụng\" (xem AGA-CARRIER-22).",
+            "Dropdown chỉ liệt kê các bộ có status === 'published'. Bộ Nháp không xuất hiện trong danh sách, dù đang tồn tại trong hệ thống.",
+            "Sau khi Super Admin áp dụng 1 bộ Nháp (xem GSA-ROUTE-13 — hành động gộp Phát hành + Áp dụng toàn hệ thống), bộ đó lập tức xuất hiện trong dropdown lần mở tiếp theo (dữ liệu cùng phiên SPA, không cần tải lại trang thật)."
+          ],
+          "systemFlow": [
+            "PricingCreate.tsx — dropdown \"Bộ tuyến áp dụng\" filter: routeConfigVersions.filter(v => v.status === 'published') — bộ Nháp bị loại trước khi render <option>.",
+            "Không có guard phụ ở store-level cho thao tác này (khác với setActiveRouteConfigVersion có guard phía store) — trách nhiệm lọc hoàn toàn ở PricingCreate.tsx."
+          ],
+          "crossPlatformImpact": [
+            "Super Admin — Áp dụng bộ Nháp: Bộ tuyến chỉ xuất hiện trong dropdown này SAU KHI Super Admin bấm Áp dụng toàn bộ hệ thống (xem GSA-ROUTE-13 — hành động gộp Phát hành + Áp dụng). Bộ Nháp dù đã tồn tại trong routeConfigVersions cũng không hiện ở đây."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Dropdown \"Bộ tuyến áp dụng\" trong trang Tạo bảng giá chỉ hiện bộ có status === 'published' — bộ Nháp không bao giờ xuất hiện.",
+            "AC2: Khi Super Admin phát hành 1 bộ Nháp mới, bộ đó xuất hiện trong dropdown lần mở tiếp theo (trong cùng phiên SPA, không cần tải lại trang thật).",
+            "AC3: Nếu hệ thống không có bộ Đã phát hành nào → dropdown rỗng; Agency Admin không thể chọn bộ tuyến và không thể lưu bảng giá hợp lệ."
+          ],
+          "notes": [
+            "Story này liên hệ trực tiếp với AGA-CARRIER-22 (Chọn bộ tuyến áp dụng khi tạo bảng giá) — bổ sung ràng buộc về trạng thái bộ tuyến.",
+            "Tương tự, setActiveRouteConfigVersion phía Super Admin cũng chỉ nhận bộ 'published' (xem GSA-ROUTE-13)."
           ]
         }
       ]

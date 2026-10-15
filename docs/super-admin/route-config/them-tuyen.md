@@ -15,7 +15,7 @@ Là GHN Super Admin, tôi muốn tạo 1 tuyến mới hoàn toàn trống (chư
 
 ## User Flow
 
-1. Trong khối "🔀 Cấu hình tuyến", bấm nút "+ Thêm tuyến" ở cuối bảng.
+1. Trong khối "🔀 Cấu hình tuyến", bấm "✏️ Chỉnh sửa" để vào chế độ Sửa (chỉ có khi bộ là Nháp — xem GSA-ROUTE-14), sau đó bấm nút "+ Thêm tuyến" ở cuối bảng.
 2. 1 dòng tuyến mới xuất hiện ở CUỐI bảng (dưới mọi tuyến hiện có, kể cả các tuyến do Super Admin tự tạo trước đó — dòng "Nội Tỉnh" vẫn luôn ở đầu) — tên trống, CHƯA tick cặp vùng miền nào.
 3. Ngay khi vừa thêm, ô tên đã hiện lỗi đỏ "Ít nhất 2 ký tự" — khác với hành vi thêm vùng miền (xem GSA-ROUTE-6), nơi dòng mới không báo lỗi cho tới khi gõ tên.
 4. Gõ tên tuyến (tối thiểu 2 ký tự sau khi trim) để hết lỗi.
@@ -53,6 +53,7 @@ Là GHN Super Admin, tôi muốn tạo 1 tuyến mới hoàn toàn trống (chư
 
 ## Notes
 
+- **Chỉ thực hiện được khi bộ đang là Nháp VÀ khối đang ở chế độ Sửa** — nút "+ Thêm tuyến" chỉ hiện khi `tuyenEditing = true`. Bộ Hoạt động không có nút "✏️ Chỉnh sửa" ở khối này nên không vào được chế độ Sửa. Muốn thêm tuyến mới vào cấu trúc của bộ Hoạt động phải nhân bản bộ đó thành bộ Nháp trước (xem GSA-ROUTE-16).
 - Story tách riêng khỏi GSA-ROUTE-3 (Cấu hình tuyến) để tập trung mô tả riêng nút "+ Thêm tuyến", tương tự cách GSA-ROUTE-6 tách "Thêm vùng" khỏi GSA-ROUTE-2.
 - **Known inconsistency (đã biết, chưa xử lý)**: khác với "Thêm vùng miền" (GSA-ROUTE-6) — nơi dòng mới hoàn toàn im lặng cho tới khi gõ tên — "Thêm tuyến" báo lỗi "Ít nhất 2 ký tự" NGAY LẬP TỨC dù chưa gõ gì. Đây là 2 hành vi validate khác nhau giữa 2 bảng tương tự nhau trên cùng 1 trang; cần cân nhắc đồng bộ ở sprint sau nếu muốn trải nghiệm nhất quán giữa "Cấu hình vùng miền" và "Cấu hình tuyến".
 - Tuyến mới không tự động seed cặp nào (khác vùng miền mới luôn tự seed sẵn cặp "Nội Tỉnh") — vì tuyến không có khái niệm "mặc định áp dụng" tương tự khái niệm "cùng vùng" của vùng miền.

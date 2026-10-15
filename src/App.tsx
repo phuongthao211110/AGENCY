@@ -8,6 +8,7 @@ import AgencyDetail from './platforms/super-admin/pages/AgencyDetail'
 import Hubs247 from './platforms/super-admin/pages/Hubs247'
 import RouteConfig from './platforms/super-admin/pages/RouteConfig'
 import RouteConfigList from './platforms/super-admin/pages/RouteConfigList'
+import PaymentApprovals from './platforms/super-admin/pages/PaymentApprovals'
 import SuperAdminSettings from './platforms/super-admin/pages/Settings'
 import AccountInfo from './platforms/super-admin/pages/settings/AccountInfo'
 import UserManagement from './platforms/super-admin/pages/settings/UserManagement'
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="hubs-247" element={<Hubs247 />} />
           <Route path="route-config" element={<RouteConfigList />} />
           <Route path="route-config/edit/:id" element={<RouteConfig />} />
+          <Route path="payment-approvals" element={<PaymentApprovals />} />
           <Route path="settings" element={<SuperAdminSettings />}>
             <Route path="account" element={<AccountInfo />} />
             <Route path="users" element={<UserManagement />} />

@@ -15,7 +15,7 @@ Là GHN Super Admin, tôi muốn thêm 1 vùng miền mới từ khối "Cấu h
 
 ## User Flow
 
-1. Trong khối "🗺️ Cấu hình vùng miền", bấm nút "+ Thêm vùng miền" ở cuối bảng.
+1. Trong khối "🗺️ Cấu hình vùng miền", bấm "✏️ Chỉnh sửa" để vào chế độ Sửa (chỉ có khi bộ là Nháp — xem GSA-ROUTE-14), sau đó bấm nút "+ Thêm vùng miền" ở cuối bảng.
 2. 1 dòng vùng mới xuất hiện ở cuối bảng — tên trống, chưa có tỉnh nào, KHÔNG hiện lỗi gì (theo hành vi validate của GSA-ROUTE-2: chỉ báo lỗi sau khi đã đặt tên).
 3. Gõ tên vào ô tên — nếu trùng với tên 1 vùng khác (không phân biệt hoa/thường), lỗi đỏ "Tên vùng miền đã tồn tại" hiện ngay; nếu hợp lệ thì hết lỗi.
 4. Chọn tỉnh từ dropdown "Chọn Tỉnh/Thành" (chỉ liệt kê tỉnh chưa thuộc vùng nào) để gán vào vùng mới — có thể chọn nhiều tỉnh liên tiếp, mỗi lần 1 tỉnh.
@@ -52,6 +52,7 @@ Là GHN Super Admin, tôi muốn thêm 1 vùng miền mới từ khối "Cấu h
 
 ## Notes
 
+- **Chỉ thực hiện được khi bộ đang là Nháp VÀ khối đang ở chế độ Sửa** — nút "+ Thêm vùng miền" chỉ hiện khi `regionsEditing = true`. Bộ Hoạt động không có nút "✏️ Chỉnh sửa" ở khối này nên không vào được chế độ Sửa. Muốn thêm vùng mới vào cấu trúc của bộ Hoạt động phải nhân bản bộ đó thành bộ Nháp trước (xem GSA-ROUTE-16).
 - Story này tách riêng phần "Thêm vùng" (nút "+ Thêm vùng miền") ra khỏi GSA-ROUTE-2 để mô tả sâu hơn tác động DÂY CHUYỀN của thao tác này sang khối "Cấu hình tuyến" (GSA-ROUTE-3) — điều mà GSA-ROUTE-2 chỉ nhắc ngắn gọn ở 1 dòng System Flow.
 - Điểm quan trọng nhất: thêm vùng mới KHÔNG chỉ là 1 thao tác cục bộ trong bảng "Cấu hình vùng miền" — nó tự động sinh thêm N cặp mới trong ma trận tuyến (1 cặp đã có sẵn tên "Nội Tỉnh", N cặp còn lại ở trạng thái "chưa cấu hình"), nên Super Admin luôn cần ghé qua khối "Cấu hình tuyến" sau khi thêm vùng để xử lý các cặp chéo còn thiếu, nếu không muốn hệ thống báo "không thể xác định tuyến" khi tính giá giữa vùng mới và vùng cũ (xem GSA-ROUTE-5, AC4).
 - Vùng mới không có tên mặc định (khác hành vi cũ đặt sẵn "Miền mới N") — xem lý do ở GSA-ROUTE-2.

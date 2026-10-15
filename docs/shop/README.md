@@ -54,6 +54,13 @@
 | SHOP-ORDER-38 | [In vận đơn: Tách kiện theo sản phẩm](orders/tach-kien-theo-san-pham.md) | draft |
 | SHOP-ORDER-39 | [In đơn hàng: Fix nội dung bị cắt khi in nhiều đơn](orders/fix-noi-dung-bi-cat-khi-in-nhieu-don.md) | draft |
 | SHOP-ORDER-40 | [Tạo đơn mới: Áp dụng cấu hình tuyến](orders/ap-dung-cau-hinh-tuyen.md) | [Draft] |
+| SHOP-ORDER-41 | [Tạo đơn: Chọn phương thức thanh toán phí ship](orders/chon-phuong-thuc-thanh-toan-phi-ship.md) | [Draft] |
+| SHOP-ORDER-42 | [Modal thanh toán online (QR MoMo / chuyển khoản ngân hàng)](orders/modal-thanh-toan-online.md) | [Draft] |
+| SHOP-ORDER-43 | [Chặn tạo đơn/xác nhận gửi đơn khi chưa thanh toán online](orders/chan-tao-don-khi-chua-thanh-toan-online.md) | [Draft] |
+| SHOP-ORDER-44 | [Badge trạng thái thanh toán ở danh sách đơn](orders/badge-trang-thai-thanh-toan-danh-sach-don.md) | [Draft] |
+| SHOP-ORDER-45 | [Hiển thị và thao tác lại thanh toán trong Chi tiết đơn](orders/hien-thi-va-thao-tac-thanh-toan-trong-chi-tiet-don.md) | [Draft] |
+| SHOP-ORDER-46 | [Tự reset phương thức thanh toán khi đổi người trả ship](orders/reset-thanh-toan-khi-doi-nguoi-tra-ship.md) | [Draft] |
+| SHOP-ORDER-47 | [Nhắc hoàn tiền khi huỷ đơn đã thanh toán online](orders/nhac-hoan-tien-khi-huy-don-da-thanh-toan.md) | [Draft] |
 
 ## Đối soát
 

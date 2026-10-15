@@ -7,50 +7,80 @@ figma: https://www.figma.com/design/G33IlXebyXXGxZbbYbKECr/-GSA--GHN-SUPER-ADMIN
 status: draft
 ---
 
-# [GSA] Vùng & Tuyến: Trang "Chỉnh sửa vùng & tuyến" — 1 draft chung cho 3 phần
+# [GSA] Vùng & Tuyến: Trang sửa bộ vùng tuyến theo id
 
 ## User Story
 
-Là GHN Super Admin, tôi muốn chỉnh sửa Vùng miền, Tuyến, và Nội/Ngoại thành trên CÙNG 1 bản nháp (draft), rồi lưu MỘT LẦN DUY NHẤT để tạo ra 1 bộ vùng tuyến mới hoàn chỉnh — thay vì phải lưu riêng từng phần — để đảm bảo 3 phần này luôn đồng bộ với nhau trong cùng 1 bộ, không bị lệch pha.
+Là GHN Super Admin, tôi muốn mở và làm việc với ĐÚNG 1 bộ vùng tuyến cụ thể (theo id trên URL) với header đầy đủ hành động và 3 khối cấu hình theo mô hình Xem/Sửa, để thấy rõ trạng thái bộ đang xem và biết đúng thao tác nào được phép làm ở trạng thái đó.
 
 ## User Flow
 
-1. Vào trang qua nút "Chỉnh sửa vùng & tuyến" ở trang danh sách (GSA-ROUTE-12), route `/super-admin/route-config/edit`.
-2. Đầu trang có link "← Danh sách bộ vùng tuyến" quay lại GSA-ROUTE-12; tiêu đề "Chỉnh sửa vùng & tuyến"; mô tả "Đang chỉnh trên bộ vùng tuyến đang áp dụng — bấm 'Lưu thay đổi' sẽ tự sinh ra 1 bộ MỚI, bộ hiện tại vẫn giữ nguyên trong lịch sử, không bị sửa đè."
-3. Trang mở sẵn với dữ liệu của bộ ĐANG ÁP DỤNG (không phải trống) — Super Admin sửa trực tiếp trên đó y hệt trước đây (thêm/sửa/xoá vùng miền, tick chip gán tuyến, thêm/sửa/xoá tuyến, cấu hình Nội/Ngoại thành theo tỉnh/xã-phường).
-4. Có 2 thanh hành động GIỐNG HỆT NHAU (1 ở ngay dưới khối "Cấu hình tuyến", 1 ở cuối khối "Cấu hình nội & ngoại thành") — cả 2 đều điều khiển CHUNG 1 draft, bấm ở đâu cũng ra kết quả như nhau (tiện vì Nội/Ngoại thành nằm cuối trang, khỏi phải cuộn lên).
-5. "Huỷ bỏ" (chỉ bật khi có thay đổi) → khôi phục draft về đúng dữ liệu bộ đang áp dụng, bỏ mọi chỉnh sửa chưa lưu.
-6. "💾 Lưu thay đổi (tạo bộ mới)" (chỉ bật khi có thay đổi) → tạo 1 bộ mới (xem GSA-ROUTE-11), trang KHÔNG điều hướng đi đâu cả — tiếp tục ở lại trang này, có thể sửa/lưu tiếp nhiều lần trong 1 phiên, mỗi lần lưu là 1 bộ mới.
-7. "↻ Thiết lập lại" → tải lại toàn bộ trang, mất mọi thay đổi trong phiên (kể cả các bộ đã lỡ tạo trong phiên — vì đây là demo, dữ liệu chỉ ở bộ nhớ, không persist).
+1. Vào trang qua nút "Sửa" ở trang danh sách (GSA-ROUTE-12), route `/super-admin/route-config/edit/:id`. Link "← Danh sách" quay lại.
+2. **Header trang** hiện:
+   - Tên bộ (label)
+   - Badge trạng thái: **"Nháp"** (vàng) hoặc **"Hoạt động"** (xanh lá) — theo `bundle.status`
+   - Toggle "Hiển thị mặc định" + nút "⚡ Áp dụng toàn bộ hệ thống" (chỉ với bộ Nháp) — xem GSA-ROUTE-13
+   - Nút "✏️ Đổi tên" — xem GSA-ROUTE-19 (hiện ở CẢ 2 trạng thái)
+   - Nút "📋 Nhân bản" — xem GSA-ROUTE-16 (hiện ở CẢ 2 trạng thái)
+   - Nút "🗑 Xoá" — xem GSA-ROUTE-18 (chỉ hiện khi bộ là Nháp)
+3. **Bộ Hoạt động**: banner vàng/đỏ nhạt hiện ngay dưới header: "🔒 Bộ đã phát hành. Không sửa được Vùng miền và Tuyến. Bạn vẫn có thể khoá/mở tuyến và chỉnh Nội/Ngoại thành. Muốn thay đổi cấu trúc thì nhân bản bộ này."
+4. **Khối "🗺️ Cấu hình vùng miền"** — mô hình Xem/Sửa:
+   - **Mặc định (chế độ Xem)**: tên vùng miền hiện dạng pill xanh dương (`#EFF6FF`/`#BFDBFE`/`#1D4ED8`), tỉnh/thành cũng dạng pill cùng màu, KHÔNG có input/nút xoá/dropdown/"+Thêm vùng miền"/thanh Lưu-Huỷ. Dòng "X tỉnh chưa được gán vùng miền: ..." luôn hiện dù đang Xem hay Sửa.
+   - Nút "✏️ Chỉnh sửa" ở góc phải header khối — chỉ hiện khi `!isPublished && !regionsEditing` (bộ Nháp và chưa vào chế độ Sửa).
+   - Bấm "✏️ Chỉnh sửa" → `regionsEditing = true` → hiện đầy đủ input/nút xoá/dropdown/"+Thêm vùng miền"/thanh Lưu-Huỷ.
+   - Bấm "💾 Lưu thay đổi" → gọi `commitRegionsDraft`, `updateDraftStructure`, tự set `regionsEditing = false`, quay lại chế độ Xem.
+   - Bấm "✕ Huỷ bỏ" → gọi `cancelRegionsDraft`, tự set `regionsEditing = false`, quay lại chế độ Xem.
+5. **Khối "🔀 Cấu hình tuyến"** — mô hình Xem/Sửa tương tự:
+   - **Mặc định (chế độ Xem)**: tên tuyến hiện dạng pill cam (`#FFEAD9`/`#FDBA74`/`#FF5200`), nút xoá tuyến (X) ẩn, "+Thêm tuyến" và thanh Lưu-Huỷ ẩn, khối "chưa được gán tuyến" hiện dạng text tĩnh.
+   - Nút "✏️ Chỉnh sửa" — chỉ hiện khi `!isPublished && !tuyenEditing`.
+   - Bấm "✏️ Chỉnh sửa" → `tuyenEditing = true` → hiện đầy đủ input/nút xoá/"+Thêm tuyến"/dropdown gán/thanh Lưu-Huỷ.
+   - **Icon khoá/mở khoá riêng từng cặp** (🔒/🔓 cạnh mỗi chip): LUÔN bấm được BẤT KỂ đang ở chế độ Xem hay Sửa — không bị gate bởi `tuyenEditing`. Chỉ bị chặn bởi cặp đang khoá (chip locked thì gỡ chip disabled, nhưng icon khoá vẫn bấm được để mở khoá). Xem GSA-ROUTE-15.
+   - Nút gỡ chip (click chip để bỏ gán): bị gate bởi `tuyenReadOnly = isPublished || !tuyenEditing` — chỉ gỡ được khi đang ở chế độ Sửa.
+   - Lưu/Huỷ đều tự set `tuyenEditing = false`.
+6. **Khối "🏙️ Cấu hình nội & ngoại thành"** — mô hình Xem/Sửa:
+   - **Mặc định (chế độ Xem)**: sidebar tỉnh/thành chỉ đọc (không có nút X, không có "+Thêm tỉnh"), panel chính hiện 2 cột "Nội thành"/"Ngoại thành" liệt kê tên xã/phường dạng danh sách tĩnh (không checkbox, không ô tìm kiếm).
+   - Nút "✏️ Chỉnh sửa" hiện ở CẢ bộ Nháp lẫn Hoạt động (khác 2 khối trên — khối này sửa được ở cả 2 trạng thái).
+   - Bấm "✏️ Chỉnh sửa" → `urbanEditing = true` → hiện sidebar đầy đủ (nút X, "+Thêm tỉnh") + 2 cột checklist + ô tìm kiếm + thanh Lưu-Huỷ-Thiết lập lại.
+   - Lưu (`updateVersionUrbanConfigs`) / Huỷ đều tự set `urbanEditing = false`.
+7. Mỗi khối hoàn toàn độc lập: lưu khối Vùng miền không ảnh hưởng draft đang dở ở khối Tuyến hay Nội/Ngoại thành.
 
 ## System Flow
 
-1. State draft hợp nhất: `routeDraftRegions`, `routeDraftMatrix`, `routeNames`, `routeDraftUrbanConfigs` — TẤT CẢ khởi tạo từ dữ liệu bộ đang áp dụng (`regions`/`routeMatrix`/`urbanConfigs` hiện tại), không có state draft riêng cho Nội/Ngoại thành nữa (khác bản trước khi tính năng versioning chưa có — lúc đó Nội/Ngoại thành có draft + nút Lưu RIÊNG, độc lập với Vùng miền/Tuyến).
-2. `activeVersion` (state, khởi tạo `getActiveRouteConfigVersion()`) — dùng để so sánh draft hiện tại với bộ đang áp dụng, tính `hasRouteChanges` (bật/tắt nút Huỷ bỏ/Lưu thay đổi).
-3. Mọi handler sửa Vùng miền/Tuyến (`handleAddRegion`, `handleRenameRegion`, `handleDeleteRegion`, `handleAssignProvince`, `handleRemoveProvince`, `handleAddTuyen`, `handleRenameTuyen`, `handleDeleteTuyen`, `handleToggleChip`) và Nội/Ngoại thành (`handleAddUrbanProvinceDraft`, `handleRemoveUrbanProvinceDraft`, `handleToggleUrbanWardDraft`, `handleSelectAllUrbanWards`) đều CHỈ gọi `setState` trên draft cục bộ — không có hàm nào ghi vào store dùng chung nữa (khác bản cũ, nơi các handler này gọi thẳng hàm mutate của `routeConfig.ts`).
-4. `commitRouteDraft()` — gọi `commitNewRouteConfigVersion(routeDraftRegions, routeDraftMatrix, routeDraftUrbanConfigs)`, cập nhật `activeVersion` bằng version mới trả về, rồi đồng bộ LẠI draft từ store (giờ đã trỏ đúng bộ mới) để các thao tác tiếp theo so sánh đúng với bộ vừa tạo.
-5. `cancelRouteDraft()` — reset draft về đúng `activeVersion.regions/routeMatrix/urbanConfigs` (deep clone).
-6. `hasRouteChanges` = so sánh `JSON.stringify` draft với `JSON.stringify` `activeVersion` cho CẢ 3 phần (`regions`, `routeMatrix`, `urbanConfigs`) — sửa BẤT KỲ phần nào trong 3 phần cũng làm biến này = true.
+1. Route `/super-admin/route-config/edit/:id` — đọc `id` từ URL param, tìm đúng bộ trong `routeConfigVersions`. `const isPublished = bundle.status === 'published'`.
+2. **State chế độ Xem/Sửa**: `regionsEditing` (bool, mặc định `false`), `tuyenEditing` (bool, mặc định `false`), `urbanEditing` (bool, mặc định `false`). Biến phái sinh: `tuyenReadOnly = isPublished || !tuyenEditing`.
+3. **Vùng miền**: state draft cục bộ `regionsDraft`. Nút "✏️ Chỉnh sửa" render khi `!isPublished && !regionsEditing`. Mọi handler thao tác (`handleAddRegion`, v.v.) bị guard `if (isPublished || !regionsEditing) return`. Lưu gọi `updateDraftStructure(bundle.id, ...)`, sau đó `setRegionsEditing(false)`.
+4. **Tuyến**: state draft cục bộ `matrixDraft`. Nút "✏️ Chỉnh sửa" render khi `!isPublished && !tuyenEditing`. Handler `handleAddTuyen`, `handleRenameTuyen`, `handleDeleteTuyen`, `handleToggleChip` bị gate bởi `tuyenReadOnly`. `togglePairLock(key)` gọi `updateVersionLocks` — KHÔNG có điều kiện disable từ `tuyenReadOnly` (chỉ bị chặn bởi `isPublished` cho `handleToggleChip` và `lockedPairKeys.has(key)` cho chip). Lưu gọi `updateDraftStructure`, sau đó `setTuyenEditing(false)`.
+5. **Nội/Ngoại thành**: state draft `urbanDraft`. Nút "✏️ Chỉnh sửa" render bất kể `isPublished`. Lưu gọi `updateVersionUrbanConfigs(bundle.id, urbanDraft)`, sau đó `setUrbanEditing(false)`.
+6. **Khoá tuyến**: không qua draft, save ngay qua `updateVersionLocks(bundle.id, ...)` — hợp lệ ở cả 2 trạng thái và cả 2 chế độ Xem/Sửa. Xem GSA-ROUTE-15.
+7. `bundle` (state) được cập nhật sau mỗi lần lưu/hành động thành công để header/badge phản ánh đúng trạng thái mới.
+8. **Fix QA**: sau khi `handleApplySystemWide()` phát hành+áp dụng thành công 1 bộ Nháp (chuyển sang Hoạt động), code tự gọi `setRegionsEditing(false)` và `setTuyenEditing(false)` — tránh để lại UI ở chế độ Sửa cho bộ vừa khoá cứng cấu trúc.
 
 ## Acceptance Criteria
 
-**AC1:** Trang mở sẵn dữ liệu của bộ ĐANG ÁP DỤNG (không trống) ở cả 3 khối Vùng miền/Tuyến/Nội-Ngoại thành.
+**AC1:** Trang mở sẵn đúng dữ liệu của bộ theo `id` trên URL — không mặc định mở bộ đang active.
 
-**AC2:** Sửa BẤT KỲ 1 trong 3 khối (Vùng miền HOẶC Tuyến HOẶC Nội/Ngoại thành) → CẢ 2 thanh hành động (trên và dưới) đều bật nút "Huỷ bỏ"/"Lưu thay đổi" cùng lúc.
+**AC2:** Header hiện badge "Nháp" (vàng) hoặc "Hoạt động" (xanh lá) tuỳ `bundle.status`. Toggle "Hiển thị mặc định" và nút "✏️ Đổi tên", "📋 Nhân bản" xuất hiện ở cả 2 trạng thái.
 
-**AC3:** Bấm "Lưu thay đổi" ở thanh TRÊN hay thanh DƯỚI đều cho kết quả giống hệt nhau — tạo đúng 1 bộ mới chứa ĐỦ dữ liệu cả 3 khối tại thời điểm bấm (không phải chỉ khối gần nút nhất).
+**AC3:** Bộ Hoạt động: banner khoá hiển thị rõ; nút "🗑 Xoá" và nút "✏️ Chỉnh sửa" của khối Vùng miền và Tuyến đều ẩn; icon khoá/mở khoá từng cặp vẫn bấm được.
 
-**AC4:** Sau khi lưu thành công, nút "Huỷ bỏ"/"Lưu thay đổi" tự tắt lại (vì draft giờ khớp đúng bộ mới vừa tạo) — không còn "có thay đổi chưa lưu" giả.
+**AC4:** Bộ Nháp: nút "🗑 Xoá" và "⚡ Áp dụng toàn bộ hệ thống" hiện ở header; nút "✏️ Chỉnh sửa" hiện ở khối Vùng miền và Tuyến.
 
-**AC5:** Bấm "Huỷ bỏ" → mọi ô nhập/tick trên cả 3 khối trở về ĐÚNG giá trị của bộ đang áp dụng (trước khi sửa), không sót lại thay đổi nào.
+**AC5:** Mặc định (chưa bấm Chỉnh sửa): khối Vùng miền và Tuyến ở chế độ Xem — tên hiện dạng pill, KHÔNG có input/nút xoá/dropdown/"+Thêm..."/thanh Lưu-Huỷ.
 
-**AC6:** Không điều hướng rời trang sau khi lưu — Super Admin có thể lưu nhiều lần liên tiếp trong 1 phiên, mỗi lần tạo đúng 1 bộ mới.
+**AC6:** Bấm "✏️ Chỉnh sửa" ở khối Vùng miền (bộ Nháp) → chế độ Sửa xuất hiện đầy đủ (input, dropdown, "+Thêm vùng miền", thanh Lưu-Huỷ). Lưu hoặc Huỷ → quay về chế độ Xem.
 
-**AC7:** Không có vùng miền nào → khối "Cấu hình tuyến" hiện "Chưa có vùng miền nào — thêm ở khối 'Cấu hình vùng miền' trước." (giữ nguyên hành vi cũ, không đổi).
+**AC7:** Bấm "✏️ Chỉnh sửa" ở khối Tuyến (bộ Nháp) → chế độ Sửa xuất hiện đầy đủ (input, "+Thêm tuyến", dropdown gán, thanh Lưu-Huỷ). Lưu hoặc Huỷ → quay về chế độ Xem.
+
+**AC8:** Icon khoá/mở khoá riêng từng cặp: bấm được ở CẢ 2 trạng thái (Nháp/Hoạt động) VÀ CẢ 2 chế độ (Xem/Sửa) của khối Tuyến — không bị gate bởi `tuyenEditing`.
+
+**AC9:** Khối Nội/Ngoại thành: nút "✏️ Chỉnh sửa" hiện ở CẢ bộ Nháp lẫn Hoạt động. Ở chế độ Xem: danh sách xã/phường tĩnh không có checkbox. Ở chế độ Sửa: checklist đầy đủ. Lưu gọi `updateVersionUrbanConfigs`.
+
+**AC10:** Sau khi phát hành+áp dụng thành công từ bộ Nháp (chuyển sang Hoạt động), khối Vùng miền và Tuyến tự thoát chế độ Sửa (nếu đang mở) về chế độ Xem.
+
+**AC11:** 3 khối hoàn toàn độc lập: lưu khối Vùng miền không reset hay ảnh hưởng draft đang dở ở khối Tuyến hoặc Nội/Ngoại thành.
 
 ## Notes
 
-- **Route đổi từ `/super-admin/route-config` sang `/super-admin/route-config/edit`** — route gốc giờ thuộc về trang danh sách (GSA-ROUTE-12).
-- Story này chỉ mô tả CƠ CHẾ DRAFT CHUNG + LƯU TẠO BỘ MỚI — chi tiết từng thao tác cụ thể (thêm vùng, tick chip gán tuyến, thêm tỉnh Nội/Ngoại thành...) đã có sẵn ở GSA-ROUTE-2/3/4/6/7/8/10 — các story đó vẫn ĐÚNG về THAO TÁC, chỉ SAI về thời điểm lưu (mô tả "ghi thẳng vào store" cần hiểu lại thành "ghi vào draft, chỉ lưu thật khi bấm Lưu thay đổi") — chưa cập nhật lại trong phạm vi story này.
-- Trước khi có tính năng versioning, khối "Nội & ngoại thành" có nút Lưu/Huỷ RIÊNG, độc lập với Vùng miền/Tuyến (xem GSA-ROUTE-4) — bản này gộp chung làm 1, GSA-ROUTE-4 cần cập nhật lại phần đó.
-- Không có "known gap" về nguồn dữ liệu — toàn bộ là dữ liệu Super Admin nhập thật, không dùng công thức demo cố định.
+- Story này viết lại từ 2 bản cũ: bản gốc mô tả 1 draft gộp chung cả 3 khối; bản thứ hai mô tả mỗi khối có nút Lưu/Huỷ riêng nhưng luôn hiện input khi Nháp — cả 2 đã được thay thế hoàn toàn bởi mô hình Xem/Sửa.
+- Chi tiết từng thao tác cụ thể (thêm vùng, tick chip, thêm tỉnh...) vẫn được mô tả ở GSA-ROUTE-2/3/4/6/7/8/10; story này mô tả cơ chế Xem/Sửa, phân quyền theo trạng thái, và toàn bộ header.
+- Hành động "⚡ Áp dụng toàn bộ hệ thống" và Toggle "Hiển thị mặc định" chi tiết xem GSA-ROUTE-13.
