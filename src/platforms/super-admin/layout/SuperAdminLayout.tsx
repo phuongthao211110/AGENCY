@@ -12,19 +12,16 @@ import {
   LogoutOutlined,
   RightOutlined,
   RobotOutlined,
-  WalletOutlined,
 } from '@ant-design/icons'
 import { superAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
 import PlatformSwitcher from '../../../components/PlatformSwitcher'
 import { agenciesList, shopConnections, carrierRequests } from '../agencyStore'
-import { loadOrders } from '../../../mock-data/orderStore'
 
 const NAV_ITEMS = [
   { key: '/super-admin/agencies', icon: <BankOutlined />, label: 'Đại lý' },
   { key: '/super-admin/hubs-247', icon: <EnvironmentOutlined />, label: 'Địa chỉ lấy hàng 247' },
   { key: '/super-admin/route-config', icon: <GlobalOutlined />, label: 'Cấu hình vùng & tuyến' },
-  { key: '/super-admin/payment-approvals', icon: <WalletOutlined />, label: 'Duyệt thanh toán' },
 ]
 
 function countAgenciesWithPendingRequests() {
@@ -32,10 +29,6 @@ function countAgenciesWithPendingRequests() {
   shopConnections.filter(s => s.status === 'pending' && s.carrier === 'GHN').forEach(s => agencyIds.add(s.agencyId))
   carrierRequests.filter(r => r.status === 'pending').forEach(r => agencyIds.add(r.agencyId))
   return agenciesList.filter(a => agencyIds.has(a.id)).length
-}
-
-function countPendingPaymentApprovals() {
-  return loadOrders().filter(o => o.paymentApprovalStatus === 'pending_review').length
 }
 
 const SETTINGS_ITEM = { key: '/super-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }
@@ -55,21 +48,8 @@ export default function SuperAdminLayout() {
     }
   }, [])
 
-  // Badge "Duyệt thanh toán" tính từ loadOrders() ngay trong thân component — tự đúng mỗi khi
-  // SuperAdminLayout re-render, nhưng duyệt/từ chối xảy ra ở route con (PaymentApprovals.tsx) chỉ
-  // tự re-render chính nó (qua tick cục bộ), không kéo theo layout cha. Lắng nghe sự kiện
-  // 'ghn-orders-changed' (phát từ orderStore.ts mỗi lần ghi) để badge cập nhật ngay, không cần
-  // điều hướng sang trang khác rồi quay lại mới thấy số mới.
-  const [, forceOrdersTick] = useState(0)
-  useEffect(() => {
-    const handler = () => forceOrdersTick(n => n + 1)
-    window.addEventListener('ghn-orders-changed', handler)
-    return () => window.removeEventListener('ghn-orders-changed', handler)
-  }, [])
-
   const isActive = (key: string) => location.pathname.startsWith(key)
   const pendingAgenciesCount = countAgenciesWithPendingRequests()
-  const pendingPaymentApprovalsCount = countPendingPaymentApprovals()
 
   return (
     <ConfigProvider theme={superAdminTheme}>
@@ -122,9 +102,6 @@ export default function SuperAdminLayout() {
                   <span style={{ flex: 1 }}>{item.label}</span>
                   {item.key === '/super-admin/agencies' && pendingAgenciesCount > 0 && (
                     <Badge count={pendingAgenciesCount} size="small" />
-                  )}
-                  {item.key === '/super-admin/payment-approvals' && pendingPaymentApprovalsCount > 0 && (
-                    <Badge count={pendingPaymentApprovalsCount} size="small" />
                   )}
                 </div>
               )

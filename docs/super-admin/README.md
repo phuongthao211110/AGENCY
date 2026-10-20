@@ -44,6 +44,12 @@ _Chưa có stories_
 
 _Chưa có stories_
 
+## Cài đặt - Quy tắc thanh toán tiền mặt
+
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [GSA] Cài đặt: Cấu hình ngưỡng cảnh báo & khoá tạo đơn theo thanh toán tiền mặt | [quy-tac-thanh-toan-tien-mat.md](./settings/quy-tac-thanh-toan-tien-mat.md) | — | [Draft] |
+
 ## Duyệt yêu cầu
 
 | Story | File | Jira | Status |
@@ -73,3 +79,7 @@ _Chưa có stories_
 | [GSA] Vùng & Tuyến: Nhân bản bộ vùng tuyến | [nhan-ban-bo-vung-tuyen.md](./route-config/nhan-ban-bo-vung-tuyen.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Xoá bộ Nháp | [xoa-bo-nhap.md](./route-config/xoa-bo-nhap.md) | — | [Draft] |
 | [GSA] Vùng & Tuyến: Đổi tên bộ vùng tuyến | [doi-ten-bo-vung-tuyen.md](./route-config/doi-ten-bo-vung-tuyen.md) | — | [Draft] |
+
+## Duyệt thanh toán (ĐÃ CHUYỂN SANG AGENCY ADMIN)
+
+> ⚠️ Toàn bộ tính năng "Duyệt thanh toán" (GSA-PAYMENT-1/2/3) đã bị XOÁ KHỎI Super Admin — quyền duyệt thanh toán tiền mặt đã chuyển hẳn sang Agency Admin, vì Shop (bưu cục) giờ chuyển tiền mặt thu hộ về tài khoản Agency quản lý mình, không phải thẳng GHN. Xem `docs/agency-admin/cash-remittance/` (AGA-PAYMENT-1/2/3) cho tính năng thay thế.

@@ -27,6 +27,10 @@ export type PriceSurcharges = {
   codFee: FeeTier[]
   deliveryFailFee: SurchargeFee
   addressChange?: AddressChangeFee
+  // Phí hoàn hàng — form "Tạo bảng giá" (PricingCreate.tsx, Agency Admin) đã cho nhập từ trước
+  // nhưng bị RƠI MẤT lúc lưu (không có trong type này nên không map vào newTable.surcharges) —
+  // optional để bảng giá tạo trước khi có field này vẫn đọc được bình thường (coi như chưa cấu hình).
+  returnFee?: SurchargeFee
 }
 
 // `routeName` (mới) = tên tuyến THẬT đang sống trong routeConfig.ts (Super Admin quản lý) tại

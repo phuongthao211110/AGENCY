@@ -99,6 +99,14 @@
 | [AGENCY] Đối soát - Danh sách phiên shop: Thêm search | [them-search-danh-sach-phien-shop.md](./reconciliation/them-search-danh-sach-phien-shop.md) | — | [Draft] |
 | [AGENCY] Đối soát - Chi tiết phiên shop: Thêm search | [them-search-chi-tiet-phien-shop.md](./reconciliation/them-search-chi-tiet-phien-shop.md) | — | [Draft] |
 
+## Duyệt thanh toán tiền mặt
+
+| Story | File | Jira | Status |
+|-------|------|------|--------|
+| [AGA] Duyệt thanh toán tiền mặt: Danh sách đơn chờ duyệt theo từng Shop | [danh-sach-don-tien-mat-cho-duyet.md](./cash-remittance/danh-sach-don-tien-mat-cho-duyet.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Duyệt theo từng Shop | [duyet-tat-ca-don-cho.md](./cash-remittance/duyet-tat-ca-don-cho.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Cảnh báo trễ 1 ngày, tự động khoá tạo đơn sau 3 ngày | [canh-bao-va-tu-dong-khoa-tao-don.md](./cash-remittance/canh-bao-va-tu-dong-khoa-tao-don.md) | — | [Draft] |
+
 ## Hệ thống
 
 | Story | File | Jira | Status |
@@ -130,3 +138,5 @@
 | [AGENCY] Thiết lập NVC - Tạo bảng giá: Chọn bộ tuyến áp dụng | [chon-bo-tuyen-ap-dung-tao-bang-gia.md](./carrier-setup/chon-bo-tuyen-ap-dung-tao-bang-gia.md) | — | [Draft] |
 | [AGENCY] Thiết lập NVC - Agency Admin xem được tuyến/cặp vùng miền đang bị Super Admin khoá | [xem-tuyen-cap-vung-mien-bi-khoa.md](./carrier-setup/xem-tuyen-cap-vung-mien-bi-khoa.md) | — | [Draft] |
 | [AGENCY] Thiết lập NVC - Tạo bảng giá: Chỉ chọn được bộ tuyến Đã phát hành | [chi-chi-chon-bo-tuyen-da-phat-hanh.md](./carrier-setup/chi-chi-chon-bo-tuyen-da-phat-hanh.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Tạo bảng giá: Xem chi tiết bộ tuyến đang áp dụng | [xem-chi-tiet-bo-tuyen-dang-ap-dung.md](./carrier-setup/xem-chi-tiet-bo-tuyen-dang-ap-dung.md) | — | [Draft] |
+| [AGENCY] Thiết lập NVC - Tạo bảng giá: Thay đổi bộ tuyến áp dụng | [thay-doi-bo-tuyen-ap-dung.md](./carrier-setup/thay-doi-bo-tuyen-ap-dung.md) | — | [Draft] |

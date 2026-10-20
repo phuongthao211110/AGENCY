@@ -1,5 +1,5 @@
 import { ConfigProvider } from 'antd'
-import { UserOutlined, TeamOutlined, SafetyOutlined } from '@ant-design/icons'
+import { UserOutlined, TeamOutlined, SafetyOutlined, FieldTimeOutlined } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { superAdminTheme } from '../../../theme/platforms'
 import {
@@ -19,6 +19,7 @@ const SETTINGS_NAV = [
   { key: '/super-admin/settings/account', icon: <UserOutlined />, label: 'Thông tin tài khoản' },
   { key: '/super-admin/settings/users', icon: <TeamOutlined />, label: 'Quản lý người dùng' },
   { key: '/super-admin/settings/permissions', icon: <SafetyOutlined />, label: 'Phân quyền' },
+  { key: '/super-admin/settings/cash-remittance-rules', icon: <FieldTimeOutlined />, label: 'Quy tắc thanh toán tiền mặt' },
 ]
 
 export default function Settings() {

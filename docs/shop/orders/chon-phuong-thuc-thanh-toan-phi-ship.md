@@ -1,6 +1,6 @@
 ---
 id: SHOP-ORDER-41
-jiraKey: 
+jiraKey: AGENCY-1318
 platform: shop
 section: Đơn hàng
 figma: https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW?node-id=2-449

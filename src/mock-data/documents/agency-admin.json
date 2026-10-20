@@ -2421,39 +2421,104 @@
           "jiraKey": "",
           "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Chọn bộ tuyến áp dụng",
           "status": "draft",
-          "userStory": "Là Agency Admin (Đại lý), tôi muốn chọn bộ tuyến nào sẽ áp dụng cho bảng giá đang tạo (thay vì luôn dùng bộ tuyến mặc định global), để có thể tạo bảng giá theo đúng cấu hình tuyến mà Super Admin đã thiết kế cho kịch bản giá cụ thể đó.",
+          "userStory": "Là Agency Admin (Đại lý), tôi muốn bảng giá đang tạo tự động áp dụng đúng bộ tuyến hệ thống đang dùng (thay vì phải tự chọn từ đầu), và luôn thấy rõ tên bộ tuyến đang áp dụng ngay trên form, để biết chắc bảng giá sắp tạo dựa trên đúng cấu hình tuyến nào.",
           "userFlow": [
             "Vào \"Thiết lập NVC\" → tab Bảng giá → \"Thêm bảng giá\".",
-            "Trong card \"Thông tin cơ bản\", ngay bên dưới ô \"Mô tả\", có dropdown \"Bộ tuyến áp dụng\" liệt kê tất cả bộ tuyến Super Admin đã tạo; bộ đang là mặc định hệ thống có hậu tố \" (Mặc định)\" trong tên.",
-            "Dropdown mặc định chọn sẵn BỘ TUYẾN ĐANG LÀ MẶC ĐỊNH HỆ THỐNG (bộ Super Admin đặt \"Đặt làm mặc định\") — không phải bộ gần nhất tạo nếu bộ đó khác bộ mặc định.",
-            "Có dòng chú thích nhỏ ngay dưới dropdown: \"Danh sách tuyến bên dưới lấy theo bộ này. Chỉ áp dụng cho bảng giá đang tạo — đổi bộ sau khi lưu không ảnh hưởng bảng giá đã có.\"",
-            "Đổi dropdown sang bộ khác → toàn bộ \"Danh sách tuyến\" bên dưới reset và populate lại theo danh sách tuyến của bộ vừa chọn (tên tuyến mỗi dòng đổi theo bộ mới, dữ liệu giá đã nhập bị xoá trắng).",
-            "Modal \"Bảng mô tả tuyến dịch vụ\" (nút \"Định nghĩa tuyến\" đầu khối và icon (i) cạnh toggle \"Tách Nội thành/Ngoại thành\") cũng phản ánh đúng bộ tuyến đang chọn ở dropdown.",
+            "Trong card \"Thông tin cơ bản\", ngay bên dưới ô \"Mô tả\", có 1 dòng \"Bộ tuyến áp dụng\" hiển thị tên bộ đang chọn (🔀 Tên bộ), có hậu tố \" (Mặc định)\" nếu đó là bộ Super Admin đang đặt làm mặc định hệ thống.",
+            "Dòng này mặc định hiển thị BỘ TUYẾN ĐANG LÀ MẶC ĐỊNH HỆ THỐNG (bộ Super Admin đặt \"Đặt làm mặc định\") — không phải bộ gần nhất tạo nếu bộ đó khác bộ mặc định.",
+            "Cạnh tên bộ có 2 link \"Xem chi tiết\" (xem AGA-CARRIER-25) và \"Thay đổi\" (xem AGA-CARRIER-26) — 2 thao tác này có story riêng, không mô tả lại chi tiết ở đây.",
+            "Có dòng chú thích nhỏ dưới cùng khối: \"Danh sách tuyến bên dưới lấy theo bộ này. Chỉ áp dụng cho bảng giá đang tạo — đổi bộ sau khi lưu không ảnh hưởng bảng giá đã có.\"",
             "Bấm \"Tạo bảng giá\" → bảng giá được lưu với `routeName` mỗi zone chốt cứng dạng chuỗi theo bộ tuyến đã chọn tại thời điểm lưu; bảng giá đã tồn tại trước đó KHÔNG bị đổi theo."
           ],
           "systemFlow": [
-            "`PricingCreate.tsx` thêm state `selectedBundleId` khởi tạo bằng `getActiveRouteConfigVersion().id` (bộ Super Admin đang đặt làm mặc định); derive `selectedBundle = routeConfigVersions.find(v => v.id === selectedBundleId) ?? getActiveRouteConfigVersion()`.",
-            "Dropdown \"Bộ tuyến áp dụng\" render `routeConfigVersions` (mới nhất lên đầu); item có `id === getActiveRouteConfigVersion().id` thêm hậu tố \" (Mặc định)\" vào label.",
-            "`handleBundleChange(versionId)`: đổi `selectedBundleId` VÀ reset `routes` thành `listRouteNamesIn(newBundle).map((name, i) => makeEmptyRoute(name, String(i + 1)))` — tên tuyến 2 bộ có thể khác nhau, giữ nguyên route cũ sẽ bị \"mồ côi\" (giá trị không khớp option nào trong `<select>` của bộ mới).",
-            "`RouteBlock` và `ZoneGuideModal` nhận thêm prop `bundle: RouteConfigVersion` — mọi chỗ đọc state global (`routeRegions`, `routeMatrix`, `urbanConfigs`, hàm gốc `isSameProvinceRouteName`/`describeSameProvinceRoutePairs`/`listRouteNames`) đổi thành đọc từ `bundle` qua 3 hàm thuần mới: `isSameProvinceRouteNameIn(bundle, x)`, `describeSameProvinceRoutePairsIn(bundle, x)`, `listRouteNamesIn(bundle)`.",
-            "`routeConfig.ts` bổ sung 3 hàm thuần nhận `RouteConfigVersion` làm tham số — `isSameProvinceRouteNameIn`, `describeSameProvinceRoutePairsIn`, `listRouteNamesIn` — không đụng 3 hàm gốc tương ứng (vẫn đọc global state, dùng cho Web Shop và RouteCheck).",
-            "`routeConfigVersions` và `activeVersionId` nay persist qua `localStorage` (key `ghn_route_config_v1`): lưu lúc `commitNewRouteConfigVersion()` / `setActiveRouteConfigVersion()`, khôi phục 1 lần lúc module khởi tạo (IIFE ngay sau khai báo `activeVersionId`) — F5 trang lại vẫn đầy đủ bộ tuyến đã tạo.",
-            "`handleSubmit()` tiếp tục lưu `routeName` mỗi zone dạng chuỗi (theo bộ đã chọn, không lưu thêm id bộ tuyến) — schema `PriceTable`/`PriceZone` không thay đổi; bảng giá cũ không bị tác động."
+            "`PricingCreate.tsx` khai báo state `selectedBundleId` khởi tạo bằng `getActiveRouteConfigVersion().id` (bộ Super Admin đang đặt làm mặc định); derive `selectedBundle = routeConfigVersions.find(v => v.id === selectedBundleId) ?? getActiveRouteConfigVersion()`.",
+            "Dòng \"Bộ tuyến áp dụng\" hiện `🔀 {selectedBundle.label}` + hậu tố \" (Mặc định)\" nếu `selectedBundle.id === getActiveRouteConfigVersion().id`.",
+            "`routes` (state \"Danh sách tuyến\") khởi tạo lần đầu bằng `listRouteNamesIn(selectedBundle).map((name, i) => makeEmptyRoute(name, String(i + 1)))` — luôn khớp đúng bộ đang chọn ngay từ đầu.",
+            "`handleSubmit()` lưu `routeName` mỗi zone dạng chuỗi (theo bộ đã chọn tại thời điểm bấm \"Tạo bảng giá\", không lưu thêm id bộ tuyến) — schema `PriceTable`/`PriceZone` không thay đổi; bảng giá cũ không bị tác động.",
+            "`selectedBundleId`/`selectedBundle` được 2 thao tác con cập nhật: AGA-CARRIER-25 (Xem chi tiết) chỉ ĐỌC, không đổi; AGA-CARRIER-26 (Thay đổi) là nơi DUY NHẤT thay đổi giá trị này."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Card \"Thông tin cơ bản\" trong form Tạo bảng giá có dropdown \"Bộ tuyến áp dụng\" liệt kê đủ tất cả bộ tuyến Super Admin đã tạo; bộ đang là mặc định hệ thống có thêm hậu tố \" (Mặc định)\".",
-            "AC2: Dropdown mặc định chọn sẵn bộ tuyến là MẶC ĐỊNH HỆ THỐNG (bộ Super Admin đặt \"Đặt làm mặc định\") — không phải bộ mới nhất tạo gần đây nếu bộ đó không phải bộ mặc định.",
-            "AC3: Đổi dropdown sang bộ khác → toàn bộ \"Danh sách tuyến\" RESET và populate lại theo danh sách tuyến của bộ vừa chọn; dữ liệu giá đã nhập ở các dòng cũ bị xoá trắng.",
-            "AC4: Modal \"Bảng mô tả tuyến dịch vụ\" (nút \"Định nghĩa tuyến\" và icon (i) cạnh toggle) phản ánh đúng bộ tuyến đang chọn ở dropdown — tên vùng/miền và cấu hình tuyến khớp đúng bộ đó, không phải bộ global.",
-            "AC5: Bảng giá đã lưu trước khi có tính năng này (và bảng giá mới lưu với bộ A) KHÔNG bị ảnh hưởng nếu sau đó người dùng chọn bộ B — `routeName` trong mỗi zone đã chốt cứng dạng chuỗi tại thời điểm lưu.",
-            "AC6: Sau khi Super Admin tạo bộ tuyến mới rồi F5 lại trang → bộ mới vẫn xuất hiện trong dropdown (persist localStorage hoạt động) — không bị mất như trước khi có persist.",
-            "AC7: Khi Super Admin chưa từng tạo thêm bộ tuyến nào (chỉ có 1 bộ mặc định duy nhất) → dropdown hiện đúng 1 bộ đó có hậu tố \" (Mặc định)\", không ẩn dropdown hay báo lỗi."
+            "AC1: Card \"Thông tin cơ bản\" hiện dòng \"Bộ tuyến áp dụng\" với tên bộ đang chọn (🔀 + tên), hậu tố \" (Mặc định)\" nếu đúng bộ mặc định hệ thống, và 2 link \"Xem chi tiết\" / \"Thay đổi\".",
+            "AC2: Dòng này mặc định hiển thị bộ tuyến là MẶC ĐỊNH HỆ THỐNG (bộ Super Admin đặt \"Đặt làm mặc định\") — không phải bộ mới nhất tạo gần đây nếu bộ đó không phải bộ mặc định.",
+            "AC3: \"Danh sách tuyến\" (card bên dưới) ngay từ lần render đầu tiên đã populate đúng theo bộ mặc định hệ thống — không rỗng, không cần thao tác gì thêm.",
+            "AC4: Bảng giá đã lưu trước khi có tính năng này (và bảng giá mới lưu với bộ A) KHÔNG bị ảnh hưởng nếu sau đó người dùng chọn bộ B — `routeName` trong mỗi zone đã chốt cứng dạng chuỗi tại thời điểm lưu."
           ],
           "notes": [
+            "Story này chỉ mô tả phần HIỂN THỊ + GIÁ TRỊ MẶC ĐỊNH của \"Bộ tuyến áp dụng\". Chi tiết modal \"Xem chi tiết\" xem AGA-CARRIER-25; chi tiết modal \"Thay đổi\" (bảng tìm kiếm/phân trang, cách reset \"Danh sách tuyến\") xem AGA-CARRIER-26.",
+            "Trước đây (bản gốc) đây là 1 `<select>` gộp chung cả việc hiển thị lẫn đổi bộ trong 1 story duy nhất — đã tách thành 3 story riêng (22/25/26) để mỗi thao tác có AC rõ ràng, đúng quy ước \"1 story = 1 thao tác\" của dự án.",
             "Phạm vi thay đổi CHỈ ảnh hưởng bảng giá MỚI TẠO — bảng giá đã lưu trước đó (cả seed gốc lẫn bảng tạo qua AGA-CARRIER-21) KHÔNG đổi theo vì `routeName` đã chốt cứng dạng chuỗi.",
-            "Xem AGA-CARRIER-19 để hiểu dropdown \"Tuyến\" (mỗi dòng trong \"Danh sách tuyến\") lấy danh sách tên tuyến từ đâu — story này bổ sung cấp độ chọn BỘ TUYẾN, không thay thế cơ chế dropdown tuyến từng dòng đó.",
-            "3 hàm gốc `isSameProvinceRouteName()`, `describeSameProvinceRoutePairs()`, `listRouteNames()` (đọc state global) KHÔNG bị thay đổi — Web Shop (`CreateOrderDrawer`, `CreateLetterDrawer`) và RouteCheck.tsx vẫn dùng hàm gốc, đọc đúng bộ tuyến global đang active."
+            "Xem AGA-CARRIER-19 để hiểu dropdown \"Tuyến\" (mỗi dòng trong \"Danh sách tuyến\") lấy danh sách tên tuyến từ đâu — dropdown đó là thành phần khác, không đụng tới cơ chế chọn CẤP BỘ TUYẾN mô tả ở đây."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-25",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Xem chi tiết bộ tuyến đang áp dụng",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn xem đầy đủ Vùng miền, Tuyến, và Nội/Ngoại thành của bộ tuyến đang áp dụng cho bảng giá ngay tại trang Tạo bảng giá, để hiểu rõ cấu hình trước khi nhập giá cho từng tuyến, mà không cần rời trang hay hỏi Super Admin.",
+          "userFlow": [
+            "Tại trang \"Tạo bảng giá\", card \"Thông tin cơ bản\" → dòng \"Bộ tuyến áp dụng\" (xem AGA-CARRIER-22) → bấm link \"Xem chi tiết\".",
+            "Modal \"Bảng mô tả tuyến dịch vụ\" mở ra — ĐÚNG CÙNG 1 modal với nút \"Định nghĩa tuyến\" ở khối \"Danh sách tuyến\", không phải modal riêng. Nội dung gồm: danh sách Vùng miền (tên vùng + số tỉnh/thành), bảng Tuyến ↔ Cặp vùng miền (kèm badge khoá nếu có — xem AGA-CARRIER-23), danh sách Nội thành/Ngoại thành theo từng tỉnh.",
+            "Nội dung modal LUÔN phản ánh đúng bộ đang chọn ở dòng \"Bộ tuyến áp dụng\" — nếu vừa đổi bộ qua \"Thay đổi\" (AGA-CARRIER-26) rồi mới bấm \"Xem chi tiết\", modal hiện dữ liệu của bộ MỚI, không phải bộ cũ.",
+            "Đóng modal (nút X hoặc click ra ngoài) → quay lại form Tạo bảng giá, không có gì thay đổi — đây là modal CHỈ XEM, không có thao tác chỉnh sửa nào."
+          ],
+          "systemFlow": [
+            "`PricingCreate.tsx`: nút \"Xem chi tiết\" gọi `setShowZoneGuide(true)` — state `showZoneGuide` dùng CHUNG với nút \"Định nghĩa tuyến\" ở khối \"Danh sách tuyến\" (cùng 1 state, cùng 1 modal, 2 điểm vào).",
+            "`<ZoneGuideModal bundle={selectedBundle} onClose={() => setShowZoneGuide(false)} />` — prop `bundle` LUÔN là `selectedBundle` hiện tại (xem AGA-CARRIER-22), nên tự động đổi nội dung ngay khi `selectedBundleId` đổi qua AGA-CARRIER-26.",
+            "`ZoneGuideModal` tự build dữ liệu hiển thị từ `bundle.regions`, `bundle.routeMatrix` (qua `listRouteNamesIn(bundle)`, `isSameProvinceRouteNameIn(bundle, x)`, `describeSameProvinceRoutePairsIn(bundle, x)`) và `bundle.urbanConfigs` — không đọc state global của `routeConfig.ts`.",
+            "Badge khoá trong bảng Tuyến ↔ Cặp vùng miền gọi `routeLockStatusIn(bundle, routeName)` — xem AGA-CARRIER-23 để biết đầy đủ quy tắc full/partial.",
+            "Modal không có nút lưu/sửa nào — đóng bằng `onClose`, không mutate bất kỳ state nào của `PricingCreate.tsx` hay `routeConfig.ts`."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bấm \"Xem chi tiết\" ở dòng \"Bộ tuyến áp dụng\" → mở đúng modal \"Bảng mô tả tuyến dịch vụ\" — cùng modal với nút \"Định nghĩa tuyến\" ở khối \"Danh sách tuyến\" (không phải 2 modal khác nhau).",
+            "AC2: Nội dung modal hiển thị đủ 3 phần: Vùng miền, bảng Tuyến ↔ Cặp vùng miền (kèm badge khoá), Nội/Ngoại thành — của ĐÚNG bộ đang chọn ở \"Bộ tuyến áp dụng\".",
+            "AC3: Nếu vừa đổi bộ qua \"Thay đổi\" (AGA-CARRIER-26) rồi mới bấm \"Xem chi tiết\" → modal hiện dữ liệu của bộ MỚI vừa chọn, không phải bộ trước đó.",
+            "AC4: Modal không có bất kỳ nút chỉnh sửa/lưu nào — đóng modal không làm thay đổi gì ở form Tạo bảng giá hay dữ liệu Vùng & Tuyến của Super Admin."
+          ],
+          "notes": [
+            "Đây KHÔNG phải modal riêng mới tạo — là modal `ZoneGuideModal` đã có sẵn (trước đây chỉ mở được qua nút \"Định nghĩa tuyến\"), nay có thêm 1 điểm vào thứ 2 từ dòng \"Bộ tuyến áp dụng\". Không có logic mới nào trong `ZoneGuideModal` — chỉ thêm 1 chỗ gọi `setShowZoneGuide(true)`.",
+            "Xem AGA-CARRIER-22 để biết dòng \"Bộ tuyến áp dụng\" hiển thị/mặc định ra sao; AGA-CARRIER-26 để biết cách đổi bộ qua \"Thay đổi\".",
+            "Xem AGA-CARRIER-23 để biết đầy đủ quy tắc hiển thị badge khoá (full/partial) trong bảng Tuyến ↔ Cặp vùng miền của modal này."
+          ]
+        },
+        {
+          "id": "AGA-CARRIER-26",
+          "jiraKey": "",
+          "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Thay đổi bộ tuyến áp dụng",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn xem danh sách tất cả bộ tuyến đã phát hành (kèm Vùng miền/Tuyến của từng bộ) để so sánh trước khi chọn, và đổi bộ tuyến áp dụng cho bảng giá đang tạo chỉ trong 1 lần bấm, để dễ dàng tìm đúng bộ phù hợp với kịch bản giá đang cần mà không phải đoán tên bộ qua dropdown.",
+          "userFlow": [
+            "Tại trang \"Tạo bảng giá\", card \"Thông tin cơ bản\" → dòng \"Bộ tuyến áp dụng\" (xem AGA-CARRIER-22) → bấm link \"Thay đổi\".",
+            "Modal \"Thay đổi vùng tuyến\" mở ra: ô tìm kiếm theo tên bộ ở đầu modal; bảng 4 cột Tên (màu xanh)/Vùng miền (nối dấu phẩy)/Tuyến (nối dấu phẩy)/Thao tác (bộ đang chọn hiện chữ xanh \"Đã chọn\", bộ khác hiện nút \"Chọn\"); cuối modal có thanh phân trang \"Hiển thị 50\" + số trang + \"Đến trang\".",
+            "Gõ vào ô tìm kiếm → bảng lọc còn các bộ có tên khớp (không phân biệt hoa/thường), trang tự về 1.",
+            "Bấm \"Chọn\" ở 1 dòng bộ khác → modal đóng NGAY, không hỏi xác nhận gì (Tạo bảng giá là trang state cục bộ chưa lưu, đổi/xoá tự do không cần cảnh báo). Dòng \"Bộ tuyến áp dụng\" cập nhật theo bộ vừa chọn, VÀ toàn bộ \"Danh sách tuyến\" bên dưới RESET + populate lại theo danh sách tuyến của bộ mới (tên tuyến mỗi dòng đổi theo bộ mới, dữ liệu giá đã nhập ở các dòng cũ bị xoá trắng).",
+            "Chỉ các bộ `status === 'published'` xuất hiện trong bảng — bộ Nháp Super Admin đang soạn dở không bao giờ hiện (xem AGA-CARRIER-24).",
+            "Nếu hệ thống chỉ có đúng 1 bộ đã phát hành → bảng hiện đúng 1 dòng đó (\"Đã chọn\"), không có nút \"Chọn\" nào khác, không báo lỗi."
+          ],
+          "systemFlow": [
+            "`ChangeBundleModal` (component trong `PricingCreate.tsx`) nhận props `bundles` (đã filter `status === 'published'` ở nơi gọi, mới nhất lên đầu — xem AGA-CARRIER-24), `selectedId`, `onSelect`, `onClose`.",
+            "State nội bộ: `search` (chuỗi tìm kiếm), `page`, `pageSize` (mặc định 50).",
+            "`filtered = bundles.filter(b => b.label.toLowerCase().includes(search.trim().toLowerCase()))`; đổi `search` tự `setPage(1)`.",
+            "Mỗi dòng tính `regionNames = bundle.regions.map(r => r.name || '(chưa đặt tên)').join(', ')` và `routeNames = listRouteNamesIn(bundle).join(', ')` — tái dùng đúng hàm đã có trong `routeConfig.ts`, không thêm hàm mới.",
+            "Bấm \"Chọn\" gọi `onSelect(bundle.id); onClose()` ngay lập tức, không qua bước xác nhận nào. `onSelect` = `handleBundleChange(versionId)` của `PricingCreate.tsx`: đổi `selectedBundleId` VÀ reset `routes` thành `listRouteNamesIn(newBundle).map((name, i) => makeEmptyRoute(name, String(i + 1)))`.",
+            "`BundlePagination` (component riêng, cùng file) — bản sao kiểu dáng của `Pagination` đã dùng ở `AgencyOrders.tsx`/`Shops.tsx` (mỗi file platform tự có bản `Pagination` riêng, không import chéo)."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bấm \"Thay đổi\" → mở modal \"Thay đổi vùng tuyến\" với ô tìm kiếm, bảng Tên/Vùng miền/Tuyến/Thao tác, và thanh phân trang (\"Hiển thị N\" + số trang + \"Đến trang\").",
+            "AC2: Bảng chỉ hiện bộ có `status === 'published'` — bộ Nháp không bao giờ xuất hiện (xem AGA-CARRIER-24).",
+            "AC3: Bộ đang chọn hiện chữ xanh \"Đã chọn\" ở cột Thao tác (không phải nút); các bộ khác hiện nút \"Chọn\".",
+            "AC4: Gõ vào ô tìm kiếm → bảng chỉ còn các bộ có tên khớp (không phân biệt hoa/thường), trang tự reset về 1.",
+            "AC5: Bấm \"Chọn\" ở 1 bộ khác → đổi ngay, modal đóng, KHÔNG có bước xác nhận nào (kể cả khi \"Danh sách tuyến\" đã nhập dữ liệu) — toàn bộ \"Danh sách tuyến\" RESET + populate lại theo danh sách tuyến của bộ vừa chọn, dữ liệu giá cũ bị xoá trắng.",
+            "AC6: Khi hệ thống chỉ có đúng 1 bộ đã phát hành → bảng hiện đúng 1 dòng đó (\"Đã chọn\"), không báo lỗi, không hiện nút \"Chọn\" nào khác."
+          ],
+          "notes": [
+            "Đổi bộ tuyến KHÔNG có bước xác nhận/cảnh báo mất dữ liệu — Tạo bảng giá là trang tạo mới, toàn bộ \"Danh sách tuyến\" chỉ là state cục bộ CHƯA LƯU vào pricingStore.ts; đổi/xoá tự do ở đây không mất dữ liệu đã lưu thật nào. Quyết định này đã được xác nhận lại rõ ràng — KHÔNG thêm window.confirm cho thao tác này dù đã nhập dữ liệu, khác với các hành động ảnh hưởng dữ liệu ĐÃ LƯU ở nơi khác trong hệ thống (huỷ đơn, xoá bộ tuyến...).",
+            "Redesign từ `<select>` sang modal bảng có tìm kiếm/phân trang — lý do: `<select>` không đủ chỗ hiện Vùng miền/Tuyến của từng bộ để Agency Admin so sánh trước khi đổi.",
+            "Xem AGA-CARRIER-22 để biết dòng \"Bộ tuyến áp dụng\" hiển thị/mặc định ra sao; AGA-CARRIER-25 để biết modal \"Xem chi tiết\".",
+            "3 hàm gốc `isSameProvinceRouteName()`, `describeSameProvinceRoutePairs()`, `listRouteNames()` (đọc state global) KHÔNG bị ảnh hưởng — Web Shop (`CreateOrderDrawer`, `CreateLetterDrawer`) và RouteCheck.tsx vẫn dùng hàm gốc, đọc đúng bộ tuyến global đang active."
           ]
         },
         {
@@ -2503,26 +2568,26 @@
           "jiraKey": "",
           "title": "[AGENCY] Thiết lập NVC - Tạo bảng giá: Chỉ chọn được bộ tuyến Đã phát hành",
           "status": "draft",
-          "userStory": "Là Agency Admin, tôi muốn dropdown \"Bộ tuyến áp dụng\" (xem AGA-CARRIER-22) khi tạo bảng giá chỉ hiện các bộ vùng tuyến đã phát hành — không hiện bộ Nháp đang soạn dở — để không vô tình gắn bảng giá vào 1 bộ tuyến chưa hoàn chỉnh.",
+          "userStory": "Là Agency Admin, tôi muốn modal \"Thay đổi vùng tuyến\" (xem AGA-CARRIER-26) khi tạo bảng giá chỉ hiện các bộ vùng tuyến đã phát hành — không hiện bộ Nháp đang soạn dở — để không vô tình gắn bảng giá vào 1 bộ tuyến chưa hoàn chỉnh.",
           "userFlow": [
-            "Agency Admin vào \"Tạo bảng giá\" → mở dropdown \"Bộ tuyến áp dụng\" (xem AGA-CARRIER-22).",
-            "Dropdown chỉ liệt kê các bộ có status === 'published'. Bộ Nháp không xuất hiện trong danh sách, dù đang tồn tại trong hệ thống.",
-            "Sau khi Super Admin áp dụng 1 bộ Nháp (xem GSA-ROUTE-13 — hành động gộp Phát hành + Áp dụng toàn hệ thống), bộ đó lập tức xuất hiện trong dropdown lần mở tiếp theo (dữ liệu cùng phiên SPA, không cần tải lại trang thật)."
+            "Agency Admin vào \"Tạo bảng giá\" → bấm \"Thay đổi\" để mở modal \"Thay đổi vùng tuyến\" (xem AGA-CARRIER-26).",
+            "Bảng trong modal chỉ liệt kê các bộ có status === 'published'. Bộ Nháp không xuất hiện trong danh sách, dù đang tồn tại trong hệ thống.",
+            "Sau khi Super Admin áp dụng 1 bộ Nháp (xem GSA-ROUTE-13 — hành động gộp Phát hành + Áp dụng toàn hệ thống), bộ đó lập tức xuất hiện trong bảng lần mở modal tiếp theo (dữ liệu cùng phiên SPA, không cần tải lại trang thật)."
           ],
           "systemFlow": [
-            "PricingCreate.tsx — dropdown \"Bộ tuyến áp dụng\" filter: routeConfigVersions.filter(v => v.status === 'published') — bộ Nháp bị loại trước khi render <option>.",
+            "PricingCreate.tsx — props bundles truyền vào ChangeBundleModal được filter: routeConfigVersions.filter(v => v.status === 'published') — bộ Nháp bị loại trước khi truyền vào modal.",
             "Không có guard phụ ở store-level cho thao tác này (khác với setActiveRouteConfigVersion có guard phía store) — trách nhiệm lọc hoàn toàn ở PricingCreate.tsx."
           ],
           "crossPlatformImpact": [
-            "Super Admin — Áp dụng bộ Nháp: Bộ tuyến chỉ xuất hiện trong dropdown này SAU KHI Super Admin bấm Áp dụng toàn bộ hệ thống (xem GSA-ROUTE-13 — hành động gộp Phát hành + Áp dụng). Bộ Nháp dù đã tồn tại trong routeConfigVersions cũng không hiện ở đây."
+            "Super Admin — Áp dụng bộ Nháp: Bộ tuyến chỉ xuất hiện trong bảng modal này SAU KHI Super Admin bấm Áp dụng toàn bộ hệ thống (xem GSA-ROUTE-13 — hành động gộp Phát hành + Áp dụng). Bộ Nháp dù đã tồn tại trong routeConfigVersions cũng không hiện ở đây."
           ],
           "acceptanceCriteria": [
-            "AC1: Dropdown \"Bộ tuyến áp dụng\" trong trang Tạo bảng giá chỉ hiện bộ có status === 'published' — bộ Nháp không bao giờ xuất hiện.",
-            "AC2: Khi Super Admin phát hành 1 bộ Nháp mới, bộ đó xuất hiện trong dropdown lần mở tiếp theo (trong cùng phiên SPA, không cần tải lại trang thật).",
-            "AC3: Nếu hệ thống không có bộ Đã phát hành nào → dropdown rỗng; Agency Admin không thể chọn bộ tuyến và không thể lưu bảng giá hợp lệ."
+            "AC1: Bảng trong modal \"Thay đổi vùng tuyến\" chỉ hiện bộ có status === 'published' — bộ Nháp không bao giờ xuất hiện.",
+            "AC2: Khi Super Admin phát hành 1 bộ Nháp mới, bộ đó xuất hiện trong bảng lần mở modal tiếp theo (trong cùng phiên SPA, không cần tải lại trang thật).",
+            "AC3: Nếu hệ thống không có bộ Đã phát hành nào → bảng trong modal rỗng (hiện dòng \"Không tìm thấy bộ vùng tuyến nào\"); Agency Admin không thể chọn bộ tuyến và không thể lưu bảng giá hợp lệ."
           ],
           "notes": [
-            "Story này liên hệ trực tiếp với AGA-CARRIER-22 (Chọn bộ tuyến áp dụng khi tạo bảng giá) — bổ sung ràng buộc về trạng thái bộ tuyến.",
+            "Story này liên hệ trực tiếp với AGA-CARRIER-26 (Thay đổi bộ tuyến áp dụng khi tạo bảng giá) — bổ sung ràng buộc về trạng thái bộ tuyến. Xem thêm AGA-CARRIER-22 (hiển thị/mặc định) và AGA-CARRIER-25 (Xem chi tiết).",
             "Tương tự, setActiveRouteConfigVersion phía Super Admin cũng chỉ nhận bộ 'published' (xem GSA-ROUTE-13)."
           ]
         }
@@ -3082,6 +3147,143 @@
             "**Redesign lần 2 (2026-09-27)**: bộ lọc kỳ điều khiển bảng này đổi từ 3 nút Ngày/Tuần/Tháng đặt trong card \"Xu hướng...\" (AGA-REPORT-12) sang dropdown \"Thời gian\" ở header trang (AGA-REPORT-7) — bản thân bảng (cột, sắp xếp, tìm kiếm) không đổi gì.",
             "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng phần của trang — AGA-REPORT-7 giờ chỉ còn giữ khung trang tổng thể (header, thứ tự các khối), không còn mô tả bảng này nữa.",
             "Không có \"known gap\" nào về nguồn dữ liệu — bảng dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+          ]
+        }
+      ]
+    },
+    {
+      "key": "cash-remittance",
+      "title": "Duyệt thanh toán tiền mặt",
+      "stories": [
+        {
+          "id": "AGA-PAYMENT-1",
+          "jiraKey": "",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Danh sách đơn chờ duyệt theo từng Shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn xem danh sách đơn tiền mặt NHÓM THEO TỪNG SHOP (bưu cục) thuộc đại lý mình, kèm số ngày đã trễ chưa chuyển tiền về cho đại lý, để biết Shop nào cần nhắc và Shop nào đã bị hệ thống tự khoá tạo đơn — và duyệt được RIÊNG cho từng shop thay vì gộp chung.",
+          "userFlow": [
+            "Vào menu \"Duyệt thanh toán\" trong sidebar Agency Admin (icon ví tiền, có badge đỏ số đơn đang \"Chờ duyệt\") → route /agency-admin/cash-remittance.",
+            "Đầu trang hiện tiêu đề + mô tả ngắn giải thích cơ chế: Shop thu hộ tiền mặt phải chuyển lại cho Agency; trễ 1-2 ngày chỉ bị nhắc, trễ từ 3 ngày Shop tự động bị khoá tạo đơn mới.",
+            "4 chip tổng (tính trên TOÀN BỘ đại lý): \"N chờ duyệt\" (vàng), \"N trễ 1-2 ngày\" (vàng), \"N đã khoá tạo đơn (≥3 ngày)\" (đỏ), \"N đã nhận tiền\" (xanh).",
+            "Bên dưới là DANH SÁCH THEO TỪNG SHOP — mỗi shop CÓ ĐƠN TIỀN MẶT (shop không có đơn tiền mặt nào thì không hiện khối) là 1 khối riêng, gồm:\n   - Tên shop + badge trạng thái TỔNG QUÁT của shop đó: \"Không có đơn chờ\" (xanh) / \"Có đơn chờ duyệt\" (vàng) / \"⚠ Trễ N ngày\" (vàng) / \"🚫 Đang bị khoá tạo đơn\" (đỏ).\n   - Số đơn tiền mặt của shop đó.\n   - Nút \"Duyệt shop này (N)\" — N là số đơn CHỜ DUYỆT của RIÊNG shop này.\n   - Bảng con liệt kê từng đơn của shop đó: Mã vận đơn, Số tiền, Shop khai lúc, Trạng thái.",
+            "Trạng thái từng dòng đơn CHỈ HIỂN THỊ, không bấm được gì ở cấp từng dòng: Chờ duyệt (vàng, chưa trễ) / ⚠ Chờ duyệt — trễ N ngày (vàng, 1-2 ngày) / 🚫 Quá N ngày — đã khoá tạo đơn (đỏ, ≥3 ngày) / ✓ Đã nhận tiền (xanh, kèm giờ + nguồn duyệt) / ✕ Chưa nhận tiền (đỏ, kèm lý do từ chối + nguồn — HIẾM, chỉ khi Agency đã từng kiểm tra và xác nhận KHÔNG nhận được tiền qua rejectOrderPayment()).",
+            "KHÔNG hiện bất kỳ dòng \"Shop báo đã chuyển...\" nào ở đây dù Shop đã bấm \"Thanh toán cho đại lý\" ở Báo cáo dòng tiền (Web Shop — xem SHOP-ORDER-55) hay chưa — Agency KHÔNG dựa vào \"lời khai\" của Shop để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi bấm \"Duyệt shop này\"."
+          ],
+          "systemFlow": [
+            "Route /agency-admin/cash-remittance (CashRemittance.tsx), nav item trong AgencyAdminLayout.tsx với badge countPendingCashApprovals() = đếm đơn paymentMethod === 'cash' && paymentApprovalStatus === 'pending_review' của các shop có agencyId === CURRENT_AGENCY_ID ('AGN001').",
+            "agencyShops = loadShops().filter(s => s.agencyId === CURRENT_AGENCY_ID) — toàn bộ shop thuộc đại lý mình (kể cả shop chưa có đơn tiền mặt nào — bị lọc bỏ ở bước sau).",
+            "relevantOrders = orders.filter(o => o.paymentMethod === 'cash' && !!o.paymentApprovalStatus) — tính SẴN trên toàn bộ đơn tiền mặt (không giới hạn agency ở bước này, vì bước gán vào từng shop ở dưới đã tự đảm bảo chỉ hiện shop thuộc đại lý mình).",
+            "shopsWithOrders = agencyShops.map(shop => ({ shop, orders: relevantOrders.filter(o => o.shopId === shop.id) })).filter(g => g.orders.length > 0) — mỗi phần tử là 1 khối ShopGroup, chỉ giữ shop CÓ ít nhất 1 đơn tiền mặt.",
+            "ShopGroup({ shopDisplayName, orders, onApproved }): tự tính pending/maxDays RIÊNG cho shop này (không dùng biến toàn trang) để quyết định badge trạng thái + số N trên nút \"Duyệt shop này\".",
+            "daysSince(order.paymentPaidAt) CÙNG CÔNG THỨC với shopCashOverdueDays() (orderStore.ts) mà Web Shop dùng để quyết định khoá tạo đơn, để 2 phía luôn khớp số ngày."
+          ],
+          "crossPlatformImpact": [
+            "Ảnh hưởng trực tiếp khả năng tạo đơn của Web Shop (xem AGA-PAYMENT-3, SHOP-ORDER-43)."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Sidebar Agency Admin có mục \"Duyệt thanh toán\" với badge đỏ hiện đúng số đơn pending_review của CÁC SHOP THUỘC AGENCY MÌNH; route mở đúng trang.",
+            "AC2: 4 chip tổng đầu trang hiện đúng số lượng theo từng trạng thái, tính trên TOÀN BỘ đại lý (cộng dồn mọi shop).",
+            "AC3: Mỗi shop CÓ đơn tiền mặt hiện đúng 1 khối riêng — shop KHÔNG có đơn tiền mặt nào thì KHÔNG hiện khối (không hiện khối rỗng).",
+            "AC4: Badge trạng thái tổng quát của từng shop phản ánh đúng mức độ trễ NẶNG NHẤT trong các đơn pending_review của RIÊNG shop đó.",
+            "AC5: Đơn trễ 1-2 ngày → nhãn dòng \"⚠ Chờ duyệt — trễ N ngày\" (vàng); đơn trễ ≥3 ngày → nhãn dòng \"🚫 Quá N ngày — đã khoá tạo đơn\" (đỏ).",
+            "AC6: Dòng đơn trong bảng con THUẦN HIỂN THỊ — không có nút Duyệt/Từ chối riêng ở cấp từng dòng (hành động nằm ở cấp SHOP, xem AGA-PAYMENT-2).",
+            "AC7: Đơn paymentApprovalStatus === 'rejected' → hiện ĐÚNG \"✕ Chưa nhận tiền\" (đỏ) kèm lý do + nguồn từ chối — KHÔNG được rơi vào nhánh tính ngày trễ (bug đã phát hiện qua UAT: thiếu nhánh rejected khiến đơn này hiện sai thành \"🚫 Quá N ngày — đã khoá tạo đơn\").",
+            "AC8: Đơn rejected KHÔNG được tính vào số N trên nút \"Duyệt shop này (N)\" — approveOrderPayment() chỉ áp dụng cho đơn đang pending_review.",
+            "AC9: Dù đơn có cashRemittanceDeclaredAt (Shop đã tự khai bên Web Shop) hay không, StatusCell ở đây hiện ĐÚNG Y HỆT nhau — không có bất kỳ dòng/nhãn \"Shop báo đã chuyển\" nào khác biệt."
+          ],
+          "notes": [
+            "Thay đổi lớn (v2 — nhóm theo shop): bản đầu (v1) là 1 bảng phẳng chung cho toàn đại lý + 1 nút \"Duyệt tất cả\" áp dụng hết — đã đổi sang nhóm RIÊNG theo từng shop để Agency Admin kiểm soát/duyệt chính xác từng shop một, không bị gộp nhầm.",
+            "Tính năng này THAY THẾ HOÀN TOÀN trang \"Duyệt thanh toán phí ship\" cũ của Super Admin (GSA-PAYMENT-1/2/3, đã XOÁ) — lý do nghiệp vụ: Shop (bưu cục) thu hộ tiền mặt phải chuyển lại cho ĐẠI LÝ quản lý mình, không phải chuyển thẳng cho GHN, nên Agency Admin mới đúng vai trò duyệt.",
+            "Số ngày trễ tính từ paymentPaidAt CŨ NHẤT còn pending_review của shop đó (xem shopCashOverdueDays(), orderStore.ts) — không phải trung bình hay theo từng đơn riêng lẻ.",
+            "Xem AGA-PAYMENT-2 (nút \"Duyệt shop này\" — hành động nay ở CẤP SHOP, không còn là 1 nút tổng cho cả đại lý); AGA-PAYMENT-3 (phía Web Shop — cảnh báo/tự động khoá tạo đơn theo ngưỡng cấu hình).",
+            "Ngưỡng \"1-2 ngày\"/\"≥3 ngày\" hiện trong mô tả đầu trang và nhãn các dòng KHÔNG còn hardcode — đọc từ loadRemittanceConfig() (warningDays/blockDays), Super Admin cấu hình ở /super-admin/settings/cash-remittance-rules (xem GSA-PAYMENT-CONFIG-1); 1/3 chỉ còn là giá trị MẶC ĐỊNH.",
+            "Bug đã sửa: StatusCell ban đầu KHÔNG có nhánh rejected (chỉ check confirmed rồi rơi thẳng vào tính ngày trễ) — phát hiện khi thêm dữ liệu demo có đơn rejected thật. Đã thêm nhánh rejected ngay sau confirmed, trước khi tính days.",
+            "rejectOrderPayment() (orderStore.ts) vẫn chưa có nút gọi nào trong UI (kế thừa hạn chế từ thiết kế cũ) — đơn rejected trong hệ thống hiện chỉ có thể đến từ seed data demo, không tạo được qua thao tác Agency Admin thật.",
+            "Thay đổi (bỏ hint \"Shop báo đã chuyển\"): StatusCell từng hiện thêm 1 dòng \"💬 Shop báo đã chuyển lúc...\" khi đơn có cashRemittanceDeclaredAt — đã BỎ theo yêu cầu: Agency không cần một \"thông báo\" kiểu Shop tự khai để tin, mà tự dựa vào số ngày trễ do hệ thống tự track rồi tự đối chiếu sổ quỹ thật. cashRemittanceDeclaredAt vẫn tồn tại trên Order và vẫn được set bởi declareCashRemittance() (Shop vẫn bấm \"Thanh toán cho đại lý\" được bình thường, xem SHOP-ORDER-55) — chỉ KHÔNG còn hiển thị gì ở phía Agency Admin.",
+            "Tên mục sidebar/tiêu đề trang đã đổi từ \"Duyệt thanh toán tiền mặt\" thành \"Duyệt thanh toán\" (ngắn gọn hơn) — id/tên file tài liệu vẫn giữ nguyên để không phá liên kết, chỉ UI text đổi."
+          ]
+        },
+        {
+          "id": "AGA-PAYMENT-2",
+          "jiraKey": "",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Duyệt theo từng Shop",
+          "status": "draft",
+          "userStory": "Là Agency Admin, sau khi đã thực nhận đủ tiền mặt từ MỘT Shop cụ thể chuyển lên, tôi muốn duyệt hàng loạt tất cả đơn tiền mặt đang \"Chờ duyệt\" của RIÊNG SHOP ĐÓ chỉ bằng 1 lần bấm — mà KHÔNG ảnh hưởng tới các shop khác chưa chuyển tiền.",
+          "userFlow": [
+            "Tại mỗi khối Shop (xem AGA-PAYMENT-1), góc phải có nút \"Duyệt shop này (N)\" — N là số đơn chờ duyệt CỦA RIÊNG SHOP ĐÓ.",
+            "N = 0 → nút xám, không bấm được.",
+            "Bấm nút → window.confirm nêu rõ tên shop và số đơn sẽ bị ảnh hưởng.",
+            "Xác nhận → CHỈ đơn tiền mặt \"Chờ duyệt\" của SHOP ĐÓ chuyển \"✓ Đã nhận tiền\" — các shop khác HOÀN TOÀN không bị ảnh hưởng.",
+            "Hệ quả tức thì: nếu shop đó đang bị khoá tạo đơn (≥3 ngày) → mở lại NGAY.",
+            "Huỷ confirm → không đổi gì.",
+            "Badge trạng thái tổng quát của khối Shop đó tự cập nhật ngay sau khi duyệt.",
+            "Nếu có đơn còn nghi ngờ, xử lý NGOÀI hệ thống trước khi bấm \"Duyệt shop này\"."
+          ],
+          "systemFlow": [
+            "ShopGroup: pending = orders.filter(o => o.paymentApprovalStatus === 'pending_review') — tính RIÊNG trên mảng orders đã được lọc sẵn theo shopId của khối này (xem AGA-PAYMENT-1).",
+            "handleApproveShop(): guard if (pending.length === 0) return; window.confirm(...) có tên shop trong nội dung; nếu xác nhận, lặp for (const o of pending) approveOrderPayment(o.id, CURRENT_AGENT).",
+            "approveOrderPayment(orderId, approvedBy) (dùng chung, trong orderStore.ts): chỉ áp dụng khi đơn đang paymentApprovalStatus === 'pending_review'; set paymentApprovalStatus: 'confirmed', paymentApprovedAt, paymentApprovedBy. Hàm này KHÔNG đổi gì — chỉ khác CẤP GỌI (mỗi khối Shop tự gọi cho đúng pending của mình, không có vòng lặp nào gộp nhiều shop).",
+            "shopCashOverdueDays(shopId) (orderStore.ts) chỉ đếm đơn CÒN pending_review CỦA ĐÚNG shop đó — sau khi duyệt xong shop A, shopCashOverdueDays('A') về 0 ngay, trong khi shop B (chưa duyệt) vẫn giữ nguyên số ngày trễ — 2 shop hoàn toàn độc lập.",
+            "onApproved (= refresh ở component cha CashRemittance) được gọi sau khi duyệt xong 1 shop — re-render LẠI TOÀN TRANG (mọi khối Shop), nhưng vì dữ liệu các shop khác không đổi nên UI của họ không có gì khác biệt."
+          ],
+          "crossPlatformImpact": [
+            "Mở lại khả năng tạo đơn của Web Shop ngay lập tức (xem AGA-PAYMENT-3)."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Nút \"Duyệt shop này (N)\" hiện đúng N = số đơn chờ duyệt CỦA RIÊNG shop đó.",
+            "AC2: N = 0 → nút xám, disabled.",
+            "AC3: Bấm nút (N>0) → luôn hiện window.confirm có TÊN SHOP trong nội dung.",
+            "AC4: Xác nhận → CHỈ đơn của shop đó chuyển \"✓ Đã nhận tiền\"; shop khác giữ nguyên.",
+            "AC5: Shop đang bị khoá → sau khi duyệt RIÊNG shop đó, Web Shop mở lại tạo đơn ngay.",
+            "AC6: Huỷ window.confirm → không đơn nào của shop đó đổi trạng thái.",
+            "AC7: Không có cách chọn lọc duyệt riêng 1 vài đơn trong CÙNG 1 shop."
+          ],
+          "notes": [
+            "Thay đổi lớn (v2): trước đây (v1) chỉ có 1 nút \"Duyệt tất cả đơn chờ\" DUY NHẤT cho TOÀN ĐẠI LÝ (mọi shop cùng lúc) — đã đổi thành mỗi shop có nút \"Duyệt shop này\" RIÊNG, để Agency Admin kiểm soát chính xác từng shop, tránh duyệt nhầm/duyệt gộp khi chỉ 1 vài shop đã thực sự chuyển tiền.",
+            "KHÔNG có cách Từ chối 1 đơn cụ thể qua UI (hàm rejectOrderPayment() còn tồn tại trong code nhưng chưa có nút gọi — kế thừa hạn chế từ thiết kế cũ). Nếu phát hiện 1 đơn gian lận/sai sót, xử lý NGOÀI hệ thống (liên hệ Shop) trước khi bấm \"Duyệt shop này\" cho các đơn còn lại của shop đó.",
+            "Xem AGA-PAYMENT-1 để biết cấu trúc trang (nhóm theo shop); AGA-PAYMENT-3 để biết cơ chế cảnh báo/khoá tự động phía Web Shop mà hành động này ảnh hưởng tới; GSA-PAYMENT-CONFIG-1 (Super Admin) để biết nơi cấu hình ngưỡng ≥3 ngày (mặc định) quyết định khi nào shop bị khoá."
+          ]
+        },
+        {
+          "id": "AGA-PAYMENT-3",
+          "jiraKey": "",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Cảnh báo trễ 1 ngày, tự động khoá tạo đơn sau 3 ngày",
+          "status": "draft",
+          "userStory": "Là Agency Admin, tôi muốn hệ thống TỰ ĐỘNG nhắc nhở rồi khoá tạo đơn của riêng từng Shop nếu Shop đó chậm chuyển tiền mặt thu hộ về cho đại lý quá lâu, để không phải tự theo dõi thủ công.",
+          "userFlow": [
+            "Shop (bưu cục) tạo 1 đơn Tiền mặt (Shop trả ship) bình thường — đơn đi vận hành ngay (xem SHOP-ORDER-43), paymentApprovalStatus: 'pending_review'.",
+            "Qua ngày hôm sau (trễ 1-2 ngày) mà Agency Admin chưa duyệt: ngay khi vào trang \"Đơn hàng\" (Web Shop), 1 BANNER VÀNG hiện LIÊN TỤC ngay dưới tiêu đề trang: \"⚠️ Shop còn N ngày chưa chuyển tiền mặt đã thu cho đại lý. Vui lòng chuyển sớm — quá 3 ngày hệ thống sẽ tự động khoá tạo đơn mới.\" — banner hiện SUỐT trong lúc Shop còn ở ngưỡng cảnh báo (không cần bấm gì để thấy, không tự ẩn), Shop vẫn bấm \"+ Tạo đơn hàng\" → \"Tạo đơn hàng\" bình thường, KHÔNG có popup nào chặn thêm.",
+            "Quá 3 ngày mà vẫn chưa được Agency Admin duyệt: nút \"+ Tạo đơn hàng\" ở Web Shop TỰ ĐỘNG chuyển xám, đổi label \"Tạm chặn tạo đơn\", không bấm được, hover hiện tooltip giải thích — áp dụng cho CẢ 2 loại đơn (Hàng hoá GHN lẫn Thư/tài liệu 247Express) của RIÊNG shop này, các Shop khác (kể cả cùng đại lý) không bị ảnh hưởng.",
+            "Đơn đã tạo TRƯỚC khi bị khoá hoàn toàn không bị ảnh hưởng gì — vẫn xem/sửa/huỷ/in bình thường, chỉ việc TẠO ĐƠN MỚI là bị chặn.",
+            "Agency Admin vào \"Duyệt thanh toán tiền mặt\" bấm \"Duyệt shop này\" (xem AGA-PAYMENT-2) → Shop được MỞ LẠI tạo đơn ngay lập tức, không cần chờ gì thêm."
+          ],
+          "systemFlow": [
+            "shopCashOverdueDays(shopId) (orderStore.ts): lọc đơn o.shopId === shopId && o.paymentMethod === 'cash' && o.paymentApprovalStatus === 'pending_review' && o.paymentPaidAt; nếu rỗng → trả 0; nếu có → lấy paymentPaidAt CŨ NHẤT, gọi daysSinceCalendar() tính SỐ NGÀY LỊCH chênh lệch (so ngày dương lịch, KHÔNG phải số giờ trôi qua chia 24) — đơn tạo lúc 23h50 hôm nay đã tính \"trễ 1 ngày\" ngay khi sang 00h01 hôm sau, không cần đợi đủ 24 giờ, vì Shop gộp tất cả đơn phát sinh trong 1 ngày thành 1 đợt cần chuyển.",
+            "isOrderCreationBlocked(shopId): trả về shopCashOverdueDays(shopId) >= loadRemittanceConfig().blockDays — THAY THẾ HOÀN TOÀN công tắc thủ công cũ (setOrderCreationBlocked/ghn_order_creation_blocked trong localStorage, đã xoá) — không còn lưu trạng thái gì, tính TOÀN BỘ từ dữ liệu đơn hiện có mỗi lần gọi. Ngưỡng blockDays (và warningDays) nay đọc từ loadRemittanceConfig() — Super Admin cấu hình được ở /super-admin/settings/cash-remittance-rules (xem GSA-PAYMENT-CONFIG-1), mặc định { warningDays: 1, blockDays: 3 }.",
+            "Orders.tsx (Web Shop): remittanceConfig = loadRemittanceConfig(); cashOverdueDays = shopCashOverdueDays('SHP001'); creationBlocked = cashOverdueDays >= remittanceConfig.blockDays; cashOverdueWarning = cashOverdueDays >= remittanceConfig.warningDays && cashOverdueDays < remittanceConfig.blockDays.",
+            "Nút \"+ Tạo đơn hàng\" dùng creationBlocked để disable/đổi label/tooltip — giống hệt cách UI cũ phản ứng với công tắc thủ công, chỉ khác NGUỒN của biến creationBlocked.",
+            "Banner cảnh báo (JSX ngay dưới \"Page header\", TRƯỚC khối \"Tabs\" trong Orders.tsx): {cashOverdueWarning && (<div>...</div>)} — nền #FEF3C7, chữ #92400E, full-width, render MỖI LẦN trang re-render (không phải 1 lần duy nhất) nên LUÔN khớp đúng cashOverdueDays hiện tại. Menu con \"Tạo đơn hàng\" (mở CreateOrderDrawer) KHÔNG còn gọi window.alert(...) nữa — onClick chỉ còn setDrawerOpen(true).",
+            "handleCreate() trong CẢ CreateOrderDrawer (đơn Hàng hoá) và CreateLetterDrawer (đơn Thư) đều guard if (isOrderCreationBlocked('SHP001')) { window.alert(...); return } ngay đầu hàm — phòng trường hợp drawer đã mở sẵn trước khi quá hạn 3 ngày."
+          ],
+          "crossPlatformImpact": [
+            "Thay đổi khả năng tạo đơn ở Web Shop (CreateOrderDrawer, CreateLetterDrawer) dựa trên dữ liệu duyệt từ Agency Admin."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Shop có đơn tiền mặt pending_review với paymentPaidAt cách đây 0 ngày (hôm nay) → không cảnh báo, không khoá gì.",
+            "AC2: Shop có đơn tiền mặt pending_review trễ 1-2 ngày → banner vàng hiện LIÊN TỤC ngay dưới tiêu đề trang \"Đơn hàng\" với đúng số ngày trễ (không cần bấm gì), và bấm \"Tạo đơn hàng\" vẫn mở form bình thường, không có popup nào xen vào.",
+            "AC3: Shop có đơn tiền mặt pending_review trễ ≥3 ngày → nút \"+ Tạo đơn hàng\" chuyển xám, label \"Tạm chặn tạo đơn\", không bấm được — áp dụng cho CẢ Hàng hoá lẫn Thư/tài liệu.",
+            "AC4: Đơn đã tạo TRƯỚC khi bị khoá không bị ảnh hưởng gì — vẫn thao tác (xem/sửa/huỷ/in) bình thường.",
+            "AC5: Việc khoá/cảnh báo tính RIÊNG theo từng shop — Shop A bị khoá không ảnh hưởng gì tới Shop B, kể cả khi 2 shop cùng thuộc 1 đại lý.",
+            "AC6: Agency Admin bấm \"Duyệt shop này\" (AGA-PAYMENT-2) cho shop đang bị khoá → Shop đó MỞ LẠI tạo đơn ngay (F5 trang Web Shop là thấy, không cần thao tác gì thêm).",
+            "AC7: Đơn MoMo/Chuyển khoản KHÔNG BAO GIỜ tính vào shopCashOverdueDays() (chỉ lọc paymentMethod === 'cash') — 2 kênh online không ảnh hưởng gì tới việc khoá/cảnh báo tạo đơn của shop."
+          ],
+          "notes": [
+            "Thay đổi lớn: thay thế hoàn toàn công tắc thủ công \"Chặn tạo đơn mới\" của GHN Super Admin (GSA-PAYMENT-3, đã xoá — vốn là 1 cờ boolean TOÀN HỆ THỐNG, bật/tắt tay) bằng cơ chế TỰ ĐỘNG, tính TOÀN BỘ từ dữ liệu, áp dụng RIÊNG từng shop theo số ngày trễ thực tế — không cần ai bấm nút \"bật chặn\" nữa.",
+            "Cập nhật: ngưỡng 1 ngày (cảnh báo)/3 ngày (khoá) KHÔNG còn hardcode — Super Admin cấu hình được ở /super-admin/settings/cash-remittance-rules (xem GSA-PAYMENT-CONFIG-1), áp dụng CHUNG cho toàn hệ thống (chưa hỗ trợ cấu hình riêng từng đại lý — nếu cần, phải thiết kế lại CashRemittanceConfig).",
+            "Sửa quan trọng: cách đếm số ngày trễ đổi từ \"24 giờ trôi qua kể từ đúng giờ phút tạo đơn\" sang \"NGÀY LỊCH chênh lệch\" (daysSinceCalendar()) — khớp đúng mô hình Shop gộp TẤT CẢ đơn phát sinh trong 1 ngày thành 1 đợt cần chuyển cho Agency; đơn tạo cuối ngày hôm nay vẫn tính \"trễ 1 ngày\" ngay khi sang ngày mai, không cần đợi đủ 24 giờ.",
+            "PROTOTYPE THUẦN — không có cơ chế nhắc qua email/SMS/push notification nào, chỉ có banner vàng ngay trên trang khi Shop đang mở Web Shop.",
+            "Thay đổi (banner thay cho alert): bản đầu dùng window.alert hiện 1 LẦN mỗi khi Shop bấm \"Tạo đơn hàng\" lúc đang trong ngưỡng cảnh báo — dễ bị bỏ sót (Shop tắt alert rồi quên luôn) và gây gián đoạn thao tác. Đã đổi sang banner vàng full-width hiện LIÊN TỤC ngay dưới tiêu đề trang \"Đơn hàng\" trong suốt thời gian Shop còn ở ngưỡng cảnh báo — không cần bấm gì để thấy, không tự ẩn, và không còn window.alert nào ở bước này nữa (guard window.alert trong handleCreate() khi THỰC SỰ đã bị khoá — xem điểm 6 — KHÔNG đổi).",
+            "Xem AGA-PAYMENT-1 (danh sách đơn chờ duyệt, phía Agency Admin), AGA-PAYMENT-2 (hành động \"Duyệt shop này\", theo từng shop), SHOP-ORDER-43 (vì sao đơn tiền mặt luôn ở pending_review cho tới khi được duyệt, trong khi MoMo/CK tự \"Đã nhận\" ngay), GSA-PAYMENT-CONFIG-1 (Super Admin — nơi cấu hình 2 ngưỡng này)."
           ]
         }
       ]

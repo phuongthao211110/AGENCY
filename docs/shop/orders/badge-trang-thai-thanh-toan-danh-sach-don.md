@@ -1,50 +1,47 @@
 ---
 id: SHOP-ORDER-44
-jiraKey: 
+jiraKey: AGENCY-1322
 platform: shop
 section: Đơn hàng
 figma: https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW?node-id=2-449
 status: draft
 ---
 
-# [WEB SHOP] Đơn hàng - Badge trạng thái thanh toán ở danh sách đơn
+# [WEB SHOP] Đơn hàng - Badge trạng thái thanh toán ở danh sách đơn (ĐÃ BỎ — dồn sang Báo cáo dòng tiền)
 
-## User Story
+> ⚠️ **ĐÃ BỊ BỎ KHỎI DANH SÁCH ĐƠN** — Badge mô tả ở story này (nằm trong cột "Phí ship" của danh sách Đơn hàng) đã được GỠ BỎ. Lý do: dễ gây hiểu lầm khi lẫn với các cột khác, và lặp lại thông tin đã có ở trang riêng "Báo cáo dòng tiền" (xem SHOP-ORDER-55) — nơi này hiển thị đầy đủ hơn (nhóm theo ngày, lọc theo trạng thái) và không bị bó hẹp trong 1 cột nhỏ của bảng. Nội dung dưới đây giữ lại để biết hàm `paymentBadge()` hoạt động ra sao — hàm này VẪN CÒN dùng ở Chi tiết đơn (xem SHOP-ORDER-45), chỉ không còn render ở danh sách.
 
-Là chủ shop nhìn vào danh sách đơn hàng, tôi muốn thấy rõ trạng thái thanh toán phí ship của các đơn đã chọn MoMo hoặc chuyển khoản, để biết đơn nào cần hoàn tất thanh toán và đơn nào đã xong.
+## User Story (lịch sử — không còn áp dụng ở danh sách đơn)
 
-## User Flow
+Là chủ shop nhìn vào danh sách đơn hàng, tôi muốn thấy rõ trạng thái thanh toán phí ship của MỌI đơn Shop tự trả — nhu cầu này nay được đáp ứng qua trang riêng "Báo cáo dòng tiền" (SHOP-ORDER-55), không còn qua badge trong danh sách đơn nữa.
 
-1. Danh sách đơn hàng hiển thị từng dòng (`TRow`).
-2. Cột "Phí ship" (phía phải): nếu đơn có `paymentMethod = 'momo'` hoặc `'bank_transfer'`, hiển thị badge nhỏ dưới dòng "Shop trả"/"Khách trả".
-3. Badge màu sắc khác nhau theo `paymentStatus`.
-4. Đơn `paymentMethod = 'cash'` hoặc không có field → không hiển thị badge.
+## Chi tiết hàm `paymentBadge()` (vẫn còn dùng — chỉ đổi NƠI dùng)
 
-## System Flow
+1. `paymentBadge(order)`:
+   ```js
+   function paymentBadge(order: Order): { label: string; color: string; bg: string } | null {
+     const methodLabel = order.paymentMethod === 'bank_transfer' ? 'chuyển khoản'
+       : order.paymentMethod === 'momo' ? 'MoMo'
+       : order.paymentMethod === 'cash' ? 'tiền mặt'
+       : null
+     if (!methodLabel) return null
+     if (order.paymentApprovalStatus === 'confirmed') return { label: `Đã nhận ${methodLabel}`, color: '#00C853', bg: '#D9F7E5' }
+     if (order.paymentApprovalStatus === 'rejected') return { label: 'Đại lý từ chối xác nhận', color: '#EF4444', bg: '#FEE2E2' }
+     if (order.paymentApprovalStatus === 'pending_review') return { label: `Chờ đại lý xác nhận ${methodLabel}`, color: '#3B82F6', bg: '#EFF6FF' }
+     if (order.paymentStatus === 'pending') return { label: `Chờ thanh toán ${methodLabel}`, color: '#F59E0B', bg: '#FEF3C7' }
+     if (order.paymentStatus === 'failed') return { label: 'Thanh toán thất bại', color: '#EF4444', bg: '#FEE2E2' }
+     return null
+   }
+   ```
+2. `TRow` (danh sách đơn) **KHÔNG còn gọi hàm này nữa** — biến `payBadge` và block render badge trong cột "Phí ship" đã bị xoá khỏi `Orders.tsx`.
+3. Hàm `paymentBadge()` vẫn được gọi ở **Chi tiết đơn** (`OrderDetailDrawer`, dòng "Trạng thái {kênh}" trong tab Thông tin — xem SHOP-ORDER-45) và ở trang **Báo cáo dòng tiền** mới (`CashFlowReport.tsx` — tuy trang này tự định nghĩa `StatusBadge` riêng theo cùng logic, không gọi thẳng `paymentBadge()`, vì cách hiển thị hơi khác: badge trong danh sách ngày, không gắn với tên kênh trong label).
 
-1. `paymentBadge(order)` (dòng 1041–1048): trả về `null` nếu `paymentMethod` không phải `'momo'` hoặc `'bank_transfer'`.
-2. Badge theo `paymentStatus`:
-   - `'paid'` → `Đã thanh toán {MoMo/chuyển khoản}`, chữ `#00C853`, nền `#D9F7E5`.
-   - `'pending'` → `Chờ thanh toán {MoMo/chuyển khoản}`, chữ `#F59E0B`, nền `#FEF3C7`.
-   - `'failed'` → `Thanh toán thất bại`, chữ `#EF4444`, nền `#FEE2E2`.
-3. `TRow` (dòng 3464, 3546–3553): `const payBadge = paymentBadge(order)` → nếu `payBadge` khác null, render `<span>` pill trong cột Phí ship (font 11px, padding `1px 6px`, borderRadius 8).
+## Acceptance Criteria (đã lỗi thời — xem SHOP-ORDER-55 cho AC còn áp dụng)
 
-## Acceptance Criteria
-
-**AC1:** Đơn `paymentMethod = 'momo'` + `paymentStatus = 'paid'` → badge xanh "Đã thanh toán MoMo" trong cột Phí ship.
-
-**AC2:** Đơn `paymentMethod = 'bank_transfer'` + `paymentStatus = 'paid'` → badge xanh "Đã thanh toán chuyển khoản".
-
-**AC3:** `paymentStatus = 'pending'` → badge vàng "Chờ thanh toán MoMo" hoặc "Chờ thanh toán chuyển khoản".
-
-**AC4:** `paymentStatus = 'failed'` → badge đỏ "Thanh toán thất bại" (không kèm tên kênh).
-
-**AC5:** Đơn `paymentMethod = 'cash'` hoặc không có `paymentMethod` → không hiển thị badge.
-
-**AC6:** Badge nằm trong cột "Phí ship", dưới dòng "Shop trả"/"Khách trả", dạng pill nhỏ (font 11px). Không hiện ở cột khác.
+**AC cũ (KHÔNG còn áp dụng)**: Mọi AC liên quan "badge hiện ở cột Phí ship trong danh sách đơn" đã lỗi thời — cột "Phí ship" giờ chỉ còn 2 dòng: Số tiền + "Shop trả"/"Khách trả", không còn badge nào bên dưới.
 
 ## Notes
 
-- **PROTOTYPE THUẦN** — badge phản ánh state mock data trong localStorage, không kết nối gateway thanh toán thật.
-- Màu badge tái sử dụng bộ màu đã có sẵn trong file (không bịa mã màu mới): xanh `#D9F7E5`/`#00C853` (cùng badge TLHH), vàng `#FEF3C7`/`#F59E0B` (cùng `ROW_STATUS_STYLE.returning`), đỏ `#FEE2E2`/`#EF4444` (cùng `ROW_STATUS_STYLE.cancelled`).
-- Text badge phân biệt "MoMo" và "chuyển khoản" theo đúng `paymentMethod` của từng đơn — không dùng nhãn chung cho cả 2.
+- **Thay đổi**: bỏ badge khỏi danh sách đơn theo yêu cầu dọn giao diện — tránh trùng lặp thông tin với trang "Báo cáo dòng tiền" mới (SHOP-ORDER-55), nơi hiển thị đầy đủ và rõ ràng hơn.
+- Xem SHOP-ORDER-55 để biết đầy đủ UI/AC của trang thay thế.
+- Xem SHOP-ORDER-48 để biết nhãn TRẠNG THÁI DÒNG ("Đơn nháp · Chờ GHN xác nhận"...) — đây là nhãn KHÁC, nằm ở cột "Mã vận đơn"/trạng thái vận chuyển, KHÔNG bị ảnh hưởng bởi thay đổi này (vẫn còn trong danh sách đơn như cũ, dù hiện nay hiếm khi kích hoạt — xem ghi chú legacy ở SHOP-ORDER-48).

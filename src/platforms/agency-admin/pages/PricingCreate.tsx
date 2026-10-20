@@ -1176,6 +1176,155 @@ function RouteBlock({
   )
 }
 
+// ─── Change route bundle modal ──────────────────────────────────────────────
+// Thay thế <select> cũ bằng bảng có tìm kiếm + phân trang — cho Agency Admin thấy đủ Vùng
+// miền/Tuyến của từng bộ trước khi đổi, thay vì chỉ thấy mỗi tên bộ trong 1 dòng dropdown.
+function ChangeBundleModal({ bundles, selectedId, onSelect, onClose }: {
+  bundles: RouteConfigVersion[]
+  selectedId: string
+  onSelect: (id: string) => void
+  onClose: () => void
+}) {
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+
+  const filtered = bundles.filter((b) => b.label.toLowerCase().includes(search.trim().toLowerCase()))
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize)
+
+  const cellStyle: React.CSSProperties = { padding: '10px 16px', fontSize: 14, color: C_TEXT_PRIMARY, verticalAlign: 'top' }
+  const truncateStyle: React.CSSProperties = { maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 300 }} />
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        background: '#fff', borderRadius: 12, zIndex: 301, width: 900, maxWidth: '92vw',
+        maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY }}>Thay đổi vùng tuyến</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
+            <CloseOutlined style={{ fontSize: 16, color: C_TEXT_SECONDARY }} />
+          </button>
+        </div>
+
+        <div style={{ padding: '14px 20px 0', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '8px 12px' }}>
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+              placeholder="Tìm kiếm"
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px' }}>
+          <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', background: C_BG_HEADER }}>
+              <div style={{ ...cellStyle, flex: '1 0 0', fontSize: 13, color: C_TEXT_SECONDARY, fontWeight: 600 }}>Tên</div>
+              <div style={{ ...cellStyle, flex: '1.6 0 0', fontSize: 13, color: C_TEXT_SECONDARY, fontWeight: 600 }}>Vùng miền</div>
+              <div style={{ ...cellStyle, flex: '1.6 0 0', fontSize: 13, color: C_TEXT_SECONDARY, fontWeight: 600 }}>Tuyến</div>
+              <div style={{ ...cellStyle, flex: '0.7 0 0', fontSize: 13, color: C_TEXT_SECONDARY, fontWeight: 600 }}>Thao tác</div>
+            </div>
+            {pageRows.length === 0 ? (
+              <div style={{ padding: '32px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14 }}>Không tìm thấy bộ vùng tuyến nào</div>
+            ) : pageRows.map((b) => {
+              const regionNames = b.regions.map((r) => r.name || '(chưa đặt tên)').join(', ')
+              const routeNames = listRouteNamesIn(b).join(', ')
+              const isSelected = b.id === selectedId
+              return (
+                <div key={b.id} style={{ display: 'flex', alignItems: 'center', borderTop: `1px solid ${C_BORDER}` }}>
+                  <div style={{ ...cellStyle, flex: '1 0 0', color: C_LINK, fontWeight: 700 }}>{b.label}</div>
+                  <div style={{ ...cellStyle, flex: '1.6 0 0', ...truncateStyle }} title={regionNames}>{regionNames}</div>
+                  <div style={{ ...cellStyle, flex: '1.6 0 0', ...truncateStyle }} title={routeNames}>{routeNames}</div>
+                  <div style={{ ...cellStyle, flex: '0.7 0 0' }}>
+                    {isSelected ? (
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#16A34A' }}>Đã chọn</span>
+                    ) : (
+                      <button
+                        onClick={() => { onSelect(b.id); onClose() }}
+                        style={{ padding: '4px 14px', border: `1px solid ${C_BORDER}`, borderRadius: 6, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Chọn
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <BundlePagination
+          page={page} pageSize={pageSize} totalPages={totalPages}
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(1) }}
+        />
+      </div>
+    </>
+  )
+}
+
+function BundlePagination({ page, pageSize, totalPages, onPageChange, onPageSizeChange }: {
+  page: number; pageSize: number; totalPages: number
+  onPageChange: (p: number) => void; onPageSizeChange: (s: number) => void
+}) {
+  const [goTo, setGoTo] = useState(String(page))
+
+  const pages: (number | '...')[] = []
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) pages.push(i)
+  } else {
+    pages.push(1, 2, 3, '...', totalPages - 2, totalPages - 1, totalPages)
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', borderTop: `1px solid ${C_BORDER}`, flexShrink: 0 }}>
+      <div
+        onClick={() => onPageSizeChange(pageSize === 50 ? 100 : 50)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}
+      >
+        <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap' }}>Hiển thị {pageSize}</span>
+      </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        {pages.map((p, i) => p === '...' ? (
+          <span key={i} style={{ fontSize: 13, color: C_TEXT_PRIMARY }}>...</span>
+        ) : (
+          <div
+            key={i}
+            onClick={() => onPageChange(p)}
+            style={{
+              width: 22, height: 22, borderRadius: 500, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', background: p === page ? C_TEXT_PRIMARY : 'transparent',
+              fontSize: 13, color: p === page ? '#fff' : C_TEXT_PRIMARY, flexShrink: 0,
+            }}
+          >
+            {p}
+          </div>
+        ))}
+      </div>
+      <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Đến trang</span>
+      <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 6, width: 44, padding: '4px 8px', flexShrink: 0 }}>
+        <input
+          value={goTo}
+          onChange={(e) => setGoTo(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const n = parseInt(goTo)
+              if (!isNaN(n) && n >= 1 && n <= totalPages) onPageChange(n)
+            }
+          }}
+          style={{ width: '100%', border: 'none', outline: 'none', textAlign: 'center', fontSize: 13, color: C_TEXT_PRIMARY, background: 'transparent' }}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ─── Zone guide modal ─────────────────────────────────────────────────────────
 
 function ZoneGuideModal({ bundle, onClose }: { bundle: RouteConfigVersion; onClose: () => void }) {
@@ -1339,6 +1488,7 @@ export default function PricingCreate() {
   const [selectedBundleId, setSelectedBundleId] = useState<string>(() => getActiveRouteConfigVersion().id)
   const selectedBundle = routeConfigVersions.find((v) => v.id === selectedBundleId) ?? getActiveRouteConfigVersion()
   const [showZoneGuide, setShowZoneGuide] = useState(false)
+  const [showChangeBundleModal, setShowChangeBundleModal] = useState(false)
   const [bulkWeight, setBulkWeight] = useState('')
   const [bulkPrice, setBulkPrice] = useState('')
   const [routes, setRoutes] = useState<RouteConfig[]>(() =>
@@ -1451,6 +1601,9 @@ export default function PricingCreate() {
         insurance: routes[0]?.surcharges.insurance ?? [],
         codFee: routes[0]?.surcharges.codFee ?? [],
         deliveryFailFee: routes[0]?.surcharges.deliveryFailFee ?? { value: '', unit: 'vnd' },
+        // Trước đây bị bỏ sót khỏi object lưu (chỉ có trong form, không map ra bảng giá thật) —
+        // đã bổ sung để Web Shop đọc được, xem SHOP-ORDER-55/feeBreakdownRows (CashFlowReport.tsx).
+        returnFee: routes[0]?.surcharges.returnFee ?? { value: '', unit: 'vnd' },
         addressChange: addressChangeFee,
       },
     }
@@ -1544,21 +1697,28 @@ export default function PricingCreate() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontSize: 14, color: C_TEXT_LABEL, lineHeight: '20px' }}>Bộ tuyến áp dụng</span>
-            <select
-              value={selectedBundleId}
-              onChange={(e) => handleBundleChange(e.target.value)}
-              style={{ ...inputStyle, maxWidth: 480, width: '100%', cursor: 'pointer' }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = '#FFA274')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = C_BORDER)}
-            >
-              {/* Chỉ hiện bộ ĐÃ PHÁT HÀNH — bộ Nháp chưa chọn được ở bảng giá (đúng bảng quyền
-                  thao tác, xem routeConfig.ts: RouteConfigStatus). */}
-              {[...routeConfigVersions].filter((v) => v.status === 'published').reverse().map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.label}{v.id === getActiveRouteConfigVersion().id ? ' (Mặc định)' : ''}
-                </option>
-              ))}
-            </select>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '8px 12px', maxWidth: 480,
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                🔀 {selectedBundle.label}{selectedBundle.id === getActiveRouteConfigVersion().id ? ' (Mặc định)' : ''}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+                <button
+                  onClick={() => setShowZoneGuide(true)}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: C_LINK }}
+                >
+                  Xem chi tiết
+                </button>
+                <button
+                  onClick={() => setShowChangeBundleModal(true)}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: C_LINK }}
+                >
+                  Thay đổi
+                </button>
+              </div>
+            </div>
             <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>
               Danh sách tuyến bên dưới lấy theo bộ này. Chỉ áp dụng cho bảng giá đang tạo — đổi bộ sau khi lưu không ảnh hưởng bảng giá đã có.
             </span>
@@ -1584,6 +1744,14 @@ export default function PricingCreate() {
             <span style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{routes.length} tuyến</span>
           </div>
           {showZoneGuide && <ZoneGuideModal bundle={selectedBundle} onClose={() => setShowZoneGuide(false)} />}
+          {showChangeBundleModal && (
+            <ChangeBundleModal
+              bundles={[...routeConfigVersions].filter((v) => v.status === 'published').reverse()}
+              selectedId={selectedBundleId}
+              onSelect={handleBundleChange}
+              onClose={() => setShowChangeBundleModal(false)}
+            />
+          )}
 
           {/* Nhập nhanh đồng giá */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '8px 12px 8px 20px', background: '#F9FAFB', border: `1px solid ${C_BORDER}`, borderRadius: 8, marginTop: 8 }}>

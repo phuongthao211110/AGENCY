@@ -7,6 +7,7 @@ import {
   UserOutlined,
   InboxOutlined,
   ReconciliationOutlined,
+  DollarCircleOutlined,
   CustomerServiceOutlined,
   SettingOutlined,
   LogoutOutlined,
@@ -21,6 +22,7 @@ const SIDEBAR_WIDTH = 240
 
 const NAV_ITEMS = [
   { key: '/shop/orders',         icon: <InboxOutlined />,           label: 'Đơn hàng' },
+  { key: '/shop/cash-flow',      icon: <DollarCircleOutlined />,    label: 'Báo cáo dòng tiền' },
   { key: '/shop/reconciliation', icon: <ReconciliationOutlined />,  label: 'Đối soát' },
   { key: '/shop/support',        icon: <CustomerServiceOutlined />, label: 'Hỗ trợ' },
 ]

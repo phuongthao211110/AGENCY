@@ -8,11 +8,11 @@ import AgencyDetail from './platforms/super-admin/pages/AgencyDetail'
 import Hubs247 from './platforms/super-admin/pages/Hubs247'
 import RouteConfig from './platforms/super-admin/pages/RouteConfig'
 import RouteConfigList from './platforms/super-admin/pages/RouteConfigList'
-import PaymentApprovals from './platforms/super-admin/pages/PaymentApprovals'
 import SuperAdminSettings from './platforms/super-admin/pages/Settings'
 import AccountInfo from './platforms/super-admin/pages/settings/AccountInfo'
 import UserManagement from './platforms/super-admin/pages/settings/UserManagement'
 import Permissions from './platforms/super-admin/pages/settings/Permissions'
+import CashRemittanceRules from './platforms/super-admin/pages/settings/CashRemittanceRules'
 
 // Agency Admin
 import AgencyAdminLayout from './platforms/agency-admin/layout/AgencyAdminLayout'
@@ -28,6 +28,7 @@ import AgencyOrders from './platforms/agency-admin/pages/AgencyOrders'
 import AgencyOrdersImport from './platforms/agency-admin/pages/AgencyOrdersImport'
 import AgencyOrdersHistory from './platforms/agency-admin/pages/AgencyOrdersHistory'
 import AgencyReconciliation from './platforms/agency-admin/pages/AgencyReconciliation'
+import CashRemittance from './platforms/agency-admin/pages/CashRemittance'
 import AgencyReconciliationDetail from './platforms/agency-admin/pages/AgencyReconciliationDetail'
 import AgencyReconciliationShopDetail from './platforms/agency-admin/pages/AgencyReconciliationShopDetail'
 import AgencyAdminSettings from './platforms/agency-admin/pages/Settings'
@@ -44,6 +45,7 @@ import ShopRegister from './platforms/shop/pages/Register'
 import ShopOrders from './platforms/shop/pages/Orders'
 import ShopReconciliation from './platforms/shop/pages/Reconciliation'
 import ShopReconciliationDetail from './platforms/shop/pages/ReconciliationDetail'
+import ShopCashFlowReport from './platforms/shop/pages/CashFlowReport'
 import ShopPricing from './platforms/shop/pages/Pricing'
 import ShopSupport from './platforms/shop/pages/Support'
 import ShopSettings from './platforms/shop/pages/Settings'
@@ -67,11 +69,11 @@ export default function App() {
           <Route path="hubs-247" element={<Hubs247 />} />
           <Route path="route-config" element={<RouteConfigList />} />
           <Route path="route-config/edit/:id" element={<RouteConfig />} />
-          <Route path="payment-approvals" element={<PaymentApprovals />} />
           <Route path="settings" element={<SuperAdminSettings />}>
             <Route path="account" element={<AccountInfo />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="permissions" element={<Permissions />} />
+            <Route path="cash-remittance-rules" element={<CashRemittanceRules />} />
             <Route index element={<Navigate to="account" replace />} />
           </Route>
           <Route index element={<Navigate to="agencies" replace />} />
@@ -86,6 +88,7 @@ export default function App() {
           <Route path="shops" element={<Shops />} />
           <Route path="shops/create" element={<ShopCreate />} />
           <Route path="shops/:id" element={<ShopDetail />} />
+          <Route path="cash-remittance" element={<CashRemittance />} />
           <Route path="reconciliation" element={<AgencyReconciliation />} />
           <Route path="reconciliation/:id" element={<AgencyReconciliationDetail />} />
           <Route path="reconciliation/shop/:shopSessionId" element={<AgencyReconciliationShopDetail />} />
@@ -111,6 +114,7 @@ export default function App() {
         <Route path="/shop/register" element={<ShopRegister />} />
         <Route path="/shop" element={<ShopLayout />}>
           <Route path="orders" element={<ShopOrders />} />
+          <Route path="cash-flow" element={<ShopCashFlowReport />} />
           <Route path="reconciliation" element={<ShopReconciliation />} />
           <Route path="reconciliation/:id" element={<ShopReconciliationDetail />} />
           <Route path="pricing" element={<ShopPricing />} />

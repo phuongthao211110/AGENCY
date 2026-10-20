@@ -15,12 +15,16 @@ import {
   NodeIndexOutlined,
   RobotOutlined,
   BarChartOutlined,
+  WalletOutlined,
 } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
 import { GHN_ORANGE, COLOR_BORDER } from '../../../theme/tokens'
 import PlatformSwitcher from '../../../components/PlatformSwitcher'
+import { loadOrders } from '../../../mock-data/orderStore'
+import { loadShops } from '../../../mock-data/shopStore'
 
 const SIDEBAR_WIDTH = 240
+const CURRENT_AGENCY_ID = 'AGN001'
 
 const NAV_ITEMS = [
   { key: '/agency-admin/report', icon: <BarChartOutlined />, label: 'Báo cáo' },
@@ -35,7 +39,14 @@ const NAV_ITEMS = [
   },
   { key: '/agency-admin/carrier-setup', icon: <TruckOutlined />, label: 'Thiết lập NVC' },
   { key: '/agency-admin/reconciliation', icon: <AuditOutlined />, label: 'Đối soát NVC' },
+  { key: '/agency-admin/cash-remittance', icon: <WalletOutlined />, label: 'Duyệt thanh toán' },
 ]
+
+// Số đơn tiền mặt đang "Chờ duyệt" của các shop thuộc agency này — Shop khác agency không tính.
+function countPendingCashApprovals() {
+  const agencyShopIds = new Set(loadShops().filter(s => s.agencyId === CURRENT_AGENCY_ID).map(s => s.id))
+  return loadOrders().filter(o => agencyShopIds.has(o.shopId) && o.paymentMethod === 'cash' && o.paymentApprovalStatus === 'pending_review').length
+}
 
 const SETTINGS_ITEM = { key: '/agency-admin/settings', icon: <SettingOutlined />, label: 'Cài đặt' }
 
@@ -58,6 +69,17 @@ export default function AgencyAdminLayout() {
       import(/* @vite-ignore */ p).then((m) => setHermesPanel(() => m.default)).catch(() => {})
     }
   }, [])
+
+  // Badge "Duyệt thanh toán tiền mặt" — lắng nghe 'ghn-orders-changed' (phát từ orderStore.ts mỗi
+  // lần ghi, kể cả từ Web Shop tạo đơn tiền mặt mới) để số liệu cập nhật ngay, không cần điều
+  // hướng sang trang khác rồi quay lại mới thấy số mới.
+  const [, forceOrdersTick] = useState(0)
+  useEffect(() => {
+    const handler = () => forceOrdersTick(n => n + 1)
+    window.addEventListener('ghn-orders-changed', handler)
+    return () => window.removeEventListener('ghn-orders-changed', handler)
+  }, [])
+  const pendingCashApprovalsCount = countPendingCashApprovals()
 
   const isActive = (key: string) => location.pathname.startsWith(key)
 
@@ -110,7 +132,10 @@ export default function AgencyAdminLayout() {
                     <span style={{ fontSize: 20, display: 'flex', color: active ? GHN_ORANGE : '#555' }}>
                       {item.icon}
                     </span>
-                    {item.label}
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {item.key === '/agency-admin/cash-remittance' && pendingCashApprovalsCount > 0 && (
+                      <Badge count={pendingCashApprovalsCount} size="small" />
+                    )}
                   </div>
                   {/* Menu con — chỉ hiện khi mục cha đang active, để URL con khớp đúng section */}
                   {item.children && active && (

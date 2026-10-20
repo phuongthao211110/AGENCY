@@ -3246,9 +3246,9 @@ export default function AgencyOrders() {
 // ── Popup xác nhận huỷ đơn — dùng chung cho cả nút nhanh từng dòng (1 phần tử) và nút hàng
 // loạt trên thanh "Đã chọn N" (nhiều phần tử). Drawer chi tiết dùng banner inline riêng. ──
 function CancelOrderModal({ orders, onClose, onConfirm }: { orders: Order[]; onClose: () => void; onConfirm: () => void }) {
-  // Cảnh báo riêng khi trong danh sách huỷ có đơn đang chờ GHN xác nhận thanh toán — huỷ vẫn hợp
-  // lệ (nếu sau đó GHN xác nhận đã nhận tiền, hệ thống tự nhắc "Chờ hoàn tiền" cho Shop), nhưng đại
-  // lý cần biết rõ đây KHÔNG phải đơn nháp bỏ quên thông thường trước khi bấm Xác nhận huỷ.
+  // Cảnh báo riêng khi trong danh sách huỷ có đơn đang chờ đại lý xác nhận thanh toán — huỷ vẫn hợp
+  // lệ (nếu sau đó đại lý xác nhận đã nhận tiền, hệ thống tự nhắc "Chờ hoàn tiền" cho Shop), nhưng
+  // đại lý cần biết rõ đây KHÔNG phải đơn nháp bỏ quên thông thường trước khi bấm Xác nhận huỷ.
   const pendingApprovalCount = orders.filter(o => o.paymentApprovalStatus === 'pending_review').length
   return (
     <>
@@ -3274,7 +3274,7 @@ function CancelOrderModal({ orders, onClose, onConfirm }: { orders: Order[]; onC
         </div>
         {pendingApprovalCount > 0 && (
           <div style={{ fontSize: 13, color: '#B45309', background: '#FEF3C7', borderRadius: 6, padding: '8px 12px', lineHeight: '18px' }}>
-            ⚠ {pendingApprovalCount === 1 ? '1 đơn' : `${pendingApprovalCount} đơn`} trong số này đang chờ GHN xác nhận thanh toán — không phải đơn nháp bỏ quên. Nếu GHN xác nhận đã nhận tiền SAU KHI huỷ, hệ thống sẽ tự nhắc hoàn tiền cho Shop.
+            ⚠ {pendingApprovalCount === 1 ? '1 đơn' : `${pendingApprovalCount} đơn`} trong số này đang chờ đại lý xác nhận thanh toán — không phải đơn nháp bỏ quên. Nếu sau đó xác nhận đã nhận tiền SAU KHI huỷ, hệ thống sẽ tự nhắc hoàn tiền cho Shop.
           </div>
         )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

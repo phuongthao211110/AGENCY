@@ -55,12 +55,20 @@
 | SHOP-ORDER-39 | [In đơn hàng: Fix nội dung bị cắt khi in nhiều đơn](orders/fix-noi-dung-bi-cat-khi-in-nhieu-don.md) | draft |
 | SHOP-ORDER-40 | [Tạo đơn mới: Áp dụng cấu hình tuyến](orders/ap-dung-cau-hinh-tuyen.md) | [Draft] |
 | SHOP-ORDER-41 | [Tạo đơn: Chọn phương thức thanh toán phí ship](orders/chon-phuong-thuc-thanh-toan-phi-ship.md) | [Draft] |
-| SHOP-ORDER-42 | [Modal thanh toán online (QR MoMo / chuyển khoản ngân hàng)](orders/modal-thanh-toan-online.md) | [Draft] |
-| SHOP-ORDER-43 | [Chặn tạo đơn/xác nhận gửi đơn khi chưa thanh toán online](orders/chan-tao-don-khi-chua-thanh-toan-online.md) | [Draft] |
-| SHOP-ORDER-44 | [Badge trạng thái thanh toán ở danh sách đơn](orders/badge-trang-thai-thanh-toan-danh-sach-don.md) | [Draft] |
+| SHOP-ORDER-42 | [Modal thanh toán online: cơ chế đếm ngược và tự xác nhận (dùng chung MoMo/chuyển khoản)](orders/modal-thanh-toan-online.md) | [Draft] |
+| SHOP-ORDER-43 | [Giữ đơn chờ đại lý xác nhận thanh toán (mọi phương thức Shop trả ship)](orders/chan-tao-don-khi-chua-thanh-toan-online.md) | [Draft] |
+| SHOP-ORDER-44 | [Badge trạng thái thanh toán ở danh sách đơn ⚠️ đã bỏ — xem SHOP-ORDER-55](orders/badge-trang-thai-thanh-toan-danh-sach-don.md) | [Draft] |
 | SHOP-ORDER-45 | [Hiển thị và thao tác lại thanh toán trong Chi tiết đơn](orders/hien-thi-va-thao-tac-thanh-toan-trong-chi-tiet-don.md) | [Draft] |
 | SHOP-ORDER-46 | [Tự reset phương thức thanh toán khi đổi người trả ship](orders/reset-thanh-toan-khi-doi-nguoi-tra-ship.md) | [Draft] |
-| SHOP-ORDER-47 | [Nhắc hoàn tiền khi huỷ đơn đã thanh toán online](orders/nhac-hoan-tien-khi-huy-don-da-thanh-toan.md) | [Draft] |
+| SHOP-ORDER-47 | [Nhắc hoàn tiền khi huỷ đơn đã được đại lý xác nhận thanh toán](orders/nhac-hoan-tien-khi-huy-don-da-thanh-toan.md) | [Draft] |
+| SHOP-ORDER-48 | [Nhãn trạng thái "Đơn nháp" khi đang chờ/bị từ chối xác nhận thanh toán](orders/nhan-trang-thai-don-nhap-cho-xac-nhan.md) | [Draft] |
+| SHOP-ORDER-49 | [Tạo đơn hàng: Phương thức thanh toán MoMo](orders/phuong-thuc-thanh-toan-momo.md) | [Draft] |
+| SHOP-ORDER-50 | [Tạo đơn hàng: Phương thức thanh toán chuyển khoản ngân hàng](orders/phuong-thuc-thanh-toan-chuyen-khoan.md) | [Draft] |
+| SHOP-ORDER-51 | [Chi tiết đơn hàng: Đổi phương thức thanh toán ⚠️ chưa implement](orders/doi-phuong-thuc-thanh-toan-chi-tiet-don.md) | [Draft] |
+| SHOP-ORDER-52 | [Chi tiết đơn hàng: Trạng thái thanh toán và lịch sử thao tác](orders/trang-thai-thanh-toan-va-lich-su-chi-tiet-don.md) | [Draft] |
+| SHOP-ORDER-53 | [Chi tiết đơn hàng: Tự reset phương thức thanh toán ⚠️ chưa implement](orders/tu-reset-phuong-thuc-thanh-toan-chi-tiet-don.md) | [Draft] |
+| SHOP-ORDER-54 | [Danh sách đơn hàng: Nhãn "Đã thanh toán" ở cột Trạng thái ⚠️ chưa implement](orders/nhan-da-thanh-toan-cot-trang-thai-danh-sach-don.md) | [Draft] |
+| SHOP-ORDER-55 | [Báo cáo dòng tiền: Bảng phí dịch vụ đã/chưa thanh toán](orders/bao-cao-dong-tien.md) | [Draft] |
 
 ## Đối soát
 
