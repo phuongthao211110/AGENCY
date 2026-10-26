@@ -1166,7 +1166,7 @@
           ],
           "notes": [
             "Redesign lần 2 sau phản hồi của user: bản đầu tiên tách thành 1 card riêng (3 dòng con hiển thị số liệu thật); bản 2 gộp lại 1 dòng nhưng vẫn hiển thị số liệu thật dạng \"0đ / 10.000đ / 50%\"; user phản hồi tiếp: phụ phí phải mặc định là 0 (giống các phụ phí khác), chỉ khi nào THỰC SỰ có đổi địa chỉ mới hiện số khác 0 — vì ở bước tạo đơn chưa có sự kiện đổi địa chỉ nào cả. Đã sửa lại đúng theo hướng này: dòng luôn hiện \"0đ\", 3 mức phí cụ thể chỉ còn xem được qua tooltip.",
-            "Hệ quả cần lưu ý cho tương lai: vì hệ thống hiện CHƯA có tính năng thực sự xử lý yêu cầu đổi địa chỉ (không có màn hình \"Yêu cầu đổi địa chỉ\" ở Chi tiết đơn hàng), dòng \"0đ\" này sẽ KHÔNG BAO GIỜ đổi thành số khác trong prototype hiện tại — đây là giới hạn đã biết, cần bổ sung 1 story khác (ở màn Chi tiết đơn hàng) để thực sự tính và cộng phụ phí này khi địa chỉ đổi thật.",
+            "Đã xây xong — xem SHOP-ORDER-56: nút \"Đổi địa chỉ\" ở Chi tiết đơn hàng, Shop tự chọn 1 trong 3 mức rồi phụ phí được tính và cộng thật vào order.fee (lưu riêng ở order.feeAddressChange). (Khoảng hở đã ghi chú trước đây: hệ thống CHƯA có tính năng thực sự xử lý yêu cầu đổi địa chỉ — nay đã có.)",
             "Tính năng NET-NEW trong phiên làm việc này — trước đó Agency Admin (PricingCreate.tsx) đã có phần cấu hình 3 mức phụ phí đổi địa chỉ, nhưng Web Shop chưa từng đọc/hiển thị dữ liệu này ở bất kỳ đâu trong luồng tạo đơn.",
             "Chỉ áp dụng cho CreateOrderDrawer (đơn Hàng hoá) — KHÔNG áp dụng cho CreateLetterDrawer (đơn Thư/tài liệu, qua 247Express).",
             "Dữ liệu mẫu addressChange chỉ được thêm vào PRC001 — 6 bảng giá còn lại trong pricing.json chưa có field này (mặc định undefined), nên dòng này sẽ KHÔNG hiện với các dịch vụ dùng bảng giá khác cho tới khi Agency Admin cấu hình thêm ở Tạo bảng giá."
@@ -1634,34 +1634,36 @@
           "jiraKey": "AGENCY-1323",
           "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Đổi phương thức thanh toán",
           "status": "draft",
-          "userStory": "Là chủ shop, khi đơn còn là \"Đơn nháp\" và tôi muốn đổi cách trả phí ship (ví dụ đổi từ Tiền mặt sang MoMo, hoặc ngược lại) mà không cần huỷ đơn tạo lại, tôi muốn có thể đổi phương thức thanh toán ngay trong Chi tiết đơn hàng.",
+          "userStory": "Là chủ shop, khi muốn đổi cách trả phí ship của 1 đơn (ví dụ đổi từ Tiền mặt sang MoMo, hoặc ngược lại) mà không cần huỷ đơn tạo lại, tôi muốn có thể đổi phương thức thanh toán ngay trong Chi tiết đơn hàng.",
           "userFlow": [
-            "Mở chi tiết 1 \"Đơn nháp\" (status='pending'), vào edit mode.",
-            "Tại khu vực \"Thanh toán\" trong tab \"Thông tin\", hiện lại PaymentMethodPicker (3 pill: Tiền mặt / MoMo / Chuyển khoản — xem SHOP-ORDER-41) cho phép chọn lại, chỉ khi đơn ĐANG Ở \"Đơn nháp\" và CHƯA được đại lý xác nhận (paymentApprovalStatus khác 'confirmed').",
-            "Đổi từ tiền mặt sang online (MoMo/CK): bấm \"Lưu thay đổi\" → mở modal thanh toán (SHOP-ORDER-42/49/50) để hoàn tất kênh mới, giống luồng tạo đơn.",
-            "Đổi từ online sang tiền mặt: bấm \"Lưu thay đổi\" → lưu ngay, paymentApprovalStatus reset về 'pending_review' (đơn tiền mặt vẫn cần đại lý xác nhận — xem SHOP-ORDER-43), không mở modal.",
-            "Đổi giữa 2 kênh online (MoMo ↔ Chuyển khoản): bấm \"Lưu thay đổi\" → mở modal thanh toán kênh MỚI, bỏ qua trạng thái đã khai của kênh CŨ.",
-            "Đơn đã được đại lý xác nhận (paymentApprovalStatus === 'confirmed') hoặc đã rời \"Đơn nháp\" → KHÔNG cho đổi phương thức nữa (picker ẩn hoặc disabled) — tránh đổi phương thức sau khi đại lý đã xác nhận nhận đúng 1 kênh cụ thể."
+            "Mở chi tiết 1 đơn Shop tự trả ship (feePayer === 'sender'), bấm \"Chỉnh sửa\" vào edit mode.",
+            "Tại khu vực \"Thanh toán\" trong tab \"Thông tin\", dòng text tĩnh biến thành PaymentMethodPicker (3 pill: Tiền mặt / MoMo / Chuyển khoản) cho phép chọn lại — CHỈ hiện khi đơn CHƯA được đại lý xác nhận (paymentApprovalStatus !== 'confirmed'). Đơn COD (Khách trả ship) không có picker này.",
+            "Đổi từ tiền mặt sang online (MoMo/CK): bấm \"Lưu thay đổi\" → lưu ngay phương thức mới (xoá sạch trạng thái duyệt của kênh cũ) rồi mở modal QR thanh toán cho kênh mới, giống luồng tạo đơn.",
+            "Đổi từ online sang tiền mặt: bấm \"Lưu thay đổi\" → lưu ngay, paymentApprovalStatus chuyển 'pending_review' (đơn tiền mặt vẫn cần đại lý xác nhận — xem SHOP-ORDER-43), không mở modal nào.",
+            "Đổi giữa 2 kênh online (MoMo ↔ Chuyển khoản): bấm \"Lưu thay đổi\" → lưu phương thức mới, mở modal thanh toán kênh MỚI, bỏ hẳn trạng thái đã khai của kênh CŨ.",
+            "Đơn đã được đại lý xác nhận (paymentApprovalStatus === 'confirmed') → picker không hiện nữa (chỉ còn dòng text tĩnh), tránh đổi phương thức sau khi đại lý đã xác nhận nhận đúng 1 kênh cụ thể."
           ],
           "systemFlow": [
-            "Cần mở rộng OrderDraft (hiện chỉ có receiverName/Phone/Address, weightKg, cod, fee, status) thêm paymentMethod + có thể feePayer.",
-            "draftFromOrder() cần khởi tạo thêm paymentMethod: order.paymentMethod ?? 'cash'.",
-            "Cần 1 handler tương đương handleSelectPaymentMethod của CreateOrderDrawer (xem SHOP-ORDER-41) nhưng áp cho draft thay vì state cục bộ độc lập.",
-            "saveEdit() cần thêm nhánh: nếu draft.paymentMethod !== order.paymentMethod và draft.paymentMethod là online → mở modal thanh toán kênh mới trước khi commitSave; nếu đổi sang tiền mặt → commitSave kèm paymentApprovalStatus: 'pending_review' ngay.",
-            "Cần guard ẩn/disable picker khi order.paymentApprovalStatus === 'confirmed' hoặc order.status !== 'pending'."
+            "OrderDraft (Orders.tsx) có thêm field paymentMethod: 'cash' | 'momo' | 'bank_transfer'; draftFromOrder() khởi tạo paymentMethod: order.paymentMethod ?? 'cash'.",
+            "Dòng \"Thanh toán\" trong tab \"Thông tin\": khi editMode && order.feePayer === 'sender' && order.paymentApprovalStatus !== 'confirmed' → render PaymentMethodPicker (component dùng chung với CreateOrderDrawer, xem SHOP-ORDER-41) bind vào draft.paymentMethod; ngược lại hiện text tĩnh như cũ.",
+            "commitSave(status, extraFields?): nhận thêm tham số tuỳ chọn extraFields (merge vào updateOrder()) — dùng để gửi kèm các field thanh toán khi phương thức đổi, mà không phải viết lại toàn bộ logic lưu field khác (tên/SĐT/địa chỉ/COD/phí/trạng thái).",
+            "saveEdit(): nếu draft.paymentMethod === order.paymentMethod → commitSave(draft.status) như cũ (không đổi gì về thanh toán). Nếu KHÁC:\n   - Đổi sang online (momo/bank_transfer): commitSave(draft.status, { paymentMethod, paymentStatus: 'pending', paymentApprovalStatus: undefined, paymentPaidAt: undefined, paymentApprovedAt: undefined, paymentApprovedBy: undefined, paymentApprovalRejectedReason: undefined }) rồi setPaymentModalOpen(true) — mở lại OnlinePaymentModal đã có sẵn (đọc order.paymentMethod trực tiếp nên tự đúng kênh mới ngay khi order đồng bộ lại qua onUpdated()), tái dùng nguyên handlePaymentPaidInDetail/handlePaymentExpireInDetail/handlePaymentRetryInDetail của luồng \"Thanh toán lại\" (SHOP-ORDER-45) — không viết thêm callback riêng.\n   - Đổi sang tiền mặt: commitSave(draft.status, { paymentMethod: 'cash', paymentStatus: 'not_required', paymentApprovalStatus: 'pending_review', paymentPaidAt: now, paymentApprovedAt: undefined, paymentApprovedBy: undefined, paymentApprovalRejectedReason: undefined }), không mở modal.",
+            "Ghi 1 dòng \"Đổi phương thức thanh toán\" vào Lịch sử thao tác khi draft.paymentMethod !== order.paymentMethod, nêu rõ kênh cũ → kênh mới (methodLabelOf(), helper mới)."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Đơn \"Đơn nháp\" CHƯA được đại lý xác nhận → vào edit mode thấy lại được PaymentMethodPicker để đổi phương thức.",
-            "AC2: Đơn ĐÃ được đại lý xác nhận (confirmed) hoặc đã rời \"Đơn nháp\" → không hiện/không cho bấm picker đổi phương thức.",
-            "AC3: Đổi tiền mặt → online → \"Lưu thay đổi\" mở modal thanh toán kênh mới, lưu thực sự chỉ sau khi modal tự xác nhận xong.",
+            "AC1: Đơn Shop trả ship CHƯA được đại lý xác nhận → vào edit mode thấy lại được PaymentMethodPicker để đổi phương thức.",
+            "AC2: Đơn ĐÃ được đại lý xác nhận (confirmed) → không hiện/không cho bấm picker đổi phương thức (chỉ còn text tĩnh).",
+            "AC3: Đổi tiền mặt → online → \"Lưu thay đổi\" lưu phương thức mới NGAY rồi mở modal thanh toán kênh mới — modal tự xác nhận xong mới thực sự chuyển \"Đã nhận tiền\".",
             "AC4: Đổi online → tiền mặt → \"Lưu thay đổi\" lưu ngay, paymentApprovalStatus chuyển 'pending_review', không mở modal.",
-            "AC5: Đổi online ↔ online (MoMo ↔ CK) → mở modal kênh mới, bỏ hẳn trạng thái khai của kênh cũ (không giữ paymentPaidAt/paymentApprovalStatus cũ)."
+            "AC5: Đổi online ↔ online (MoMo ↔ CK) → mở modal kênh mới, bỏ hẳn trạng thái khai của kênh cũ (không giữ paymentPaidAt/paymentApprovalStatus cũ).",
+            "AC6: Đơn Khách trả ship (COD, feePayer === 'receiver') → không hiện picker trong edit mode, dù đơn đang ở trạng thái nào."
           ],
           "notes": [
-            "GAP — CHƯA CÓ TRONG CODE. Story này viết trước làm spec, chờ xác nhận lại phạm vi rồi mới triển khai.",
-            "Khác với handlePaymentRetryInDetail() (đã có, xem SHOP-ORDER-52) — hàm đó chỉ tạo LẠI mã thanh toán cho CÙNG 1 kênh sau khi bị từ chối/hết hạn, không cho đổi SANG kênh khác.",
-            "Cần làm rõ thêm với Product trước khi code: có cho đổi phương thức khi đơn đang pending_review (chưa bị từ chối) hay không — bản spec này giả định CÓ (chỉ chặn khi đã confirmed), cần xác nhận lại."
+            "Sửa 1 lỗi phát hiện trước khi code: spec gốc (viết theo đúng tên ticket Jira AGENCY-1323) gate picker theo order.status === 'pending' (\"Đơn nháp\") — nhưng từ sau đợt refactor \"đơn Shop trả ship đi thẳng pickup ngay khi tạo\" (xem SHOP-ORDER-43 \"Thay đổi lớn lần 1\"), KHÔNG còn đơn nào ở status === 'pending' một khi đã chọn phương thức thanh toán — điều kiện đó sẽ luôn sai, picker sẽ không bao giờ hiện ra được. Đã sửa: bỏ hẳn check status === 'pending', chỉ còn gate theo paymentApprovalStatus !== 'confirmed' (giống cách SHOP-ORDER-54 đã tự làm đúng).",
+            "Khác với handlePaymentRetryInDetail() (đã có, xem SHOP-ORDER-45/52) — hàm đó chỉ tạo LẠI mã thanh toán cho CÙNG 1 kênh sau khi bị từ chối/hết hạn, không đổi SANG kênh khác; tính năng này mới thực sự cho đổi kênh.",
+            "Không có gì chặn đổi phương thức khi đơn đang pending_review (chưa bị từ chối) — chỉ chặn khi đã confirmed, theo đúng giả định ban đầu của spec.",
+            "Xem SHOP-ORDER-53 (tự reset phương thức khi đổi người trả ship) — tạm ĐÓNG/gộp vào SHOP-ORDER-46 vì nghi trùng ticket, không phụ thuộc gì story này nữa do feePayer vẫn chưa đổi được trong Chi tiết đơn (ngoài phạm vi lần làm này)."
           ]
         },
         {
@@ -1702,18 +1704,18 @@
         {
           "id": "SHOP-ORDER-53",
           "jiraKey": "AGENCY-1325",
-          "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Tự reset phương thức thanh toán",
+          "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Tự reset phương thức thanh toán (ĐÃ ĐÓNG — trùng SHOP-ORDER-46)",
           "status": "draft",
-          "userStory": "Là chủ shop đang sửa 1 đơn nháp trong Chi tiết đơn hàng, nếu tôi đổi người trả phí ship từ \"Shop trả\" sang \"Khách trả\", tôi muốn phương thức thanh toán online đã chọn trước đó tự động bị xoá/reset.",
+          "userStory": "Là chủ shop đang sửa 1 đơn nháp trong Chi tiết đơn hàng, nếu tôi đổi người trả phí ship từ \"Shop trả\" sang \"Khách trả\", tôi muốn phương thức thanh toán online đã chọn trước đó tự động bị xoá/reset, để tránh đơn được lưu có dữ liệu thanh toán không khớp với người trả ship.",
           "userFlow": [
-            "[CHƯA IMPLEMENT, PHỤ THUỘC SHOP-ORDER-51] Điều kiện tiên quyết: Chi tiết đơn hàng phải CÓ sẵn khả năng đổi feePayer/paymentMethod trong edit mode (xem SHOP-ORDER-51, cũng chưa implement).",
+            "Điều kiện tiên quyết: Chi tiết đơn hàng phải CÓ sẵn khả năng đổi feePayer/paymentMethod trong edit mode (tính năng này CHƯA CÓ — xem SHOP-ORDER-51, cũng đang ở trạng thái \"chưa implement\").",
             "Giả sử SHOP-ORDER-51 đã có: Shop đang sửa đơn, đã chọn MoMo/CK, rồi đổi người trả ship sang \"Khách trả ship\".",
             "Hệ thống tự động reset paymentMethod về 'cash', xoá lựa chọn online đã chọn trong draft.",
-            "Picker thanh toán trong draft ẩn đi."
+            "Picker thanh toán trong draft ẩn đi (vì người trả ship không còn là Shop)."
           ],
           "systemFlow": [
-            "[DỰ KIẾN — CHƯA CODE] Cần 1 useEffect tương tự bản đã có trong CreateOrderDrawer (xem SHOP-ORDER-46), nhưng áp dụng cho draft.feePayer/draft.paymentMethod bên trong OrderDetailDrawer.",
-            "Phụ thuộc hoàn toàn vào việc OrderDraft có field feePayer/paymentMethod hay chưa (xem SHOP-ORDER-51) — nếu SHOP-ORDER-51 không được triển khai, ticket này KHÔNG THỂ triển khai."
+            "Cần 1 useEffect tương tự bản đã có trong CreateOrderDrawer (xem SHOP-ORDER-46: if (effectiveFeePayer === 'receiver' && paymentMethod !== 'cash') { reset về cash }), nhưng áp dụng cho draft.feePayer/draft.paymentMethod bên trong OrderDetailDrawer thay vì state cục bộ của form tạo đơn.",
+            "Phụ thuộc hoàn toàn vào việc OrderDraft có field feePayer/paymentMethod hay chưa (xem SHOP-ORDER-51) — nếu SHOP-ORDER-51 không được triển khai, ticket này KHÔNG THỂ triển khai vì không có gì để \"reset\"."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
@@ -1721,9 +1723,8 @@
             "AC2: Reset không tự lưu — chỉ áp dụng cho draft cục bộ, Shop vẫn phải bấm \"Lưu thay đổi\" để ghi nhận."
           ],
           "notes": [
-            "GAP — CHƯA CÓ TRONG CODE, và nhiều khả năng là ticket bị gắn nhầm section. useEffect DUY NHẤT hiện có trong OrderDetailDrawer chỉ reset state UI cục bộ khi chuyển sang xem đơn khác — không liên quan paymentMethod.",
-            "Cơ chế tương tự THỰC SỰ đang tồn tại ở màn Tạo đơn hàng (CreateOrderDrawer, xem SHOP-ORDER-46) — khuyến nghị xác nhận lại với Product xem ticket này có trùng SHOP-ORDER-46 hay không trước khi code thêm.",
-            "Nếu là tính năng mới thật cho Chi tiết đơn → phải làm SHOP-ORDER-51 trước, vì không có field để reset nếu chưa có field để đổi."
+            "ĐÃ ĐÓNG. SHOP-ORDER-51 (đổi phương thức thanh toán ở Chi tiết đơn) đã triển khai xong nhưng CỐ Ý không thêm field feePayer vào OrderDraft (ngoài phạm vi, Shop vẫn không đổi được \"ai trả ship\" trong Chi tiết đơn) — nên điều kiện tiên quyết của story này vẫn chưa tồn tại, xác nhận đây đúng là trùng với SHOP-ORDER-46 (Tạo đơn hàng), không phải tính năng riêng cho Chi tiết đơn.",
+            "Nếu sau này Product thực sự muốn cho đổi feePayer ngay trong Chi tiết đơn → mở lại ticket mới, lúc đó mới cần tính năng tự reset tương ứng (tái dùng đúng pattern useEffect đã có ở SHOP-ORDER-46)."
           ]
         },
         {
@@ -1731,30 +1732,30 @@
           "jiraKey": "",
           "title": "[WEB SHOP] Đơn hàng - Danh sách đơn hàng: Nhãn \"Đã thanh toán\" ở cột Trạng thái",
           "status": "draft",
-          "userStory": "Là chủ shop nhìn vào cột Trạng thái trong danh sách đơn, tôi muốn biết ngay đơn đã được GHN xác nhận nhận tiền hay chưa mà không cần liếc sang cột Phí ship, để xác nhận nhanh \"đơn này đã xong phần tiền, chỉ còn chờ vận chuyển\".",
+          "userStory": "Là chủ shop nhìn vào cột Trạng thái trong danh sách đơn, tôi muốn biết ngay đơn đã được đại lý xác nhận nhận tiền hay chưa mà không cần liếc sang cột Phí ship, để xác nhận nhanh \"đơn này đã xong phần tiền, chỉ còn chờ vận chuyển\".",
           "userFlow": [
-            "Đơn Shop trả ship (tiền mặt/MoMo/chuyển khoản) sau khi được GHN duyệt → status chuyển từ \"Đơn nháp\" sang \"Chờ lấy hàng\" (hoặc trạng thái vận chuyển hiện tại của đơn).",
-            "Ngay sau khi chuyển, nhãn ở cột Trạng thái hiện thêm hậu tố: \"Chờ lấy hàng · Đã thanh toán\" (tương tự cho các trạng thái vận chuyển xa hơn nếu Shop mở lại trang sau đó).",
-            "Màu nhãn giữ nguyên màu của trạng thái vận chuyển — suffix \"Đã thanh toán\" KHÔNG đổi màu nhãn.",
-            "Đơn Khách trả ship (COD), hoặc đơn Shop trả nhưng CHƯA được duyệt → không có suffix \"Đã thanh toán\"."
+            "Đơn Shop trả ship (tiền mặt/MoMo/chuyển khoản) sau khi được đại lý xác nhận → nhãn ở cột Trạng thái hiện thêm hậu tố: \"Chờ lấy hàng · Đã thanh toán\" (áp dụng tương tự cho \"Đang giao · Đã thanh toán\" nếu đơn đã ở bước xa hơn khi Shop mở lại trang).",
+            "Màu nhãn giữ nguyên màu của trạng thái vận chuyển (ví dụ xanh lá của \"Chờ lấy hàng\") — suffix \"Đã thanh toán\" KHÔNG đổi màu nhãn, khác với suffix \"GHN từ chối xác nhận\" (vốn ép màu đỏ).",
+            "Đơn Khách trả ship (COD), hoặc đơn Shop trả nhưng CHƯA được duyệt (pending_review/rejected/chưa có paymentApprovalStatus) → không có suffix \"Đã thanh toán\".",
+            "Đơn đã huỷ (status === 'cancelled') dù đã được xác nhận nhận tiền → vẫn chỉ hiện \"Đã huỷ · Chờ hoàn tiền\" (SHOP-ORDER-47), KHÔNG cộng thêm \"· Đã thanh toán\"."
           ],
           "systemFlow": [
-            "Cần thêm nhánh trong rowStatus(order), đặt SAU 2 nhánh pending_review/rejected và TRƯỚC return base: if (order.paymentApprovalStatus === 'confirmed') return { ...base, label: base.label + ' · Đã thanh toán' }.",
-            "Khác 2 nhánh hiện có, nhánh này KHÔNG giới hạn status === 'pending' — vì khi paymentApprovalStatus chuyển 'confirmed', approveOrderPayment() đã tự đẩy status sang 'pickup' trước đó rồi.",
-            "Cần loại trừ status === 'cancelled' khỏi nhánh này (đã có suffix riêng '· Chờ hoàn tiền' — xem SHOP-ORDER-47), đặt nhánh cancelled TRƯỚC nhánh confirmed mới.",
-            "Không đổi paymentBadge() (SHOP-ORDER-44) — 2 chỗ hiển thị độc lập, suffix này chỉ bổ sung ở cột Trạng thái."
+            "Thêm 1 nhánh trong rowStatus(order) (Orders.tsx), đặt SAU nhánh cancelled và 2 nhánh pending_review/rejected hiện có, TRƯỚC return base:\n   js\n   if (order.paymentApprovalStatus === 'confirmed') {\n     return { ...base, label: ${base.label} · Đã thanh toán }\n   }",
+            "KHÔNG giới hạn order.status === 'pending' (khác 2 nhánh pending_review/rejected phía trên) — vì theo approveOrderPayment(), tại thời điểm paymentApprovalStatus chuyển 'confirmed', status đã không còn là 'pending' nữa (đã tự đẩy sang 'pickup').",
+            "Đặt SAU nhánh cancelled nên đơn huỷ đã có suffix riêng \"· Chờ hoàn tiền\" không bị chồng thêm \"· Đã thanh toán\" trên cùng 1 dòng.",
+            "Không đổi paymentBadge() (SHOP-ORDER-44) — 2 chỗ hiển thị độc lập, suffix này chỉ bổ sung thêm ở cột Trạng thái, không thay thế badge cột Phí ship."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Đơn Shop trả ship, paymentApprovalStatus === 'confirmed', status bất kỳ (trừ cancelled) → nhãn cột Trạng thái có thêm hậu tố '· Đã thanh toán'.",
+            "AC1: Đơn Shop trả ship, paymentApprovalStatus === 'confirmed', status bất kỳ (trừ cancelled) → nhãn cột Trạng thái có thêm hậu tố \"· Đã thanh toán\".",
             "AC2: Màu nhãn giữ nguyên màu gốc của trạng thái vận chuyển hiện tại — suffix không ép màu riêng.",
-            "AC3: Đơn đã huỷ (status === 'cancelled') dù confirmed → vẫn chỉ hiện 'Đã huỷ · Chờ hoàn tiền', KHÔNG cộng thêm '· Đã thanh toán'.",
-            "AC4: Đơn Khách trả ship (COD), hoặc Shop trả nhưng chưa được duyệt — không có suffix 'Đã thanh toán'."
+            "AC3: Đơn đã huỷ (status === 'cancelled') dù paymentApprovalStatus === 'confirmed' → vẫn chỉ hiện \"Đã huỷ · Chờ hoàn tiền\" (SHOP-ORDER-47), KHÔNG cộng thêm \"· Đã thanh toán\".",
+            "AC4: Đơn Khách trả ship (COD), hoặc Shop trả nhưng chưa được duyệt — không có suffix \"Đã thanh toán\"."
           ],
           "notes": [
-            "GAP — CHƯA CÓ TRONG CODE. Phát hiện khi rà soát lại toàn bộ suffix hiện có của rowStatus() — hệ thống chỉ báo 2 trạng thái 'đang chờ/bị từ chối' mà không có trạng thái 'đã duyệt' tương ứng ở cùng cột, dù dữ liệu paymentApprovalStatus đã có sẵn.",
-            "Cần xác nhận lại với Product: suffix 'Đã thanh toán' hiển thị MÃI MÃI suốt vòng đời đơn hay chỉ tạm thời ngay sau khi duyệt rồi tự ẩn.",
-            "Xem SHOP-ORDER-44 (badge cột Phí ship, không đổi), SHOP-ORDER-48 (2 suffix chờ/từ chối), SHOP-ORDER-47 (suffix Chờ hoàn tiền cho đơn huỷ)."
+            "Hiện tại hệ thống trước đây chỉ báo 2 trạng thái \"xấu/đang chờ\" (chờ duyệt, bị từ chối, cả 2 đều gate theo status === 'pending' nên gần như không còn kích hoạt được — xem SHOP-ORDER-48) mà không có trạng thái \"tốt\" (đã duyệt) tương ứng ở CÙNG MỘT cột, dù thông tin đó đã tồn tại sẵn trong dữ liệu (paymentApprovalStatus). Nhánh mới này lấp đúng khoảng trống đó, và vì không gate theo status, nó hoạt động được ngay cả khi 2 nhánh cũ đã thành code chết.",
+            "Suffix \"Đã thanh toán\" hiển thị MÃI MÃI trong suốt vòng đời đơn (kể cả khi đã \"Giao thành công\"), không tự ẩn — giữ đúng theo tinh thần \"biết ngay đơn này đã xong phần tiền\" của user story, không cần phân biệt thêm \"tạm thời/vĩnh viễn\".",
+            "Xem SHOP-ORDER-44 (badge cột Phí ship, đã có sẵn, không đổi), SHOP-ORDER-48 (2 suffix \"chờ/từ chối\" cũ, nay gần như không còn kích hoạt được), SHOP-ORDER-47 (suffix \"Chờ hoàn tiền\" cho đơn huỷ) để biết đầy đủ các nhãn liên quan ở cùng khu vực."
           ]
         },
         {
@@ -1770,19 +1771,21 @@
             "Bấm nút \"Thanh toán cho đại lý\" → mở modal \"Thanh toán hạn mức đã dùng\" (2 cột, mô phỏng đúng 1 UI thật tham khảo):\n   - Cột trái: chip trạng thái \"⏱ Chưa thanh toán\" (xám); dòng \"Phí giao hàng (Đơn hàng đã bàn giao/ Hoàn tất) [Tải danh sách đơn]\" (link cam, xuất file riêng danh sách đơn cần trả) = tổng đơn pending_review; dòng \"Nợ tồn\" = tổng đơn rejected; \"Tổng tiền cần thanh toán\" (cam, đậm, to) = 2 dòng trên cộng lại; ghi chú nhắc đọc kỹ; checkbox \"Tôi đã đọc, hiểu và chấp nhận điều khoản thanh toán của GHN\" (BẮT BUỘC tick mới bấm được nút); nút \"Xác nhận thanh toán\" (cam, disabled nếu chưa tick hoặc tổng = 0) — bấm vào gọi declareCashRemittance(), hiện banner xanh \"✓ Đã gửi yêu cầu thanh toán Xđ cho đại lý — mã ...\" ngay trong modal; đơn đang rejected (\"Nợ tồn\") được ĐƯA VỀ pending_review để Agency duyệt lại được (không kẹt mãi).\n   - Cột phải \"Lịch sử thanh toán\": liệt kê MỌI lần Shop đã bấm \"Xác nhận thanh toán\" trước đó, mỗi card: chip xanh \"✓ Đã gửi yêu cầu thanh toán\", \"Mã thanh toán: {code}\" (icon copy), \"Thời gian: dd/mm/yyyy hh:mm:ss\", \"Tổng tiền: Xđ\", nút \"Xem chi tiết\" (hiện danh sách mã vận đơn của lần đó).",
             "Bảng: dòng đầu tiên luôn là \"Tổng\" (nền cam nhạt), cộng dồn 3 cột tiền của TOÀN BỘ đơn.",
             "Các dòng sau, mỗi dòng 1 đơn: STT, Mã đơn (gạch chân xanh), Ngày thanh toán (giờ + ngày), Người nhận (tên + SĐT che bớt \"xxxx 1234\" + tỉnh/thành), Trạng thái (tên kênh: MoMo/Chuyển khoản/Tiền mặt), Phí dịch vụ (số ÂM — toàn bộ phí ship của đơn), Đã thanh toán (số DƯƠNG nếu GHN đã xác nhận, 0 nếu chưa), Chưa thanh toán (số ÂM nếu GHN chưa xác nhận, 0 nếu đã xong).",
+            "Đơn đã confirmed (đại lý đã duyệt) nhưng SAU ĐÓ phát sinh thêm phí (phí hoàn hàng/phụ phí đổi địa chỉ — xem SHOP-ORDER-56) mà phần phát sinh đó CHƯA được duyệt lại → ngay dưới \"Mã đơn\" hiện thêm 1 badge nhỏ màu vàng \"⚠️ Phí hoàn hàng chưa duyệt\" (nếu do trả hàng) hoặc \"⚠️ Phụ phí đổi địa chỉ chưa duyệt\" (nếu do đổi địa chỉ) — để Shop biết NGAY trên bảng chính lý do cột \"Chưa thanh toán\" của đơn đó khác 0 dù \"Trạng thái\" tổng thể vẫn là đơn đã thanh toán, không cần bấm vào xem breakdown mới biết.",
             "Chỉ hiện đơn Shop TỰ TRẢ SHIP (tiền mặt/MoMo/chuyển khoản) của shop đang đăng nhập — đơn Khách trả ship (COD) không xuất hiện.",
             "Bấm vào SỐ TIỀN ở cột \"Phí dịch vụ\" của 1 dòng bất kỳ → mở modal chi tiết: mã vận đơn ở header, dòng \"Người nhận\" (tên + giờ/ngày + SĐT che bớt + tỉnh/thành), tổng \"PHÍ DỊCH VỤ\" (số âm, to, đậm), rồi breakdown 5 hạng mục phí GHN THẬT (đúng những khoản đã tính khi tạo đơn ở CreateOrderDrawer): \"Phí giao hàng\", \"Phí bảo hiểm (khai giá)\", \"Phí giao trả 1 phần\", \"Phí giao thất bại thu tiền\", \"Phí thu hộ\" — cộng dồn 5 dòng này LUÔN đúng bằng tổng \"PHÍ DỊCH VỤ\". Bấm X hoặc click ra ngoài overlay để đóng."
           ],
           "systemFlow": [
             "src/platforms/shop/pages/CashFlowReport.tsx, route cash-flow trong App.tsx, nav item trong ShopLayout.tsx.",
             "relevantOrders = loadOrders().filter(o => o.shopId === 'SHP001' && !!o.paymentApprovalStatus).sort(...) — sắp xếp theo paymentPaidAt giảm dần, KHÔNG nhóm theo ngày (bảng phẳng, khớp đúng dạng bảng đối soát thật).",
-            "rowAmounts(order): phiDichVu = -order.fee; daThanhToan = paymentApprovalStatus === 'confirmed' ? order.fee : 0; chuaThanhToan = confirmed ? 0 : -order.fee — nhị phân theo mô hình hiện có (không có khái niệm thanh toán 1 phần), nhưng vẫn giữ đúng quy ước dấu của bảng đối soát thật: |phiDichVu| = daThanhToan + |chuaThanhToan|.",
+            "rowAmounts(order): phiDichVu = -order.fee. Nếu chưa confirmed: daThanhToan = 0, chuaThanhToan = -order.fee. Nếu đã confirmed: daThanhToan = order.paymentApprovedAmount ?? order.fee (snapshot fee NGAY TẠI THỜI ĐIỂM đại lý duyệt — xem SHOP-ORDER-56), chuaThanhToan = -(order.fee - daThanhToan) nếu hiệu số dương, ngược lại 0 — tách riêng phần ĐÃ DUYỆT khỏi phần phí phát sinh SAU KHI duyệt (phí hoàn hàng/đổi địa chỉ) để không ngộ nhận gộp cả vào \"Đã thanh toán\" chỉ vì đơn đang ở trạng thái confirmed. Đơn chưa từng phát sinh thêm gì sau duyệt (đa số) có paymentApprovedAmount === fee → hành vi giống hệt bản nhị phân cũ, vẫn giữ đúng quy ước dấu: |phiDichVu| = daThanhToan + |chuaThanhToan|.",
             "Dòng \"Tổng\" = reduce cộng dồn 3 giá trị trên qua TOÀN BỘ relevantOrders (không phụ thuộc trang/phân trang).",
+            "pendingSurchargeLabel(order): trả null nếu đơn chưa confirmed hoặc fee - (paymentApprovedAmount ?? fee) <= 0 (không có gì phát sinh thêm); nếu có phát sinh → trả 'Phí hoàn hàng chưa duyệt' khi order.status === 'returning', 'Phụ phí đổi địa chỉ chưa duyệt' khi feeAddressChange > 0 (và không phải đang returning), hoặc 'Phát sinh thêm chưa duyệt' cho trường hợp còn lại không xác định được loại cụ thể. Badge CHỈ hiện khi hàm này trả về chuỗi khác null, render ngay dưới mã vận đơn ở cột \"Mã đơn\" (nền #FEF3C7, chữ #92400E, cùng tông với banner cảnh báo trễ hạn ở AGA-PAYMENT-3).",
             "handleExport(): dùng thư viện xlsx (đã có sẵn trong project, xem Shops.tsx/AgencyOrders.tsx), build headers + rows từ đúng dữ liệu đang hiển thị, XLSX.writeFile(...) tải file phi-dich-vu-{ngày}.xlsx — XUẤT FILE THẬT, không phải nút giả.",
             "maskedReceiver(order): che SĐT chỉ còn 4 số cuối (slice(-4)), lấy phần cuối cùng của receiverAddress (sau dấu phẩy cuối) làm \"tỉnh/thành\" hiển thị.",
             "Không có tab \"Tiền thu hộ\" nào trong trang này (đã bỏ theo yêu cầu) — COD xem ở trang \"Đối soát\" (/shop/reconciliation) riêng.",
             "Order (orderStore.ts) có thêm 5 field mới lưu ĐÚNG breakdown phí lúc tạo đơn: feeShipping, feeInsurance (phí bảo hiểm/khai giá), feePartial (phí giao trả 1 phần), feeDeliveryFail (phí giao thất bại thu tiền), feeCod (phí thu hộ) — trước đây các khoản này chỉ được TÍNH trong state cục bộ của CreateOrderDrawer/CreateLetterDrawer để hiện trên form, rồi CỘNG GỘP vào order.fee khi lưu, làm MẤT breakdown; giờ buildOrder() lưu riêng từng field luôn.",
-            "feeBreakdownRows(order) (CashFlowReport.tsx): trả về 6 dòng { label, amount } (5 khoản tính lúc tạo đơn + \"Phí trả hàng (hoàn hàng)\" = -(order.feeReturn ?? 0), chỉ phát sinh sau khi đơn bị hoàn — xem confirmReturnOrder(), Orders.tsx). Đơn CŨ không có field breakdown (feeShipping === undefined) → fallback \"Phí giao hàng\" = -(order.fee - (order.feeReturn ?? 0)) — PHẢI trừ feeReturn ra trước vì order.fee đã cộng sẵn khoản đó khi đơn bị hoàn, nếu không sẽ bị đếm trùng 2 lần (bug đã phát hiện và sửa qua UAT).",
+            "feeBreakdownRows(order) (CashFlowReport.tsx): trả về 7 dòng { label, amount } (5 khoản tính lúc tạo đơn + \"Phí trả hàng (hoàn hàng)\" = -(order.feeReturn ?? 0) + \"Phụ phí đổi địa chỉ\" = -(order.feeAddressChange ?? 0) — SHOP-ORDER-56 — cả 2 chỉ phát sinh SAU khi có sự kiện thật xảy ra, xem confirmReturnOrder()/confirmAddressChangeOrder(), Orders.tsx). Đơn CŨ không có field breakdown (feeShipping === undefined) → fallback \"Phí giao hàng\" = -(order.fee - (order.feeReturn ?? 0) - (order.feeAddressChange ?? 0)) — PHẢI trừ cả 2 khoản phát sinh sau ra trước vì order.fee đã cộng sẵn khi chúng xảy ra, nếu không sẽ bị đếm trùng 2 lần (bug feeReturn đã phát hiện và sửa qua UAT; áp dụng tương tự cho feeAddressChange).",
             "Click vào số tiền cột \"Phí dịch vụ\" (onClick={() => setBreakdownOrder(order)}) mở modal; click overlay nền hoặc icon X đóng modal — state breakdownOrder reset về null.",
             "declareCashRemittance(shopId, declaredBy) (orderStore.ts): trả về 1 CashRemittanceBatch (hoặc null nếu không có gì để khai) — đánh dấu cashRemittanceDeclaredAt (ISO timestamp) trên MỌI đơn paymentMethod === 'cash' đang pending_review HOẶC rejected của shop đó; đơn rejected được ĐỔI NGƯỢC về pending_review (xoá paymentApprovalRejectedReason) vì approveOrderPayment() chỉ nhận đơn pending_review — nếu không reset, đơn rejected sẽ kẹt vĩnh viễn không bao giờ duyệt lại được; ghi 1 dòng \"Báo đã chuyển tiền mặt cho đại lý\" vào Lịch sử thao tác của TỪNG đơn liên quan.",
             "CashRemittanceBatch (orderStore.ts, kiểu MỚI): { id, shopId, declaredAt, declaredBy, totalAmount, orderIds } — id sinh kiểu YYMMDD + 5 ký tự ngẫu nhiên (generateRemittanceCode()), lưu vào localStorage key ghn_cash_remittance_batches_v1 qua loadRemittanceBatches(shopId)/saveRemittanceBatch() — ĐÂY LÀ LỊCH SỬ LỜI KHAI của Shop, KHÁC với lịch sử Agency đã duyệt (đọc paymentApprovalStatus của từng đơn trong orderIds để biết Agency đã duyệt hay chưa).",
@@ -1796,7 +1799,7 @@
             "AC1: Sidebar Web Shop có mục \"Báo cáo dòng tiền\", route /shop/cash-flow mở đúng trang, không lỗi console.",
             "AC2: Trang chỉ hiện nhãn \"Phí dịch vụ\" (gạch chân cam) — KHÔNG có tab \"Tiền thu hộ\" nào.",
             "AC3: Dòng \"Tổng\" hiện đúng tổng 3 cột tiền của toàn bộ đơn khớp bộ lọc shop; luôn thoả |Phí dịch vụ| = Đã thanh toán + |Chưa thanh toán|.",
-            "AC4: Đơn paymentApprovalStatus === 'confirmed' → \"Đã thanh toán\" > 0 (= đúng order.fee), \"Chưa thanh toán\" = 0.",
+            "AC4: Đơn paymentApprovalStatus === 'confirmed' → \"Đã thanh toán\" > 0 (= order.paymentApprovedAmount, mặc định bằng order.fee nếu chưa từng phát sinh phí sau khi duyệt), \"Chưa thanh toán\" = 0 — TRỪ KHI đơn có phí phát sinh SAU thời điểm duyệt (phí hoàn hàng/đổi địa chỉ, xem SHOP-ORDER-56), khi đó \"Đã thanh toán\" giữ nguyên số đã duyệt, \"Chưa thanh toán\" < 0 bằng đúng phần phát sinh thêm.",
             "AC5: Đơn paymentApprovalStatus !== 'confirmed' (pending_review/rejected) → \"Đã thanh toán\" = 0, \"Chưa thanh toán\" < 0 (= -order.fee).",
             "AC6: Cột \"Người nhận\" hiện SĐT che bớt dạng \"xxxx 1234\" (chỉ 4 số cuối) + tỉnh/thành — KHÔNG hiện SĐT đầy đủ.",
             "AC7: Bấm \"Tải file excel\" → tải thật 1 file .xlsx đúng dữ liệu đang hiển thị (STT/Mã đơn/Ngày/Người nhận/Trạng thái/3 cột tiền), không lỗi JS.",
@@ -1809,9 +1812,12 @@
             "AC14: Sau khi bấm \"Xác nhận thanh toán\": banner xanh hiện NGAY trong modal (không cần đóng/mở lại), 1 card mới xuất hiện ở \"Lịch sử thanh toán\"; đơn rejected trong lô vừa khai được ĐƯA VỀ pending_review (xoá lý do từ chối) để Agency duyệt lại được.",
             "AC15: Đóng rồi mở lại modal (hoặc nhìn nút ngoài trang) SAU KHI đã khai: các đơn vừa khai KHÔNG được tính lại vào \"Phí giao hàng\"/\"Nợ tồn\"/tổng tiền cần thanh toán nữa (dù vẫn đang pending_review, chưa được Agency duyệt) — Shop KHÔNG bấm \"Xác nhận thanh toán\" lặp lại được cho cùng 1 lô đơn (bug phát hiện qua UAT, xem Notes).",
             "AC16: Sau khi Shop khai, Agency Admin (/agency-admin/cash-remittance) KHÔNG hiện thêm bất kỳ dòng \"Shop báo đã chuyển...\" nào — badge trạng thái (Chờ duyệt/⚠ Trễ N ngày) giữ nguyên như khi chưa khai, Agency vẫn phải tự đối chiếu sổ quỹ rồi bấm \"Duyệt shop này\" mới chuyển \"✓ Đã nhận tiền\".",
-            "AC17: Nếu Agency từ chối (rejectOrderPayment) 1 đơn đã từng được Shop khai trước đó → đơn quay về trạng thái \"chưa khai\" (cashRemittanceDeclaredAt bị xoá), xuất hiện LẠI trong \"Nợ tồn\" ở lần mở modal tiếp theo để Shop khai lại — không bị loại vĩnh viễn."
+            "AC17: Nếu Agency từ chối (rejectOrderPayment) 1 đơn đã từng được Shop khai trước đó → đơn quay về trạng thái \"chưa khai\" (cashRemittanceDeclaredAt bị xoá), xuất hiện LẠI trong \"Nợ tồn\" ở lần mở modal tiếp theo để Shop khai lại — không bị loại vĩnh viễn.",
+            "AC18: Đơn đã confirmed mà phát sinh thêm phí hoàn hàng/đổi địa chỉ CHƯA được duyệt lại (fee > paymentApprovedAmount) → hiện đúng badge vàng tương ứng (\"Phí hoàn hàng chưa duyệt\" nếu do trả hàng, \"Phụ phí đổi địa chỉ chưa duyệt\" nếu do đổi địa chỉ) ngay dưới mã vận đơn ở bảng chính; đơn KHÔNG có phát sinh gì thêm (đa số) hoặc đơn chưa từng confirmed → KHÔNG hiện badge nào."
           ],
           "notes": [
+            "Thêm mới (badge cảnh báo phát sinh chưa duyệt): trước đây, đơn confirmed có phí hoàn hàng/đổi địa chỉ phát sinh thêm chỉ lộ ra ở cột \"Chưa thanh toán\" bằng 1 con số thường (cùng màu/cỡ chữ các số khác) — Shop dễ bỏ sót nếu không tự bấm vào breakdown từng đơn. Đã thêm badge vàng \"⚠️ ...\" ngay dưới mã vận đơn (xem pendingSurchargeLabel()) để báo trước, không cần đổi màu cột số tiền (giữ nguyên theo yêu cầu, chỉ thêm badge).",
+            "Bug đã phát hiện qua UAT và sửa (phát hiện khi làm SHOP-SETTINGS-3, Tem QR): icon copy 'Mã thanh toán' ở cột 'Lịch sử thanh toán' dùng try { navigator.clipboard.writeText(batch.id) } catch { ... } — writeText() trả về Promise, lỗi quyền clipboard bị từ chối xảy ra BẤT ĐỒNG BỘ nên try/catch đồng bộ không bắt được, rơi thành unhandled promise rejection. Đã sửa thành navigator.clipboard.writeText(batch.id).catch(() => {}).",
             "Đây là BẢN LÀM LẠI (v2) sau khi đối chiếu với 1 ảnh UI thật của GHN (bảng \"Phí dịch vụ\" trong trang đối soát) — bản v1 trước đó (chip tổng + 4 tab lọc + badge theo đơn, nhóm theo ngày) đã bị thay thế hoàn toàn vì không khớp cách trình bày thật.",
             "Tab \"Tiền thu hộ\" (có ở bản tham khảo ban đầu) đã bị BỎ theo yêu cầu — trang này giờ CHỈ còn \"Phí dịch vụ\", không có cơ chế điều hướng/tab nào khác.",
             "Sửa quan trọng (sau phản hồi \"phí phát sinh phải dựa theo phí GHN\"): bản đầu của modal breakdown dùng 6 nhãn phụ phí BỊA theo đúng chữ trong ảnh tham khảo (Phí trả hàng/Phí giao lại/Phí khai giá/Phí khuyến mãi/Phí đồng kiểm/Phí thu hồi chứng từ) nhưng gán cứng = 0, không map với dữ liệu thật nào. Đã sửa: bỏ hẳn 6 nhãn bịa đó, dùng ĐÚNG 5 hạng mục phí GHN thật mà form Tạo đơn (CreateOrderDrawer) đã có sẵn công thức tính (shopFeeFromPriceTable, checkbox Khai giá/Giao 1 phần/Giao thất bại thu tiền/Thu hộ) — đồng thời thêm field lưu persist các khoản này vào Order (trước đó chỉ tính rồi cộng gộp, không lưu riêng).",
@@ -1824,7 +1830,57 @@
             "Đây là lời khai TỰ NGUYỆN, một chiều — không có cơ chế nào bắt Shop phải bấm nút này trước khi Agency duyệt; Agency vẫn có thể tự chủ động \"Duyệt shop này\" (AGA-PAYMENT-2) bất cứ lúc nào mà không cần chờ Shop khai trước.",
             "Xem AGA-PAYMENT-1/2 (Agency Admin) để biết cách Agency nhìn thấy và xử lý lời khai này.",
             "Thay đổi (bỏ hint \"Shop báo đã chuyển\" bên Agency Admin): trước đây Agency Admin (CashRemittance.tsx) hiện thêm dòng \"💬 Shop báo đã chuyển lúc...\" khi đơn có cashRemittanceDeclaredAt — đã BỎ theo yêu cầu (xem AGA-PAYMENT-1 Notes): Agency không cần \"thông báo\" kiểu Shop tự khai để tin, mà tự dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật. Cơ chế khai của Shop ở trang này (nút \"Thanh toán cho đại lý\", declareCashRemittance(), \"Lịch sử thanh toán\") KHÔNG đổi gì — Shop vẫn khai bình thường, chỉ là lời khai đó không còn hiển thị gì thêm ở phía Agency Admin nữa.",
-            "Bug đã phát hiện qua UAT và sửa (v3 — modal \"Thanh toán hạn mức đã dùng\"): bản đầu của unpaidOrders/overdueOrders/unremittedCashOrders chỉ lọc theo paymentApprovalStatus, KHÔNG loại trừ đơn đã có cashRemittanceDeclaredAt — khiến Shop xác nhận thanh toán xong, đóng rồi mở lại modal vẫn thấy y nguyên số tiền cũ và có thể bấm \"Xác nhận thanh toán\" lặp lại vô hạn lần cho cùng 1 lô đơn chưa được Agency duyệt (tạo nhiều CashRemittanceBatch trùng lặp cho cùng 1 khoản nợ). Đã sửa: thêm điều kiện !o.cashRemittanceDeclaredAt vào cả 3 chỗ lọc trên. Đồng thời sửa rejectOrderPayment() để XOÁ cashRemittanceDeclaredAt khi Agency từ chối — nếu không xoá, đơn bị từ chối sau khi đã khai 1 lần sẽ bị loại vĩnh viễn khỏi \"cần thanh toán\" dù Agency chưa thực sự nhận tiền (cùng dạng lỗi \"kẹt vĩnh viễn\" như bug rejected đã sửa ở AGA-PAYMENT-1)."
+            "Bug đã phát hiện qua UAT và sửa (v3 — modal \"Thanh toán hạn mức đã dùng\"): bản đầu của unpaidOrders/overdueOrders/unremittedCashOrders chỉ lọc theo paymentApprovalStatus, KHÔNG loại trừ đơn đã có cashRemittanceDeclaredAt — khiến Shop xác nhận thanh toán xong, đóng rồi mở lại modal vẫn thấy y nguyên số tiền cũ và có thể bấm \"Xác nhận thanh toán\" lặp lại vô hạn lần cho cùng 1 lô đơn chưa được Agency duyệt (tạo nhiều CashRemittanceBatch trùng lặp cho cùng 1 khoản nợ). Đã sửa: thêm điều kiện !o.cashRemittanceDeclaredAt vào cả 3 chỗ lọc trên. Đồng thời sửa rejectOrderPayment() để XOÁ cashRemittanceDeclaredAt khi Agency từ chối — nếu không xoá, đơn bị từ chối sau khi đã khai 1 lần sẽ bị loại vĩnh viễn khỏi \"cần thanh toán\" dù Agency chưa thực sự nhận tiền (cùng dạng lỗi \"kẹt vĩnh viễn\" như bug rejected đã sửa ở AGA-PAYMENT-1).",
+            "Cập nhật sau SHOP-ORDER-56 (phụ phí đổi địa chỉ phát sinh sau khi tạo đơn): phát hiện đơn đã confirmed mà phát sinh thêm phí (hoàn hàng/đổi địa chỉ) bị rowAmounts() cũ ngộ nhận gộp CẢ phần mới phát sinh vào \"Đã thanh toán\", dù đại lý chưa hề duyệt phần đó. Đã sửa bằng cách thêm field order.paymentApprovedAmount (snapshot fee tại đúng thời điểm duyệt, set ở MỌI nơi paymentApprovalStatus chuyển 'confirmed': approveOrderPayment() orderStore.ts, handlePaymentPaid()/handlePaymentPaidInDetail()/buildOrder() Orders.tsx) rồi tách rowAmounts() theo field này thay vì dùng thẳng order.fee. Xem chi tiết đầy đủ ở SHOP-ORDER-56."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-56",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Đơn hàng - Chi tiết: Yêu cầu đổi địa chỉ phát sinh phụ phí",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi người nhận yêu cầu đổi địa chỉ giao hàng sau khi đơn đã tạo, tôi muốn vào Chi tiết đơn hàng, chọn mức phí tương ứng (Cùng Phường/Xã · Cùng Tỉnh/Thành · Khác Tỉnh/Thành) và xác nhận, để địa chỉ được cập nhật và phụ phí được tính đúng cộng thêm vào đơn — thay vì dòng \"Phụ phí đổi địa chỉ\" mãi mãi là 0đ không bao giờ phản ánh đúng thực tế.",
+          "userFlow": [
+            "Mở Chi tiết 1 đơn Hàng hoá đang còn \"đi\" (Đơn nháp/Chờ lấy hàng/Đang giao/Chờ xác nhận giao lại — chưa huỷ/giao xong/đang hoàn/đã hoàn), dùng dịch vụ có bảng giá đã cấu hình ít nhất 1 trong 3 mức phụ phí đổi địa chỉ → card hành động có thêm nút \"Đổi địa chỉ\" (cam nhạt, cạnh \"Hoàn hàng\"/\"Huỷ đơn\"/\"Cập nhật\").",
+            "Bấm \"Đổi địa chỉ\" → hiện khối cam: ô nhập \"Địa chỉ giao hàng mới\" (prefill địa chỉ hiện tại) + 3 lựa chọn mức phí (radio), mỗi mức hiện sẵn số tiền sẽ áp dụng (đọc từ bảng giá mặc định của shop).",
+            "Chọn 1 mức, sửa địa chỉ (hoặc giữ nguyên), bấm \"Xác nhận đổi địa chỉ\" → receiverAddress cập nhật theo địa chỉ mới, phụ phí theo mức đã chọn CỘNG THÊM vào fee của đơn, đơn đóng lại.",
+            "Chưa chọn mức, hoặc địa chỉ trống → nút \"Xác nhận đổi địa chỉ\" bị disabled, không bấm được.",
+            "Bấm \"Không đổi\" → đóng khối cam, không đổi gì, quay lại card hành động bình thường.",
+            "Mở lại Chi tiết đơn → \"Phí ship\" đã tăng đúng bằng phụ phí vừa chọn; tab \"Lịch sử thao tác\" có 2 dòng mới: \"Cập nhật địa chỉ giao hàng\" (địa chỉ cũ → mới) và \"Phát sinh phí đổi địa chỉ\" (0 → Xđ, chỉ ghi khi phí > 0).",
+            "Nếu đơn đã được đại lý duyệt thanh toán từ trước (paymentApprovalStatus === 'confirmed'), việc đổi địa chỉ KHÔNG đổi trạng thái duyệt đó — xem mục Báo cáo dòng tiền bên dưới để biết phần phí mới này hiển thị thế nào.",
+            "Vào \"Báo cáo dòng tiền\" (/shop/cash-flow), với đơn vừa đổi địa chỉ (nếu đã confirmed từ trước): cột \"Đã thanh toán\" giữ nguyên số đại lý đã duyệt TRƯỚC khi đổi địa chỉ; cột \"Chưa thanh toán\" hiện đúng bằng phụ phí đổi địa chỉ vừa cộng thêm (số âm) — KHÔNG bị gộp ngầm vào \"Đã thanh toán\". Bấm vào số tiền \"Phí dịch vụ\" của đơn đó → modal breakdown có thêm dòng \"Phụ phí đổi địa chỉ\"."
+          ],
+          "systemFlow": [
+            "isAddressChangeEligible(order) (Orders.tsx, cạnh isReturnEligible): true khi order.status ∈ {pending, pickup, in_transit, redelivery} VÀ bảng giá mặc định của shop (currentShopAddressChangeSurcharges()) có ít nhất 1 trong 3 mức (sameWardFee/sameProvinceFee/interProvincePercent) khác rỗng.",
+            "currentShopAddressChangeFee(tier, baseShippingFee): đọc surcharges.addressChange từ bảng giá isDefault (giống cách currentShopReturnFee() đọc returnFee, cùng giới hạn đã biết — không truy vết được bảng giá CŨ nếu Agency đã đổi bảng giá mặc định sau khi đơn được tạo). tier === 'same_ward' → sameWardFee; 'same_province' → sameProvinceFee; 'inter_province' → Math.round(baseShippingFee * interProvincePercent / 100) — tính trên order.feeShipping (phí giao hàng gốc, đúng nghĩa \"% cước phí tuyến/lần\" đã định nghĩa ở PricingCreate.tsx), KHÔNG tính trên order.fee (đã gồm cả phụ phí khác không liên quan tới tuyến).",
+            "OrderDetailDrawer thêm 3 state: confirmingAddressChange, newAddressInput (prefill order.receiverAddress lúc mở), addressChangeTier: 'same_ward' | 'same_province' | 'inter_province' | null — reset khi đổi đơn, giống các state confirming* khác.",
+            "confirmAddressChangeOrder(): ghi 2 dòng lịch sử thao tác (\"Cập nhật địa chỉ giao hàng\", và \"Phát sinh phí đổi địa chỉ\" nếu phí > 0) rồi updateOrder(order.id, { receiverAddress, feeAddressChange: (order.feeAddressChange ?? 0) + fee, fee: order.fee + fee }) — cộng dồn (không ghi đè) feeAddressChange để hỗ trợ trường hợp đổi địa chỉ nhiều lần trên cùng 1 đơn, giống cách feeReturn được cộng thêm ở confirmReturnOrder().",
+            "Nút \"Đổi địa chỉ\" trong card hành động (view mode) → onClick={() => { setConfirmingAddressChange(true); setNewAddressInput(order.receiverAddress) }}. Nhánh nút confirmingAddressChange (song song confirmingReturn): \"Không đổi\" (outline) / \"Xác nhận đổi địa chỉ\" (cam đặc, disabled khi chưa chọn mức hoặc địa chỉ trống).",
+            "Order (orderStore.ts) thêm 2 field mới: feeAddressChange?: number (cùng nhóm với feeReturn, lưu riêng phần phụ phí đổi địa chỉ đã cộng vào fee); paymentApprovedAmount?: number (snapshot fee NGAY TẠI THỜI ĐIỂM paymentApprovalStatus chuyển 'confirmed', set ở MỌI nơi set giá trị đó: approveOrderPayment() orderStore.ts, buildOrder() lúc tạo đơn online tự xác nhận ngay, handlePaymentPaid() CreateOrderDrawer, handlePaymentPaidInDetail() OrderDetailDrawer).",
+            "CashFlowReport.tsx: feeBreakdownRows() thêm dòng thứ 7 { label: 'Phụ phí đổi địa chỉ', amount: -(order.feeAddressChange ?? 0) }, fallback \"Phí giao hàng\" cho đơn cũ trừ thêm feeAddressChange ngoài feeReturn để không đếm trùng; rowAmounts(order) sửa lại — nếu paymentApprovalStatus !== 'confirmed' giữ nguyên nhị phân cũ, nếu confirmed thì daThanhToan = order.paymentApprovedAmount ?? order.fee, extra = order.fee - daThanhToan, chuaThanhToan = extra > 0 ? -extra : 0.",
+            "Không áp dụng cho CreateLetterDrawer (đơn Thư/tài liệu qua 247Express) — giống đúng giới hạn phạm vi đã nêu ở SHOP-ORDER-37."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đơn thoả isAddressChangeEligible → nút \"Đổi địa chỉ\" xuất hiện trong card hành động ở Chi tiết đơn hàng.",
+            "AC2: Đơn KHÔNG thoả (đã huỷ/giao xong/đang hoàn/đã hoàn, HOẶC bảng giá không cấu hình mức phí nào) → không hiện nút.",
+            "AC3: Bấm \"Đổi địa chỉ\" → hiện ô nhập địa chỉ (prefill đúng địa chỉ hiện tại) + 3 radio mức phí, mỗi mức hiện đúng số tiền tính từ bảng giá mặc định của shop.",
+            "AC4: Chưa chọn mức HOẶC địa chỉ trống → nút \"Xác nhận đổi địa chỉ\" disabled.",
+            "AC5: Chọn mức + nhập địa chỉ hợp lệ, bấm \"Xác nhận đổi địa chỉ\" → order.receiverAddress đổi đúng giá trị mới, order.fee tăng đúng bằng phí của mức đã chọn, order.feeAddressChange lưu đúng số đó, drawer đóng lại.",
+            "AC6: Mức \"Khác Tỉnh/Thành\" tính đúng Math.round(feeShipping * interProvincePercent / 100) — không tính trên fee tổng.",
+            "AC7: Sau khi xác nhận, tab \"Lịch sử thao tác\" có đúng 2 dòng mới (hoặc 1 dòng nếu phí = 0, bỏ dòng \"Phát sinh phí đổi địa chỉ\").",
+            "AC8: Bấm \"Không đổi\" → không đổi gì trên đơn, quay lại card hành động bình thường.",
+            "AC9: Đơn paymentApprovalStatus === 'confirmed' TRƯỚC khi đổi địa chỉ: sau khi đổi, ở Báo cáo dòng tiền — \"Đã thanh toán\" GIỮ NGUYÊN số đã duyệt trước đó (không tăng theo phụ phí mới), \"Chưa thanh toán\" hiện đúng bằng -(phụ phí đổi địa chỉ vừa cộng).",
+            "AC10: Đơn CHƯA confirmed: sau khi đổi địa chỉ, \"Chưa thanh toán\" vẫn hiện đúng -order.fee (đã gồm phụ phí mới) — hành vi không đổi so với trước.",
+            "AC11: Modal breakdown (Báo cáo dòng tiền) của đơn đã đổi địa chỉ có thêm dòng \"Phụ phí đổi địa chỉ\" đúng số tiền, cộng dồn 7 dòng luôn khớp đúng 100% tổng \"PHÍ DỊCH VỤ\".",
+            "AC12: Đổi địa chỉ nhiều lần trên cùng 1 đơn → feeAddressChange cộng dồn đúng tổng các lần, fee tăng đúng từng lần (không ghi đè lần trước)."
+          ],
+          "notes": [
+            "Mô phỏng THEO ĐÚNG pattern confirmReturnOrder()/\"Hoàn hàng\" đã có sẵn (SHOP-ORDER-10) — không phát minh cơ chế mới, chỉ thêm input chọn mức (return không cần chọn vì chỉ có 1 mức phí).",
+            "Hệ thống KHÔNG lưu dữ liệu phường/xã của địa chỉ (chỉ lưu chuỗi tự do \"{đường}, {tỉnh/thành}\") nên KHÔNG tự động so khớp địa chỉ cũ/mới để suy ra đúng mức — Shop phải TỰ CHỌN mức áp dụng dựa trên biết thực tế của đơn (giống cách người vận hành thật biết rõ khoảng cách đổi địa chỉ, không cần hệ thống suy luận).",
+            "Phát hiện kèm theo (không phải mục tiêu ban đầu của story, nhưng BẮT BUỘC sửa cùng lúc vì cùng 1 cơ chế \"fee tăng sau khi confirmed\"): lỗi hiển thị \"Đã thanh toán\" ở Báo cáo dòng tiền (SHOP-ORDER-55) khi đơn đã duyệt mà phát sinh thêm phí. Lỗi này tồn tại SẴN cho cả feeReturn (Hoàn hàng) từ trước story này — đã sửa chung 1 lần cho cả 2 loại phụ phí, không chỉ riêng đổi địa chỉ.",
+            "Đóng hẳn khoảng hở đã ghi chú ở SHOP-ORDER-37 Notes (\"cần bổ sung 1 story khác... để thực sự tính và cộng phụ phí này khi địa chỉ đổi thật\").",
+            "Chưa xử lý: cho phép Shop \"huỷ\" 1 lần đổi địa chỉ đã xác nhận (hoàn lại phí) — ngoài phạm vi, giống confirmReturnOrder() cũng không có cơ chế hoàn tác.",
+            "Chưa xử lý: luồng để Shop/đại lý tự nguyện \"thanh toán bù\" riêng phần extra phát sinh sau khi đã khai/chuyển tiền mặt cho đại lý (modal \"Thanh toán hạn mức đã dùng\", SHOP-ORDER-55 chỉ xét đơn pending_review/rejected, không xét đơn confirmed có extra mới) — hiện tại \"Chưa thanh toán\" chỉ là CON SỐ HIỂN THỊ đúng thực tế, chưa có action nào để Shop chủ động khai nộp riêng phần đó. Giới hạn đã biết, cần 1 story khác nếu nghiệp vụ yêu cầu."
           ]
         }
       ]
@@ -2125,6 +2181,275 @@
             "AC5: Sau khi xoá thành công → session bị huỷ, shop không thể đăng nhập lại bằng tài khoản cũ.",
             "AC6: Email xác nhận được gửi tới địa chỉ email đã đăng ký của shop.",
             "AC7: Lý do xoá và ghi chú được lưu vào hệ thống để phân tích churn rate."
+          ]
+        },
+        {
+          "id": "SHOP-SETTINGS-2",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt: Tem QR — Tạo mới & danh sách",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn tạo được nhiều \"tem QR\" (mỗi tem gắn với 1 tên gợi nhớ như \"Quầy thịt\", \"Quầy tươi sống\") để in dán ở từng khu vực/quầy vật lý của mình, và xem được danh sách tất cả tem đã tạo (lọc theo trạng thái, tìm kiếm theo tên/mã), để quản lý nhiều điểm bán cùng lúc mà không bị rối.",
+          "userFlow": [
+            "Vào Cài đặt (Web Shop) → mục con \"Tem QR\" (icon mã QR) → route /shop/settings/qr-codes.",
+            "Đầu trang: tiêu đề \"Tem QR\" + nút \"+ Thêm tem QR\" (cam) góc phải.",
+            "3 tab lọc: \"Tất cả\" / \"Đang hoạt động\" / \"Đã vô hiệu\" — bấm đổi tab lọc đúng theo trạng thái bật/tắt của tem; ô tìm kiếm lọc theo tên tem hoặc mã tem.",
+            "Bảng liệt kê: Tên tem (tên + mã tem bên dưới) | Trạng thái (toggle bật/tắt + nhãn — xem SHOP-SETTINGS-5) | Lượt quét ({đã quét}/{giới hạn hoặc \"Không giới hạn\"}) | Hết hạn (ngày giờ hoặc \"Không thời hạn\") | Ghi chú | Thao tác (3 icon: xem tem QR — màn hình riêng cách điệu, SHOP-SETTINGS-3; chỉnh sửa — SHOP-SETTINGS-7; xoá — SHOP-SETTINGS-5).",
+            "Danh sách rỗng ban đầu (chưa tạo tem nào) → hiện hướng dẫn tạo tem đầu tiên thay vì bảng trống trơn.",
+            "Bấm \"+ Thêm tem QR\" → modal \"Thêm tem QR\" với 4 field: \"Tên tem\" (bắt buộc), \"Thời điểm hết hạn\" (để trống = không thời hạn), \"Giới hạn lượt quét\" (để trống = không giới hạn), \"Ghi chú\" → bấm \"Thêm tem QR\" để lưu, tem mới mặc định Đang hoạt động, 0 lượt quét, xuất hiện ngay trong bảng."
+          ],
+          "systemFlow": [
+            "src/mock-data/qrStore.ts (store mới, localStorage key ghn_qr_codes_v1): QrCode { id, shopId, name, active, scanCount, scanLimit: number|null, expiresAt: string|null, note, createdAt }. loadQrCodes(shopId) trả về mảng tem của đúng shop, sort theo createdAt giảm dần.",
+            "addQrCode(shopId, input: { name, expiresAt, scanLimit, note }): sinh id mới, active: true, scanCount: 0, createdAt: new Date().toISOString(), .trim() cho name/note.",
+            "id sinh bằng 12 ký tự ngẫu nhiên từ bảng chữ/số đã bỏ ký tự dễ nhầm (0/O, 1/I).",
+            "Trang src/platforms/shop/pages/settings/QrCodes.tsx (route qr-codes lồng trong settings của Web Shop, App.tsx; nav item \"Tem QR\" icon QrcodeOutlined trong SETTINGS_NAV, Settings.tsx). Bảng dùng flex-table tự viết.",
+            "QrFormModal({mode: 'add', onSave, onClose}) — dùng chung với modal Sửa (SHOP-SETTINGS-7), ở mode: 'add' chỉ render 4 field cơ bản, KHÔNG có khối toggle \"Đang hoạt động\".",
+            "3 tab lọc + ô tìm kiếm là state cục bộ của QrCodes(), lọc trên mảng loadQrCodes(shopId) đã tải."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Vào /shop/settings/qr-codes lần đầu (chưa có tem nào) → hiện hướng dẫn tạo tem đầu tiên, không hiện bảng rỗng trơ trọi.",
+            "AC2: \"+ Thêm tem QR\" với \"Tên tem\" bỏ trống → nút \"Thêm tem QR\" trong modal disabled, không lưu được.",
+            "AC3: Tạo tem thành công → xuất hiện ngay trong bảng, mặc định \"Đang hoạt động\", 0 lượt quét, đúng tên/hết hạn/giới hạn/ghi chú đã nhập.",
+            "AC4: 3 tab lọc đúng theo trạng thái bật/tắt của từng tem; ô tìm kiếm lọc đúng theo tên HOẶC mã tem, không phân biệt hoa/thường."
+          ],
+          "notes": [
+            "Tính năng NET-NEW trong phiên làm việc đã build — trước đó Web Shop chưa có khái niệm \"tem QR\" nào.",
+            "Tách từ story gốc \"Tem QR\" (từng là 1 story duy nhất) thành 6 story nhỏ — xem SHOP-SETTINGS-3 (xem mã QR thật + xem trước tem), SHOP-SETTINGS-4 (quét tem dẫn tới Tạo đơn hàng), SHOP-SETTINGS-5 (bật/tắt + xoá), SHOP-SETTINGS-6 (chống đếm trùng lượt quét), SHOP-SETTINGS-7 (chỉnh sửa tem) — tất cả đều build trên NỀN đã mô tả ở đây.",
+            "PROTOTYPE THUẦN — lưu localStorage, không có backend thật."
+          ]
+        },
+        {
+          "id": "SHOP-SETTINGS-3",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt: Tem QR — Xem tem QR (màn hình riêng, cách điệu)",
+          "status": "draft",
+          "userStory": "Là chủ shop, với mỗi tem đã tạo, tôi muốn xem 1 màn hình riêng trình bày tem QR đẹp (có tên đại lý/shop, mã QR thật, lời kêu gọi quét mã) và copy nhanh link đích, để xem lại/chia sẻ tem mà không phải mở nhiều modal khác nhau.",
+          "userFlow": [
+            "Bấm icon mã QR (đầu tiên trong cột Thao tác, nay chỉ còn 3 icon — xem SHOP-SETTINGS-2) ở 1 dòng → MỞ MÀN HÌNH RIÊNG (không phải modal/popup — che TOÀN BỘ trang, kể cả sidebar), header có nút \"←\" quay lại + tiêu đề \"Xem tem QR\".",
+            "Dưới header: tên tem (to, đậm), rồi tới thẻ tem cách điệu: nền cam họa tiết chéo, bên trong có khối trắng bo góc hiện \"Bưu cục\" + tên shop (chữ cam đậm, viết hoa), bên dưới là khung trắng chứa mã QR THẬT (quét được), có nút tròn dài xanh dương \"QUÉT MÃ TẠO ĐƠN NGAY\" đè lên mép dưới khung QR.",
+            "Dưới thẻ tem: link đích dạng text (ví dụ .../shop/orders?qr=<id>).",
+            "Nút \"Copy URL\": copy link đích vào clipboard. (2 nút khác hiện cùng hàng dưới thẻ tem — \"Tải xuống\" và \"In tem QR\" — xem riêng SHOP-SETTINGS-8/SHOP-SETTINGS-9, KHÔNG mô tả lại ở đây.)",
+            "Bấm \"←\" quay lại → đóng màn hình, về lại đúng danh sách Tem QR, không đổi gì dữ liệu.",
+            "Toàn bộ màn hình này THUẦN XEM — không có field nào để sửa, không ảnh hưởng scanCount/active/bất kỳ field nào của tem."
+          ],
+          "systemFlow": [
+            "QrStickerFullscreen({ qr, shopName, onClose }) (QrCodes.tsx, GỘP từ 2 component cũ ViewQrModal + StickerPreviewModal thành 1): position: fixed; inset: 0; zIndex: 2000; background: #fff — che TOÀN BỘ viewport, chỉ là 1 component full-viewport được bật/tắt qua state stickerQr ở component cha, không phải route điều hướng thật.",
+            "Mã QR sinh bằng thư viện qrcode, giống hệt cách cũ: QRCode.toDataURL(qrTargetUrl(qr.id), { width: 200, margin: 1, color: { dark: '#111827', light: '#FFFFFF' } }) → ảnh base64 qua <img>.",
+            "Thẻ tem cách điệu là 1 <div ref={cardRef}> — nền repeating-linear-gradient(135deg, #FF8A3D 0px, #FF8A3D 16px, #FF7A1A 16px, #FF7A1A 32px) mô phỏng họa tiết chéo cam, bên trong 2 khối trắng bo góc (tên shop; QR + nút kêu gọi đè lên bằng position: absolute). cardRef này được SHOP-SETTINGS-8/9 dùng lại để rasterize — story đó mới mô tả chi tiết cách chụp/xuất.",
+            "Copy URL: navigator.clipboard.writeText(qrTargetUrl(qr.id)).catch(() => {}) — .catch() THẲNG TRÊN PROMISE (không phải try/catch đồng bộ, vốn KHÔNG bắt được lỗi bất đồng bộ của writeText() — xem Notes) nếu trình duyệt từ chối quyền clipboard, không crash UI."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm icon mã QR → MỞ MÀN HÌNH RIÊNG che toàn bộ trang (không phải modal nhỏ, không còn thấy sidebar/topbar Web Shop phía sau), có nút \"←\" + tiêu đề \"Xem tem QR\".",
+            "AC2: Màn hình hiện đúng: tên tem, thẻ tem nền cam họa tiết với tên shop + mã QR THẬT (quét được, đúng link {origin}/shop/orders?qr={id}) + nút \"QUÉT MÃ TẠO ĐƠN NGAY\" đè lên mép khung QR, link đích dạng text bên dưới.",
+            "AC3: Bấm \"←\" → đóng màn hình, quay về đúng danh sách Tem QR (sidebar/topbar hiện lại bình thường), không đổi dữ liệu gì.",
+            "AC4: Bấm \"Copy URL\" → copy đúng giá trị qrTargetUrl(qr.id) vào clipboard; nếu trình duyệt từ chối quyền clipboard, KHÔNG được làm crash trang.",
+            "AC5: Mở màn hình này (xem/copy) KHÔNG làm thay đổi scanCount, active, hay bất kỳ field nào khác của tem."
+          ],
+          "notes": [
+            "Bug đã phát hiện qua UAT và sửa: handleCopyLink() ban đầu viết try { navigator.clipboard.writeText(link) } catch { ... } — nhưng writeText() trả về 1 Promise, lỗi (quyền clipboard bị từ chối) xảy ra BẤT ĐỒNG BỘ nên try/catch đồng bộ KHÔNG bắt được, rơi thành unhandled promise rejection làm crash trang. Đã sửa thành navigator.clipboard.writeText(link).catch(() => {}). Phát hiện thêm 1 chỗ dùng SAI PATTERN tương tự ở CashFlowReport.tsx (nút copy mã thanh toán, SHOP-ORDER-55) và đã sửa cùng lúc.",
+            "Lịch sử: bản v1 (2 modal riêng \"Xem mã QR\"/\"Xem tem\") đã được build và UAT trước đó — khi user cung cấp thêm 1 ảnh tham khảo mới (màn hình mobile app \"Xem tem QR\" cách điệu, có nút In + Tải nhiều định dạng + Copy URL riêng), xác nhận đây là tính năng MỚI chưa từng có trong 2 ảnh tham khảo trước. Bản v2 gộp cả Tải/In vào story này; nay tách tiếp (lần 2) thành SHOP-SETTINGS-8 (Tải PNG/PDF) và SHOP-SETTINGS-9 (In tem QR) theo đúng yêu cầu \"tách các tính năng vừa thêm thành task riêng\".",
+            "Theo yêu cầu của user: dựng ĐÚNG full-screen như ảnh tham khảo thay vì giữ dạng modal nhỏ — đây là NGOẠI LỆ duy nhất trong Web Shop dùng pattern full-viewport-overlay thay vì modal.",
+            "Xem SHOP-SETTINGS-4 để biết chuyện gì xảy ra khi link này THỰC SỰ được mở; SHOP-SETTINGS-8 (Tải PNG/PDF); SHOP-SETTINGS-9 (In tem QR)."
+          ]
+        },
+        {
+          "id": "SHOP-SETTINGS-4",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt: Tem QR — Quét tem dẫn tới Tạo đơn hàng",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi khách quét tem QR đã dán ở quầy, tôi muốn trình duyệt của khách tự động mở sẵn form \"Tạo đơn hàng\" (với ghi chú biết ngay đơn này từ tem nào) — và nếu tem đã hết hạn/bị tắt/hết lượt quét, hoặc shop tôi đang bị khoá tạo đơn, khách phải thấy đúng lý do thay vì mở được form một cách sai lệch.",
+          "userFlow": [
+            "Khách quét mã QR thật (hoặc Shop tự mở thử link) → trình duyệt mở /shop/orders?qr=<mã tem>.",
+            "Hệ thống tự kiểm tra tem còn hợp lệ không (đang bật, chưa hết hạn, chưa chạm giới hạn lượt quét).",
+            "Hợp lệ → tự cộng 1 lượt quét, xoá query param qr khỏi URL, rồi MỞ SẴN form \"Tạo đơn hàng\" với Ghi chú đơn hàng tự điền sẵn \"Đơn từ Tem QR: {tên tem}\" (Shop vẫn sửa/xoá được ghi chú này bình thường trước khi bấm \"Tạo đơn\").",
+            "Không hợp lệ (hết hạn/đã tắt/hết lượt/không tồn tại) → hiện window.alert báo lỗi, KHÔNG mở form, KHÔNG cộng lượt quét.",
+            "Shop đang bị khoá tạo đơn (quá hạn chuyển tiền mặt cho đại lý, xem AGA-PAYMENT-3) → dù tem hợp lệ, hiện đúng cảnh báo khoá tạo đơn thay vì mở form."
+          ],
+          "systemFlow": [
+            "Deep-link vào Orders.tsx (component ShopOrders): dùng useSearchParams() (react-router-dom), useEffect đọc searchParams.get('qr') — có giá trị thì xoá param khỏi URL ngay (setSearchParams(..., { replace: true })) — xem chi tiết cơ chế chống đếm trùng ở SHOP-SETTINGS-6.",
+            "Thứ tự kiểm tra: findQrCode(qrId) → nếu null hoặc !isQrCodeUsable(qr) → window.alert(...), dừng lại. Hợp lệ → kiểm tiếp isOrderCreationBlocked('SHP001') (orderStore.ts, xem AGA-PAYMENT-3) → nếu đang khoá → window.alert đúng nội dung khoá, dừng lại, KHÔNG gọi recordQrScan().",
+            "Hợp lệ VÀ không bị khoá → recordQrScan(qrId) (tăng scanCount), setQrSourceNote('Đơn từ Tem QR: ' + qr.name), setDrawerOpen(true) để mở CreateOrderDrawer.",
+            "isQrCodeUsable(qr) (qrStore.ts): active === true && (!expiresAt || expiresAt chưa qua) && (scanLimit === null || scanCount < scanLimit).",
+            "CreateOrderDrawer nhận thêm prop tuỳ chọn initialNote?: string; vì drawer này LUÔN mount sẵn (ẩn/hiện bằng CSS transform, không unmount — xem SHOP-ORDER-43), có 1 useEffect riêng theo dõi open && initialNote để set vào state orderNote đúng lúc drawer mở từ luồng quét QR.",
+            "\"Ghi chú đơn hàng\" tự điền chỉ là giá trị KHỞI TẠO của state orderNote — Shop vẫn sửa/xoá bình thường trước khi bấm \"Tạo đơn\"."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Mở link /shop/orders?qr=<id> của 1 tem đang hoạt động, chưa hết hạn, chưa chạm giới hạn lượt quét, shop không bị khoá tạo đơn → tự mở form \"Tạo đơn hàng\" với Ghi chú đơn hàng = \"Đơn từ Tem QR: {tên tem}\", đồng thời \"Lượt quét\" của tem đó tăng thêm đúng 1.",
+            "AC2: Mở link của 1 tem đã TẮT, đã HẾT HẠN, hoặc đã chạm giới hạn lượt quét → hiện cảnh báo, KHÔNG mở form tạo đơn, KHÔNG cộng thêm lượt quét.",
+            "AC3: Mở link của 1 mã tem KHÔNG TỒN TẠI (đã xoá, hoặc gõ sai) → findQrCode() trả null, bị từ chối giống AC2.",
+            "AC4: Mở link QR trong lúc shop đang bị khoá tạo đơn (quá hạn chuyển tiền mặt, xem AGA-PAYMENT-3) → hiện đúng cảnh báo khoá tạo đơn, không mở form, KHÔNG cộng lượt quét, dù tem hợp lệ.",
+            "AC5: Ghi chú đơn hàng tự điền chỉ là giá trị khởi tạo — Shop sửa/xoá được bình thường trước khi tạo đơn, không bị khoá field."
+          ],
+          "notes": [
+            "Đây là lý do nghiệp vụ DUY NHẤT khiến tính năng Tem QR tồn tại — SHOP-SETTINGS-2/3/5/7 chỉ là phần quản lý xoay quanh cái lõi này.",
+            "Xem SHOP-ORDER-43 (vì sao CreateOrderDrawer luôn mount sẵn), AGA-PAYMENT-3 (cơ chế khoá tạo đơn mà luồng quét QR phải tôn trọng).",
+            "Xem SHOP-SETTINGS-6 để biết cơ chế chống đếm 1 lượt quét thật thành 2 (bug StrictMode đã phát hiện và sửa) — liên quan trực tiếp tới AC1 ở đây.",
+            "PROTOTYPE THUẦN — \"lượt quét\" chỉ tăng khi trình duyệt THỰC SỰ mở đúng link."
+          ]
+        },
+        {
+          "id": "SHOP-SETTINGS-5",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt: Tem QR — Bật/tắt và xoá tem",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn bật/tắt hoặc xoá hẳn 1 tem QR ngay từ bảng danh sách, để tạm ngưng hoặc dọn dẹp những tem không còn dùng (quầy đã dẹp, tem in sai...) mà không cần mở modal Sửa chỉ để đổi 1 trạng thái.",
+          "userFlow": [
+            "Bấm toggle trạng thái ở cột \"Trạng thái\" của 1 dòng (không qua modal Sửa) → bật/tắt NGAY tem đó, KHÔNG cần window.confirm xác nhận.",
+            "Tem vừa TẮT: mã QR cũ vẫn quét được (link không đổi) nhưng sẽ báo \"không hợp lệ\" và KHÔNG dẫn vào trang Tạo đơn hàng nữa (xem SHOP-SETTINGS-4, AC2).",
+            "Bấm icon thùng rác (thứ ba, cuối cùng trong cột Thao tác — nay chỉ còn 3 icon, xem SHOP-SETTINGS-2) → window.confirm xác nhận xoá hẳn (không khôi phục được) → xoá tem khỏi danh sách.",
+            "Tem đã xoá: mở lại link QR cũ của tem đó → hệ thống không tìm thấy tem, bị từ chối y như tem đã tắt."
+          ],
+          "systemFlow": [
+            "setQrCodeActive(id, active) (qrStore.ts): bật/tắt RIÊNG LẺ 1 tem, dùng cho toggle ngoài bảng — KHÔNG đổi field nào khác.",
+            "deleteQrCode(id) (qrStore.ts): lọc bỏ hẳn tem khỏi mảng lưu trong localStorage — xoá VĨNH VIỄN, không có \"thùng rác\"/khôi phục.",
+            "Toggle ở bảng gọi trực tiếp setQrCodeActive() khi onChange, KHÔNG qua window.confirm — khác hẳn nút Xoá (CÓ window.confirm) vì bật/tắt là thao tác dễ đảo ngược.",
+            "isQrCodeUsable(qr) (xem SHOP-SETTINGS-4) kiểm active === true là điều kiện ĐẦU TIÊN — tem tắt lập tức fail check này dù các điều kiện khác (hạn/lượt quét) vẫn còn hợp lệ.",
+            "findQrCode(id) trả null cho tem đã xoá — luồng quét (SHOP-SETTINGS-4) coi null giống hệt \"không hợp lệ\", không cần logic riêng cho \"đã xoá\" vs \"đã tắt\"."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm toggle trạng thái ở bảng → tem đổi trạng thái NGAY (không cần xác nhận, không cần reload), nhãn đổi đúng \"Đang hoạt động\"/\"Đã vô hiệu\".",
+            "AC2: Tắt 1 tem → mở lại link QR của tem đó → bị từ chối (hiện cảnh báo, không mở form tạo đơn — xem SHOP-SETTINGS-4 AC2).",
+            "AC3: Bật lại 1 tem đã tắt → mở lại đúng link QR cũ (không đổi link) → hoạt động bình thường trở lại, scanCount giữ nguyên số đã quét trước đó (không reset về 0).",
+            "AC4: Bấm icon thùng rác → luôn hiện window.confirm cảnh báo không khôi phục được, trước khi xoá thật.",
+            "AC5: Xác nhận xoá → tem biến mất khỏi danh sách (mọi tab lọc); mở lại link QR cũ của tem đó → bị từ chối giống AC2.",
+            "AC6: Huỷ window.confirm khi xoá → tem KHÔNG bị xoá, giữ nguyên trong danh sách."
+          ],
+          "notes": [
+            "Toggle ngoài bảng và toggle trong modal Sửa (xem SHOP-SETTINGS-7) CÙNG đổi 1 giá trị active, chỉ khác NƠI bấm.",
+            "Xoá tem KHÔNG xoá lịch sử scanCount đã ghi nhận ở đâu khác — xoá là xoá sạch, không còn gì để tra cứu lại.",
+            "PROTOTYPE THUẦN — không có \"thùng rác\" tạm/khôi phục trong X ngày; xoá là xoá hẳn ngay lập tức."
+          ]
+        },
+        {
+          "id": "SHOP-SETTINGS-6",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt: Tem QR — Chống đếm trùng lượt quét",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn 1 lượt quét QR thật của khách CHỈ được tính đúng 1 lần (không bị đếm thành 2), để \"Lượt quét\"/\"Giới hạn lượt quét\" hiển thị đúng số liệu thật, không bị tiêu hao quota oan vì lỗi kỹ thuật của hệ thống.",
+          "userFlow": [
+            "Khách quét 1 tem QR có giới hạn lượt quét (ví dụ giới hạn 2 lượt) → mở link /shop/orders?qr=<id> → form Tạo đơn hàng mở ra đúng 1 lần.",
+            "Kiểm tra lại \"Lượt quét\" của tem đó trong bảng → chỉ tăng đúng +1, không phải +2.",
+            "Tải lại trang (F5) ngay sau khi quét 1 lần → KHÔNG tự mở lại form tạo đơn lần nữa, KHÔNG cộng thêm lượt quét (query param qr đã bị xoá khỏi URL ngay sau lần xử lý đầu — xem SHOP-SETTINGS-4)."
+          ],
+          "systemFlow": [
+            "Bug đã phát hiện qua UAT: effect xử lý ?qr=<id> trong Orders.tsx (xem SHOP-SETTINGS-4) có side-effect KHÔNG idempotent (recordQrScan() cộng dồn scanCount) nên bị React.StrictMode (bật trong src/main.tsx, chỉ ở dev mode) tự gọi lại effect đó LẦN THỨ 2 ngay lúc mount → 1 lượt quét thật bị tính thành 2.",
+            "Ảnh hưởng trực tiếp: tem đặt \"Giới hạn lượt quét\" = 2 bị tiêu hết quota chỉ sau ĐÚNG 1 lượt quét thật.",
+            "Cách sửa: thêm const handledQrIdRef = useRef<string | null>(null) trong component ShopOrders — guard đầu effect: if (!qrId || handledQrIdRef.current === qrId) return; handledQrIdRef.current = qrId SET NGAY trước khi làm bất kỳ việc gì khác — chặn xử lý trùng cùng 1 qrId ở lần gọi effect thứ 2 trở đi, KHÔNG phụ thuộc chờ setSearchParams() kịp cập nhật state giữa 2 lần StrictMode invoke.",
+            "Xác nhận lại qua UAT: bản build production (vite build, không có StrictMode double-invoke) vốn KHÔNG dính bug này ngay cả TRƯỚC khi sửa — nhưng vẫn sửa ở tầng effect để an toàn cho CẢ dev mode lẫn production."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Quét 1 lần 1 tem QR hợp lệ (chạy ở npm run dev, có React.StrictMode) → \"Lượt quét\" của tem đó tăng đúng +1, không phải +2.",
+            "AC2: Tải lại trang (F5) ngay sau khi quét 1 lần → KHÔNG tự mở lại form tạo đơn, KHÔNG cộng thêm lượt quét lần 2.",
+            "AC3: Quét 2 lần RIÊNG BIỆT (2 lần mở link thật, không phải F5 lại cùng 1 lần tải) → \"Lượt quét\" tăng đúng +2 (guard chỉ chặn TRÙNG LẶP trong CÙNG 1 lần tải trang, không chặn 2 lượt quét thật khác nhau).",
+            "AC4: Hành vi giống hệt nhau giữa npm run dev (có StrictMode) và bản build production (vite build, không StrictMode) — không có khác biệt số lượt quét giữa 2 môi trường."
+          ],
+          "notes": [
+            "Đây là bug kỹ thuật THUẦN TUÝ (React StrictMode double-invoke effect trong dev mode) — không phải lỗi nghiệp vụ, không ảnh hưởng gì tới logic hợp lệ/không hợp lệ của tem (xem SHOP-SETTINGS-4).",
+            "handledQrIdRef là useRef, không phải useState — cố ý, vì set giá trị này KHÔNG được trigger re-render.",
+            "Xem SHOP-SETTINGS-4 (luồng quét đầy đủ mà effect này nằm trong đó) để biết context đầy đủ của đoạn code được sửa."
+          ]
+        },
+        {
+          "id": "SHOP-SETTINGS-7",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt: Tem QR — Chỉnh sửa tem",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn sửa lại tên/hạn/giới hạn lượt quét/ghi chú của 1 tem đã tạo, và bật/tắt trạng thái ngay trong CÙNG 1 modal, để chỉnh lại thông tin khi cần mà không phải xoá tạo lại tem mới (mất hết lịch sử lượt quét).",
+          "userFlow": [
+            "Bấm icon bút chì (thứ hai trong cột Thao tác — nay chỉ còn 3 icon, xem SHOP-SETTINGS-2) ở 1 dòng → modal \"Chỉnh sửa tem QR\" mở ra với 4 field GIỐNG modal Thêm (xem SHOP-SETTINGS-2), đã điền sẵn ĐÚNG giá trị hiện tại của tem đó (kể cả giờ hết hạn hiển thị đúng theo giờ LOCAL trình duyệt).",
+            "Cộng thêm khối \"Đang hoạt động:\" (toggle + chú thích \"Tắt để vô hiệu hoá tem — mọi phiên khách đang mở sẽ bị thu hồi ngay.\") — khối này CHỈ xuất hiện ở modal Sửa, KHÔNG có ở modal Thêm.",
+            "Đổi \"Tên tem\"/\"Ghi chú\"/\"Giới hạn lượt quét\"/\"Thời điểm hết hạn\" rồi bấm \"Lưu thay đổi\" → bảng cập nhật đúng giá trị mới NGAY, không tạo thêm dòng mới, id/mã tem/lượt quét đã có KHÔNG đổi.",
+            "Tắt toggle \"Đang hoạt động\" rồi \"Lưu thay đổi\" → sửa được CẢ trạng thái bật/tắt ngay trong modal này (xem SHOP-SETTINGS-5 để biết cách sửa trạng thái NGOÀI modal này).",
+            "Xoá trắng \"Tên tem\" → nút \"Lưu thay đổi\" disabled, không lưu được — giống hệt validate của modal Thêm."
+          ],
+          "systemFlow": [
+            "QrFormModal({ mode: 'edit', initial, onSave, onClose }) — dùng chung với modal Thêm (xem SHOP-SETTINGS-2); khác nhau ở tiêu đề, nhãn nút lưu, và khối toggle \"Đang hoạt động\" (CHỈ render khi mode === 'edit').",
+            "isoToLocalInput(iso) (QrCodes.tsx, helper riêng cho modal Sửa): chuyển ISO string lưu trong qr.expiresAt sang định dạng input datetime-local theo giờ LOCAL của trình duyệt.",
+            "updateQrCode(id, input: { name, expiresAt, scanLimit, note, active }) (qrStore.ts): cập nhật CẢ 4 field lẫn trạng thái active CÙNG LÚC qua đúng 1 lần gọi — KHÔNG đổi id/shopId/scanCount/createdAt.",
+            "handleEditSave() (QrCodes.tsx): gọi updateQrCode() rồi đóng modal, bảng tự re-render với dữ liệu mới.",
+            "Nếu giới hạn lượt quét MỚI < scanCount hiện có → tem lập tức coi là hết lượt ở lần quét kế tiếp (xem isQrCodeUsable(), SHOP-SETTINGS-4/5) — không cần xử lý gì thêm."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm icon bút chì → modal \"Chỉnh sửa tem QR\" mở ra với 4 field ĐÃ ĐIỀN ĐÚNG giá trị hiện tại của tem đó (kể cả giờ hết hạn hiển thị đúng theo giờ LOCAL trình duyệt), kèm toggle \"Đang hoạt động\" đúng trạng thái hiện tại.",
+            "AC2: Đổi \"Tên tem\"/\"Ghi chú\"/\"Giới hạn lượt quét\"/\"Thời điểm hết hạn\" rồi bấm \"Lưu thay đổi\" → bảng cập nhật đúng giá trị mới NGAY, không tạo thêm dòng mới, id/mã tem/lượt quét đã có KHÔNG đổi.",
+            "AC3: Tắt toggle \"Đang hoạt động\" rồi \"Lưu thay đổi\" → Trạng thái ở bảng đổi ngay \"Đã vô hiệu\"; mở lại link QR của tem đó → bị từ chối (xem SHOP-SETTINGS-4 AC2) — không cần đóng modal rồi bấm toggle ở bảng mới có hiệu lực.",
+            "AC4: Xoá trắng \"Tên tem\" → nút \"Lưu thay đổi\" disabled, không lưu được (giống AC2 của modal Thêm, SHOP-SETTINGS-2).",
+            "AC5: Sửa giới hạn lượt quét xuống THẤP HƠN scanCount hiện có → tem lập tức bị coi là hết lượt ở lần quét kế tiếp, không cần thao tác gì thêm."
+          ],
+          "notes": [
+            "Dòng chú thích \"Tắt để vô hiệu hoá tem — mọi phiên khách đang mở sẽ bị thu hồi ngay\" chỉ mang tính MÔ TẢ hành vi đã có sẵn (mọi lượt quét đều tự kiểm isQrCodeUsable() ngay tại thời điểm quét — xem SHOP-SETTINGS-4) — không cần thêm cơ chế \"thu hồi phiên\" nào khác.",
+            "isoToLocalInput() ban đầu được viết trước khi có caller (lỗi TS \"declared but never read\"), bị xoá, rồi thêm lại đúng lúc modal Sửa thực sự cần tới.",
+            "Xem SHOP-SETTINGS-5 để biết cách sửa trạng thái bật/tắt theo cách KHÁC (toggle ngoài bảng, không qua modal này)."
+          ]
+        },
+        {
+          "id": "SHOP-SETTINGS-8",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt: Tem QR — Tải tem QR (PNG & PDF)",
+          "status": "draft",
+          "userStory": "Là chủ shop đang xem màn hình \"Xem tem QR\" của 1 tem, tôi muốn tải về đúng thiết kế tem đang hiển thị (không chỉ ảnh QR trắng đen đơn thuần) dưới dạng PNG hoặc PDF, để có file sẵn sàng gửi đi in ấn chuyên nghiệp hoặc lưu trữ.",
+          "userFlow": [
+            "Trong màn hình \"Xem tem QR\" (SHOP-SETTINGS-3), bấm nút \"Tải xuống ▾\" → mở dropdown 2 lựa chọn: \"Tải PNG\" / \"Tải PDF\".",
+            "Chọn \"Tải PNG\" → tải về 1 file .png chứa ĐÚNG thẻ tem cách điệu đang hiển thị (nền cam họa tiết + tên shop + QR + nút kêu gọi) — không phải chỉ ảnh QR trắng đen trơn.",
+            "Chọn \"Tải PDF\" → tải về 1 file .pdf 1 trang, chứa CÙNG ảnh thẻ tem đó, kích thước trang khớp đúng tỉ lệ ảnh (không bị méo/cắt/co giãn sai).",
+            "Bấm ra ngoài dropdown (không chọn gì) → dropdown tự đóng, không tải gì.",
+            "Tải nhiều lần liên tiếp (PNG rồi PDF, hoặc PNG nhiều lần) → mỗi lần đều ra đúng 1 file mới, không bị lẫn/ghi đè dữ liệu của lần trước."
+          ],
+          "systemFlow": [
+            "Dùng lại cardRef (tham chiếu tới <div> thẻ tem cách điệu) đã có sẵn từ SHOP-SETTINGS-3 — KHÔNG tạo thêm DOM/ảnh riêng cho việc tải, đảm bảo file tải về LUÔN khớp 100% với những gì đang hiển thị trên màn hình.",
+            "renderCardCanvas(): html2canvas(cardRef.current, { backgroundColor: null, scale: 2 }) (thư viện MỚI html2canvas, npm install html2canvas) → trả về <canvas> độ phân giải gấp đôi (scale 2) để ảnh/PDF tải về nét hơn.",
+            "handleDownload('png' | 'pdf'): gọi renderCardCanvas() MỖI LẦN bấm (không cache canvas cũ) — đảm bảo ảnh tải về luôn mới nhất.",
+            "PNG: canvas.toDataURL('image/png') → tạo thẻ <a href={dataUrl} download=\"tem-qr-{tên tem}.png\"> → .click() ngay — tải file ảnh THẬT, không phải nút giả.",
+            "PDF: thư viện MỚI jsPDF (npm install jspdf) — new jsPDF({ unit: 'px', format: [canvas.width, canvas.height] }) (khởi tạo trang PDF ĐÚNG kích thước pixel của canvas, không dùng khổ giấy cố định A4/Letter), pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height), pdf.save('tem-qr-{tên tem}.pdf').",
+            "Tên file cả 2 định dạng: tem-qr-{qr.name thay khoảng trắng bằng dấu gạch ngang}.{ext} — nhất quán giữa PNG/PDF.",
+            "Dropdown \"Tải xuống ▾\" dùng CHUNG pattern overlay-trong suốt-bắt-click-ngoài đã có sẵn ở nhiều nơi khác trong dự án (ví dụ dropdown \"Trạng thái\" ở Agency Admin \"Duyệt thanh toán\", AGA-PAYMENT-1)."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm \"Tải xuống\" → hiện dropdown đúng 2 lựa chọn \"Tải PNG\"/\"Tải PDF\", không có lựa chọn thừa/thiếu.",
+            "AC2: Chọn \"Tải PNG\" → tải về đúng 1 file .png, tên file chứa tem-qr- + tên tem, nội dung ảnh là ĐÚNG thẻ tem cách điệu, không phải chỉ mã QR trắng đen.",
+            "AC3: Chọn \"Tải PDF\" → tải về đúng 1 file .pdf, đúng 1 trang, kích thước trang khớp tỉ lệ ảnh thẻ tem.",
+            "AC4: Bấm ra ngoài dropdown mà không chọn gì → dropdown đóng lại, KHÔNG có file nào được tải.",
+            "AC5: Tải PNG rồi tải PDF liên tiếp (không đóng màn hình giữa chừng) → cả 2 file đều đúng nội dung, không bị lẫn/dùng nhầm canvas của nhau."
+          ],
+          "notes": [
+            "html2canvas/jsPDF CHỈ dùng trong phạm vi tính năng Tem QR (SHOP-SETTINGS-3/8/9) — không ảnh hưởng/dùng chung với bất kỳ chỗ nào khác trong dự án.",
+            "PROTOTYPE nhưng NÚT TẢI LÀ THẬT — xuất file PNG/PDF thật xuống máy, không phải nút giả/mô phỏng.",
+            "Dùng CHUNG renderCardCanvas() với SHOP-SETTINGS-9 (In tem QR) — cả 2 story đều rasterize đúng cardRef, đảm bảo file tải về và bản in LUÔN cùng 1 thiết kế.",
+            "Xem SHOP-SETTINGS-3 để biết bố cục màn hình \"Xem tem QR\" mà nút này nằm trong đó."
+          ]
+        },
+        {
+          "id": "SHOP-SETTINGS-9",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Cài đặt: Tem QR — In tem QR",
+          "status": "draft",
+          "userStory": "Là chủ shop đang xem màn hình \"Xem tem QR\" của 1 tem, tôi muốn bấm 1 nút là mở được hộp thoại in của trình duyệt ngay với đúng thiết kế tem đang hiển thị, để in ra giấy dán lên quầy ngay tại chỗ mà không cần tải file về rồi mở lên in thủ công.",
+          "userFlow": [
+            "Trong màn hình \"Xem tem QR\" (SHOP-SETTINGS-3), bấm nút \"In tem QR\".",
+            "1 tab/cửa sổ trình duyệt MỚI mở ra, chỉ chứa đúng ảnh thẻ tem cách điệu (không có sidebar/topbar/nút bấm nào khác của Web Shop).",
+            "Ngay khi ảnh tải xong trong tab mới, hộp thoại in CỦA TRÌNH DUYỆT tự động hiện ra — Shop chọn máy in thật hoặc \"Lưu dưới dạng PDF\" ngay trong hộp thoại đó.",
+            "Đóng tab in (hoặc hộp thoại in) → quay lại màn hình \"Xem tem QR\" ban đầu, không có gì thay đổi.",
+            "Bấm \"In tem QR\" nhiều lần liên tiếp → mỗi lần mở đúng 1 tab mới với đúng ảnh hiện tại, không bị treo/mở chồng nhiều tab cũ."
+          ],
+          "systemFlow": [
+            "Dùng lại renderCardCanvas() (dùng chung cardRef với SHOP-SETTINGS-8 — Tải PNG/PDF) để rasterize thẻ tem cách điệu thành <canvas>, rồi canvas.toDataURL('image/png') lấy data URL.",
+            "handlePrint(): window.open('', '_blank', 'width=480,height=640') mở 1 tab/cửa sổ trống MỚI; printWindow.document.write(...) ghi thẳng 1 trang HTML tối giản chỉ gồm <img src=\"{dataUrl}\" style=\"max-width:100%\" onload=\"window.print()\" /> căn giữa màn hình; onload của chính thẻ <img> đó tự gọi window.print() ngay khi ảnh tải xong.",
+            "Tách in sang TAB RIÊNG (thay vì in thẳng trang /shop/settings/qr-codes hiện tại) để KHÔNG phải viết CSS @media print che sidebar/topbar/các phần tử khác của Web Shop.",
+            "Không giữ tham chiếu printWindow sau khi mở — mỗi lần bấm \"In tem QR\" là 1 lần gọi window.open() độc lập, trình duyệt tự quản lý vòng đời tab đó.",
+            "Nếu trình duyệt chặn popup (hiếm) → window.open() trả về null, hàm return sớm, KHÔNG có lỗi nào văng ra ngoài."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm \"In tem QR\" → mở đúng 1 tab/cửa sổ mới, chỉ chứa ảnh thẻ tem cách điệu (không lẫn giao diện Web Shop).",
+            "AC2: Ngay khi ảnh trong tab mới tải xong → hộp thoại in của trình duyệt TỰ ĐỘNG hiện ra, không cần thao tác thêm.",
+            "AC3: Nội dung ảnh trong tab in ĐÚNG HỆT thẻ tem đang hiển thị ở màn hình \"Xem tem QR\" gốc.",
+            "AC4: Đóng tab in (hoặc huỷ hộp thoại in) → không ảnh hưởng gì tới màn hình \"Xem tem QR\" ban đầu, dữ liệu tem không đổi.",
+            "AC5: Bấm \"In tem QR\" nhiều lần liên tiếp → mỗi lần đều mở đúng 1 tab mới, không bị lỗi/treo trang vì gọi lặp lại.",
+            "AC6: Trình duyệt chặn popup → không có lỗi JS nào hiện ra console, trang hiện tại vẫn hoạt động bình thường."
+          ],
+          "notes": [
+            "Đây là năng lực HOÀN TOÀN MỚI — các bản Tem QR trước đó (v1 2-modal, v2 full-screen gộp chung) CHƯA TỪNG có nút In nào, chỉ có tải ảnh về rồi Shop tự in thủ công.",
+            "Dùng CHUNG renderCardCanvas() với SHOP-SETTINGS-8 (Tải PNG/PDF) — đảm bảo bản in và file tải về LUÔN cùng 1 thiết kế.",
+            "PROTOTYPE nhưng NÚT IN LÀ THẬT — gọi đúng window.print() thật của trình duyệt, không phải mô phỏng/nút giả.",
+            "Xem SHOP-SETTINGS-3 để biết bố cục màn hình \"Xem tem QR\" mà nút này nằm trong đó; SHOP-SETTINGS-8 để biết cơ chế rasterize dùng chung."
           ]
         }
       ]

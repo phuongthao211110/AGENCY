@@ -7,9 +7,9 @@ figma: https://www.figma.com/design/MchY3tv6zpA65VTnt5OEhW?node-id=2-449
 status: draft
 ---
 
-# [WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Tự reset phương thức thanh toán
+# [WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Tự reset phương thức thanh toán (ĐÃ ĐÓNG — trùng SHOP-ORDER-46)
 
-> ⚠️ **CHƯA IMPLEMENT / NGHI NGỜ TRÙNG TICKET** — Đã rà soát toàn bộ `OrderDetailDrawer` trong `Orders.tsx`: `useEffect` DUY NHẤT trong component này chỉ reset state UI cục bộ (tab đang chọn, edit mode, draft...) khi CHUYỂN SANG xem đơn khác — không có logic nào tự reset `paymentMethod` khi sửa đơn. Cơ chế "tự reset phương thức thanh toán khi đổi người trả ship" THỰC SỰ đang tồn tại chỉ ở màn **Tạo đơn hàng** (`CreateOrderDrawer`, xem SHOP-ORDER-46) — rất có thể ticket Jira AGENCY-1325 này là bị gắn nhầm section "Chi tiết đơn hàng" thay vì "Tạo đơn hàng", trỏ tới đúng tính năng đã mô tả ở SHOP-ORDER-46. Story này giữ lại để khớp đúng số ticket, nhưng đề xuất XÁC NHẬN LẠI với Product trước khi code bất kỳ thứ gì mới.
+> ⚠️ **ĐÃ ĐÓNG, KHÔNG CODE THÊM** — Sau khi triển khai SHOP-ORDER-51 (đổi phương thức thanh toán ở Chi tiết đơn), xác nhận lại: `OrderDraft`/edit mode của Chi tiết đơn hàng VẪN KHÔNG có field `feePayer` nào để sửa (chỉ có `paymentMethod` mới thêm cho SHOP-ORDER-51) — nghĩa là Shop không có cách nào đổi "ai trả ship" ngay trong Chi tiết đơn, nên "tự reset phương thức khi đổi người trả ship" KHÔNG CÓ GÌ để kích hoạt ở màn hình này. Cơ chế này THỰC SỰ chỉ tồn tại ở màn **Tạo đơn hàng** (`CreateOrderDrawer`, xem SHOP-ORDER-46) — xác nhận ticket Jira AGENCY-1325 bị gắn nhầm section "Chi tiết đơn hàng" thay vì "Tạo đơn hàng", trỏ đúng tính năng đã có sẵn ở SHOP-ORDER-46. Đóng story này, không code gì thêm cho tới khi có yêu cầu THẬT SỰ cho phép đổi `feePayer` trong Chi tiết đơn (lúc đó mới cần tính năng reset tương ứng).
 
 ## User Story (giả định theo đúng tên ticket)
 
@@ -35,6 +35,5 @@ Là chủ shop đang sửa 1 đơn nháp trong Chi tiết đơn hàng, nếu tô
 
 ## Notes
 
-- **GAP — CHƯA CÓ TRONG CODE**, và nhiều khả năng là ticket bị gắn nhầm section. Khuyến nghị: xác nhận lại với Product xem ticket AGENCY-1325 có thực sự muốn mô tả 1 tính năng MỚI trong Chi tiết đơn hàng, hay chỉ là cùng 1 tính năng đã có ở Tạo đơn hàng (SHOP-ORDER-46) nhưng gắn nhầm section lúc tạo ticket.
-- Nếu xác nhận là trùng → nên đóng/liên kết ticket này với SHOP-ORDER-46 thay vì code thêm 1 lần nữa.
-- Nếu xác nhận là tính năng THỰC SỰ mới cho Chi tiết đơn → phải làm SHOP-ORDER-51 (Đổi phương thức thanh toán ở Chi tiết đơn) TRƯỚC, vì không có field để reset nếu chưa có field để đổi.
+- **ĐÃ ĐÓNG.** SHOP-ORDER-51 (đổi phương thức thanh toán ở Chi tiết đơn) đã triển khai xong nhưng CỐ Ý không thêm field `feePayer` vào `OrderDraft` (ngoài phạm vi, Shop vẫn không đổi được "ai trả ship" trong Chi tiết đơn) — nên điều kiện tiên quyết của story này vẫn chưa tồn tại, xác nhận đây đúng là trùng với SHOP-ORDER-46 (Tạo đơn hàng), không phải tính năng riêng cho Chi tiết đơn.
+- Nếu sau này Product thực sự muốn cho đổi `feePayer` ngay trong Chi tiết đơn → mở lại ticket mới, lúc đó mới cần tính năng tự reset tương ứng (tái dùng đúng pattern `useEffect` đã có ở SHOP-ORDER-46).

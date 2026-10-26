@@ -11,61 +11,60 @@ status: draft
 
 ## User Story
 
-Là nhân viên đại lý (Agency Admin), tôi muốn xem biểu đồ đường thể hiện doanh thu/sản lượng theo từng ngày trong 14 ngày gần nhất, so sánh trực quan với đúng 14 ngày đó lùi 7 ngày trước, để nhận biết xu hướng tăng/giảm mà không cần đọc số liệu thô.
+Là nhân viên đại lý (Agency Admin), tôi muốn xem 1 biểu đồ miền (area) chồng theo từng shop thể hiện doanh thu theo ngày, cùng lúc với 1 đường tổng sản lượng đè lên trên, trong đúng khoảng thời gian tôi đang chọn ở bộ lọc "Thời gian" của trang, để biết shop nào đóng góp bao nhiêu và xu hướng tổng thể mà không cần đọc số liệu thô.
 
 ## User Flow
 
-1. Card "Xu hướng doanh thu & sản lượng" nằm bên TRÁI, cùng hàng với card "Khách hàng" (xem AGA-REPORT-11).
-2. Đầu card: tiêu đề bên trái; bên phải gồm 1 dropdown chọn shop (mặc định "Toàn đại lý", liệt kê tên từng shop của đại lý) đặt NGAY BÊN TRÁI cụm nút toggle "Doanh thu"/"Sản lượng" (đổi biểu đồ này) — bộ lọc kỳ (trước đây là 3 nút Ngày/Tuần/Tháng đặt ở card này) đã chuyển hẳn lên dropdown "Thời gian" ở header trang (xem AGA-REPORT-7), không còn nút chọn kỳ nào trong card này nữa.
-3. Dưới cụm nút là 2 dòng chú thích nhỏ: dòng 1 "6 KPI & Bảng chi tiết đang so với [kỳ trước theo lựa chọn]", dòng 2 "Biểu đồ luôn hiện 14 ngày gần nhất, không đổi theo tab." — khi dropdown đang chọn 1 shop cụ thể (khác "Toàn đại lý"), dòng 2 nối thêm " — đang xem riêng shop **[Tên shop]**" (tên shop tô màu xanh `#3B82F6`, bold).
-4. Chọn 1 shop trong dropdown → biểu đồ (cả 2 đường Kỳ này/Kỳ trước) vẽ lại chỉ dựa trên đơn hàng của riêng shop đó, không còn là tổng toàn đại lý. Chọn lại "Toàn đại lý" → biểu đồ về đúng hành vi mặc định (tổng toàn đại lý) như trước.
-5. Biểu đồ: đường nét liền màu cam (`#FF5200`) = Kỳ này (14 ngày gần nhất), đường nét đứt xám = Kỳ trước (đúng 14 ngày đó lùi 7 ngày); có vùng tô mờ dưới đường Kỳ này; trục Y hiện 5 mốc giá trị, trục X hiện nhãn ngày (DD/MM) cách quãng.
-6. Rê chuột vào biểu đồ → hiện đường dọc chỉ vị trí đang trỏ, chấm tròn trên đường Kỳ này, và 1 dòng text dưới biểu đồ ghi rõ ngày + giá trị Kỳ này + giá trị Kỳ trước (D-7) của đúng ngày đó.
-7. Cuối card là legend 2 dòng: nét liền cam = "Kỳ này", nét đứt xám = "Kỳ trước (D-7)".
+1. Card "Xu hướng doanh thu & sản lượng" chiếm TOÀN BỘ chiều rộng trang, nằm riêng 1 hàng — KHÔNG còn chung hàng tỉ lệ 2:1 với card "Khách hàng" (AGA-REPORT-11) như thiết kế cũ, để cả 2 card cùng rộng ngang nhau, cùng mật độ cột/pixel dù biểu đồ có vẽ tới 90 điểm.
+2. Đầu card: tiêu đề bên trái; bên phải là nút **"Chọn shop (N/10)"** — bấm vào mở 1 dropdown có ô tìm kiếm + danh sách checkbox TẤT CẢ shop của đại lý, xếp theo doanh thu giảm dần (shop doanh thu cao hiện trước). Tối đa chọn được 10 shop cùng lúc — chạm mốc 10 thì các checkbox chưa chọn tự mờ/disable kèm dòng nhắc đỏ "Đã chọn tối đa 10 shop — bỏ chọn bớt để thêm shop khác."
+3. KHÔNG còn toggle "Doanh thu"/"Sản lượng" nào — biểu đồ hiện ĐỒNG THỜI cả 2 chỉ số: miền chồng theo shop = doanh thu (trục trái), 1 đường cam duy nhất = sản lượng (trục phải), không có cách tách riêng từng chỉ số để xem 1 mình nữa.
+4. KHÔNG còn đường "Kỳ trước (D-7)" so sánh nào — biểu đồ chỉ vẽ ĐÚNG 1 kỳ (kỳ hiện tại theo bộ lọc "Thời gian"). So sánh với kỳ trước chỉ còn ở 6 KPI đầu trang và bảng "Chi tiết theo shop" (dạng % delta), không còn ở biểu đồ này.
+5. Dưới cụm nút là 2 dòng chú thích nhỏ: dòng 1 "6 KPI & Bảng chi tiết đang so với [kỳ trước theo lựa chọn]", dòng 2 "Biểu đồ hiện đúng [N] ngày của kỳ đang chọn ở filter 'Thời gian' — miền theo shop = doanh thu (trục trái), đường cam = tổng sản lượng (trục phải)".
+6. Đổi bộ lọc "Thời gian" ở header trang (Hôm nay/Hôm qua/30-60-90 ngày trước/tuỳ chỉnh) → số ngày hiển thị trên biểu đồ này đổi theo NGAY (khác thiết kế cũ — biểu đồ này giờ KHÔNG cố định 14 ngày nữa, luôn bám đúng số ngày của kỳ đang chọn).
+7. Danh sách shop đã TICK CHỌN không tự đổi khi đổi bộ lọc "Thời gian" sau đó — chỉ có THỨ TỰ hiện trong dropdown (xếp theo doanh thu) và DỮ LIỆU vẽ trên biểu đồ mới cập nhật theo kỳ mới; mặc định 10 shop doanh thu cao nhất chỉ được tự động chọn sẵn đúng 1 LẦN lúc mới vào trang.
+8. Rê chuột vào biểu đồ → hiện đường dọc chỉ vị trí đang trỏ, chấm tròn phóng to trên đường sản lượng, và 1 khối tooltip dưới biểu đồ liệt kê đúng ngày + doanh thu từng shop đang chọn (sắp giảm dần) + tổng sản lượng của ngày đó.
+9. Cuối card là legend: 1 ô màu vuông nhỏ cho mỗi shop đang chọn (kèm tên), và 1 line-swatch cam "Tổng sản lượng (trục phải)"; nếu chưa shop nào có doanh thu trong kỳ → thay bằng dòng "Chưa có shop nào phát sinh doanh thu trong N ngày gần nhất."
+10. Dưới cùng có link **"↓ Xem dạng bảng"** — chuyển sang bảng số liệu thô: cột là từng ngày, hàng là từng shop đang chọn (tên + mã shop) hiện đúng doanh thu, hàng cuối "Tổng sản lượng" hiện số đơn mỗi ngày; link đổi thành "↑ Xem dạng biểu đồ" để quay lại.
 
 ## System Flow
 
-1. `buildDailySeries(orders, endDate, days)` — trả về `days` điểm liên tiếp theo NGÀY, điểm cuối = `endDate`; mỗi điểm gồm `revenue` (Σ `order.fee` trong ngày) và `volume` (đếm đơn trong ngày).
-2. State `chartShopId` (mặc định `'all'`) điều khiển bởi dropdown chọn shop mới; options của dropdown lấy từ `shops` (kết quả `buildShopStats()` của toàn đại lý).
-3. `chartOrders = chartShopId === 'all' ? agencyOrders : agencyOrders.filter(o => o.shopId === chartShopId)` — khi chọn "Toàn đại lý", `chartOrders` = `agencyOrders` (hành vi y hệt trước đây, không đổi); khi chọn 1 shop cụ thể, `chartOrders` chỉ còn đơn của riêng shop đó.
-4. `dailyCurrent = buildDailySeries(chartOrders, anchorDate, 14)`; `dailyPrevious = buildDailySeries(chartOrders, anchorDate - 7 ngày, 14)` — 2 mảng CÙNG ĐỘ DÀI (14), khớp theo INDEX (điểm thứ i của `dailyPrevious` = đúng 7 ngày trước điểm thứ i của `dailyCurrent`) — hoàn toàn ĐỘC LẬP với tab Ngày/Tuần/Tháng; nguồn dữ liệu đầu vào (`chartOrders`) là phần DUY NHẤT thay đổi theo `chartShopId`, logic dựng chuỗi ngày không đổi.
-5. `TrendLineChart({current, previous, metric})` vẽ bằng SVG thuần: `xFor(i)`/`yFor(v)` map index/giá trị sang toạ độ; `curPath`/`prevPath` là chuỗi lệnh `M`/`L` nối các điểm; `areaPath` = `curPath` khép kín xuống đáy để tô vùng mờ (opacity 0.08).
-6. `maxValue = Math.max(1, ...curValues, ...prevValues)` — dùng CHUNG 1 trục Y cho cả 2 đường để so sánh đúng tỉ lệ; tối thiểu 1 để tránh chia 0 khi toàn bộ dữ liệu = 0 (bao gồm trường hợp shop đang chọn không có đơn nào trong 14 ngày).
-7. Hover: `<rect>` trong suốt phủ từng "cột" ngày (`onMouseEnter`/`onMouseLeave` set `hoverIdx`) → khi có `hoverIdx`, vẽ thêm đường dọc nét đứt + chấm tròn tại điểm đang trỏ + dòng text tổng hợp Kỳ này/Kỳ trước của ngày đó.
-8. `chartMetric` (state `'revenue' | 'volume'`) chọn field nào của `DailyPoint` dùng để vẽ (`curValues = current.map(p => p[metric])`) và định dạng số hiển thị (`fmtVND` cho revenue, `fmtNum` cho volume).
-9. Bộ lọc kỳ (dropdown "Thời gian") đặt VẬT LÝ ở header trang (AGA-REPORT-7), KHÔNG còn trong card này — điều khiển 6 KPI (AGA-REPORT-10) và bảng "Chi tiết theo shop" (AGA-REPORT-13), KHÔNG điều khiển chính biểu đồ này (biểu đồ luôn cố định 14 ngày, độc lập hoàn toàn với lựa chọn kỳ).
-10. `chartShopId` CHỈ đọc bởi biểu đồ này — không truyền xuống/ảnh hưởng 6 KPI đầu trang, bảng "Chi tiết theo shop" (AGA-REPORT-13), hay card "Khách hàng" (AGA-REPORT-11); các khối đó tiếp tục dùng `agencyOrders` (toàn đại lý) không đổi.
+1. `rankShopIdsByRevenue(agencyOrders, shops, trend.curEnd, trendDays)`: xếp hạng TOÀN BỘ shop của đại lý theo tổng doanh thu trong đúng cửa sổ `trendDays` ngày kết thúc tại `trend.curEnd` (shop 0đ vẫn có mặt, xếp cuối) — tính LẠI mỗi lần render (đổi filter "Thời gian" là xếp hạng lại), dùng cho cả mặc định ban đầu lẫn thứ tự hiện trong dropdown.
+2. `trendDays` suy ra trực tiếp từ khoảng `trend.curStart`/`trend.curEnd` của bộ lọc "Thời gian" đang chọn ở header trang (`getComparisonRanges`/`rollingRange`) — khác thiết kế cũ, giờ KHÔNG còn hằng số 14 cố định nào, biểu đồ này và card "Khách hàng" dùng CHUNG 1 giá trị `trendDays`.
+3. `selectedShopIds` (state `Set<string>`) khởi tạo 1 LẦN DUY NHẤT lúc mount bằng `shopRankedIds.slice(0, MAX_COLORED_SHOPS)` (10 shop đầu bảng xếp hạng tại thời điểm mount) — đổi filter "Thời gian" sau đó KHÔNG reset lại Set này, giữ đúng lựa chọn thủ công của người dùng.
+4. `toggleShopSelected(id)`: thêm/bớt 1 id khỏi Set; chặn thêm khi `selectedShopIds.size >= MAX_COLORED_SHOPS` (= 10) — picker tự disable checkbox ở ngưỡng này, hàm có thêm 1 lớp guard dự phòng.
+5. `buildShopStackedSeries(agencyOrders, shops, trend.curEnd, trendDays, shopRankedIds.filter(id => selectedShopIds.has(id)))`: dựng `points` (mỗi điểm 1 ngày, `values[shopId] = {revenue, volume}`) CHỈ cho các shop đã chọn — thứ tự entities theo đúng thứ tự xếp hạng hiện tại (không theo thứ tự tick), mỗi entity gán 1 màu cố định từ `SHOP_PALETTE` (10 màu) theo chỉ số trong mảng entities.
+6. `ShopRevenueVolumeChart({points, entities})`: tự tính `revenueTotals`/`volumeTotals` bằng cách CỘNG DỒN qua đúng các `entities` được truyền vào (nghĩa là đường sản lượng = tổng sản lượng của các SHOP ĐANG CHỌN, không phải toàn đại lý) — vẽ `bands` (miền chồng tích luỹ đáy→đỉnh theo thứ tự entities, có seam trắng phân tách) cho doanh thu trên trục trái, và 1 `volumeLinePath` duy nhất cho sản lượng trên trục phải, dùng màu `C_ACTION` (cam) — cố ý KHÔNG trùng bất kỳ màu nào trong `SHOP_PALETTE` để không bị nhầm là "1 shop nữa".
+7. Khác với biểu đồ "Khách hàng" bên dưới (`buildCustomerPoints`, gộp theo TUẦN khi `trendDays > 30`) — `ShopRevenueVolumeChart` LUÔN vẽ theo NGÀY, không bao giờ gộp tuần dù `trendDays` lên tới 90 (do biểu đồ này đã full-width riêng hàng, đủ rộng để vẽ dày điểm).
+8. Toggle "Xem dạng bảng" là state cục bộ `tableView` trong chính component — không ảnh hưởng gì tới `selectedShopIds`/dữ liệu, chỉ đổi cách trình bày CÙNG 1 bộ `points`/`entities` đã tính.
+9. Picker "Chọn shop": state `shopPickerOpen`/`shopPickerSearch`, đóng khi click ra ngoài (`mousedown` + `shopPickerRef.current.contains`) — cùng pattern click-outside dùng ở nhiều dropdown khác trong dự án.
+10. KHÔNG có toggle Doanh thu/Sản lượng và KHÔNG có state nào cho "kỳ trước" trong component này nữa — cả 2 cơ chế của thiết kế cũ (AGA-REPORT-12 bản trước) đã bị GỠ BỎ hoàn toàn khỏi code, không phải tạm ẩn.
 
 ## Acceptance Criteria
 
-**AC1:** Card nằm bên trái, cùng hàng với card "Khách hàng" (AGA-REPORT-11), chiếm tỉ lệ rộng hơn (~2:1) khi đủ chỗ.
+**AC1:** Card chiếm full-width, riêng 1 hàng — không chia cột với card "Khách hàng".
 
-**AC2:** Toggle "Doanh thu"/"Sản lượng" đổi đúng cả trục Y lẫn 2 đường biểu đồ theo field tương ứng.
+**AC2:** Nút "Chọn shop (N/10)" hiện đúng số shop đang chọn; bấm mở dropdown có ô tìm kiếm + checkbox list xếp theo doanh thu giảm dần của đúng kỳ đang chọn.
 
-**AC3:** Biểu đồ luôn hiện đúng 14 điểm/ngày cho cả 2 đường, bất kể dropdown "Thời gian" ở header đang chọn Ngày/Tuần/Tháng.
+**AC3:** Chọn đủ 10 shop → các checkbox chưa chọn tự mờ/disable, hiện dòng cảnh báo đỏ nhắc đã đạt tối đa.
 
-**AC4:** Đường "Kỳ trước" tại vị trí ngày X = đúng giá trị của ngày (X trừ 7 ngày) — khớp theo index, không theo khoảng của lựa chọn kỳ ở header.
+**AC4:** Đổi bộ lọc "Thời gian" ở header trang → số ngày vẽ trên biểu đồ đổi đúng theo, KHÔNG cố định ở bất kỳ con số nào.
 
-**AC5:** Rê chuột vào biểu đồ → hiện đường chỉ vị trí + chấm tròn + dòng text đúng ngày/giá trị Kỳ này/giá trị Kỳ trước (D-7) của điểm đang trỏ; rời chuột ra → ẩn hết, chỉ còn chấm tròn cố định ở điểm cuối cùng (ngày gần nhất).
+**AC5:** Đổi bộ lọc "Thời gian" sau khi đã tự tick chọn shop → danh sách shop ĐANG CHỌN giữ nguyên (không bị reset về top 10 mới), chỉ dữ liệu/thứ tự trong dropdown cập nhật theo kỳ mới.
 
-**AC6:** Không có đơn hàng nào trong toàn bộ 14 ngày (`agencyOrders` rỗng hoặc quá cũ) → biểu đồ vẫn render (2 đường phẳng ở đáy), không lỗi/NaN/chia 0.
+**AC6:** Biểu đồ hiện ĐÚNG 1 đường sản lượng (không tách theo shop) và miền chồng doanh thu CHỈ tính trên các shop đang được tick chọn — bỏ chọn bớt 1 shop thì cả miền lẫn tổng sản lượng đều giảm tương ứng.
 
-**AC7:** Legend hiện đúng 2 mục: nét liền cam "Kỳ này", nét đứt xám "Kỳ trước (D-7)".
+**AC7:** Rê chuột vào biểu đồ → hiện đường chỉ vị trí + chấm tròn phóng to trên đường sản lượng + tooltip liệt kê đúng doanh thu từng shop (sắp giảm dần) và tổng sản lượng của ngày đang trỏ; rời chuột → ẩn hết.
 
-**AC8:** Dropdown chọn shop mặc định ở "Toàn đại lý" và liệt kê đầy đủ tên các shop của đại lý; chọn 1 shop cụ thể → 2 đường biểu đồ (Kỳ này/Kỳ trước) đổi đúng theo dữ liệu đơn hàng của riêng shop đó, không còn lẫn dữ liệu của shop khác.
+**AC8:** Không có shop nào (trong số đang chọn) phát sinh doanh thu trong toàn bộ kỳ → biểu đồ vẫn render (trục/lưới đầy đủ), không lỗi/NaN/chia 0, legend hiện dòng nhắc "Chưa có shop nào phát sinh doanh thu...".
 
-**AC9:** Chọn lại "Toàn đại lý" sau khi đã chọn 1 shop → biểu đồ trở về đúng tổng dữ liệu toàn đại lý như hành vi mặc định trước đây.
+**AC9:** Bấm "Xem dạng bảng" → hiện đúng bảng: cột theo ngày, hàng theo từng shop đang chọn (tên + mã shop), hàng cuối "Tổng sản lượng"; bấm "Xem dạng biểu đồ" → quay lại đúng trạng thái biểu đồ trước đó.
 
-**AC10:** Chọn 1 shop không có đơn hàng nào trong 14 ngày gần nhất → biểu đồ vẫn render bình thường (2 đường phẳng ở đáy), không lỗi/NaN/chia 0.
-
-**AC11:** Khi đang chọn 1 shop cụ thể, dòng chú thích dưới toggle hiện thêm "đang xem riêng shop [Tên shop]" với tên shop tô màu xanh `#3B82F6` in đậm; khi chọn "Toàn đại lý" thì không hiện phần này.
-
-**AC12:** Bộ lọc shop của biểu đồ này không ảnh hưởng đến 6 KPI đầu trang, bảng "Chi tiết theo shop" (AGA-REPORT-13), hay card "Khách hàng" (AGA-REPORT-11) — các khối đó luôn tính trên toàn đại lý bất kể dropdown đang chọn shop nào.
+**AC10:** KHÔNG còn toggle Doanh thu/Sản lượng, KHÔNG còn đường "Kỳ trước" nào trên biểu đồ này — chỉ 6 KPI đầu trang và bảng "Chi tiết theo shop" mới hiện % so với kỳ trước.
 
 ## Notes
 
-- **Bổ sung ngày 2026-10-01**: thêm dropdown chọn shop ("Toàn đại lý" hoặc 1 shop cụ thể) cho riêng biểu đồ này, đặt bên trái cụm toggle Doanh thu/Sản lượng. Khi chọn 1 shop, `chartOrders` được lọc theo `shopId` trước khi dựng `dailyCurrent`/`dailyPrevious`, nên 2 đường biểu đồ phản ánh đúng dữ liệu riêng của shop đó. Thay đổi này CHỈ tác động biểu đồ xu hướng — không ảnh hưởng 6 KPI đầu trang, bảng "Chi tiết theo shop" (AGA-REPORT-13), hay card "Khách hàng" (AGA-REPORT-11), các khối đó vẫn tính trên toàn đại lý như cũ.
-- **Redesign lần 2 (2026-09-27)**: gỡ hẳn bộ lọc Ngày/Tuần/Tháng khỏi card này — chuyển lên dropdown "Thời gian" ở header trang (AGA-REPORT-7), card giờ chỉ còn đúng 1 toggle Doanh thu/Sản lượng — theo đúng ảnh mockup UI thật do người yêu cầu cung cấp. Trước đây bộ lọc đặt vật lý trong card này nhưng không điều khiển chính biểu đồ, dễ gây hiểu lầm — bản mới loại bỏ hẳn nguồn nhầm lẫn đó bằng cách dời hẳn ra khỏi card.
-- **Tách ra từ AGA-REPORT-7** (redesign tổng thể trang "Báo cáo") theo yêu cầu quản lý riêng từng phần của trang.
-- Màu `#FF5200` (cam, `C_ACTION`) cho đường "Kỳ này" dùng ĐÚNG token màu hành động chính của app (theo CLAUDE.md), khác với màu teal trong ảnh mockup gốc — chủ động không copy màu mockup để giữ nhất quán toàn hệ thống.
-- Không có "known gap" nào về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định.
+- **Doc này đã lỗi thời và được VIẾT LẠI HOÀN TOÀN** để khớp đúng code thật đang chạy — bản trước mô tả 1 thiết kế KHÁC HẲN (2 đường line "Kỳ này"/"Kỳ trước D-7" cố định 14 ngày, dropdown chọn 1 shop duy nhất mặc định "Toàn đại lý", toggle Doanh thu/Sản lượng) đã bị thay thế từ đợt redesign "cột chồng theo shop, filter thời gian" (xem commit `8ae4c05`) nhưng doc chưa từng được cập nhật theo — hai thiết kế không tương thích với nhau, không phải chỉnh sửa nhỏ.
+- Màu trục phải/đường sản lượng dùng `C_ACTION` (cam, token hành động chính của app theo CLAUDE.md) — nhất quán với các biểu đồ khác trong cùng trang.
+- `MAX_COLORED_SHOPS = 10` là giới hạn CỨNG — không có khái niệm gộp phần dư vào "Khác" nữa (khác thiết kế gộp-nhóm từng cân nhắc trước đó); người dùng tự chọn đúng danh sách muốn xem, tối đa 10.
+- Không có "known gap" về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (`orderStore`/`agencyOrders`), doanh thu loại trừ đơn online đã trả trước (`isPrepaidOnline`), không dùng công thức demo cố định.
+- Xem AGA-REPORT-7 (bộ lọc "Thời gian" ở header, nguồn `trendDays`/`trend.curStart`/`trend.curEnd` dùng chung cho cả trang), AGA-REPORT-11 (card "Khách hàng", dùng chung `trendDays` nhưng KHÁC ở chỗ gộp theo tuần khi > 30 ngày), AGA-REPORT-13 (bảng "Chi tiết theo shop", nơi còn giữ % so với kỳ trước).

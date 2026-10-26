@@ -7,62 +7,56 @@ figma:
 status: draft
 ---
 
-# [AGA] Duyệt thanh toán tiền mặt: Danh sách đơn chờ duyệt theo từng Shop
+# [AGA] Duyệt thanh toán tiền mặt: Danh sách shop theo tab Chờ/Đã xác nhận
+
+## Bối cảnh
+
+Tách nhỏ (lần 2) từ bản AGA-PAYMENT-1 gộp trước đó (từng gồm cả bộ lọc/tìm kiếm/chọn nhiều/màn Chi tiết trong cùng 1 story) — nay CHỈ còn phạm vi: trang danh sách chính (header, 3 thẻ tổng quan, 2 tab, bảng cơ bản, phân trang). Các năng lực khác đã tách thành story riêng: AGA-PAYMENT-4 (lọc + tìm kiếm), AGA-PAYMENT-5 (chọn nhiều shop), AGA-PAYMENT-6 (màn "Chi tiết" full-page), AGA-PAYMENT-2 (duyệt 1 dòng), AGA-PAYMENT-7 (duyệt hàng loạt), AGA-PAYMENT-8 (duyệt từ màn Chi tiết).
 
 ## User Story
 
-Là Agency Admin, tôi muốn xem danh sách đơn tiền mặt NHÓM THEO TỪNG SHOP (bưu cục) thuộc đại lý mình, kèm số ngày đã trễ chưa chuyển tiền về cho đại lý, để biết Shop nào cần nhắc và Shop nào đã bị hệ thống tự khoá tạo đơn — và duyệt được RIÊNG cho từng shop thay vì gộp chung.
+Là Agency Admin, tôi muốn xem danh sách SHOP (bưu cục) thuộc đại lý mình đang nợ tiền mặt phí ship, tách riêng 2 tab "Chờ xác nhận"/"Đã xác nhận" kèm 3 thẻ tổng quan đầu trang, để nắm nhanh tình hình công nợ tiền mặt của toàn đại lý mà không phải cuộn qua từng khối shop một như thiết kế cũ.
 
 ## User Flow
 
-1. Vào menu "Duyệt thanh toán" trong sidebar Agency Admin (icon ví tiền, có badge đỏ số đơn đang "Chờ duyệt") → route `/agency-admin/cash-remittance`.
-2. Đầu trang hiện tiêu đề + mô tả ngắn giải thích cơ chế: Shop thu hộ tiền mặt phải chuyển lại cho Agency; trễ 1-2 ngày chỉ bị nhắc, trễ từ 3 ngày Shop tự động bị khoá tạo đơn mới.
-3. 4 chip tổng (tính trên TOÀN BỘ đại lý): "N chờ duyệt" (vàng), "N trễ 1-2 ngày" (vàng), "N đã khoá tạo đơn (≥3 ngày)" (đỏ), "N đã nhận tiền" (xanh).
-4. Bên dưới là DANH SÁCH THEO TỪNG SHOP — mỗi shop CÓ ĐƠN TIỀN MẶT (shop không có đơn tiền mặt nào thì không hiện khối) là 1 khối riêng, gồm:
-   - Tên shop + badge trạng thái TỔNG QUÁT của shop đó: "Không có đơn chờ" (xanh) / "Có đơn chờ duyệt" (vàng) / "⚠ Trễ N ngày" (vàng) / "🚫 Đang bị khoá tạo đơn" (đỏ).
-   - Số đơn tiền mặt của shop đó.
-   - Nút **"Duyệt shop này (N)"** — N là số đơn CHỜ DUYỆT của RIÊNG shop này.
-   - Bảng con liệt kê từng đơn của shop đó: Mã vận đơn, Số tiền, Shop khai lúc, Trạng thái.
-5. Trạng thái từng dòng đơn CHỈ HIỂN THỊ, không bấm được gì ở cấp từng dòng: Chờ duyệt (vàng, chưa trễ) / ⚠ Chờ duyệt — trễ N ngày (vàng, 1-2 ngày) / 🚫 Quá N ngày — đã khoá tạo đơn (đỏ, ≥3 ngày) / ✓ Đã nhận tiền (xanh, kèm giờ + nguồn duyệt) / **✕ Chưa nhận tiền** (đỏ, kèm lý do từ chối + nguồn — HIẾM, chỉ khi Agency đã từng kiểm tra và xác nhận KHÔNG nhận được tiền qua `rejectOrderPayment()`).
-6. KHÔNG hiện bất kỳ dòng "Shop báo đã chuyển..." nào ở đây dù Shop đã bấm "Thanh toán cho đại lý" ở Báo cáo dòng tiền (Web Shop — xem SHOP-ORDER-55) hay chưa — Agency KHÔNG dựa vào "lời khai" của Shop để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi bấm "Duyệt shop này".
+1. Vào menu "Duyệt thanh toán" trong sidebar Agency Admin → route `/agency-admin/cash-remittance`.
+2. Đầu trang: tiêu đề "Duyệt thanh toán" + mô tả ngắn "Đối soát và xác nhận phí ship shop phải chuyển cho đại lý".
+3. 3 thẻ tổng quan: **"Tổng đơn hàng chưa thanh toán"** (đỏ, đếm mọi đơn `pending_review` của đại lý), **"Tổng phí ship chưa thanh toán (đ)"** (đỏ, cộng dồn phí các đơn đó), **"Shop bị khoá tạo đơn"** dạng "X / Y" (X = số shop đang bị tự động khoá tạo đơn, Y = tổng số shop CÓ phát sinh đơn tiền mặt — không phải tổng toàn bộ shop của đại lý).
+4. 2 tab: **"Chờ xác nhận {n}"** (mặc định, nền đen) / **"Đã xác nhận {m}"** — n = số shop còn ≥1 đơn `pending_review`; m = số shop có đơn tiền mặt nhưng HIỆN KHÔNG còn đơn nào `pending_review` (đã duyệt hết). 1 shop CHỈ thuộc đúng 1 trong 2 tab tại 1 thời điểm.
+5. **Bảng tab "Chờ xác nhận"**: Shop (tên đậm + mã shop xám bên dưới) | Trạng thái ("Đã khoá tạo đơn" đỏ / "Cho phép tạo đơn" xanh — chữ màu thuần, không nền) | Đơn hàng chưa thanh toán (số đơn `pending_review` của shop đó) | Phí ship chưa thanh toán (đ) | Thao tác: nút xanh "✓ Đã nhận" (xem AGA-PAYMENT-2) + nút viền "👁 Chi tiết" (xem AGA-PAYMENT-6).
+6. **Bảng tab "Đã xác nhận"**: chỉ còn Shop | Trạng thái (luôn "Cho phép tạo đơn" xanh) | Thao tác (chỉ còn "👁 Chi tiết").
+7. Bấm "✓ Đã nhận" hoặc duyệt hàng loạt (xem AGA-PAYMENT-2/7) → sau khi xác nhận, (các) shop đó NGAY LẬP TỨC biến mất khỏi tab "Chờ xác nhận" và xuất hiện ở tab "Đã xác nhận"; 2 số đếm trên tab và 3 thẻ tổng quan đầu trang cập nhật theo.
+8. Cuối trang: thanh phân trang thật (không phải số trang giả) — "Hiển thị {50|100}" + dãy số trang + ô "Đến trang" nhảy thẳng.
+9. KHÔNG hiện bất kỳ dòng "Shop báo đã chuyển..." nào ở đây dù Shop đã bấm "Thanh toán cho đại lý" ở Báo cáo dòng tiền (Web Shop — xem SHOP-ORDER-55) hay chưa — Agency KHÔNG dựa vào "lời khai" của Shop để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi duyệt.
 
 ## System Flow
 
 1. Route `/agency-admin/cash-remittance` (`CashRemittance.tsx`), nav item trong `AgencyAdminLayout.tsx` với badge `countPendingCashApprovals()` = đếm đơn `paymentMethod === 'cash' && paymentApprovalStatus === 'pending_review'` của các shop có `agencyId === CURRENT_AGENCY_ID` ('AGN001').
-2. `agencyShops = loadShops().filter(s => s.agencyId === CURRENT_AGENCY_ID)` — toàn bộ shop thuộc đại lý mình (kể cả shop chưa có đơn tiền mặt nào — bị lọc bỏ ở bước sau).
-3. `relevantOrders = orders.filter(o => o.paymentMethod === 'cash' && !!o.paymentApprovalStatus)` — tính SẴN trên toàn bộ đơn tiền mặt (không giới hạn agency ở bước này, vì bước gán vào từng shop ở dưới đã tự đảm bảo chỉ hiện shop thuộc đại lý mình).
-4. `shopsWithOrders = agencyShops.map(shop => ({ shop, orders: relevantOrders.filter(o => o.shopId === shop.id) })).filter(g => g.orders.length > 0)` — mỗi phần tử là 1 khối `ShopGroup`, chỉ giữ shop CÓ ít nhất 1 đơn tiền mặt.
-5. `ShopGroup({ shopDisplayName, orders, onApproved })`: tự tính `pending`/`maxDays` RIÊNG cho shop này (không dùng biến toàn trang) để quyết định badge trạng thái + số N trên nút "Duyệt shop này".
-6. `daysSince(order.paymentPaidAt)` CÙNG CÔNG THỨC với `shopCashOverdueDays()` (`orderStore.ts`) mà Web Shop dùng để quyết định khoá tạo đơn, để 2 phía luôn khớp số ngày.
+2. `buildShopStats(shop, relevantOrders, blockDays)`: trả về `{ shop, orders, pending, pendingFeeTotal, maxDays, blocked }` cho 1 shop — `blocked = pending.length > 0 && maxDays >= blockDays`, ĐÚNG công thức `isOrderCreationBlocked()` (`orderStore.ts`) để "Trạng thái" ở đây LUÔN khớp với việc Web Shop của shop đó có đang bị khoá tạo đơn thật hay không.
+3. `allStats = agencyShops.map(shop => buildShopStats(...)).filter(s => s.orders.length > 0)` — chỉ giữ shop CÓ ít nhất 1 đơn tiền mặt liên quan.
+4. `pendingShops = allStats.filter(s => s.pending.length > 0)`; `confirmedShops = allStats.filter(s => s.pending.length === 0)` — tương ứng đúng 2 tab, không chồng lấn.
+5. `blockedShopsCount = pendingShops.filter(s => s.blocked).length` — tử số thẻ "Shop bị khoá tạo đơn"; mẫu số = `allStats.length`.
+6. `activeRows` (sau khi áp bộ lọc/tìm kiếm — xem AGA-PAYMENT-4) cắt trang bằng `pageSize`/`page` qua component `Pagination` (tái dùng NGUYÊN hàm `export function Pagination` đã có sẵn ở `AgencyOrders.tsx`).
+7. `refresh()` (tick state ở component cha) được gọi sau mỗi lần duyệt (bất kỳ cách nào) — re-render lại `allStats`/`pendingShops`/`confirmedShops`, khiến shop vừa duyệt tự "nhảy" từ mảng này sang mảng kia ở lần render kế tiếp.
 
 ## Acceptance Criteria
 
 **AC1:** Sidebar Agency Admin có mục "Duyệt thanh toán" với badge đỏ hiện đúng số đơn `pending_review` của CÁC SHOP THUỘC AGENCY MÌNH; route mở đúng trang.
 
-**AC2:** 4 chip tổng đầu trang hiện đúng số lượng theo từng trạng thái, tính trên TOÀN BỘ đại lý (cộng dồn mọi shop).
+**AC2:** 3 thẻ tổng quan hiện đúng số liệu tính trên TOÀN BỘ đại lý (không phụ thuộc tab/trang/bộ lọc đang chọn); "Shop bị khoá tạo đơn" hiện đúng dạng "X / Y" với Y = số shop CÓ đơn tiền mặt (không phải tổng số shop của đại lý).
 
-**AC3:** Mỗi shop CÓ đơn tiền mặt hiện đúng 1 khối riêng — shop KHÔNG có đơn tiền mặt nào thì KHÔNG hiện khối (không hiện khối rỗng).
+**AC3:** 1 shop chỉ xuất hiện ở ĐÚNG 1 tab tại 1 thời điểm — "Chờ xác nhận" nếu còn ≥1 đơn `pending_review`, "Đã xác nhận" nếu có đơn tiền mặt nhưng hiện không còn đơn nào `pending_review`; shop chưa từng phát sinh đơn tiền mặt không xuất hiện ở tab nào.
 
-**AC4:** Badge trạng thái tổng quát của từng shop phản ánh đúng mức độ trễ NẶNG NHẤT trong các đơn `pending_review` của RIÊNG shop đó.
+**AC4:** Sau khi 1 shop được duyệt hết đơn chờ (bất kỳ cách nào), shop đó rời tab "Chờ xác nhận" sang "Đã xác nhận" NGAY, đếm 2 tab + 3 thẻ tổng quan cập nhật theo, không cần F5.
 
-**AC5:** Đơn trễ 1-2 ngày → nhãn dòng "⚠ Chờ duyệt — trễ N ngày" (vàng); đơn trễ ≥3 ngày → nhãn dòng "🚫 Quá N ngày — đã khoá tạo đơn" (đỏ).
+**AC5:** Cuối trang luôn hiện thanh phân trang thật (kể cả khi dữ liệu demo chỉ đủ 1 trang).
 
-**AC6:** Dòng đơn trong bảng con THUẦN HIỂN THỊ — không có nút Duyệt/Từ chối riêng ở cấp từng dòng (hành động nằm ở cấp SHOP, xem AGA-PAYMENT-2).
-
-**AC7:** Đơn `paymentApprovalStatus === 'rejected'` → hiện ĐÚNG "✕ Chưa nhận tiền" (đỏ) kèm lý do + nguồn từ chối — KHÔNG được rơi vào nhánh tính ngày trễ (bug đã phát hiện qua UAT: thiếu nhánh `rejected` khiến đơn này hiện sai thành "🚫 Quá N ngày — đã khoá tạo đơn").
-
-**AC8:** Đơn `rejected` KHÔNG được tính vào số N trên nút "Duyệt shop này (N)" — `approveOrderPayment()` chỉ áp dụng cho đơn đang `pending_review`.
-
-**AC9:** Dù đơn có `cashRemittanceDeclaredAt` (Shop đã tự khai bên Web Shop) hay không, `StatusCell` ở đây hiện ĐÚNG Y HỆT nhau — không có bất kỳ dòng/nhãn "Shop báo đã chuyển" nào khác biệt.
+**AC6:** Dù đơn có `cashRemittanceDeclaredAt` (Shop đã tự khai bên Web Shop) hay không, không có bất kỳ dòng/nhãn "Shop báo đã chuyển" nào khác biệt ở bảng danh sách chính.
 
 ## Notes
 
-- **Thay đổi lớn (v2 — nhóm theo shop)**: bản đầu (v1) là 1 bảng phẳng chung cho toàn đại lý + 1 nút "Duyệt tất cả" áp dụng hết — đã đổi sang nhóm RIÊNG theo từng shop để Agency Admin kiểm soát/duyệt chính xác từng shop một, không bị gộp nhầm.
-- Tính năng này THAY THẾ HOÀN TOÀN trang "Duyệt thanh toán phí ship" cũ của Super Admin (GSA-PAYMENT-1/2/3, đã XOÁ) — lý do nghiệp vụ: Shop (bưu cục) thu hộ tiền mặt phải chuyển lại cho ĐẠI LÝ quản lý mình, không phải chuyển thẳng cho GHN, nên Agency Admin mới đúng vai trò duyệt.
-- Số ngày trễ tính từ `paymentPaidAt` CŨ NHẤT còn `pending_review` của shop đó (xem `shopCashOverdueDays()`, `orderStore.ts`) — không phải trung bình hay theo từng đơn riêng lẻ.
-- Xem AGA-PAYMENT-2 (nút "Duyệt shop này" — hành động nay ở CẤP SHOP, không còn là 1 nút tổng cho cả đại lý); AGA-PAYMENT-3 (phía Web Shop — cảnh báo/tự động khoá tạo đơn theo ngưỡng cấu hình).
-- Ngưỡng "1-2 ngày"/"≥3 ngày" hiện trong mô tả đầu trang và nhãn các dòng KHÔNG còn hardcode — đọc từ `loadRemittanceConfig()` (`warningDays`/`blockDays`), Super Admin cấu hình ở `/super-admin/settings/cash-remittance-rules` (xem GSA-PAYMENT-CONFIG-1); 1/3 chỉ còn là giá trị MẶC ĐỊNH.
-- **Bug đã sửa**: `StatusCell` ban đầu KHÔNG có nhánh `rejected` (chỉ check `confirmed` rồi rơi thẳng vào tính ngày trễ) — phát hiện khi thêm dữ liệu demo có đơn `rejected` thật. Đã thêm nhánh `rejected` ngay sau `confirmed`, trước khi tính `days`.
-- `rejectOrderPayment()` (`orderStore.ts`) vẫn chưa có nút gọi nào trong UI (kế thừa hạn chế từ thiết kế cũ) — đơn `rejected` trong hệ thống hiện chỉ có thể đến từ seed data demo, không tạo được qua thao tác Agency Admin thật.
-- **Thay đổi (bỏ hint "Shop báo đã chuyển")**: `StatusCell` từng hiện thêm 1 dòng "💬 Shop báo đã chuyển lúc..." khi đơn có `cashRemittanceDeclaredAt` — đã BỎ theo yêu cầu: Agency không cần một "thông báo" kiểu Shop tự khai để tin, mà tự dựa vào số ngày trễ do hệ thống tự track rồi tự đối chiếu sổ quỹ thật. `cashRemittanceDeclaredAt` vẫn tồn tại trên `Order` và vẫn được set bởi `declareCashRemittance()` (Shop vẫn bấm "Thanh toán cho đại lý" được bình thường, xem SHOP-ORDER-55) — chỉ KHÔNG còn hiển thị gì ở phía Agency Admin.
-- Tên mục sidebar/tiêu đề trang đã đổi từ "Duyệt thanh toán tiền mặt" thành **"Duyệt thanh toán"** (ngắn gọn hơn) — `id`/tên file tài liệu vẫn giữ nguyên để không phá liên kết, chỉ UI text đổi.
+- **Lịch sử tách story**: bản gốc AGA-PAYMENT-1 (v3) gộp CẢ bộ lọc/tìm kiếm, chọn nhiều + duyệt hàng loạt, và mô tả chi tiết màn "Chi tiết" (modal rồi full-page) trong CÙNG 1 story. Nay tách thành 6 story riêng (xem Bối cảnh) để mỗi năng lực ước lượng/triển khai/test độc lập được — tổng thể tính năng KHÔNG đổi, chỉ đổi cách chia nhỏ tài liệu.
+- Tính năng này đã THAY THẾ HOÀN TOÀN trang "Duyệt thanh toán phí ship" cũ của Super Admin (GSA-PAYMENT-1/2/3, đã XOÁ) — lý do nghiệp vụ: Shop (bưu cục) thu hộ tiền mặt phải chuyển lại cho ĐẠI LÝ quản lý mình, không phải chuyển thẳng cho GHN, nên Agency Admin mới đúng vai trò duyệt.
+- Cột "Trạng thái" ở bảng chính CHỈ có 2 mức (Đã khoá tạo đơn / Cho phép tạo đơn) — mức cảnh báo trung gian (còn bao nhiêu ngày trễ) nằm ở TỪNG ĐƠN trong màn "Chi tiết" (xem AGA-PAYMENT-6), không phải ở đây.
+- Xem AGA-PAYMENT-4 (bộ lọc trạng thái + tìm kiếm); AGA-PAYMENT-5 (chọn nhiều shop); AGA-PAYMENT-6 (màn Chi tiết full-page); AGA-PAYMENT-2/7/8 (3 cách duyệt); AGA-PAYMENT-3 (cảnh báo/khoá tự động phía Web Shop); GSA-PAYMENT-CONFIG-1 (Super Admin — nơi cấu hình ngưỡng, riêng từng đại lý).
+- `rejectOrderPayment()` (`orderStore.ts`) vẫn chưa có nút gọi nào trong UI — đơn `rejected` trong hệ thống hiện chỉ có thể đến từ seed data demo.

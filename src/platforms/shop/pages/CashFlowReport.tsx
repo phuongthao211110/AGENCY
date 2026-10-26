@@ -43,6 +43,19 @@ function fmtMoney(n: number): string {
   return n.toLocaleString('vi-VN')
 }
 
+// Đơn đã `confirmed` (đại lý đã duyệt) nhưng `fee` sau đó tăng thêm (phí hoàn hàng/đổi địa chỉ phát
+// sinh SAU thời điểm duyệt — xem confirmReturnOrder/confirmAddressChangeOrder, Orders.tsx) thì phần
+// tăng thêm đó CHƯA được duyệt lại, dù cả đơn vẫn hiện "đã thanh toán" phần gốc. Badge này báo ngay
+// trên bảng chính để Shop không phải bấm vào breakdown từng đơn mới biết có khoản mới phát sinh.
+function pendingSurchargeLabel(order: Order): string | null {
+  if (order.paymentApprovalStatus !== 'confirmed') return null
+  const approvedAmount = order.paymentApprovedAmount ?? order.fee
+  if (order.fee - approvedAmount <= 0) return null
+  if (order.status === 'returning') return 'Phí hoàn hàng chưa duyệt'
+  if ((order.feeAddressChange ?? 0) > 0) return 'Phụ phí đổi địa chỉ chưa duyệt'
+  return 'Phát sinh thêm chưa duyệt'
+}
+
 function downloadXlsx(filename: string, headers: string[], rows: (string | number)[][]) {
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
   ws['!cols'] = headers.map(h => ({ wch: Math.max(12, h.length + 2) }))
@@ -66,9 +79,10 @@ const cell = (children: React.ReactNode, flex = '1 0 0', minWidth = 100, align: 
 // = 0 cho tuyệt đại đa số đơn chưa từng bị hoàn.
 function feeBreakdownRows(order: Order): Array<{ label: string; amount: number }> {
   const hasBreakdown = order.feeShipping !== undefined
-  // order.fee đã CỘNG SẴN feeReturn (xem confirmReturnOrder) — fallback phải TRỪ feeReturn ra trước
-  // khi gán cho "Phí giao hàng", nếu không "Phí trả hàng" sẽ bị tính trùng 2 lần trong tổng breakdown.
-  const fallbackShipping = order.fee - (order.feeReturn ?? 0)
+  // order.fee đã CỘNG SẴN feeReturn/feeAddressChange (xem confirmReturnOrder/confirmAddressChangeOrder,
+  // Orders.tsx) — fallback phải TRỪ cả 2 ra trước khi gán cho "Phí giao hàng", nếu không sẽ bị tính
+  // trùng 2 lần trong tổng breakdown.
+  const fallbackShipping = order.fee - (order.feeReturn ?? 0) - (order.feeAddressChange ?? 0)
   return [
     { label: 'Phí giao hàng', amount: -(hasBreakdown ? order.feeShipping! : fallbackShipping) },
     { label: 'Phí bảo hiểm (khai giá)', amount: -(order.feeInsurance ?? 0) },
@@ -76,6 +90,7 @@ function feeBreakdownRows(order: Order): Array<{ label: string; amount: number }
     { label: 'Phí giao thất bại thu tiền', amount: -(order.feeDeliveryFail ?? 0) },
     { label: 'Phí thu hộ', amount: -(order.feeCod ?? 0) },
     { label: 'Phí trả hàng (hoàn hàng)', amount: -(order.feeReturn ?? 0) },
+    { label: 'Phụ phí đổi địa chỉ', amount: -(order.feeAddressChange ?? 0) },
   ]
 }
 
@@ -262,7 +277,7 @@ function RemittanceModal({ onClose, onDeclared }: { onClose: () => void; onDecla
                 <span style={{ color: C_TEXT_SECONDARY }}>Mã thanh toán:</span>
                 <span style={{ color: C_TEXT_PRIMARY, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                   {batch.id}
-                  <CopyOutlined style={{ cursor: 'pointer', color: C_TEXT_SECONDARY }} onClick={() => { try { navigator.clipboard.writeText(batch.id) } catch { /* no clipboard */ } }} />
+                  <CopyOutlined style={{ cursor: 'pointer', color: C_TEXT_SECONDARY }} onClick={() => navigator.clipboard.writeText(batch.id).catch(() => { /* no clipboard */ })} />
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 14, padding: '4px 0' }}>
@@ -302,10 +317,19 @@ export default function CashFlowReport() {
   // Quy ước dấu giống bảng đối soát phí thật: Phí dịch vụ luôn ÂM (khoản Shop phải trả); Đã thanh
   // toán DƯƠNG (phần đã khấu trừ xong); Chưa thanh toán ÂM nếu còn nợ, 0 nếu đã xong — 2 cột sau
   // luôn cộng lại đúng bằng Phí dịch vụ.
+  // `fee` có thể TĂNG THÊM sau khi đại lý đã duyệt (phí hoàn hàng/đổi địa chỉ phát sinh sau khi
+  // paymentApprovalStatus đã là 'confirmed', xem confirmReturnOrder/confirmAddressChangeOrder) —
+  // paymentApprovedAmount lưu đúng số đại lý đã duyệt TẠI THỜI ĐIỂM đó; phần tăng thêm sau đó CHƯA
+  // được ai duyệt, phải hiện ở cột Chưa thanh toán thay vì ngộ nhận gộp cả vào Đã thanh toán chỉ vì
+  // đơn đang ở trạng thái confirmed. `paymentApprovedAmount ?? fee` giữ đúng hành vi cũ cho đơn không
+  // có phần phát sinh thêm (snapshot bằng fee hiện tại → extra = 0).
   function rowAmounts(o: Order) {
     const fee = o.fee
     const paid = o.paymentApprovalStatus === 'confirmed'
-    return { phiDichVu: -fee, daThanhToan: paid ? fee : 0, chuaThanhToan: paid ? 0 : -fee }
+    if (!paid) return { phiDichVu: -fee, daThanhToan: 0, chuaThanhToan: -fee }
+    const approvedAmount = o.paymentApprovedAmount ?? fee
+    const extra = fee - approvedAmount
+    return { phiDichVu: -fee, daThanhToan: approvedAmount, chuaThanhToan: extra > 0 ? -extra : 0 }
   }
 
   const totals = relevantOrders.reduce((acc, o) => {
@@ -411,10 +435,23 @@ export default function CashFlowReport() {
               const a = rowAmounts(order)
               const { phoneTail, city } = maskedReceiver(order)
               const [time, date] = formatDate(order.paymentPaidAt).split('\n')
+              const surchargeLabel = pendingSurchargeLabel(order)
               return (
                 <div key={order.id} style={{ display: 'flex', alignItems: 'center', borderTop: `1px solid ${C_BORDER}` }}>
                   {cell(<span style={{ fontSize: 14, color: C_TEXT_SECONDARY }}>{i + 1}</span>, '0.4 0 0', 48)}
-                  {cell(<span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, textDecoration: 'underline' }}>{order.trackingCode}</span>, '1 0 0', 110)}
+                  {cell(
+                    <div>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, textDecoration: 'underline' }}>{order.trackingCode}</span>
+                      {surchargeLabel && (
+                        <div style={{ marginTop: 2 }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 4, padding: '1px 6px', background: '#FEF3C7', color: '#92400E', whiteSpace: 'nowrap' }}>
+                            ⚠️ {surchargeLabel}
+                          </span>
+                        </div>
+                      )}
+                    </div>,
+                    '1 0 0', 110
+                  )}
                   {cell(
                     <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, lineHeight: '18px' }}>{time}<br />{date}</span>,
                     '0.9 0 0', 110

@@ -4,6 +4,7 @@
 // Both platforms are SPA routes so localStorage gives cross-page consistency.
 
 import baseOrders from './orders.json'
+import { loadShops } from './shopStore'
 
 export type DispatchStatus = 'pending_agency' | 'dispatched'
 export type SendKind = 'goods' | 'letter'
@@ -37,6 +38,18 @@ export interface Order {
   // trong Orders.tsx) để `fee` luôn phản ánh đúng tổng Shop phải trả, và lưu riêng ở đây để hiện
   // breakdown (xem CashFlowReport.tsx).
   feeReturn?: number
+  // Phí đổi địa chỉ — CÙNG LOẠI với feeReturn (chỉ phát sinh SAU khi người nhận thực sự yêu cầu đổi
+  // địa chỉ, xem confirmAddressChangeOrder trong Orders.tsx), KHÁC feeReturn ở chỗ có 3 mức tuỳ theo
+  // khoảng cách đổi (Cùng Phường/Xã · Cùng Tỉnh/Thành · Khác Tỉnh/Thành — xem ShopPricingSurcharges.
+  // addressChange). Khi phát sinh, CỘNG THÊM vào `fee`, lưu riêng ở đây để hiện breakdown.
+  feeAddressChange?: number
+  // Snapshot của `fee` NGAY TẠI THỜI ĐIỂM paymentApprovalStatus chuyển sang 'confirmed' (xem
+  // approveOrderPayment, handlePaymentPaid*). Cần tách riêng vì `fee` có thể TĂNG THÊM SAU đó (phí
+  // hoàn hàng/đổi địa chỉ phát sinh sau khi đã duyệt) — nếu không lưu lại con số ĐÃ DUYỆT, báo cáo
+  // dòng tiền (CashFlowReport.tsx) sẽ ngộ nhận luôn cả phần phụ phí mới (chưa ai duyệt) là "Đã
+  // thanh toán" chỉ vì đơn đang ở trạng thái confirmed. undefined (đơn cũ/chưa duyệt lần nào) được
+  // coi tương đương `fee` hiện tại — không có phần phát sinh thêm nào cần tách ra.
+  paymentApprovedAmount?: number
   // Lựa chọn THẬT của shop lúc tạo đơn — 'sender' = Shop trả ship, 'receiver' = Khách trả ship.
   // Khác với giá trị luôn cố định "Shop trả ship" khi đối soát với GHN (GHN chỉ biết thu cước
   // từ bên gửi/đại lý, không có khái niệm thu từ người nhận) — 2 giá trị này KHÁC NHAU có chủ đích.
@@ -322,6 +335,7 @@ export function approveOrderPayment(orderId: string, approvedBy: string): Order[
       paymentApprovalStatus: 'confirmed',
       paymentApprovedAt: new Date().toISOString(),
       paymentApprovedBy: approvedBy,
+      paymentApprovedAmount: orders[idx].fee,
       status: orders[idx].status === 'pending' ? 'pickup' : orders[idx].status,
     }
     saveOrders(orders)
@@ -412,39 +426,66 @@ export function shopCashOverdueDays(shopId: string): number {
   return daysSinceCalendar(new Date(oldestMs).toISOString())
 }
 
-// Ngưỡng cảnh báo/khoá do Super Admin cấu hình (Cài đặt → Quy tắc thanh toán tiền mặt) — áp dụng
-// CHUNG cho mọi đại lý/shop, không cấu hình riêng từng đại lý. Mặc định giữ nguyên hành vi cũ
-// (1 ngày cảnh báo, 3 ngày khoá) khi Super Admin chưa từng lưu cấu hình nào.
+// Ngưỡng cảnh báo/khoá do Super Admin cấu hình (Cài đặt → Quy tắc thanh toán tiền mặt) — RIÊNG
+// TỪNG ĐẠI LÝ (mỗi đại lý tự đặt mức tin tưởng/khắt khe khác nhau cho shop của mình), không còn
+// 1 bộ dùng chung cho toàn hệ thống như trước. Mặc định giữ nguyên hành vi cũ (1 ngày cảnh báo, 3
+// ngày khoá) cho đại lý nào Super Admin chưa từng lưu cấu hình riêng.
 export interface CashRemittanceConfig {
   warningDays: number
   blockDays: number
 }
 
-const REMITTANCE_CONFIG_KEY = 'ghn_cash_remittance_config_v1'
+// Lưu dạng 1 mảng DÙNG CHUNG (mỗi phần tử gắn `agencyId`) — cùng convention với PriceTable
+// (pricingStore.ts, cũng gắn `agencyId` trong 1 mảng chung thay vì tách key riêng từng đại lý).
+interface AgencyCashRemittanceConfig extends CashRemittanceConfig {
+  agencyId: string
+}
+
+const REMITTANCE_CONFIG_KEY = 'ghn_cash_remittance_config_v2'
 const DEFAULT_REMITTANCE_CONFIG: CashRemittanceConfig = { warningDays: 1, blockDays: 3 }
 
-export function loadRemittanceConfig(): CashRemittanceConfig {
+function loadAllRemittanceConfigs(): AgencyCashRemittanceConfig[] {
   try {
     const raw = localStorage.getItem(REMITTANCE_CONFIG_KEY)
-    if (!raw) return DEFAULT_REMITTANCE_CONFIG
+    if (!raw) return []
     const parsed = JSON.parse(raw)
-    const warningDays = Number(parsed.warningDays)
-    const blockDays = Number(parsed.blockDays)
-    return {
-      warningDays: Number.isFinite(warningDays) && warningDays > 0 ? warningDays : DEFAULT_REMITTANCE_CONFIG.warningDays,
-      blockDays: Number.isFinite(blockDays) && blockDays > 0 ? blockDays : DEFAULT_REMITTANCE_CONFIG.blockDays,
-    }
+    return Array.isArray(parsed) ? parsed : []
   } catch {
-    return DEFAULT_REMITTANCE_CONFIG
+    return []
   }
 }
 
-export function saveRemittanceConfig(config: CashRemittanceConfig): void {
+function saveAllRemittanceConfigs(list: AgencyCashRemittanceConfig[]): void {
   try {
-    localStorage.setItem(REMITTANCE_CONFIG_KEY, JSON.stringify(config))
+    localStorage.setItem(REMITTANCE_CONFIG_KEY, JSON.stringify(list))
   } catch { /* storage unavailable */ }
 }
 
+export function loadRemittanceConfig(agencyId: string): CashRemittanceConfig {
+  const found = loadAllRemittanceConfigs().find(c => c.agencyId === agencyId)
+  if (!found) return DEFAULT_REMITTANCE_CONFIG
+  const warningDays = Number(found.warningDays)
+  const blockDays = Number(found.blockDays)
+  return {
+    warningDays: Number.isFinite(warningDays) && warningDays > 0 ? warningDays : DEFAULT_REMITTANCE_CONFIG.warningDays,
+    blockDays: Number.isFinite(blockDays) && blockDays > 0 ? blockDays : DEFAULT_REMITTANCE_CONFIG.blockDays,
+  }
+}
+
+export function saveRemittanceConfig(agencyId: string, config: CashRemittanceConfig): void {
+  const list = loadAllRemittanceConfigs()
+  const idx = list.findIndex(c => c.agencyId === agencyId)
+  const entry: AgencyCashRemittanceConfig = { agencyId, ...config }
+  if (idx === -1) list.push(entry)
+  else list[idx] = entry
+  saveAllRemittanceConfigs(list)
+}
+
+// shopId → agencyId tra qua shopStore (loadShops) — giữ nguyên chữ ký cũ `isOrderCreationBlocked
+// (shopId)` cho mọi call site hiện có (Orders.tsx) không phải sửa gì, chỉ tự đổi NGUỒN ngưỡng bên
+// trong sang đúng đại lý quản lý shop đó.
 export function isOrderCreationBlocked(shopId: string): boolean {
-  return shopCashOverdueDays(shopId) >= loadRemittanceConfig().blockDays
+  const shop = loadShops().find(s => s.id === shopId)
+  if (!shop) return false
+  return shopCashOverdueDays(shopId) >= loadRemittanceConfig(shop.agencyId).blockDays
 }

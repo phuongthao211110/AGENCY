@@ -103,8 +103,13 @@
 
 | Story | File | Jira | Status |
 |-------|------|------|--------|
-| [AGA] Duyệt thanh toán tiền mặt: Danh sách đơn chờ duyệt theo từng Shop | [danh-sach-don-tien-mat-cho-duyet.md](./cash-remittance/danh-sach-don-tien-mat-cho-duyet.md) | — | [Draft] |
-| [AGA] Duyệt thanh toán tiền mặt: Duyệt theo từng Shop | [duyet-tat-ca-don-cho.md](./cash-remittance/duyet-tat-ca-don-cho.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Danh sách shop theo tab Chờ/Đã xác nhận | [danh-sach-don-tien-mat-cho-duyet.md](./cash-remittance/danh-sach-don-tien-mat-cho-duyet.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Lọc theo trạng thái & tìm kiếm shop | [loc-trang-thai-va-tim-kiem-shop.md](./cash-remittance/loc-trang-thai-va-tim-kiem-shop.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Chọn nhiều shop để duyệt hàng loạt | [chon-nhieu-shop-de-duyet-hang-loat.md](./cash-remittance/chon-nhieu-shop-de-duyet-hang-loat.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Màn "Chi tiết" shop (full-page) | [man-chi-tiet-shop.md](./cash-remittance/man-chi-tiet-shop.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Duyệt 1 shop ở bảng chính (nút "✓ Đã nhận") | [duyet-tat-ca-don-cho.md](./cash-remittance/duyet-tat-ca-don-cho.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Duyệt hàng loạt nhiều shop đã chọn | [duyet-hang-loat-nhieu-shop.md](./cash-remittance/duyet-hang-loat-nhieu-shop.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Duyệt từ màn "Chi tiết" | [duyet-tu-man-chi-tiet.md](./cash-remittance/duyet-tu-man-chi-tiet.md) | — | [Draft] |
 | [AGA] Duyệt thanh toán tiền mặt: Cảnh báo trễ 1 ngày, tự động khoá tạo đơn sau 3 ngày | [canh-bao-va-tu-dong-khoa-tao-don.md](./cash-remittance/canh-bao-va-tu-dong-khoa-tao-don.md) | — | [Draft] |
 
 ## Hệ thống

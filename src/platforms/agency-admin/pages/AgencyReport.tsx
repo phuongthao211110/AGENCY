@@ -149,30 +149,6 @@ function getComparisonRanges(preset: PeriodPreset, anchor: Date, custom: { from:
   }
 }
 
-// BUG ĐÃ PHÁT HIỆN (chưa sửa ở lần review trước — sửa ở đây): gọi lại getComparisonRanges(preset,
-// trend.prevEnd) để suy ra "kỳ trước của kỳ trước" (dùng tính Khách quay lại của chính Kỳ trước,
-// xem shopStatsPrev bên dưới) chỉ ĐÚNG với 8/10 preset. Với 'lastWeek'/'lastMonth', preset đó tự
-// "lùi 1 ngày để thoát khỏi kỳ hiện tại rồi lấy TRỌN kỳ trước" — bước lùi 1 ngày này vô tình lùi dư
-// thêm NGUYÊN 1 kỳ nữa khi anchor đưa vào vốn đã nằm đúng ranh giới cuối kỳ (trend.prevEnd luôn là
-// Chủ nhật/ngày cuối tháng với 2 preset này), ví dụ "Tuần trước" sẽ tính nhầm lùi 2 tuần thay vì 1.
-// Hàm này tính TRỰC TIẾP "kỳ liền trước" từ trend.prevStart — không gọi lại case 'lastWeek'/
-// 'lastMonth' nên không dính lại đúng bug đó; dùng startOfWeek/startOfMonth THUẦN (không có bước
-// "lùi 1 ngày" đặc biệt) nên an toàn với mọi anchor, kể cả anchor rơi đúng ranh giới kỳ.
-function getCycleBeforePrev(preset: PeriodPreset, prevStart: Date, prevEnd: Date, anchorForOthers: Date, custom: { from: Date; to: Date } | null): Range {
-  if (preset === 'lastWeek') {
-    const cPrevEnd   = endOfDay(new Date(prevStart.getTime() - DAY_MS))
-    const cPrevStart = startOfWeek(cPrevEnd)
-    return { curStart: prevStart, curEnd: prevEnd, prevStart: cPrevStart, prevEnd: cPrevEnd, compareLabel: '' }
-  }
-  if (preset === 'lastMonth') {
-    const cPrevEnd   = endOfDay(new Date(prevStart.getTime() - DAY_MS))
-    const cPrevStart = startOfMonth(cPrevEnd)
-    return { curStart: prevStart, curEnd: prevEnd, prevStart: cPrevStart, prevEnd: cPrevEnd, compareLabel: '' }
-  }
-  // 8 preset còn lại (rolling ngày + to-date tuần/tháng) đã xác nhận ĐÚNG khi gọi lại theo cách cũ.
-  return getComparisonRanges(preset, anchorForOthers, custom)
-}
-
 function computePeriodComparison(orders: { createdAt: string; fee: number }[], preset: PeriodPreset, anchor: Date, custom: { from: Date; to: Date } | null = null) {
   const { curStart, curEnd, prevStart, prevEnd, compareLabel } = getComparisonRanges(preset, anchor, custom)
   const current  = sumFeeInRange(orders, curStart, curEnd)
@@ -191,49 +167,54 @@ function pctDelta(cur: number, prev: number): number | null {
 // không phải "khách hàng" của chính nó). Mỗi shop có tập khách hàng RIÊNG: 1 số điện thoại có thể
 // là khách "mới" của shop A nhưng đã từng mua ở shop B — 2 quan hệ khách hàng độc lập, tính riêng
 // theo TỪNG shop (truyền đúng danh sách đơn của 1 shop vào 2 hàm dưới để tính đúng phạm vi đó). ──
-type CustomerOrder = { createdAt: string; receiverPhone: string }
+type CustomerOrder = { createdAt: string; receiverPhone: string; status: string }
 
+// Đơn HUỶ (`status === 'cancelled'`) KHÔNG tính là "đã mua" ở bất kỳ chỗ nào trong 3 hàm dưới đây —
+// áp dụng ĐỒNG NHẤT cho cả việc xác định "có hoạt động trong kỳ" lẫn "đã từng mua trước đó", để
+// Khách hàng mới/Khách quay lại luôn chia đúng 2 nhóm KHÔNG CHỒNG LẤN của `curSet` (xem 2 hàm dưới).
 function customersActiveInRange(orders: CustomerOrder[], start: Date, end: Date): Set<string> {
   const startMs = start.getTime(), endMs = end.getTime()
   const set = new Set<string>()
   for (const o of orders) {
+    if (o.status === 'cancelled') continue
     const t = new Date(o.createdAt).getTime()
     if (t >= startMs && t <= endMs) set.add(o.receiverPhone)
   }
   return set
 }
 
-// KH "Onboard mới": có đơn trong Kỳ này, KHÔNG có đơn nào TRƯỚC curStart trong toàn bộ lịch sử.
+// KH "Mới": có đơn HỢP LỆ (không huỷ) trong Kỳ này, và KHÔNG có đơn HỢP LỆ nào TRƯỚC curStart
+// trong toàn bộ lịch sử — tức đơn trong kỳ này là lần mua hợp lệ ĐẦU TIÊN của khách.
 function countNewCustomers(orders: CustomerOrder[], curStart: Date, curEnd: Date): number {
   const curSet = customersActiveInRange(orders, curStart, curEnd)
   const curStartMs = curStart.getTime()
   let count = 0
   curSet.forEach((phone) => {
-    const hasBefore = orders.some((o) => o.receiverPhone === phone && new Date(o.createdAt).getTime() < curStartMs)
-    if (!hasBefore) count++
+    const hasValidBefore = orders.some((o) => o.receiverPhone === phone && o.status !== 'cancelled' && new Date(o.createdAt).getTime() < curStartMs)
+    if (!hasValidBefore) count++
   })
   return count
 }
 
-// KH "Re-active": có đơn Kỳ này, KHÔNG có đơn Kỳ trước (đang coi là ngừng mua), NHƯNG từng có đơn
-// TRƯỚC Kỳ trước đó (không phải khách hoàn toàn mới — khách mới đã tính vào "KH Onboard mới").
-function countReactiveCustomers(orders: CustomerOrder[], curStart: Date, curEnd: Date, prevStart: Date, prevEnd: Date): number {
+// KH "Quay lại": có đơn HỢP LỆ (không huỷ) trong Kỳ này, VÀ đã từng có ÍT NHẤT 1 đơn HỢP LỆ khác
+// TRƯỚC curStart — tức đơn trong kỳ này là lần mua hợp lệ THỨ 2 TRỞ LÊN trong toàn bộ lịch sử của
+// khách. Nếu lần mua trước đó của khách đã bị HUỶ, nó không tính — khách vẫn được coi là "Mới" ở
+// lần mua hợp lệ kế tiếp, không phải "Quay lại". Định nghĩa MỚI này thay thế hoàn toàn cách tính cũ
+// ("từng mua, nghỉ đúng 1 kỳ, nay quay lại") — không còn khái niệm "nghỉ 1 kỳ" nào nữa.
+function countReactiveCustomers(orders: CustomerOrder[], curStart: Date, curEnd: Date): number {
   const curSet = customersActiveInRange(orders, curStart, curEnd)
-  const prevStartMs = prevStart.getTime(), prevEndMs = prevEnd.getTime()
+  const curStartMs = curStart.getTime()
   let count = 0
   curSet.forEach((phone) => {
-    const custOrders = orders.filter((o) => o.receiverPhone === phone)
-    const hasPrev = custOrders.some((o) => { const t = new Date(o.createdAt).getTime(); return t >= prevStartMs && t <= prevEndMs })
-    if (hasPrev) return
-    const hasBeforePrev = custOrders.some((o) => new Date(o.createdAt).getTime() < prevStartMs)
-    if (hasBeforePrev) count++
+    const hasValidBefore = orders.some((o) => o.receiverPhone === phone && o.status !== 'cancelled' && new Date(o.createdAt).getTime() < curStartMs)
+    if (hasValidBefore) count++
   })
   return count
 }
 
-// ── Thống kê 1 shop trong 1 khoảng kỳ — Doanh thu/Sản lượng/AOV/KH OB/KH Re-active đều tính
+// ── Thống kê 1 shop trong 1 khoảng kỳ — Doanh thu/Sản lượng/AOV/KH Mới/KH Quay lại đều tính
 // TRÊN ĐÚNG đơn hàng của shop đó (đã filter theo shopId trước khi truyền vào 2 hàm KH ở trên). ──
-type OrderForStats = { createdAt: string; fee: number; weight: number; shopId: string; receiverPhone: string; paymentMethod?: string; paymentStatus?: string }
+type OrderForStats = { createdAt: string; fee: number; weight: number; shopId: string; receiverPhone: string; status: string; paymentMethod?: string; paymentStatus?: string }
 type ShopPeriodStat = {
   id: string; name: string; status: string
   revenue: number; volume: number; aov: number
@@ -243,7 +224,7 @@ type ShopPeriodStat = {
 function buildShopPeriodStats(
   shop: { id: string; name: string; status: string },
   allOrders: OrderForStats[],
-  curStart: Date, curEnd: Date, prevStart: Date, prevEnd: Date,
+  curStart: Date, curEnd: Date,
 ): ShopPeriodStat {
   const shopOrders = allOrders.filter((o) => o.shopId === shop.id)
   const curShopOrders = shopOrders.filter((o) => { const t = new Date(o.createdAt).getTime(); return t >= curStart.getTime() && t <= curEnd.getTime() })
@@ -253,7 +234,7 @@ function buildShopPeriodStats(
     id: shop.id, name: shop.name, status: shop.status,
     revenue, volume, aov: volume > 0 ? revenue / volume : 0,
     newCustomers: countNewCustomers(shopOrders, curStart, curEnd),
-    reactiveCustomers: countReactiveCustomers(shopOrders, curStart, curEnd, prevStart, prevEnd),
+    reactiveCustomers: countReactiveCustomers(shopOrders, curStart, curEnd),
   }
 }
 
@@ -364,6 +345,11 @@ function DeltaBadge({ pct }: { pct: number | null }) {
 
 // ── KPI gọn (label + số lớn + badge %) — 6 ô xếp 1 hàng theo đúng mockup, không icon để giữ mật
 // độ thông tin cao, không rối mắt như KpiCard cũ (icon + label + số lớn, tốn diện tích hơn). ────
+// `tooltip` trước đây CHỈ hiện qua `title` gốc của trình duyệt (phải rê chuột đúng vào card mới
+// thấy) — không hiện được trên màn hình cảm ứng, và không hiện trong ảnh chụp/export báo cáo.
+// Giờ hiện LUÔN thành 1 dòng chú thích nhỏ dưới số liệu khi có `tooltip`, vẫn giữ `title` làm lớp
+// dự phòng — chỉ 2 KPI "Khách hàng mới"/"Khách quay lại" hiện đang truyền `tooltip` nên chỉ 2 card
+// đó có thêm dòng chú thích, các KPI khác (Doanh thu/Sản lượng/AOV...) không đổi gì.
 function CompactKpiCard({ label, value, deltaPct, tooltip, flexBasis = '150px' }: { label: string; value: string; deltaPct: number | null; tooltip?: string; flexBasis?: string }) {
   return (
     <div style={{ flex: `1 1 ${flexBasis}`, background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 10, padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }} title={tooltip}>
@@ -372,6 +358,7 @@ function CompactKpiCard({ label, value, deltaPct, tooltip, flexBasis = '150px' }
         <span style={{ fontSize: 21, fontWeight: 700, color: C_TEXT_PRIMARY, lineHeight: 1.15 }}>{value}</span>
         <DeltaBadge pct={deltaPct} />
       </div>
+      {tooltip && <span style={{ fontSize: 11, color: C_TEXT_SECONDARY, lineHeight: 1.35 }}>{tooltip}</span>}
     </div>
   )
 }
@@ -778,13 +765,12 @@ export default function AgencyReport() {
   const periodAnchor = period === 'custom' ? (customRange?.to ?? anchorDate) : anchorDate
 
   const trend = computePeriodComparison(agencyOrders, period, periodAnchor, customRange)
-  const prevCycle = getCycleBeforePrev(period, trend.prevStart, trend.prevEnd, trend.prevEnd, customRange)
 
-  // ── 6 KPI đầu trang: Doanh thu/Sản lượng/AOV theo cân/AOV theo sản lượng/KH OB/KH Re-active —
+  // ── 6 KPI đầu trang: Doanh thu/Sản lượng/AOV theo cân/AOV theo sản lượng/KH Mới/KH Quay lại —
   // TẤT CẢ đều = TỔNG CỘNG của bảng "Chi tiết theo shop" bên dưới (Σ từng shop), để 2 khối này
   // luôn khớp số nhau, không phải 2 nguồn tính riêng biệt dễ lệch. ─────────────────────────────
-  const shopStatsCur  = shops.map((s) => buildShopPeriodStats(s, agencyOrders, trend.curStart, trend.curEnd, trend.prevStart, trend.prevEnd))
-  const shopStatsPrev = shops.map((s) => buildShopPeriodStats(s, agencyOrders, trend.prevStart, trend.prevEnd, prevCycle.prevStart, prevCycle.prevEnd))
+  const shopStatsCur  = shops.map((s) => buildShopPeriodStats(s, agencyOrders, trend.curStart, trend.curEnd))
+  const shopStatsPrev = shops.map((s) => buildShopPeriodStats(s, agencyOrders, trend.prevStart, trend.prevEnd))
 
   const totalVolume     = shopStatsCur.reduce((sum, s) => sum + s.volume, 0)
   const totalNewCust    = shopStatsCur.reduce((sum, s) => sum + s.newCustomers, 0)
@@ -880,8 +866,8 @@ export default function AgencyReport() {
         <div style={{ display: 'flex', gap: 12, padding: '12px 16px 0', flexShrink: 0, flexWrap: 'wrap' }}>
           <CompactKpiCard label="Doanh thu" value={fmtVND(trend.current)} deltaPct={pctDelta(trend.current, trend.previous)} />
           <CompactKpiCard label="Sản lượng" value={`${fmtNum(totalVolume)} đơn`} deltaPct={pctDelta(totalVolume, prevTotalVolume)} />
-          <CompactKpiCard label="Khách hàng mới" tooltip="Khách đặt đơn lần đầu tiên trong kỳ này" value={`${fmtNum(totalNewCust)} KH`} deltaPct={pctDelta(totalNewCust, prevTotalNewCust)} />
-          <CompactKpiCard label="Khách quay lại" tooltip="Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp" value={`${fmtNum(totalReactive)} KH`} deltaPct={pctDelta(totalReactive, prevTotalReactive)} />
+          <CompactKpiCard label="Khách hàng mới" tooltip="Đơn hợp lệ đầu tiên trong kỳ này (không tính đơn đã huỷ)" value={`${fmtNum(totalNewCust)} KH`} deltaPct={pctDelta(totalNewCust, prevTotalNewCust)} />
+          <CompactKpiCard label="Khách quay lại" tooltip="Đã mua lần thứ 2 trở lên (không tính đơn đã huỷ)" value={`${fmtNum(totalReactive)} KH`} deltaPct={pctDelta(totalReactive, prevTotalReactive)} />
         </div>
         <div style={{ display: 'flex', gap: 12, padding: '12px 16px', flexShrink: 0, flexWrap: 'wrap' }}>
           <CompactKpiCard flexBasis="300px" label="AOV theo cân" value={`${fmtVND(aovByWeight)}/kg`} deltaPct={pctDelta(aovByWeight, prevAovByWeight)} />
@@ -991,7 +977,7 @@ export default function AgencyReport() {
                   <DeltaBadge pct={pctDelta(totalNewCust, prevTotalNewCust)} />
                 </div>
                 <span style={{ fontSize: 11.5, color: C_TEXT_SECONDARY, lineHeight: 1.4 }}>
-                  Khách đặt đơn lần đầu tiên trong kỳ này
+                  Đơn hợp lệ đầu tiên trong kỳ này (không tính đơn đã huỷ)
                 </span>
                 <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY, marginTop: 4 }}>{fmtNum(totalNewCust)} KH</span>
                 <CustomerTrendChart
@@ -1009,19 +995,16 @@ export default function AgencyReport() {
                   <DeltaBadge pct={pctDelta(totalReactive, prevTotalReactive)} />
                 </div>
                 <span style={{ fontSize: 11.5, color: C_TEXT_SECONDARY, lineHeight: 1.4 }}>
-                  Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp
+                  Đã mua lần thứ 2 trở lên (không tính đơn đã huỷ)
                 </span>
                 <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY, marginTop: 4 }}>{fmtNum(totalReactive)} KH</span>
-                {/* Mỗi cột = khách quay lại của ĐÚNG ngày đó, so với ĐÚNG kỳ trước của filter đang
-                    chọn (trend.prevStart/prevEnd) — KHÔNG tự chế "1 ngày liền trước" riêng cho mỗi
-                    cột như bản trước. Bản cũ khiến hầu như ngày nào cũng ra "quay lại" (vì khách
-                    demo không mua liên tục mỗi ngày), mâu thuẫn với số lớn "0 KH" tính theo đúng
-                    kỳ trước thật của filter — giờ cả số lớn và từng cột dùng CHUNG 1 định nghĩa
-                    "kỳ trước", cộng dồn các cột sẽ khớp đúng số lớn phía trên. */}
+                {/* Mỗi cột = khách có đơn hợp lệ thứ 2 trở lên trong ĐÚNG ngày (hoặc tuần, nếu gộp)
+                    đó — cùng 1 định nghĩa "mua lần thứ 2, không tính đơn huỷ" với số lớn phía trên,
+                    không còn khái niệm "kỳ trước"/"nghỉ 1 kỳ" nào nữa (xem countReactiveCustomers). */}
                 <CustomerTrendChart
                   color="#7C3AED"
                   unit="KH"
-                  points={buildCustomerPoints(trendDays, trend.curEnd, (start, end) => countReactiveCustomers(agencyOrders, start, end, trend.prevStart, trend.prevEnd))}
+                  points={buildCustomerPoints(trendDays, trend.curEnd, (start, end) => countReactiveCustomers(agencyOrders, start, end))}
                 />
               </div>
             </div>
@@ -1055,8 +1038,8 @@ export default function AgencyReport() {
               <div style={{ flex: '0 0 130px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Doanh thu</div>
               <div style={{ flex: '0 0 110px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, textAlign: 'right' }}>Sản lượng</div>
               <div style={{ flex: '0 0 120px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, textAlign: 'right' }}>AOV/đơn</div>
-              <div style={{ flex: '0 0 90px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, textAlign: 'right' }} title="Khách đặt đơn lần đầu tiên trong kỳ này">Khách mới</div>
-              <div style={{ flex: '0 0 110px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, textAlign: 'right' }} title="Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp">Khách quay lại</div>
+              <div style={{ flex: '0 0 90px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, textAlign: 'right' }} title="Đơn hợp lệ đầu tiên trong kỳ này (không tính đơn đã huỷ)">Khách mới</div>
+              <div style={{ flex: '0 0 110px', padding: '8px 12px', fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, textAlign: 'right' }} title="Đã mua lần thứ 2 trở lên (không tính đơn đã huỷ)">Khách quay lại</div>
             </div>
 
             {rankedShopStats.length === 0 && (

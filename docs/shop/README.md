@@ -64,11 +64,12 @@
 | SHOP-ORDER-48 | [Nhãn trạng thái "Đơn nháp" khi đang chờ/bị từ chối xác nhận thanh toán](orders/nhan-trang-thai-don-nhap-cho-xac-nhan.md) | [Draft] |
 | SHOP-ORDER-49 | [Tạo đơn hàng: Phương thức thanh toán MoMo](orders/phuong-thuc-thanh-toan-momo.md) | [Draft] |
 | SHOP-ORDER-50 | [Tạo đơn hàng: Phương thức thanh toán chuyển khoản ngân hàng](orders/phuong-thuc-thanh-toan-chuyen-khoan.md) | [Draft] |
-| SHOP-ORDER-51 | [Chi tiết đơn hàng: Đổi phương thức thanh toán ⚠️ chưa implement](orders/doi-phuong-thuc-thanh-toan-chi-tiet-don.md) | [Draft] |
+| SHOP-ORDER-51 | [Chi tiết đơn hàng: Đổi phương thức thanh toán](orders/doi-phuong-thuc-thanh-toan-chi-tiet-don.md) | [Draft] |
 | SHOP-ORDER-52 | [Chi tiết đơn hàng: Trạng thái thanh toán và lịch sử thao tác](orders/trang-thai-thanh-toan-va-lich-su-chi-tiet-don.md) | [Draft] |
-| SHOP-ORDER-53 | [Chi tiết đơn hàng: Tự reset phương thức thanh toán ⚠️ chưa implement](orders/tu-reset-phuong-thuc-thanh-toan-chi-tiet-don.md) | [Draft] |
-| SHOP-ORDER-54 | [Danh sách đơn hàng: Nhãn "Đã thanh toán" ở cột Trạng thái ⚠️ chưa implement](orders/nhan-da-thanh-toan-cot-trang-thai-danh-sach-don.md) | [Draft] |
+| SHOP-ORDER-53 | [Chi tiết đơn hàng: Tự reset phương thức thanh toán ⚠️ đã đóng — trùng SHOP-ORDER-46](orders/tu-reset-phuong-thuc-thanh-toan-chi-tiet-don.md) | [Draft] |
+| SHOP-ORDER-54 | [Danh sách đơn hàng: Nhãn "Đã thanh toán" ở cột Trạng thái](orders/nhan-da-thanh-toan-cot-trang-thai-danh-sach-don.md) | [Draft] |
 | SHOP-ORDER-55 | [Báo cáo dòng tiền: Bảng phí dịch vụ đã/chưa thanh toán](orders/bao-cao-dong-tien.md) | [Draft] |
+| SHOP-ORDER-56 | [Chi tiết đơn hàng: Yêu cầu đổi địa chỉ phát sinh phụ phí](orders/dieu-chinh-dia-chi-phat-sinh-phu-phi.md) | [Draft] |
 
 ## Đối soát
 
@@ -95,3 +96,11 @@ _Chưa có stories_
 | Story | File | Jira | Status |
 |-------|------|------|--------|
 | [WS] Cài đặt - Xoá tài khoản | [xoa-tai-khoan.md](./settings/xoa-tai-khoan.md) | AGENCY-610 | [Draft] |
+| [WEB SHOP] Cài đặt: Tem QR — Tạo mới & danh sách | [tao-moi-tem-qr.md](./settings/tao-moi-tem-qr.md) | — | [Draft] |
+| [WEB SHOP] Cài đặt: Tem QR — Xem tem QR (màn hình riêng, cách điệu) | [xem-tem-qr-fullscreen.md](./settings/xem-tem-qr-fullscreen.md) | — | [Draft] |
+| [WEB SHOP] Cài đặt: Tem QR — Tải tem QR (PNG & PDF) | [tai-tem-qr-png-pdf.md](./settings/tai-tem-qr-png-pdf.md) | — | [Draft] |
+| [WEB SHOP] Cài đặt: Tem QR — In tem QR | [in-tem-qr.md](./settings/in-tem-qr.md) | — | [Draft] |
+| [WEB SHOP] Cài đặt: Tem QR — Quét tem dẫn tới Tạo đơn hàng | [quet-tem-qr-dan-toi-tao-don.md](./settings/quet-tem-qr-dan-toi-tao-don.md) | — | [Draft] |
+| [WEB SHOP] Cài đặt: Tem QR — Bật/tắt và xoá tem | [bat-tat-va-xoa-tem-qr.md](./settings/bat-tat-va-xoa-tem-qr.md) | — | [Draft] |
+| [WEB SHOP] Cài đặt: Tem QR — Chống đếm trùng lượt quét | [chong-dem-trung-luot-quet.md](./settings/chong-dem-trung-luot-quet.md) | — | [Draft] |
+| [WEB SHOP] Cài đặt: Tem QR — Chỉnh sửa tem | [chinh-sua-tem-qr.md](./settings/chinh-sua-tem-qr.md) | — | [Draft] |

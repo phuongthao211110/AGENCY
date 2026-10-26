@@ -2917,75 +2917,80 @@
         {
           "id": "AGA-REPORT-8",
           "jiraKey": "",
-          "title": "[AGA] Báo cáo: Chỉ số \"Khách hàng mới\" (KH đặt đơn lần đầu trong kỳ)",
+          "title": "[AGA] Báo cáo: Chỉ số \"Khách hàng mới\" (KH có đơn hợp lệ đầu tiên trong kỳ)",
           "status": "draft",
-          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn biết có bao nhiêu KHÁCH HÀNG CUỐI (người mua/nhận hàng của shop) đặt đơn LẦN ĐẦU TIÊN trong kỳ đang chọn — cả theo từng shop và tổng toàn đại lý — để đánh giá khả năng thu hút khách mới của từng shop, tách biệt khỏi số khách quay lại mua tiếp (xem AGA-REPORT-9).",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn biết có bao nhiêu KHÁCH HÀNG CUỐI (người mua/nhận hàng của shop) có đơn HỢP LỆ (không tính đơn đã huỷ) ĐẦU TIÊN trong kỳ đang chọn — cả theo từng shop và tổng toàn đại lý — để đánh giá khả năng thu hút khách mới của từng shop, tách biệt khỏi số khách quay lại mua tiếp (xem AGA-REPORT-9).",
           "userFlow": [
             "\"Khách hàng mới\" xuất hiện ở 3 nơi trên trang \"Báo cáo\": (a) 1 trong 6 thẻ KPI đầu trang, (b) khối đầu tiên trong card \"Khách hàng\" (chấm màu xanh lá, góc phải trang), (c) cột \"Khách mới\" trong bảng \"Chi tiết theo shop\".",
-            "Thẻ KPI đầu trang: hiện số khách mới TOÀN đại lý trong kỳ, kèm badge % so với kỳ trước (hoặc chữ \"Mới\" màu xanh dương nếu kỳ trước = 0 khách mới).",
-            "Khối trong card \"Khách hàng\": chấm màu xanh lá (`#0D9488`) + nhãn \"Khách hàng mới\" + badge % (góc phải) → dòng định nghĩa \"Khách đặt đơn lần đầu tiên trong kỳ này\" → số lớn → sparkline 7 cột (7 ngày gần nhất, cột cuối cùng — hôm nay — tô đậm nhất, các cột trước nhạt hơn).",
+            "Thẻ KPI đầu trang: hiện số khách mới TOÀN đại lý trong kỳ, kèm badge % so với kỳ trước (hoặc chữ \"Mới\" màu xanh dương nếu kỳ trước = 0 khách mới); ngay dưới số lớn LUÔN hiện 1 dòng chú thích nhỏ \"Đơn hợp lệ đầu tiên trong kỳ này (không tính đơn đã huỷ)\" (không cần hover).",
+            "Khối trong card \"Khách hàng\": chấm màu xanh lá (#0D9488) + nhãn \"Khách hàng mới\" + badge % (góc phải) → dòng định nghĩa \"Đơn hợp lệ đầu tiên trong kỳ này (không tính đơn đã huỷ)\" → số lớn → biểu đồ cột theo ngày (hoặc tuần nếu kỳ > 30 ngày — xem AGA-REPORT-12 cho cách gộp tuần).",
             "Cột \"Khách mới\" trong bảng \"Chi tiết theo shop\": số khách mới CỦA RIÊNG shop đó trong kỳ đang chọn, hover vào tiêu đề cột hiện tooltip định nghĩa.",
-            "Đổi tab Ngày/Tuần/Tháng → cả 3 nơi cập nhật lại theo đúng khoảng \"Kỳ này\" mới của tab đó (sparkline trong card \"Khách hàng\" là ngoại lệ — xem System Flow điểm 4)."
+            "Đổi bộ lọc \"Thời gian\" ở header trang → cả 3 nơi cập nhật lại theo đúng khoảng \"Kỳ này\" mới — biểu đồ cột trong card \"Khách hàng\" bám đúng trendDays của bộ lọc (KHÔNG còn cố định 7 ngày như thiết kế rất cũ)."
           ],
           "systemFlow": [
-            "Khách hàng nhận diện qua `order.receiverPhone` (người nhận/mua hàng thật) — KHÔNG PHẢI chính shop. `customersActiveInRange(orders, start, end)` gom `Set<receiverPhone>` có đơn trong khoảng đó.",
-            "`countNewCustomers(orders, curStart, curEnd)` = số khách có đơn trong `[curStart, curEnd]` VÀ KHÔNG có đơn nào trước `curStart` trong toàn bộ lịch sử đơn được truyền vào (`orders.some(o => o.receiverPhone === phone && createdAt < curStart)` → false với mọi đơn).",
-            "Tính theo TỪNG shop (cột bảng, khối trong `buildShopPeriodStats`): truyền `shopOrders` đã lọc theo ĐÚNG 1 `shopId` vào `countNewCustomers()` — vì 1 số điện thoại có thể \"mới\" ở shop A nhưng đã từng mua ở shop B, 2 quan hệ khách hàng độc lập theo từng shop. Số ở thẻ KPI đầu trang = Σ giá trị này qua mọi shop (`shopStatsCur.reduce(...)`), KHÔNG tính lại trên toàn bộ `agencyOrders` gộp chung (tránh đếm trùng 1 khách mua ở nhiều shop thành \"mới\" 2 lần theo nghĩa khác).",
-            "Sparkline 7 cột trong card \"Khách hàng\" là NGOẠI LỆ — tính theo NGÀY cố định (7 ngày gần nhất tính từ `anchorDate`, mỗi điểm = `countNewCustomers(agencyOrders, startOfDay(day), endOfDay(day))` trên TOÀN đại lý), không đổi theo tab Ngày/Tuần/Tháng đang chọn — chỉ minh hoạ xu hướng ngắn hạn.",
-            "`pctDelta(cur, prev)`: `prev > 0` → % bình thường; `prev = 0` và `cur > 0` → trả `null` (hiện badge \"Mới\" màu xanh dương); cả 2 = 0 → 0%. Giá trị \"kỳ trước\" tính lại bằng `buildShopPeriodStats` với `prevCycle = getComparisonRanges(period, trend.prevEnd)` (lùi thêm 1 chu kỳ nữa để có \"kỳ trước của kỳ trước\" làm mốc so sánh).",
-            "Component hiển thị: `CompactKpiCard` (thẻ KPI đầu trang, có `title` tooltip), khối tự viết trong card \"Khách hàng\" (không dùng component riêng), header cột bảng có `title` tooltip."
+            "Khách hàng nhận diện qua order.receiverPhone (người nhận/mua hàng thật) — KHÔNG PHẢI chính shop. customersActiveInRange(orders, start, end) gom Set<receiverPhone> có đơn HỢP LỆ (bỏ qua đơn status === 'cancelled') trong khoảng đó.",
+            "countNewCustomers(orders, curStart, curEnd) = số khách có mặt trong customersActiveInRange(orders, curStart, curEnd) (có đơn hợp lệ trong Kỳ này) VÀ KHÔNG có đơn HỢP LỆ nào khác trước curStart trong toàn bộ lịch sử đơn được truyền vào — đơn status === 'cancelled' không tính là \"đã mua\" nên KHÔNG chặn khách được tính là \"mới\" (khách có 1 đơn huỷ ở quá khứ rồi giờ mới có đơn hợp lệ đầu tiên → vẫn là \"Khách hàng mới\").",
+            "Tính theo TỪNG shop (cột bảng, khối trong buildShopPeriodStats): truyền shopOrders đã lọc theo ĐÚNG 1 shopId vào countNewCustomers() — vì 1 số điện thoại có thể \"mới\" ở shop A nhưng đã từng mua ở shop B, 2 quan hệ khách hàng độc lập theo từng shop. Số ở thẻ KPI đầu trang = Σ giá trị này qua mọi shop (shopStatsCur.reduce(...)), KHÔNG tính lại trên toàn bộ agencyOrders gộp chung (tránh đếm trùng 1 khách mua ở nhiều shop thành \"mới\" 2 lần theo nghĩa khác).",
+            "Biểu đồ cột trong card \"Khách hàng\": mỗi cột = countNewCustomers(agencyOrders, start, end) của ĐÚNG ngày (hoặc tuần khi gộp, xem AGA-REPORT-12) đó, trên TOÀN đại lý — dùng CHUNG 1 định nghĩa với số lớn phía trên, không có ngoại lệ \"cố định 7 ngày\" nào nữa.",
+            "pctDelta(cur, prev): prev > 0 → % bình thường; prev = 0 và cur > 0 → trả null (hiện badge \"Mới\" màu xanh dương); cả 2 = 0 → 0%. Giá trị \"kỳ trước\" tính lại bằng buildShopPeriodStats(shop, agencyOrders, trend.prevStart, trend.prevEnd) — gọi lại ĐÚNG công thức hiện tại trên khoảng lùi 1 kỳ, không cần \"kỳ trước của kỳ trước\" nào (không còn getCycleBeforePrev(), đã xoá khỏi code).",
+            "Component hiển thị: CompactKpiCard (thẻ KPI đầu trang, nay hiện cả title tooltip LẪN 1 dòng chú thích luôn hiện — xem AGA-REPORT-10), khối tự viết trong card \"Khách hàng\" (không dùng component riêng), header cột bảng có title tooltip."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: \"Khách hàng mới\" của 1 shop = khách (theo `receiverPhone`) có đơn trong Kỳ này VÀ KHÔNG có đơn nào trước thời điểm bắt đầu Kỳ này, trong toàn bộ lịch sử đơn CỦA RIÊNG shop đó.",
-            "AC2: Số ở thẻ KPI đầu trang = TỔNG (Σ) đúng bằng cột \"Khách mới\" cộng dồn qua mọi shop trong bảng \"Chi tiết theo shop\" — không lệch số.",
-            "AC3: Badge % ở thẻ KPI và khối trong card \"Khách hàng\" hiện đúng % tăng/giảm so với kỳ trước; nếu kỳ trước = 0 khách mới và kỳ này > 0 → hiện chữ \"Mới\" (xanh dương), không hiện %/∞.",
-            "AC4: Đổi tab Ngày/Tuần/Tháng → số ở thẻ KPI, khối trong card \"Khách hàng\" (trừ sparkline) và cột bảng đều cập nhật theo đúng khoảng Kỳ này mới; sparkline 7 cột KHÔNG đổi theo tab (luôn 7 ngày gần nhất tính từ `anchorDate`).",
-            "AC5: Sparkline hiện đủ 7 cột, cột cuối cùng (hôm nay) tô màu đậm nhất (`#0D9488`), 6 cột trước tô nhạt hơn (`#0D9488` + alpha 33%); hover 1 cột hiện tooltip đúng số khách mới ngày đó.",
-            "AC6: Đại lý/shop không có đơn nào trong Kỳ này → hiện \"0 KH\", không lỗi/NaN; không nhầm lẫn với \"Khách quay lại\" (AGA-REPORT-9) — 1 khách hàng không được tính đồng thời ở cả 2 chỉ số trong cùng 1 kỳ, của cùng 1 shop."
+            "AC1: \"Khách hàng mới\" của 1 shop = khách (theo receiverPhone) có đơn HỢP LỆ trong Kỳ này VÀ KHÔNG có đơn HỢP LỆ nào khác trước thời điểm bắt đầu Kỳ này, trong toàn bộ lịch sử đơn CỦA RIÊNG shop đó.",
+            "AC2: Khách có 1 (hoặc nhiều) đơn đã HUỶ trước Kỳ này, và đây là đơn HỢP LỆ đầu tiên của họ → vẫn tính là \"Khách hàng mới\" (đơn huỷ trước đó không tính là đã từng mua).",
+            "AC3: Số ở thẻ KPI đầu trang = TỔNG (Σ) đúng bằng cột \"Khách mới\" cộng dồn qua mọi shop trong bảng \"Chi tiết theo shop\" — không lệch số.",
+            "AC4: Badge % ở thẻ KPI và khối trong card \"Khách hàng\" hiện đúng % tăng/giảm so với kỳ trước; nếu kỳ trước = 0 khách mới và kỳ này > 0 → hiện chữ \"Mới\" (xanh dương), không hiện %/∞.",
+            "AC5: Đổi bộ lọc \"Thời gian\" ở header trang → số ở thẻ KPI, khối trong card \"Khách hàng\" (kể cả biểu đồ cột) và cột bảng đều cập nhật theo đúng khoảng Kỳ này mới — không còn ngoại lệ nào dùng \"7 ngày cố định\".",
+            "AC6: Đại lý/shop không có đơn hợp lệ nào trong Kỳ này → hiện \"0 KH\", không lỗi/NaN; không nhầm lẫn với \"Khách quay lại\" (AGA-REPORT-9) — 1 khách hàng không được tính đồng thời ở cả 2 chỉ số trong cùng 1 kỳ, của cùng 1 shop (xem AC6 của AGA-REPORT-9)."
           ],
           "notes": [
-            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng chỉ số — AGA-REPORT-7 nay chỉ còn giữ khung trang tổng thể (header, thứ tự các khối), còn định nghĩa/logic chi tiết của \"Khách hàng mới\" chuyển hẳn về story này.",
-            "\"Khách hàng quay lại\" (chỉ số song song, dùng chung `buildShopPeriodStats`) được tách thành story riêng — xem [AGA-REPORT-9](./khach-quay-lai.md).",
-            "**Định nghĩa nghiệp vụ đã xác nhận với người yêu cầu**: \"KH\" = khách hàng CUỐI của shop (người mua/nhận hàng, nhận diện qua `receiverPhone`) — KHÔNG PHẢI đếm số shop.",
-            "Không có \"known gap\" về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+            "Cập nhật (2026-10-21): thêm điều kiện loại trừ đơn ĐÃ HUỶ khỏi mọi phép đếm \"đã từng mua\"/\"có hoạt động trong kỳ\" — trước đây đơn huỷ vẫn tính như đơn bình thường, khiến 1 khách có đơn đầu tiên bị huỷ rồi mới thực sự mua lần đầu (hợp lệ) bị tính NHẦM thành \"Khách quay lại\" thay vì \"Khách hàng mới\". Thay đổi này đi kèm với redesign toàn bộ định nghĩa \"Khách quay lại\" — xem [AGA-REPORT-9](./khach-quay-lai.md) Notes để biết chi tiết đầy đủ.",
+            "Sửa mô tả lỗi thời: doc bản trước mô tả sparkline \"luôn cố định 7 ngày gần nhất, không đổi theo tab\" — mô tả đó đã KHÔNG còn đúng với code từ đợt redesign \"cột chồng theo shop, filter thời gian\" (biểu đồ giờ bám đúng trendDays của bộ lọc, xem AGA-REPORT-12); đã sửa lại System Flow/User Flow cho khớp code thật.",
+            "Tách ra từ AGA-REPORT-7 (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng chỉ số.",
+            "\"Khách hàng quay lại\" (chỉ số song song, dùng chung buildShopPeriodStats) được tách thành story riêng — xem [AGA-REPORT-9](./khach-quay-lai.md).",
+            "Định nghĩa nghiệp vụ đã xác nhận với người yêu cầu: \"KH\" = khách hàng CUỐI của shop (người mua/nhận hàng, nhận diện qua receiverPhone) — KHÔNG PHẢI đếm số shop.",
+            "Không có \"known gap\" về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (orderStore), không dùng công thức demo cố định."
           ]
         },
         {
           "id": "AGA-REPORT-9",
           "jiraKey": "",
-          "title": "[AGA] Báo cáo: Chỉ số \"Khách quay lại\" (KH từng mua, ngừng 1 kỳ, nay quay lại)",
+          "title": "[AGA] Báo cáo: Chỉ số \"Khách quay lại\" (KH mua đơn hợp lệ lần thứ 2 trở lên)",
           "status": "draft",
-          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn biết có bao nhiêu KHÁCH HÀNG CUỐI (người mua/nhận hàng của shop) từng mua hàng, NGỪNG mua ở kỳ liền trước, rồi QUAY LẠI đặt đơn tiếp trong kỳ đang chọn — cả theo từng shop và tổng toàn đại lý — để đánh giá mức độ giữ chân/kéo lại khách hàng cũ, tách biệt khỏi số khách hoàn toàn mới (xem AGA-REPORT-8).",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn biết có bao nhiêu KHÁCH HÀNG CUỐI (người mua/nhận hàng của shop) đang mua đơn HỢP LỆ lần thứ 2 trở lên (không tính đơn đã huỷ) trong kỳ đang chọn — cả theo từng shop và tổng toàn đại lý — để đánh giá mức độ khách hàng quay lại mua tiếp, tách biệt khỏi số khách hoàn toàn mới (xem AGA-REPORT-8).",
           "userFlow": [
             "\"Khách quay lại\" xuất hiện ở 3 nơi trên trang \"Báo cáo\": (a) 1 trong 6 thẻ KPI đầu trang, (b) khối thứ hai trong card \"Khách hàng\" (chấm màu tím, góc phải trang), (c) cột \"Khách quay lại\" trong bảng \"Chi tiết theo shop\".",
-            "Thẻ KPI đầu trang: hiện số khách quay lại TOÀN đại lý trong kỳ, kèm badge % so với kỳ trước (hoặc chữ \"Mới\" màu xanh dương nếu kỳ trước = 0 khách quay lại).",
-            "Khối trong card \"Khách hàng\": chấm màu tím (`#7C3AED`) + nhãn \"Khách quay lại\" + badge % (góc phải) → dòng định nghĩa \"Từng mua, ngừng 1 kỳ, nay quay lại đặt đơn tiếp\" → số lớn → sparkline 7 cột (7 ngày gần nhất, cột cuối cùng — hôm nay — tô đậm nhất).",
+            "Thẻ KPI đầu trang: hiện số khách quay lại TOÀN đại lý trong kỳ, kèm badge % so với kỳ trước (hoặc chữ \"Mới\" màu xanh dương nếu kỳ trước = 0 khách quay lại); ngay dưới số lớn LUÔN hiện 1 dòng chú thích nhỏ \"Đã mua lần thứ 2 trở lên (không tính đơn đã huỷ)\" (không cần hover).",
+            "Khối trong card \"Khách hàng\": chấm màu tím (#7C3AED) + nhãn \"Khách quay lại\" + badge % (góc phải) → dòng định nghĩa \"Đã mua lần thứ 2 trở lên (không tính đơn đã huỷ)\" → số lớn → biểu đồ cột theo ngày (hoặc tuần nếu kỳ > 30 ngày, xem AGA-REPORT-12).",
             "Cột \"Khách quay lại\" trong bảng \"Chi tiết theo shop\": số khách quay lại CỦA RIÊNG shop đó trong kỳ đang chọn, hover vào tiêu đề cột hiện tooltip định nghĩa.",
-            "Đổi tab Ngày/Tuần/Tháng → cả 3 nơi cập nhật lại theo đúng khoảng \"Kỳ này\"/\"Kỳ trước\" mới của tab đó (sparkline trong card \"Khách hàng\" là ngoại lệ — xem System Flow điểm 4)."
+            "Đổi bộ lọc \"Thời gian\" ở header trang → cả 3 nơi cập nhật lại theo đúng khoảng \"Kỳ này\"/\"Kỳ trước\" mới — KHÔNG còn ngoại lệ \"sparkline dùng D-1 cố định\" như thiết kế cũ, biểu đồ cột trong card \"Khách hàng\" giờ bám đúng trendDays của bộ lọc giống hệt biểu đồ \"Xu hướng doanh thu & sản lượng\" (AGA-REPORT-12)."
           ],
           "systemFlow": [
-            "Khách hàng nhận diện qua `order.receiverPhone` — KHÔNG PHẢI chính shop. `customersActiveInRange(orders, start, end)` gom `Set<receiverPhone>` có đơn trong khoảng đó (dùng chung với AGA-REPORT-8).",
-            "`countReactiveCustomers(orders, curStart, curEnd, prevStart, prevEnd)` = số khách có đơn trong `[curStart, curEnd]`, KHÔNG có đơn nào trong `[prevStart, prevEnd]` (Kỳ trước — coi là đã ngừng mua ở kỳ đó), NHƯNG có ÍT NHẤT 1 đơn TRƯỚC `prevStart` (từng là khách cũ, không phải khách hoàn toàn mới — khách hoàn toàn mới đã tính ở AGA-REPORT-8, không tính trùng ở đây).",
-            "Tính theo TỪNG shop (cột bảng, khối trong `buildShopPeriodStats`): truyền `shopOrders` đã lọc theo ĐÚNG 1 `shopId` vào `countReactiveCustomers()`. Số ở thẻ KPI đầu trang = Σ giá trị này qua mọi shop (`shopStatsCur.reduce(...)`), KHÔNG tính lại trên `agencyOrders` gộp chung.",
-            "Sparkline 7 cột trong card \"Khách hàng\" là NGOẠI LỆ và dùng \"Kỳ trước\" ĐƠN GIẢN HOÁ = đúng 1 ngày liền trước (D-1), KHÁC với định nghĩa \"Kỳ trước\" chính thức ở thẻ KPI/bảng (theo đúng tab Ngày/Tuần/Tháng đang chọn) — mỗi điểm sparkline = `countReactiveCustomers(agencyOrders, startOfDay(day), endOfDay(day), startOfDay(day-1), endOfDay(day-1))`, chỉ minh hoạ xu hướng ngắn hạn, KHÔNG dùng để đọc số chính thức.",
-            "`pctDelta(cur, prev)`: `prev > 0` → % bình thường; `prev = 0` và `cur > 0` → trả `null` (hiện badge \"Mới\"); cả 2 = 0 → 0%. Giá trị \"kỳ trước\" của thẻ KPI/bảng tính lại bằng `buildShopPeriodStats` với `prevCycle = getComparisonRanges(period, trend.prevEnd)` để có đủ 2 mốc lùi (kỳ trước của kỳ trước) cho phép so sánh 3-điểm-thời-gian.",
-            "Component hiển thị: `CompactKpiCard` (thẻ KPI đầu trang, có `title` tooltip), khối tự viết trong card \"Khách hàng\", header cột bảng có `title` tooltip."
+            "Khách hàng nhận diện qua order.receiverPhone — KHÔNG PHẢI chính shop. customersActiveInRange(orders, start, end) gom Set<receiverPhone> có đơn HỢP LỆ (bỏ qua đơn status === 'cancelled') trong khoảng đó (dùng chung với AGA-REPORT-8).",
+            "countReactiveCustomers(orders, curStart, curEnd) = số khách có mặt trong customersActiveInRange(orders, curStart, curEnd) (tức có đơn HỢP LỆ trong Kỳ này) VÀ có ÍT NHẤT 1 đơn HỢP LỆ KHÁC trước curStart trong toàn bộ lịch sử — tức đơn trong Kỳ này là lần mua hợp lệ THỨ 2 TRỞ LÊN. Đơn status === 'cancelled' KHÔNG tính là \"đã mua\" ở bất kỳ vị trí nào trong chuỗi lịch sử (kể cả đơn ngay trước đó) — nếu lần mua liền trước của khách bị huỷ, khách vẫn được tính là \"Khách hàng mới\" (AGA-REPORT-8) ở lần mua hợp lệ kế tiếp, KHÔNG phải \"Khách quay lại\".",
+            "KHÔNG còn khái niệm \"Kỳ trước\"/\"ngừng mua đúng 1 kỳ\" nào trong định nghĩa này nữa — hàm chỉ cần đúng 2 tham số curStart/curEnd, không nhận prevStart/prevEnd như bản thiết kế cũ.",
+            "Tính theo TỪNG shop (cột bảng, khối trong buildShopPeriodStats): truyền shopOrders đã lọc theo ĐÚNG 1 shopId vào countReactiveCustomers(). Số ở thẻ KPI đầu trang = Σ giá trị này qua mọi shop (shopStatsCur.reduce(...)), KHÔNG tính lại trên agencyOrders gộp chung.",
+            "Biểu đồ cột trong card \"Khách hàng\": mỗi cột = kết quả countReactiveCustomers(agencyOrders, start, end) của ĐÚNG ngày (hoặc tuần khi gộp) đó — dùng CHUNG 1 định nghĩa với số lớn phía trên, cộng dồn các cột khớp đúng số lớn (không còn \"D-1 đơn giản hoá\" nào khác biệt như thiết kế cũ).",
+            "pctDelta(cur, prev): prev > 0 → % bình thường; prev = 0 và cur > 0 → trả null (hiện badge \"Mới\"); cả 2 = 0 → 0%. Giá trị \"kỳ trước\" của thẻ KPI/bảng tính lại bằng buildShopPeriodStats(shop, agencyOrders, trend.prevStart, trend.prevEnd) — gọi lại ĐÚNG công thức hiện tại trên khoảng lùi 1 kỳ, không cần \"kỳ trước của kỳ trước\" nào nữa (đã bỏ getCycleBeforePrev, hàm này xoá khỏi code vì không còn nơi nào dùng).",
+            "Component hiển thị: CompactKpiCard (thẻ KPI đầu trang, nay hiện cả title tooltip LẪN 1 dòng chú thích luôn hiện — xem AGA-REPORT-10), khối tự viết trong card \"Khách hàng\", header cột bảng có title tooltip."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: \"Khách quay lại\" của 1 shop = khách (theo `receiverPhone`) có đơn trong Kỳ này, KHÔNG có đơn nào trong Kỳ trước, NHƯNG có ít nhất 1 đơn TỪ TRƯỚC Kỳ trước — trong lịch sử đơn CỦA RIÊNG shop đó.",
+            "AC1: \"Khách quay lại\" của 1 shop = khách (theo receiverPhone) có đơn HỢP LỆ (không huỷ) trong Kỳ này, VÀ có ít nhất 1 đơn HỢP LỆ KHÁC trước đó trong toàn bộ lịch sử CỦA RIÊNG shop đó.",
             "AC2: Số ở thẻ KPI đầu trang = TỔNG (Σ) đúng bằng cột \"Khách quay lại\" cộng dồn qua mọi shop trong bảng \"Chi tiết theo shop\" — không lệch số.",
-            "AC3: Badge % ở thẻ KPI và khối trong card \"Khách hàng\" hiện đúng % tăng/giảm so với kỳ trước; nếu kỳ trước = 0 khách quay lại và kỳ này > 0 → hiện chữ \"Mới\" (xanh dương), không hiện %/∞.",
-            "AC4: Đổi tab Ngày/Tuần/Tháng → số ở thẻ KPI, khối trong card \"Khách hàng\" (trừ sparkline) và cột bảng đều cập nhật theo đúng khoảng Kỳ này/Kỳ trước mới; sparkline 7 cột KHÔNG đổi theo tab (luôn dùng D-1 làm \"kỳ trước\" đơn giản hoá cho từng ngày).",
-            "AC5: 1 khách hàng KHÔNG được tính đồng thời ở cả \"Khách hàng mới\" (AGA-REPORT-8) VÀ \"Khách quay lại\" trong cùng 1 kỳ, của cùng 1 shop — khách có đơn Kỳ này mà chưa từng có đơn trước đó CHỈ tính vào \"Khách hàng mới\"; khách có đơn Kỳ này sau khi từng có đơn (nhưng không có ở Kỳ trước) CHỈ tính vào \"Khách quay lại\".",
-            "AC6: Đại lý/shop không có đơn nào thoả điều kiện trong Kỳ này → hiện \"0 KH\", không lỗi/NaN."
+            "AC3: Khách có đơn hợp lệ Kỳ này nhưng lần mua TRƯỚC ĐÓ gần nhất của họ đã bị HUỶ (và không có đơn hợp lệ nào khác trước đó nữa) → tính vào \"Khách hàng mới\" (AGA-REPORT-8), KHÔNG tính vào \"Khách quay lại\".",
+            "AC4: Badge % ở thẻ KPI và khối trong card \"Khách hàng\" hiện đúng % tăng/giảm so với kỳ trước; nếu kỳ trước = 0 khách quay lại và kỳ này > 0 → hiện chữ \"Mới\" (xanh dương), không hiện %/∞.",
+            "AC5: Đổi bộ lọc \"Thời gian\" ở header trang → số ở thẻ KPI, khối trong card \"Khách hàng\" (kể cả biểu đồ cột) và cột bảng đều cập nhật theo đúng khoảng Kỳ này/Kỳ trước mới — không còn ngoại lệ nào dùng \"D-1 cố định\".",
+            "AC6: 1 khách hàng KHÔNG được tính đồng thời ở cả \"Khách hàng mới\" (AGA-REPORT-8) VÀ \"Khách quay lại\" trong cùng 1 kỳ, của cùng 1 shop — 2 chỉ số này luôn CHIA ĐÚNG (partition) tập khách có đơn hợp lệ trong kỳ, không chồng lấn, không bỏ sót khách nào.",
+            "AC7: Đại lý/shop không có đơn hợp lệ nào thoả điều kiện trong Kỳ này → hiện \"0 KH\", không lỗi/NaN."
           ],
           "notes": [
-            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng chỉ số — AGA-REPORT-7 nay chỉ còn giữ khung trang tổng thể (header, thứ tự các khối), còn định nghĩa/logic chi tiết của \"Khách quay lại\" chuyển hẳn về story này.",
-            "\"Khách hàng mới\" (chỉ số song song, loại trừ lẫn nhau — xem AC5) được tách thành story riêng — xem [AGA-REPORT-8](./khach-hang-moi.md).",
-            "**Định nghĩa \"quay lại\" là quyết định nghiệp vụ tự suy ra** (mockup gốc chỉ ghi \"Khách hàng re-active dịch vụ\", không có công thức chi tiết) — logic hiện tại: ngừng đúng 1 kỳ liền trước rồi quay lại. Nếu đội nghiệp vụ có định nghĩa khác (VD: khoảng \"ngừng hoạt động\" phải dài hơn 1 kỳ) thì cần chỉnh lại `countReactiveCustomers()`.",
-            "Không có \"known gap\" về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+            "Redesign (2026-10-21) — đổi hẳn định nghĩa: trước đây \"Khách quay lại\" = \"từng mua, NGỪNG ĐÚNG 1 KỲ liền trước, rồi quay lại mua tiếp kỳ này\" (1 dạng \"win-back\"/reactivation phức tạp, có ngoại lệ sparkline dùng D-1 riêng, cần tính thêm \"kỳ trước của kỳ trước\" qua getCycleBeforePrev()). Theo yêu cầu nghiệp vụ, đã đổi THẲNG sang định nghĩa đơn giản hơn: \"mua đơn HỢP LỆ lần thứ 2 trở lên, không tính đơn đã huỷ\" — bỏ hẳn khái niệm \"nghỉ 1 kỳ\", bỏ hẳn getCycleBeforePrev() (đã xoá khỏi code, không còn ai gọi), bỏ hẳn ngoại lệ sparkline D-1. 2 định nghĩa KHÔNG tương thích nhau — đây là thay đổi công thức, không phải sửa lỗi nhỏ.",
+            "Hệ quả tốt của định nghĩa mới: \"Khách hàng mới\" + \"Khách quay lại\" giờ CHIA ĐÚNG (partition) toàn bộ khách có đơn hợp lệ trong kỳ — không còn khách nào \"lọt khe\" (ví dụ khách mua liên tục mọi kỳ liền nhau, không hề có khoảng nghỉ, trước đây KHÔNG tính vào cả 2 chỉ số vì không phải \"mới\" cũng không \"nghỉ rồi quay lại\"; giờ chắc chắn tính vào \"Khách quay lại\" vì rõ ràng đây không phải lần mua đầu tiên).",
+            "Đơn bị HUỶ không tính là \"đã mua\" ở bất kỳ đâu trong công thức — áp dụng ĐỒNG NHẤT cho cả việc xác định \"có hoạt động trong kỳ\" (customersActiveInRange) lẫn \"đã từng mua trước đó\" — xem AC3.",
+            "\"Khách hàng mới\" (chỉ số song song, loại trừ lẫn nhau — xem AC6) được tách thành story riêng — xem [AGA-REPORT-8](./khach-hang-moi.md).",
+            "Không có \"known gap\" về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (orderStore), không dùng công thức demo cố định."
           ]
         },
         {
@@ -2997,19 +3002,19 @@
           "userFlow": [
             "Ngay dưới header trang, hiện 2 hàng thẻ KPI: hàng 1 gồm 4 thẻ đều nhau (Doanh thu, Sản lượng, Khách hàng mới, Khách quay lại); hàng 2 gồm 2 thẻ RỘNG HƠN (AOV theo cân, AOV theo sản lượng).",
             "Mỗi thẻ gồm: nhãn xám nhỏ ở trên, số lớn đậm và badge % nằm CÙNG 1 hàng ngay bên dưới (mũi tên xanh khi tăng, đỏ khi giảm, chữ \"Mới\" màu xanh dương nếu kỳ trước = 0 và kỳ này > 0).",
-            "2 thẻ \"Khách hàng mới\"/\"Khách quay lại\" có thêm tooltip (hover) giải thích định nghĩa — logic chi tiết xem AGA-REPORT-8 và AGA-REPORT-9.",
+            "2 thẻ \"Khách hàng mới\"/\"Khách quay lại\" có thêm 1 dòng chú thích nhỏ LUÔN HIỆN (không cần rê chuột) ngay dưới số lớn, giải thích ngắn gọn định nghĩa (\"Đơn hợp lệ đầu tiên trong kỳ này (không tính đơn đã huỷ)\" / \"Đã mua lần thứ 2 trở lên (không tính đơn đã huỷ)\") — kèm title gốc của trình duyệt (hover) làm lớp dự phòng; 4 thẻ còn lại (Doanh thu/Sản lượng/2 AOV) không có dòng chú thích này. Logic định nghĩa/công thức đầy đủ xem AGA-REPORT-8 và AGA-REPORT-9.",
             "Đổi dropdown \"Thời gian\" (đặt ở header trang — xem AGA-REPORT-7) → cả 6 thẻ cập nhật lại theo đúng khoảng Kỳ này/Kỳ trước của lựa chọn đó.",
             "Màn hình hẹp → mỗi hàng thẻ tự xuống dòng (wrap) độc lập, thẻ hàng 1 rộng tối thiểu ~150px, thẻ hàng 2 rộng tối thiểu ~300px."
           ],
           "systemFlow": [
-            "`getComparisonRanges(period, anchor)` định nghĩa khoảng \"Kỳ này\"/\"Kỳ trước\" theo 3 tab: Ngày → so cùng kỳ D-7; Tuần → 7 ngày gần nhất so 7 ngày liền trước; Tháng → MTD so MTD-1 (clamp ngày nếu tháng trước ít ngày hơn).",
-            "\"Doanh thu\" = `trend.current`/`trend.previous` (Σ `order.fee` trong khoảng, từ `computePeriodComparison()`). \"Sản lượng\" = `totalVolume` = Σ `volume` của mọi shop trong `shopStatsCur` (kết quả `buildShopPeriodStats()` cho từng shop).",
-            "\"AOV theo sản lượng\" = `trend.current / totalVolume`; \"AOV theo cân\" = `trend.current / (Σ order.weight trong kỳ / 1000)` — cả 2 chia cho 0 → trả 0, không lỗi/NaN.",
-            "\"Khách hàng mới\"/\"Khách quay lại\" = Σ `newCustomers`/`reactiveCustomers` qua mọi shop trong `shopStatsCur` — logic 2 hàm `countNewCustomers()`/`countReactiveCustomers()` xem AGA-REPORT-8/AGA-REPORT-9 (không lặp lại ở đây để tránh 2 nguồn dễ lệch khi sửa).",
-            "Giá trị \"kỳ trước\" của cả 6 KPI tính lại bằng chính công thức tương ứng nhưng áp khoảng `trend.prevStart/prevEnd` (làm \"kỳ hiện tại\" của phép tính lùi) và `prevCycle.prevStart/prevEnd` (làm \"kỳ trước\" của phép tính lùi), với `prevCycle = getComparisonRanges(period, trend.prevEnd)`.",
-            "`pctDelta(cur, prev)`: `prev > 0` → % bình thường; `prev = 0` và `cur > 0` → trả `null` (hiện badge \"Mới\" màu xanh dương); cả 2 = 0 → 0%. Dùng CHUNG cho cả 6 thẻ.",
-            "Component `CompactKpiCard({label, value, deltaPct, tooltip?, flexBasis?})` — thẻ trắng bo góc 10px, viền `#E5E7EB`, render nhãn (dòng riêng) rồi số + `DeltaBadge` CÙNG 1 hàng flex (`gap: 8`); `flexBasis` mặc định `150px` (hàng 1), truyền `300px` cho 2 thẻ AOV ở hàng 2 để chúng rộng hơn; `DeltaBadge` render icon `RiseOutlined`/`FallOutlined` + % hoặc chữ \"Mới\" màu `#3B82F6`.",
-            "6 giá trị này CŨNG là TỔNG (Σ) đúng bằng bảng \"Chi tiết theo shop\" (AGA-REPORT-13) — dùng chung 1 nguồn tính (`shopStatsCur`), không phải 2 nguồn tính riêng."
+            "getComparisonRanges(period, anchor) định nghĩa khoảng \"Kỳ này\"/\"Kỳ trước\" theo 3 tab: Ngày → so cùng kỳ D-7; Tuần → 7 ngày gần nhất so 7 ngày liền trước; Tháng → MTD so MTD-1 (clamp ngày nếu tháng trước ít ngày hơn).",
+            "\"Doanh thu\" = trend.current/trend.previous (Σ order.fee trong khoảng, từ computePeriodComparison()). \"Sản lượng\" = totalVolume = Σ volume của mọi shop trong shopStatsCur (kết quả buildShopPeriodStats() cho từng shop).",
+            "\"AOV theo sản lượng\" = trend.current / totalVolume; \"AOV theo cân\" = trend.current / (Σ order.weight trong kỳ / 1000) — cả 2 chia cho 0 → trả 0, không lỗi/NaN.",
+            "\"Khách hàng mới\"/\"Khách quay lại\" = Σ newCustomers/reactiveCustomers qua mọi shop trong shopStatsCur — logic 2 hàm countNewCustomers()/countReactiveCustomers() xem AGA-REPORT-8/AGA-REPORT-9 (không lặp lại ở đây để tránh 2 nguồn dễ lệch khi sửa).",
+            "Giá trị \"kỳ trước\" của cả 6 KPI tính lại bằng chính công thức tương ứng nhưng áp khoảng trend.prevStart/prevEnd làm \"kỳ hiện tại\" của phép tính lùi — shopStatsPrev = shops.map(s => buildShopPeriodStats(s, agencyOrders, trend.prevStart, trend.prevEnd)). Riêng \"Khách hàng mới\"/\"Khách quay lại\" không cần thêm mốc lùi nào khác nữa (đã bỏ hẳn prevCycle/getCycleBeforePrev() — 2 công thức này giờ chỉ cần đúng curStart/curEnd, tự nhìn lại TOÀN BỘ lịch sử trước đó, không cần biết \"kỳ trước của kỳ trước\" — xem AGA-REPORT-8/9).",
+            "pctDelta(cur, prev): prev > 0 → % bình thường; prev = 0 và cur > 0 → trả null (hiện badge \"Mới\" màu xanh dương); cả 2 = 0 → 0%. Dùng CHUNG cho cả 6 thẻ.",
+            "Component CompactKpiCard({label, value, deltaPct, tooltip?, flexBasis?}) — thẻ trắng bo góc 10px, viền #E5E7EB, render nhãn (dòng riêng) rồi số + DeltaBadge CÙNG 1 hàng flex (gap: 8); nếu có truyền tooltip thì render THÊM 1 dòng text nhỏ (11px, màu xám) ngay dưới số — hiện LUÔN, không chỉ lúc hover — đồng thời vẫn gán tooltip vào title gốc của div làm lớp dự phòng; flexBasis mặc định 150px (hàng 1), truyền 300px cho 2 thẻ AOV ở hàng 2 để chúng rộng hơn; DeltaBadge render icon RiseOutlined/FallOutlined + % hoặc chữ \"Mới\" màu #3B82F6.",
+            "6 giá trị này CŨNG là TỔNG (Σ) đúng bằng bảng \"Chi tiết theo shop\" (AGA-REPORT-13) — dùng chung 1 nguồn tính (shopStatsCur), không phải 2 nguồn tính riêng."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
@@ -3022,11 +3027,12 @@
             "AC7: Màn hình hẹp (dưới ~900px) → mỗi hàng thẻ tự xuống dòng độc lập, không tràn ngang/không phát sinh thanh cuộn ngang."
           ],
           "notes": [
-            "**Redesign lần 2 (2026-09-27)**: đổi layout từ 1 hàng 6 thẻ đều nhau sang 2 hàng (4 thẻ chính + 2 thẻ AOV rộng hơn), badge % chuyển từ dòng riêng lên CÙNG hàng với số lớn — theo đúng ảnh mockup UI thật do người yêu cầu cung cấp.",
-            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng phần của trang.",
+            "Cập nhật (2026-10-21): dòng giải thích \"Khách hàng mới\"/\"Khách quay lại\" trước đây CHỈ hiện qua title gốc của trình duyệt (phải rê chuột đúng vào thẻ mới thấy) — không hiện được trên màn hình cảm ứng, và không hiện trong ảnh chụp/export báo cáo. Đã đổi sang hiện LUÔN thành 1 dòng chú thích nhỏ dưới số liệu (vẫn giữ title làm lớp dự phòng) — chỉ áp dụng cho 2 thẻ này vì chỉ 2 thẻ này truyền tooltip vào CompactKpiCard, không ảnh hưởng 4 thẻ còn lại.",
+            "Redesign lần 2 (2026-09-27): đổi layout từ 1 hàng 6 thẻ đều nhau sang 2 hàng (4 thẻ chính + 2 thẻ AOV rộng hơn), badge % chuyển từ dòng riêng lên CÙNG hàng với số lớn — theo đúng ảnh mockup UI thật do người yêu cầu cung cấp.",
+            "Tách ra từ AGA-REPORT-7 (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng phần của trang.",
             "2 thẻ \"Khách hàng mới\"/\"Khách quay lại\" ở đây chỉ mô tả VỊ TRÍ/HÀNH VI HIỂN THỊ trong khối KPI — định nghĩa/công thức tính đầy đủ xem [AGA-REPORT-8](./khach-hang-moi.md) và [AGA-REPORT-9](./khach-quay-lai.md).",
             "Bộ lọc \"Thời gian\" điều khiển khối này nhưng KHÔNG nằm trong khối này — xem [AGA-REPORT-7](./redesign-thong-ke-shop-6-kpi-khach-hang.md) (đặt ở góc phải header trang, KHÔNG còn ở card \"Xu hướng...\" như bản trước).",
-            "Không có \"known gap\" nào về nguồn dữ liệu — cả 6 KPI đều dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+            "Không có \"known gap\" nào về nguồn dữ liệu — cả 6 KPI đều dùng dữ liệu đơn hàng thật (orderStore), không dùng công thức demo cố định."
           ]
         },
         {
@@ -3067,49 +3073,50 @@
           "jiraKey": "",
           "title": "[AGA] Báo cáo: Biểu đồ \"Xu hướng doanh thu & sản lượng\"",
           "status": "draft",
-          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem biểu đồ đường thể hiện doanh thu/sản lượng theo từng ngày trong 14 ngày gần nhất, so sánh trực quan với đúng 14 ngày đó lùi 7 ngày trước, để nhận biết xu hướng tăng/giảm mà không cần đọc số liệu thô.",
+          "userStory": "Là nhân viên đại lý (Agency Admin), tôi muốn xem 1 biểu đồ miền (area) chồng theo từng shop thể hiện doanh thu theo ngày, cùng lúc với 1 đường tổng sản lượng đè lên trên, trong đúng khoảng thời gian tôi đang chọn ở bộ lọc \"Thời gian\" của trang, để biết shop nào đóng góp bao nhiêu và xu hướng tổng thể mà không cần đọc số liệu thô.",
           "userFlow": [
-            "Card \"Xu hướng doanh thu & sản lượng\" nằm bên TRÁI, cùng hàng với card \"Khách hàng\" (xem AGA-REPORT-11).",
-            "Đầu card: tiêu đề bên trái; bên phải gồm 1 dropdown chọn shop (mặc định \"Toàn đại lý\", liệt kê tên từng shop của đại lý) đặt NGAY BÊN TRÁI cụm nút toggle \"Doanh thu\"/\"Sản lượng\" (đổi biểu đồ này) — bộ lọc kỳ (trước đây là 3 nút Ngày/Tuần/Tháng đặt ở card này) đã chuyển hẳn lên dropdown \"Thời gian\" ở header trang (xem AGA-REPORT-7), không còn nút chọn kỳ nào trong card này nữa.",
-            "Dưới cụm nút là 2 dòng chú thích nhỏ: dòng 1 \"6 KPI & Bảng chi tiết đang so với [kỳ trước theo lựa chọn]\", dòng 2 \"Biểu đồ luôn hiện 14 ngày gần nhất, không đổi theo tab.\" — khi dropdown đang chọn 1 shop cụ thể (khác \"Toàn đại lý\"), dòng 2 nối thêm \" — đang xem riêng shop **[Tên shop]**\" (tên shop tô màu xanh `#3B82F6`, bold).",
-            "Chọn 1 shop trong dropdown → biểu đồ (cả 2 đường Kỳ này/Kỳ trước) vẽ lại chỉ dựa trên đơn hàng của riêng shop đó, không còn là tổng toàn đại lý. Chọn lại \"Toàn đại lý\" → biểu đồ về đúng hành vi mặc định (tổng toàn đại lý) như trước.",
-            "Biểu đồ: đường nét liền màu cam (`#FF5200`) = Kỳ này (14 ngày gần nhất), đường nét đứt xám = Kỳ trước (đúng 14 ngày đó lùi 7 ngày); có vùng tô mờ dưới đường Kỳ này; trục Y hiện 5 mốc giá trị, trục X hiện nhãn ngày (DD/MM) cách quãng.",
-            "Rê chuột vào biểu đồ → hiện đường dọc chỉ vị trí đang trỏ, chấm tròn trên đường Kỳ này, và 1 dòng text dưới biểu đồ ghi rõ ngày + giá trị Kỳ này + giá trị Kỳ trước (D-7) của đúng ngày đó.",
-            "Cuối card là legend 2 dòng: nét liền cam = \"Kỳ này\", nét đứt xám = \"Kỳ trước (D-7)\"."
+            "Card \"Xu hướng doanh thu & sản lượng\" chiếm TOÀN BỘ chiều rộng trang, nằm riêng 1 hàng — KHÔNG còn chung hàng tỉ lệ 2:1 với card \"Khách hàng\" (AGA-REPORT-11) như thiết kế cũ, để cả 2 card cùng rộng ngang nhau, cùng mật độ cột/pixel dù biểu đồ có vẽ tới 90 điểm.",
+            "Đầu card: tiêu đề bên trái; bên phải là nút \"Chọn shop (N/10)\" — bấm vào mở 1 dropdown có ô tìm kiếm + danh sách checkbox TẤT CẢ shop của đại lý, xếp theo doanh thu giảm dần (shop doanh thu cao hiện trước). Tối đa chọn được 10 shop cùng lúc — chạm mốc 10 thì các checkbox chưa chọn tự mờ/disable kèm dòng nhắc đỏ \"Đã chọn tối đa 10 shop — bỏ chọn bớt để thêm shop khác.\"",
+            "KHÔNG còn toggle \"Doanh thu\"/\"Sản lượng\" nào — biểu đồ hiện ĐỒNG THỜI cả 2 chỉ số: miền chồng theo shop = doanh thu (trục trái), 1 đường cam duy nhất = sản lượng (trục phải), không có cách tách riêng từng chỉ số để xem 1 mình nữa.",
+            "KHÔNG còn đường \"Kỳ trước (D-7)\" so sánh nào — biểu đồ chỉ vẽ ĐÚNG 1 kỳ (kỳ hiện tại theo bộ lọc \"Thời gian\"). So sánh với kỳ trước chỉ còn ở 6 KPI đầu trang và bảng \"Chi tiết theo shop\" (dạng % delta), không còn ở biểu đồ này.",
+            "Dưới cụm nút là 2 dòng chú thích nhỏ: dòng 1 \"6 KPI & Bảng chi tiết đang so với [kỳ trước theo lựa chọn]\", dòng 2 \"Biểu đồ hiện đúng [N] ngày của kỳ đang chọn ở filter 'Thời gian' — miền theo shop = doanh thu (trục trái), đường cam = tổng sản lượng (trục phải)\".",
+            "Đổi bộ lọc \"Thời gian\" ở header trang (Hôm nay/Hôm qua/30-60-90 ngày trước/tuỳ chỉnh) → số ngày hiển thị trên biểu đồ này đổi theo NGAY (khác thiết kế cũ — biểu đồ này giờ KHÔNG cố định 14 ngày nữa, luôn bám đúng số ngày của kỳ đang chọn).",
+            "Danh sách shop đã TICK CHỌN không tự đổi khi đổi bộ lọc \"Thời gian\" sau đó — chỉ có THỨ TỰ hiện trong dropdown (xếp theo doanh thu) và DỮ LIỆU vẽ trên biểu đồ mới cập nhật theo kỳ mới; mặc định 10 shop doanh thu cao nhất chỉ được tự động chọn sẵn đúng 1 LẦN lúc mới vào trang.",
+            "Rê chuột vào biểu đồ → hiện đường dọc chỉ vị trí đang trỏ, chấm tròn phóng to trên đường sản lượng, và 1 khối tooltip dưới biểu đồ liệt kê đúng ngày + doanh thu từng shop đang chọn (sắp giảm dần) + tổng sản lượng của ngày đó.",
+            "Cuối card là legend: 1 ô màu vuông nhỏ cho mỗi shop đang chọn (kèm tên), và 1 line-swatch cam \"Tổng sản lượng (trục phải)\"; nếu chưa shop nào có doanh thu trong kỳ → thay bằng dòng \"Chưa có shop nào phát sinh doanh thu trong N ngày gần nhất.\"",
+            "Dưới cùng có link \"↓ Xem dạng bảng\" — chuyển sang bảng số liệu thô: cột là từng ngày, hàng là từng shop đang chọn (tên + mã shop) hiện đúng doanh thu, hàng cuối \"Tổng sản lượng\" hiện số đơn mỗi ngày; link đổi thành \"↑ Xem dạng biểu đồ\" để quay lại."
           ],
           "systemFlow": [
-            "`buildDailySeries(orders, endDate, days)` — trả về `days` điểm liên tiếp theo NGÀY, điểm cuối = `endDate`; mỗi điểm gồm `revenue` (Σ `order.fee` trong ngày) và `volume` (đếm đơn trong ngày).",
-            "State `chartShopId` (mặc định `'all'`) điều khiển bởi dropdown chọn shop mới; options của dropdown lấy từ `shops` (kết quả `buildShopStats()` của toàn đại lý).",
-            "`chartOrders = chartShopId === 'all' ? agencyOrders : agencyOrders.filter(o => o.shopId === chartShopId)` — khi chọn \"Toàn đại lý\", `chartOrders` = `agencyOrders` (hành vi y hệt trước đây, không đổi); khi chọn 1 shop cụ thể, `chartOrders` chỉ còn đơn của riêng shop đó.",
-            "`dailyCurrent = buildDailySeries(chartOrders, anchorDate, 14)`; `dailyPrevious = buildDailySeries(chartOrders, anchorDate - 7 ngày, 14)` — 2 mảng CÙNG ĐỘ DÀI (14), khớp theo INDEX (điểm thứ i của `dailyPrevious` = đúng 7 ngày trước điểm thứ i của `dailyCurrent`) — hoàn toàn ĐỘC LẬP với tab Ngày/Tuần/Tháng; nguồn dữ liệu đầu vào (`chartOrders`) là phần DUY NHẤT thay đổi theo `chartShopId`, logic dựng chuỗi ngày không đổi.",
-            "`TrendLineChart({current, previous, metric})` vẽ bằng SVG thuần: `xFor(i)`/`yFor(v)` map index/giá trị sang toạ độ; `curPath`/`prevPath` là chuỗi lệnh `M`/`L` nối các điểm; `areaPath` = `curPath` khép kín xuống đáy để tô vùng mờ (opacity 0.08).",
-            "`maxValue = Math.max(1, ...curValues, ...prevValues)` — dùng CHUNG 1 trục Y cho cả 2 đường để so sánh đúng tỉ lệ; tối thiểu 1 để tránh chia 0 khi toàn bộ dữ liệu = 0 (bao gồm trường hợp shop đang chọn không có đơn nào trong 14 ngày).",
-            "Hover: `<rect>` trong suốt phủ từng \"cột\" ngày (`onMouseEnter`/`onMouseLeave` set `hoverIdx`) → khi có `hoverIdx`, vẽ thêm đường dọc nét đứt + chấm tròn tại điểm đang trỏ + dòng text tổng hợp Kỳ này/Kỳ trước của ngày đó.",
-            "`chartMetric` (state `'revenue' | 'volume'`) chọn field nào của `DailyPoint` dùng để vẽ (`curValues = current.map(p => p[metric])`) và định dạng số hiển thị (`fmtVND` cho revenue, `fmtNum` cho volume).",
-            "Bộ lọc kỳ (dropdown \"Thời gian\") đặt VẬT LÝ ở header trang (AGA-REPORT-7), KHÔNG còn trong card này — điều khiển 6 KPI (AGA-REPORT-10) và bảng \"Chi tiết theo shop\" (AGA-REPORT-13), KHÔNG điều khiển chính biểu đồ này (biểu đồ luôn cố định 14 ngày, độc lập hoàn toàn với lựa chọn kỳ).",
-            "`chartShopId` CHỈ đọc bởi biểu đồ này — không truyền xuống/ảnh hưởng 6 KPI đầu trang, bảng \"Chi tiết theo shop\" (AGA-REPORT-13), hay card \"Khách hàng\" (AGA-REPORT-11); các khối đó tiếp tục dùng `agencyOrders` (toàn đại lý) không đổi."
+            "rankShopIdsByRevenue(agencyOrders, shops, trend.curEnd, trendDays): xếp hạng TOÀN BỘ shop của đại lý theo tổng doanh thu trong đúng cửa sổ trendDays ngày kết thúc tại trend.curEnd (shop 0đ vẫn có mặt, xếp cuối) — tính LẠI mỗi lần render (đổi filter \"Thời gian\" là xếp hạng lại), dùng cho cả mặc định ban đầu lẫn thứ tự hiện trong dropdown.",
+            "trendDays suy ra trực tiếp từ khoảng trend.curStart/trend.curEnd của bộ lọc \"Thời gian\" đang chọn ở header trang (getComparisonRanges/rollingRange) — khác thiết kế cũ, giờ KHÔNG còn hằng số 14 cố định nào, biểu đồ này và card \"Khách hàng\" dùng CHUNG 1 giá trị trendDays.",
+            "selectedShopIds (state Set<string>) khởi tạo 1 LẦN DUY NHẤT lúc mount bằng shopRankedIds.slice(0, MAX_COLORED_SHOPS) (10 shop đầu bảng xếp hạng tại thời điểm mount) — đổi filter \"Thời gian\" sau đó KHÔNG reset lại Set này, giữ đúng lựa chọn thủ công của người dùng.",
+            "toggleShopSelected(id): thêm/bớt 1 id khỏi Set; chặn thêm khi selectedShopIds.size >= MAX_COLORED_SHOPS (= 10) — picker tự disable checkbox ở ngưỡng này, hàm có thêm 1 lớp guard dự phòng.",
+            "buildShopStackedSeries(agencyOrders, shops, trend.curEnd, trendDays, shopRankedIds.filter(id => selectedShopIds.has(id))): dựng points (mỗi điểm 1 ngày, values[shopId] = {revenue, volume}) CHỈ cho các shop đã chọn — thứ tự entities theo đúng thứ tự xếp hạng hiện tại (không theo thứ tự tick), mỗi entity gán 1 màu cố định từ SHOP_PALETTE (10 màu) theo chỉ số trong mảng entities.",
+            "ShopRevenueVolumeChart({points, entities}): tự tính revenueTotals/volumeTotals bằng cách CỘNG DỒN qua đúng các entities được truyền vào (nghĩa là đường sản lượng = tổng sản lượng của các SHOP ĐANG CHỌN, không phải toàn đại lý) — vẽ bands (miền chồng tích luỹ đáy→đỉnh theo thứ tự entities, có seam trắng phân tách) cho doanh thu trên trục trái, và 1 volumeLinePath duy nhất cho sản lượng trên trục phải, dùng màu C_ACTION (cam) — cố ý KHÔNG trùng bất kỳ màu nào trong SHOP_PALETTE để không bị nhầm là \"1 shop nữa\".",
+            "Khác với biểu đồ \"Khách hàng\" bên dưới (buildCustomerPoints, gộp theo TUẦN khi trendDays > 30) — ShopRevenueVolumeChart LUÔN vẽ theo NGÀY, không bao giờ gộp tuần dù trendDays lên tới 90 (do biểu đồ này đã full-width riêng hàng, đủ rộng để vẽ dày điểm).",
+            "Toggle \"Xem dạng bảng\" là state cục bộ tableView trong chính component — không ảnh hưởng gì tới selectedShopIds/dữ liệu, chỉ đổi cách trình bày CÙNG 1 bộ points/entities đã tính.",
+            "Picker \"Chọn shop\": state shopPickerOpen/shopPickerSearch, đóng khi click ra ngoài (mousedown + shopPickerRef.current.contains) — cùng pattern click-outside dùng ở nhiều dropdown khác trong dự án.",
+            "KHÔNG có toggle Doanh thu/Sản lượng và KHÔNG có state nào cho \"kỳ trước\" trong component này nữa — cả 2 cơ chế của thiết kế cũ (AGA-REPORT-12 bản trước) đã bị GỠ BỎ hoàn toàn khỏi code, không phải tạm ẩn."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Card nằm bên trái, cùng hàng với card \"Khách hàng\" (AGA-REPORT-11), chiếm tỉ lệ rộng hơn (~2:1) khi đủ chỗ.",
-            "AC2: Toggle \"Doanh thu\"/\"Sản lượng\" đổi đúng cả trục Y lẫn 2 đường biểu đồ theo field tương ứng.",
-            "AC3: Biểu đồ luôn hiện đúng 14 điểm/ngày cho cả 2 đường, bất kể dropdown \"Thời gian\" ở header đang chọn Ngày/Tuần/Tháng.",
-            "AC4: Đường \"Kỳ trước\" tại vị trí ngày X = đúng giá trị của ngày (X trừ 7 ngày) — khớp theo index, không theo khoảng của lựa chọn kỳ ở header.",
-            "AC5: Rê chuột vào biểu đồ → hiện đường chỉ vị trí + chấm tròn + dòng text đúng ngày/giá trị Kỳ này/giá trị Kỳ trước (D-7) của điểm đang trỏ; rời chuột ra → ẩn hết, chỉ còn chấm tròn cố định ở điểm cuối cùng (ngày gần nhất).",
-            "AC6: Không có đơn hàng nào trong toàn bộ 14 ngày (`agencyOrders` rỗng hoặc quá cũ) → biểu đồ vẫn render (2 đường phẳng ở đáy), không lỗi/NaN/chia 0.",
-            "AC7: Legend hiện đúng 2 mục: nét liền cam \"Kỳ này\", nét đứt xám \"Kỳ trước (D-7)\".",
-            "AC8: Dropdown chọn shop mặc định ở \"Toàn đại lý\" và liệt kê đầy đủ tên các shop của đại lý; chọn 1 shop cụ thể → 2 đường biểu đồ (Kỳ này/Kỳ trước) đổi đúng theo dữ liệu đơn hàng của riêng shop đó, không còn lẫn dữ liệu của shop khác.",
-            "AC9: Chọn lại \"Toàn đại lý\" sau khi đã chọn 1 shop → biểu đồ trở về đúng tổng dữ liệu toàn đại lý như hành vi mặc định trước đây.",
-            "AC10: Chọn 1 shop không có đơn hàng nào trong 14 ngày gần nhất → biểu đồ vẫn render bình thường (2 đường phẳng ở đáy), không lỗi/NaN/chia 0.",
-            "AC11: Khi đang chọn 1 shop cụ thể, dòng chú thích dưới toggle hiện thêm \"đang xem riêng shop [Tên shop]\" với tên shop tô màu xanh `#3B82F6` in đậm; khi chọn \"Toàn đại lý\" thì không hiện phần này.",
-            "AC12: Bộ lọc shop của biểu đồ này không ảnh hưởng đến 6 KPI đầu trang, bảng \"Chi tiết theo shop\" (AGA-REPORT-13), hay card \"Khách hàng\" (AGA-REPORT-11) — các khối đó luôn tính trên toàn đại lý bất kể dropdown đang chọn shop nào."
+            "AC1: Card chiếm full-width, riêng 1 hàng — không chia cột với card \"Khách hàng\".",
+            "AC2: Nút \"Chọn shop (N/10)\" hiện đúng số shop đang chọn; bấm mở dropdown có ô tìm kiếm + checkbox list xếp theo doanh thu giảm dần của đúng kỳ đang chọn.",
+            "AC3: Chọn đủ 10 shop → các checkbox chưa chọn tự mờ/disable, hiện dòng cảnh báo đỏ nhắc đã đạt tối đa.",
+            "AC4: Đổi bộ lọc \"Thời gian\" ở header trang → số ngày vẽ trên biểu đồ đổi đúng theo, KHÔNG cố định ở bất kỳ con số nào.",
+            "AC5: Đổi bộ lọc \"Thời gian\" sau khi đã tự tick chọn shop → danh sách shop ĐANG CHỌN giữ nguyên (không bị reset về top 10 mới), chỉ dữ liệu/thứ tự trong dropdown cập nhật theo kỳ mới.",
+            "AC6: Biểu đồ hiện ĐÚNG 1 đường sản lượng (không tách theo shop) và miền chồng doanh thu CHỈ tính trên các shop đang được tick chọn — bỏ chọn bớt 1 shop thì cả miền lẫn tổng sản lượng đều giảm tương ứng.",
+            "AC7: Rê chuột vào biểu đồ → hiện đường chỉ vị trí + chấm tròn phóng to trên đường sản lượng + tooltip liệt kê đúng doanh thu từng shop (sắp giảm dần) và tổng sản lượng của ngày đang trỏ; rời chuột → ẩn hết.",
+            "AC8: Không có shop nào (trong số đang chọn) phát sinh doanh thu trong toàn bộ kỳ → biểu đồ vẫn render (trục/lưới đầy đủ), không lỗi/NaN/chia 0, legend hiện dòng nhắc \"Chưa có shop nào phát sinh doanh thu...\".",
+            "AC9: Bấm \"Xem dạng bảng\" → hiện đúng bảng: cột theo ngày, hàng theo từng shop đang chọn (tên + mã shop), hàng cuối \"Tổng sản lượng\"; bấm \"Xem dạng biểu đồ\" → quay lại đúng trạng thái biểu đồ trước đó.",
+            "AC10: KHÔNG còn toggle Doanh thu/Sản lượng, KHÔNG còn đường \"Kỳ trước\" nào trên biểu đồ này — chỉ 6 KPI đầu trang và bảng \"Chi tiết theo shop\" mới hiện % so với kỳ trước."
           ],
           "notes": [
-            "**Bổ sung ngày 2026-10-01**: thêm dropdown chọn shop (\"Toàn đại lý\" hoặc 1 shop cụ thể) cho riêng biểu đồ này, đặt bên trái cụm toggle Doanh thu/Sản lượng. Khi chọn 1 shop, `chartOrders` được lọc theo `shopId` trước khi dựng `dailyCurrent`/`dailyPrevious`, nên 2 đường biểu đồ phản ánh đúng dữ liệu riêng của shop đó. Thay đổi này CHỈ tác động biểu đồ xu hướng — không ảnh hưởng 6 KPI đầu trang, bảng \"Chi tiết theo shop\" (AGA-REPORT-13), hay card \"Khách hàng\" (AGA-REPORT-11), các khối đó vẫn tính trên toàn đại lý như cũ.",
-            "**Redesign lần 2 (2026-09-27)**: gỡ hẳn bộ lọc Ngày/Tuần/Tháng khỏi card này — chuyển lên dropdown \"Thời gian\" ở header trang (AGA-REPORT-7), card giờ chỉ còn đúng 1 toggle Doanh thu/Sản lượng — theo đúng ảnh mockup UI thật do người yêu cầu cung cấp. Trước đây bộ lọc đặt vật lý trong card này nhưng không điều khiển chính biểu đồ, dễ gây hiểu lầm — bản mới loại bỏ hẳn nguồn nhầm lẫn đó bằng cách dời hẳn ra khỏi card.",
-            "**Tách ra từ AGA-REPORT-7** (redesign tổng thể trang \"Báo cáo\") theo yêu cầu quản lý riêng từng phần của trang.",
-            "Màu `#FF5200` (cam, `C_ACTION`) cho đường \"Kỳ này\" dùng ĐÚNG token màu hành động chính của app (theo CLAUDE.md), khác với màu teal trong ảnh mockup gốc — chủ động không copy màu mockup để giữ nhất quán toàn hệ thống.",
-            "Không có \"known gap\" nào về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (`orderStore`), không dùng công thức demo cố định."
+            "Doc này đã lỗi thời và được VIẾT LẠI HOÀN TOÀN để khớp đúng code thật đang chạy — bản trước mô tả 1 thiết kế KHÁC HẲN (2 đường line \"Kỳ này\"/\"Kỳ trước D-7\" cố định 14 ngày, dropdown chọn 1 shop duy nhất mặc định \"Toàn đại lý\", toggle Doanh thu/Sản lượng) đã bị thay thế từ đợt redesign \"cột chồng theo shop, filter thời gian\" (xem commit 8ae4c05) nhưng doc chưa từng được cập nhật theo — hai thiết kế không tương thích với nhau, không phải chỉnh sửa nhỏ.",
+            "Màu trục phải/đường sản lượng dùng C_ACTION (cam, token hành động chính của app theo CLAUDE.md) — nhất quán với các biểu đồ khác trong cùng trang.",
+            "MAX_COLORED_SHOPS = 10 là giới hạn CỨNG — không có khái niệm gộp phần dư vào \"Khác\" nữa (khác thiết kế gộp-nhóm từng cân nhắc trước đó); người dùng tự chọn đúng danh sách muốn xem, tối đa 10.",
+            "Không có \"known gap\" về nguồn dữ liệu — dùng dữ liệu đơn hàng thật (orderStore/agencyOrders), doanh thu loại trừ đơn online đã trả trước (isPrepaidOnline), không dùng công thức demo cố định.",
+            "Xem AGA-REPORT-7 (bộ lọc \"Thời gian\" ở header, nguồn trendDays/trend.curStart/trend.curEnd dùng chung cho cả trang), AGA-REPORT-11 (card \"Khách hàng\", dùng chung trendDays nhưng KHÁC ở chỗ gộp theo tuần khi > 30 ngày), AGA-REPORT-13 (bảng \"Chi tiết theo shop\", nơi còn giữ % so với kỳ trước)."
           ]
         },
         {
@@ -3158,90 +3165,272 @@
         {
           "id": "AGA-PAYMENT-1",
           "jiraKey": "",
-          "title": "[AGA] Duyệt thanh toán tiền mặt: Danh sách đơn chờ duyệt theo từng Shop",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Danh sách shop theo tab Chờ/Đã xác nhận",
           "status": "draft",
-          "userStory": "Là Agency Admin, tôi muốn xem danh sách đơn tiền mặt NHÓM THEO TỪNG SHOP (bưu cục) thuộc đại lý mình, kèm số ngày đã trễ chưa chuyển tiền về cho đại lý, để biết Shop nào cần nhắc và Shop nào đã bị hệ thống tự khoá tạo đơn — và duyệt được RIÊNG cho từng shop thay vì gộp chung.",
+          "userStory": "Tách nhỏ (lần 2) từ bản AGA-PAYMENT-1 gộp trước đó (từng gồm cả bộ lọc/tìm kiếm/chọn nhiều/màn Chi tiết trong cùng 1 story) — nay CHỈ còn phạm vi: trang danh sách chính (header, 3 thẻ tổng quan, 2 tab, bảng cơ bản, phân trang). Các năng lực khác đã tách thành story riêng: AGA-PAYMENT-4 (lọc + tìm kiếm), AGA-PAYMENT-5 (chọn nhiều shop), AGA-PAYMENT-6 (màn \"Chi tiết\" full-page), AGA-PAYMENT-2 (duyệt 1 dòng), AGA-PAYMENT-7 (duyệt hàng loạt), AGA-PAYMENT-8 (duyệt từ màn Chi tiết).\n\nLà Agency Admin, tôi muốn xem danh sách SHOP (bưu cục) thuộc đại lý mình đang nợ tiền mặt phí ship, tách riêng 2 tab \"Chờ xác nhận\"/\"Đã xác nhận\" kèm 3 thẻ tổng quan đầu trang, để nắm nhanh tình hình công nợ tiền mặt của toàn đại lý mà không phải cuộn qua từng khối shop một như thiết kế cũ.",
           "userFlow": [
-            "Vào menu \"Duyệt thanh toán\" trong sidebar Agency Admin (icon ví tiền, có badge đỏ số đơn đang \"Chờ duyệt\") → route /agency-admin/cash-remittance.",
-            "Đầu trang hiện tiêu đề + mô tả ngắn giải thích cơ chế: Shop thu hộ tiền mặt phải chuyển lại cho Agency; trễ 1-2 ngày chỉ bị nhắc, trễ từ 3 ngày Shop tự động bị khoá tạo đơn mới.",
-            "4 chip tổng (tính trên TOÀN BỘ đại lý): \"N chờ duyệt\" (vàng), \"N trễ 1-2 ngày\" (vàng), \"N đã khoá tạo đơn (≥3 ngày)\" (đỏ), \"N đã nhận tiền\" (xanh).",
-            "Bên dưới là DANH SÁCH THEO TỪNG SHOP — mỗi shop CÓ ĐƠN TIỀN MẶT (shop không có đơn tiền mặt nào thì không hiện khối) là 1 khối riêng, gồm:\n   - Tên shop + badge trạng thái TỔNG QUÁT của shop đó: \"Không có đơn chờ\" (xanh) / \"Có đơn chờ duyệt\" (vàng) / \"⚠ Trễ N ngày\" (vàng) / \"🚫 Đang bị khoá tạo đơn\" (đỏ).\n   - Số đơn tiền mặt của shop đó.\n   - Nút \"Duyệt shop này (N)\" — N là số đơn CHỜ DUYỆT của RIÊNG shop này.\n   - Bảng con liệt kê từng đơn của shop đó: Mã vận đơn, Số tiền, Shop khai lúc, Trạng thái.",
-            "Trạng thái từng dòng đơn CHỈ HIỂN THỊ, không bấm được gì ở cấp từng dòng: Chờ duyệt (vàng, chưa trễ) / ⚠ Chờ duyệt — trễ N ngày (vàng, 1-2 ngày) / 🚫 Quá N ngày — đã khoá tạo đơn (đỏ, ≥3 ngày) / ✓ Đã nhận tiền (xanh, kèm giờ + nguồn duyệt) / ✕ Chưa nhận tiền (đỏ, kèm lý do từ chối + nguồn — HIẾM, chỉ khi Agency đã từng kiểm tra và xác nhận KHÔNG nhận được tiền qua rejectOrderPayment()).",
-            "KHÔNG hiện bất kỳ dòng \"Shop báo đã chuyển...\" nào ở đây dù Shop đã bấm \"Thanh toán cho đại lý\" ở Báo cáo dòng tiền (Web Shop — xem SHOP-ORDER-55) hay chưa — Agency KHÔNG dựa vào \"lời khai\" của Shop để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi bấm \"Duyệt shop này\"."
+            "Vào menu \"Duyệt thanh toán\" trong sidebar Agency Admin → route /agency-admin/cash-remittance.",
+            "Đầu trang: tiêu đề \"Duyệt thanh toán\" + mô tả ngắn \"Đối soát và xác nhận phí ship shop phải chuyển cho đại lý\".",
+            "3 thẻ tổng quan: \"Tổng đơn hàng chưa thanh toán\" (đỏ, đếm mọi đơn pending_review của đại lý), \"Tổng phí ship chưa thanh toán (đ)\" (đỏ, cộng dồn phí các đơn đó), \"Shop bị khoá tạo đơn\" dạng \"X / Y\" (X = số shop đang bị tự động khoá tạo đơn, Y = tổng số shop CÓ phát sinh đơn tiền mặt — không phải tổng toàn bộ shop của đại lý).",
+            "2 tab: \"Chờ xác nhận {n}\" (mặc định, nền đen) / \"Đã xác nhận {m}\" — n = số shop còn ≥1 đơn pending_review; m = số shop có đơn tiền mặt nhưng HIỆN KHÔNG còn đơn nào pending_review (đã duyệt hết). 1 shop CHỈ thuộc đúng 1 trong 2 tab tại 1 thời điểm.",
+            "Bảng tab \"Chờ xác nhận\": Shop (tên đậm + mã shop xám bên dưới) | Trạng thái (\"Đã khoá tạo đơn\" đỏ / \"Cho phép tạo đơn\" xanh — chữ màu thuần, không nền) | Đơn hàng chưa thanh toán (số đơn pending_review của shop đó) | Phí ship chưa thanh toán (đ) | Thao tác: nút xanh \"✓ Đã nhận\" (xem AGA-PAYMENT-2) + nút viền \"👁 Chi tiết\" (xem AGA-PAYMENT-6).",
+            "Bảng tab \"Đã xác nhận\": chỉ còn Shop | Trạng thái (luôn \"Cho phép tạo đơn\" xanh) | Thao tác (chỉ còn \"👁 Chi tiết\").",
+            "Bấm \"✓ Đã nhận\" hoặc duyệt hàng loạt (xem AGA-PAYMENT-2/7) → sau khi xác nhận, (các) shop đó NGAY LẬP TỨC biến mất khỏi tab \"Chờ xác nhận\" và xuất hiện ở tab \"Đã xác nhận\"; 2 số đếm trên tab và 3 thẻ tổng quan đầu trang cập nhật theo.",
+            "Cuối trang: thanh phân trang thật (không phải số trang giả) — \"Hiển thị {50|100}\" + dãy số trang + ô \"Đến trang\" nhảy thẳng.",
+            "KHÔNG hiện bất kỳ dòng \"Shop báo đã chuyển...\" nào ở đây dù Shop đã bấm \"Thanh toán cho đại lý\" ở Báo cáo dòng tiền (Web Shop — xem SHOP-ORDER-55) hay chưa — Agency KHÔNG dựa vào \"lời khai\" của Shop để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi duyệt."
           ],
           "systemFlow": [
             "Route /agency-admin/cash-remittance (CashRemittance.tsx), nav item trong AgencyAdminLayout.tsx với badge countPendingCashApprovals() = đếm đơn paymentMethod === 'cash' && paymentApprovalStatus === 'pending_review' của các shop có agencyId === CURRENT_AGENCY_ID ('AGN001').",
-            "agencyShops = loadShops().filter(s => s.agencyId === CURRENT_AGENCY_ID) — toàn bộ shop thuộc đại lý mình (kể cả shop chưa có đơn tiền mặt nào — bị lọc bỏ ở bước sau).",
-            "relevantOrders = orders.filter(o => o.paymentMethod === 'cash' && !!o.paymentApprovalStatus) — tính SẴN trên toàn bộ đơn tiền mặt (không giới hạn agency ở bước này, vì bước gán vào từng shop ở dưới đã tự đảm bảo chỉ hiện shop thuộc đại lý mình).",
-            "shopsWithOrders = agencyShops.map(shop => ({ shop, orders: relevantOrders.filter(o => o.shopId === shop.id) })).filter(g => g.orders.length > 0) — mỗi phần tử là 1 khối ShopGroup, chỉ giữ shop CÓ ít nhất 1 đơn tiền mặt.",
-            "ShopGroup({ shopDisplayName, orders, onApproved }): tự tính pending/maxDays RIÊNG cho shop này (không dùng biến toàn trang) để quyết định badge trạng thái + số N trên nút \"Duyệt shop này\".",
-            "daysSince(order.paymentPaidAt) CÙNG CÔNG THỨC với shopCashOverdueDays() (orderStore.ts) mà Web Shop dùng để quyết định khoá tạo đơn, để 2 phía luôn khớp số ngày."
+            "buildShopStats(shop, relevantOrders, blockDays): trả về { shop, orders, pending, pendingFeeTotal, maxDays, blocked } cho 1 shop — blocked = pending.length > 0 && maxDays >= blockDays, ĐÚNG công thức isOrderCreationBlocked() (orderStore.ts) để \"Trạng thái\" ở đây LUÔN khớp với việc Web Shop của shop đó có đang bị khoá tạo đơn thật hay không.",
+            "allStats = agencyShops.map(shop => buildShopStats(...)).filter(s => s.orders.length > 0) — chỉ giữ shop CÓ ít nhất 1 đơn tiền mặt liên quan.",
+            "pendingShops = allStats.filter(s => s.pending.length > 0); confirmedShops = allStats.filter(s => s.pending.length === 0) — tương ứng đúng 2 tab, không chồng lấn.",
+            "blockedShopsCount = pendingShops.filter(s => s.blocked).length — tử số thẻ \"Shop bị khoá tạo đơn\"; mẫu số = allStats.length.",
+            "activeRows (sau khi áp bộ lọc/tìm kiếm — xem AGA-PAYMENT-4) cắt trang bằng pageSize/page qua component Pagination (tái dùng NGUYÊN hàm export function Pagination đã có sẵn ở AgencyOrders.tsx).",
+            "refresh() (tick state ở component cha) được gọi sau mỗi lần duyệt (bất kỳ cách nào) — re-render lại allStats/pendingShops/confirmedShops, khiến shop vừa duyệt tự \"nhảy\" từ mảng này sang mảng kia ở lần render kế tiếp."
           ],
-          "crossPlatformImpact": [
-            "Ảnh hưởng trực tiếp khả năng tạo đơn của Web Shop (xem AGA-PAYMENT-3, SHOP-ORDER-43)."
-          ],
+          "crossPlatformImpact": [],
           "acceptanceCriteria": [
             "AC1: Sidebar Agency Admin có mục \"Duyệt thanh toán\" với badge đỏ hiện đúng số đơn pending_review của CÁC SHOP THUỘC AGENCY MÌNH; route mở đúng trang.",
-            "AC2: 4 chip tổng đầu trang hiện đúng số lượng theo từng trạng thái, tính trên TOÀN BỘ đại lý (cộng dồn mọi shop).",
-            "AC3: Mỗi shop CÓ đơn tiền mặt hiện đúng 1 khối riêng — shop KHÔNG có đơn tiền mặt nào thì KHÔNG hiện khối (không hiện khối rỗng).",
-            "AC4: Badge trạng thái tổng quát của từng shop phản ánh đúng mức độ trễ NẶNG NHẤT trong các đơn pending_review của RIÊNG shop đó.",
-            "AC5: Đơn trễ 1-2 ngày → nhãn dòng \"⚠ Chờ duyệt — trễ N ngày\" (vàng); đơn trễ ≥3 ngày → nhãn dòng \"🚫 Quá N ngày — đã khoá tạo đơn\" (đỏ).",
-            "AC6: Dòng đơn trong bảng con THUẦN HIỂN THỊ — không có nút Duyệt/Từ chối riêng ở cấp từng dòng (hành động nằm ở cấp SHOP, xem AGA-PAYMENT-2).",
-            "AC7: Đơn paymentApprovalStatus === 'rejected' → hiện ĐÚNG \"✕ Chưa nhận tiền\" (đỏ) kèm lý do + nguồn từ chối — KHÔNG được rơi vào nhánh tính ngày trễ (bug đã phát hiện qua UAT: thiếu nhánh rejected khiến đơn này hiện sai thành \"🚫 Quá N ngày — đã khoá tạo đơn\").",
-            "AC8: Đơn rejected KHÔNG được tính vào số N trên nút \"Duyệt shop này (N)\" — approveOrderPayment() chỉ áp dụng cho đơn đang pending_review.",
-            "AC9: Dù đơn có cashRemittanceDeclaredAt (Shop đã tự khai bên Web Shop) hay không, StatusCell ở đây hiện ĐÚNG Y HỆT nhau — không có bất kỳ dòng/nhãn \"Shop báo đã chuyển\" nào khác biệt."
+            "AC2: 3 thẻ tổng quan hiện đúng số liệu tính trên TOÀN BỘ đại lý (không phụ thuộc tab/trang/bộ lọc đang chọn); \"Shop bị khoá tạo đơn\" hiện đúng dạng \"X / Y\" với Y = số shop CÓ đơn tiền mặt (không phải tổng số shop của đại lý).",
+            "AC3: 1 shop chỉ xuất hiện ở ĐÚNG 1 tab tại 1 thời điểm — \"Chờ xác nhận\" nếu còn ≥1 đơn pending_review, \"Đã xác nhận\" nếu có đơn tiền mặt nhưng hiện không còn đơn nào pending_review; shop chưa từng phát sinh đơn tiền mặt không xuất hiện ở tab nào.",
+            "AC4: Sau khi 1 shop được duyệt hết đơn chờ (bất kỳ cách nào), shop đó rời tab \"Chờ xác nhận\" sang \"Đã xác nhận\" NGAY, đếm 2 tab + 3 thẻ tổng quan cập nhật theo, không cần F5.",
+            "AC5: Cuối trang luôn hiện thanh phân trang thật (kể cả khi dữ liệu demo chỉ đủ 1 trang).",
+            "AC6: Dù đơn có cashRemittanceDeclaredAt (Shop đã tự khai bên Web Shop) hay không, không có bất kỳ dòng/nhãn \"Shop báo đã chuyển\" nào khác biệt ở bảng danh sách chính."
           ],
           "notes": [
-            "Thay đổi lớn (v2 — nhóm theo shop): bản đầu (v1) là 1 bảng phẳng chung cho toàn đại lý + 1 nút \"Duyệt tất cả\" áp dụng hết — đã đổi sang nhóm RIÊNG theo từng shop để Agency Admin kiểm soát/duyệt chính xác từng shop một, không bị gộp nhầm.",
-            "Tính năng này THAY THẾ HOÀN TOÀN trang \"Duyệt thanh toán phí ship\" cũ của Super Admin (GSA-PAYMENT-1/2/3, đã XOÁ) — lý do nghiệp vụ: Shop (bưu cục) thu hộ tiền mặt phải chuyển lại cho ĐẠI LÝ quản lý mình, không phải chuyển thẳng cho GHN, nên Agency Admin mới đúng vai trò duyệt.",
-            "Số ngày trễ tính từ paymentPaidAt CŨ NHẤT còn pending_review của shop đó (xem shopCashOverdueDays(), orderStore.ts) — không phải trung bình hay theo từng đơn riêng lẻ.",
-            "Xem AGA-PAYMENT-2 (nút \"Duyệt shop này\" — hành động nay ở CẤP SHOP, không còn là 1 nút tổng cho cả đại lý); AGA-PAYMENT-3 (phía Web Shop — cảnh báo/tự động khoá tạo đơn theo ngưỡng cấu hình).",
-            "Ngưỡng \"1-2 ngày\"/\"≥3 ngày\" hiện trong mô tả đầu trang và nhãn các dòng KHÔNG còn hardcode — đọc từ loadRemittanceConfig() (warningDays/blockDays), Super Admin cấu hình ở /super-admin/settings/cash-remittance-rules (xem GSA-PAYMENT-CONFIG-1); 1/3 chỉ còn là giá trị MẶC ĐỊNH.",
-            "Bug đã sửa: StatusCell ban đầu KHÔNG có nhánh rejected (chỉ check confirmed rồi rơi thẳng vào tính ngày trễ) — phát hiện khi thêm dữ liệu demo có đơn rejected thật. Đã thêm nhánh rejected ngay sau confirmed, trước khi tính days.",
-            "rejectOrderPayment() (orderStore.ts) vẫn chưa có nút gọi nào trong UI (kế thừa hạn chế từ thiết kế cũ) — đơn rejected trong hệ thống hiện chỉ có thể đến từ seed data demo, không tạo được qua thao tác Agency Admin thật.",
-            "Thay đổi (bỏ hint \"Shop báo đã chuyển\"): StatusCell từng hiện thêm 1 dòng \"💬 Shop báo đã chuyển lúc...\" khi đơn có cashRemittanceDeclaredAt — đã BỎ theo yêu cầu: Agency không cần một \"thông báo\" kiểu Shop tự khai để tin, mà tự dựa vào số ngày trễ do hệ thống tự track rồi tự đối chiếu sổ quỹ thật. cashRemittanceDeclaredAt vẫn tồn tại trên Order và vẫn được set bởi declareCashRemittance() (Shop vẫn bấm \"Thanh toán cho đại lý\" được bình thường, xem SHOP-ORDER-55) — chỉ KHÔNG còn hiển thị gì ở phía Agency Admin.",
-            "Tên mục sidebar/tiêu đề trang đã đổi từ \"Duyệt thanh toán tiền mặt\" thành \"Duyệt thanh toán\" (ngắn gọn hơn) — id/tên file tài liệu vẫn giữ nguyên để không phá liên kết, chỉ UI text đổi."
+            "Lịch sử tách story: bản gốc AGA-PAYMENT-1 (v3) gộp CẢ bộ lọc/tìm kiếm, chọn nhiều + duyệt hàng loạt, và mô tả chi tiết màn \"Chi tiết\" (modal rồi full-page) trong CÙNG 1 story. Nay tách thành 6 story riêng (xem Bối cảnh) để mỗi năng lực ước lượng/triển khai/test độc lập được — tổng thể tính năng KHÔNG đổi, chỉ đổi cách chia nhỏ tài liệu.",
+            "Tính năng này đã THAY THẾ HOÀN TOÀN trang \"Duyệt thanh toán phí ship\" cũ của Super Admin (GSA-PAYMENT-1/2/3, đã XOÁ) — lý do nghiệp vụ: Shop (bưu cục) thu hộ tiền mặt phải chuyển lại cho ĐẠI LÝ quản lý mình, không phải chuyển thẳng cho GHN, nên Agency Admin mới đúng vai trò duyệt.",
+            "Cột \"Trạng thái\" ở bảng chính CHỈ có 2 mức (Đã khoá tạo đơn / Cho phép tạo đơn) — mức cảnh báo trung gian (còn bao nhiêu ngày trễ) nằm ở TỪNG ĐƠN trong màn \"Chi tiết\" (xem AGA-PAYMENT-6), không phải ở đây.",
+            "Xem AGA-PAYMENT-4 (bộ lọc trạng thái + tìm kiếm); AGA-PAYMENT-5 (chọn nhiều shop); AGA-PAYMENT-6 (màn Chi tiết full-page); AGA-PAYMENT-2/7/8 (3 cách duyệt); AGA-PAYMENT-3 (cảnh báo/khoá tự động phía Web Shop); GSA-PAYMENT-CONFIG-1 (Super Admin — nơi cấu hình ngưỡng, riêng từng đại lý).",
+            "rejectOrderPayment() (orderStore.ts) vẫn chưa có nút gọi nào trong UI — đơn rejected trong hệ thống hiện chỉ có thể đến từ seed data demo."
+          ]
+        },
+        {
+          "id": "AGA-PAYMENT-4",
+          "jiraKey": "",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Lọc theo trạng thái & tìm kiếm shop",
+          "status": "draft",
+          "userStory": "Tách từ AGA-PAYMENT-1 gốc (mục \"Bộ lọc\" trong User Flow) — nay thành story riêng vì là 1 năng lực độc lập (lọc/tìm kiếm dữ liệu đã có sẵn trên bảng), không gắn với bố cục chung của trang danh sách.\n\nLà Agency Admin quản lý nhiều shop, tôi muốn lọc nhanh theo trạng thái khoá/cho phép tạo đơn và tìm theo tên hoặc mã shop ngay trên danh sách \"Duyệt thanh toán\", để tìm đúng shop cần xử lý mà không phải cuộn qua toàn bộ danh sách khi đại lý có nhiều shop.",
+          "userFlow": [
+            "Ngay dưới 2 tab (xem AGA-PAYMENT-1): dropdown \"Trạng thái\" (Tất cả / Đã khoá tạo đơn / Cho phép tạo đơn) — CHỈ hiện ở tab \"Chờ xác nhận\" (tab \"Đã xác nhận\" luôn toàn \"Cho phép tạo đơn\" nên không cần lọc).",
+            "Ô tìm kiếm \"Tìm kiếm theo tên shop hoặc mã shop\" — hiện ở CẢ 2 tab.",
+            "Chọn 1 mức trong dropdown \"Trạng thái\" → bảng tab \"Chờ xác nhận\" chỉ còn đúng các dòng khớp trạng thái đó.",
+            "Gõ vào ô tìm kiếm (tên hoặc mã shop) → bảng (ở tab đang xem) chỉ còn dòng khớp, không phân biệt hoa/thường; xoá ô tìm kiếm → đủ lại toàn bộ dòng.",
+            "Dùng ĐỒNG THỜI cả dropdown lẫn tìm kiếm (ở tab \"Chờ xác nhận\") → bảng chỉ còn dòng khớp CẢ 2 điều kiện cùng lúc.",
+            "Đổi tab Chờ/Đã xác nhận → ô tìm kiếm giữ nguyên giá trị đang gõ (không bị xoá), dropdown \"Trạng thái\" tự ẩn nếu chuyển sang tab \"Đã xác nhận\".",
+            "Lọc/tìm kiếm chỉ ảnh hưởng những gì HIỂN THỊ trên bảng — không đổi dữ liệu/trạng thái thật của bất kỳ shop nào."
+          ],
+          "systemFlow": [
+            "statusFilter: 'all' | 'blocked' | 'allowed' (state ở component cha CashRemittance) — chỉ áp dụng cho nhánh pendingShops, không áp dụng cho confirmedShops.",
+            "search: string (state dùng chung CẢ 2 tab) — matchesSearch(shop): shop.name.toLowerCase().includes(q) || shop.id.toLowerCase().includes(q) với q = search.trim().toLowerCase().",
+            "filteredPendingShops = pendingShops.filter(s => matchesSearch(s.shop) && (statusFilter === 'all' || (statusFilter === 'blocked' ? s.blocked : !s.blocked))); filteredConfirmedShops = confirmedShops.filter(s => matchesSearch(s.shop)) (không áp statusFilter).",
+            "activeRows = activeTab === 'pending' ? filteredPendingShops : filteredConfirmedShops — nguồn dữ liệu cho bảng + phân trang (xem AGA-PAYMENT-1).",
+            "useEffect(() => { setPage(1) }, [activeTab, search, statusFilter]) — đổi bất kỳ điều kiện lọc nào cũng reset về trang 1, tránh đứng ở trang rỗng nếu bộ lọc làm giảm số dòng."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Dropdown \"Trạng thái\" chỉ hiện ở tab \"Chờ xác nhận\", KHÔNG hiện ở tab \"Đã xác nhận\".",
+            "AC2: Chọn \"Đã khoá tạo đơn\"/\"Cho phép tạo đơn\" trong dropdown → bảng chỉ còn đúng các dòng khớp trạng thái đó; chọn lại \"Tất cả\" → đủ lại toàn bộ dòng của tab.",
+            "AC3: Gõ tên hoặc mã shop vào ô tìm kiếm → bảng (ở tab đang xem) chỉ còn dòng khớp, không phân biệt hoa/thường; xoá ô tìm kiếm → đủ lại toàn bộ dòng.",
+            "AC4: Dùng đồng thời dropdown + tìm kiếm → bảng chỉ còn dòng khớp CẢ 2 điều kiện.",
+            "AC5: Đổi tab → giá trị ô tìm kiếm GIỮ NGUYÊN (không bị xoá); dropdown ẩn/hiện đúng theo tab.",
+            "AC6: Thay đổi bất kỳ điều kiện lọc/tìm kiếm nào → trang hiện tại tự reset về trang 1."
+          ],
+          "notes": [
+            "Tách từ AGA-PAYMENT-1 gốc (mục 5 cũ của User Flow) — hành vi KHÔNG đổi so với bản gộp trước đó, chỉ tách ra thành story riêng để dễ ước lượng/test độc lập.",
+            "Lọc/tìm kiếm chỉ là bộ lọc HIỂN THỊ (client-side trên mảng đã tính sẵn) — không gọi lại API/tính lại buildShopStats, nên phản hồi tức thì khi gõ.",
+            "Xem AGA-PAYMENT-1 (bố cục trang, 3 thẻ tổng quan, 2 tab); AGA-PAYMENT-5 (chọn nhiều shop, dùng chung dòng dữ liệu đã lọc ở đây — tick chọn chỉ áp dụng cho các dòng ĐANG hiển thị sau khi lọc/tìm kiếm)."
+          ]
+        },
+        {
+          "id": "AGA-PAYMENT-5",
+          "jiraKey": "",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Chọn nhiều shop để duyệt hàng loạt",
+          "status": "draft",
+          "userStory": "Tách từ AGA-PAYMENT-1 gốc (cơ chế checkbox trong User Flow) — CHỈ còn phạm vi: cơ chế TICK CHỌN (checkbox từng dòng + checkbox header chọn tất cả) và nút \"Duyệt N shop đã chọn\" XUẤT HIỆN khi nào. Hành động THỰC SỰ duyệt khi bấm nút đó xem AGA-PAYMENT-7.\n\nLà Agency Admin quản lý nhiều shop đã thực nhận tiền mặt cùng lúc từ nhiều shop, tôi muốn tick chọn chính xác những shop mình đã nhận đủ tiền trước, rồi mới xác nhận duyệt gộp 1 lần, thay vì phải bấm \"✓ Đã nhận\" lặp lại cho từng shop một.",
+          "userFlow": [
+            "Ở tab \"Chờ xác nhận\" (xem AGA-PAYMENT-1): mỗi dòng shop có 1 checkbox đầu dòng; header bảng có 1 checkbox \"chọn tất cả\".",
+            "Tick ≥1 checkbox dòng → nút xanh \"✓ Duyệt N shop đã chọn\" xuất hiện cạnh ô tìm kiếm (N = số shop đang được tick).",
+            "Tick checkbox header → chọn (hoặc bỏ chọn, nếu đang chọn hết) TOÀN BỘ các dòng ĐANG HIỂN THỊ TRÊN TRANG HIỆN TẠI (sau khi đã áp bộ lọc/tìm kiếm — xem AGA-PAYMENT-4), KHÔNG ảnh hưởng dòng ở trang khác dù dòng đó cũng khớp bộ lọc.",
+            "Bỏ tick hết các dòng đã chọn → nút \"✓ Duyệt N shop đã chọn\" tự ẩn đi.",
+            "Đổi tab (sang \"Đã xác nhận\" rồi quay lại \"Chờ xác nhận\") → TOÀN BỘ lựa chọn tick tự xoá sạch — tránh giữ lựa chọn \"vô hình\" không còn ý nghĩa (tab \"Đã xác nhận\" không có checkbox, không có gì để duyệt).",
+            "Việc tick/bỏ tick KHÔNG làm thay đổi bất kỳ dữ liệu/trạng thái đơn hàng nào — thuần chuẩn bị danh sách trước khi bấm nút duyệt (xem AGA-PAYMENT-7)."
+          ],
+          "systemFlow": [
+            "selectedShopIds: Set<string> (state ở component cha CashRemittance).",
+            "toggleSelect(shopId): thêm/xoá 1 shopId khỏi selectedShopIds.",
+            "pagedPendingIds = pagedRows.map(s => s.shop.id) (ids đang hiển thị trên trang hiện tại, SAU khi đã lọc/tìm kiếm/phân trang — xem AGA-PAYMENT-4); allPagedSelected = pagedPendingIds.length > 0 && pagedPendingIds.every(id => selectedShopIds.has(id)).",
+            "toggleSelectAllPaged(): nếu allPagedSelected thì xoá hết pagedPendingIds khỏi selectedShopIds, ngược lại thêm hết vào — CHỈ tác động pagedPendingIds, các id khác trong selectedShopIds (nếu có, từ trang khác) giữ nguyên.",
+            "useEffect(() => { setSelectedShopIds(new Set()) }, [activeTab]) — đổi tab là xoá sạch lựa chọn, không giữ qua tab.",
+            "Nút \"✓ Duyệt N shop đã chọn\" chỉ render khi selectedShopIds.size > 0; N hiển thị = selectedShopIds.size — xem AGA-PAYMENT-7 cho hành động khi bấm nút này."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Tick ≥1 checkbox dòng → nút \"✓ Duyệt N shop đã chọn\" xuất hiện với N đúng bằng số dòng đang tick.",
+            "AC2: Tick checkbox header → chọn/bỏ chọn ĐÚNG các dòng đang hiển thị trên trang hiện tại (sau lọc/tìm kiếm), không ảnh hưởng dòng ở trang khác.",
+            "AC3: Bỏ tick hết → nút \"✓ Duyệt N shop đã chọn\" tự ẩn.",
+            "AC4: Đổi tab (bất kỳ hướng nào) → toàn bộ lựa chọn tick tự xoá sạch.",
+            "AC5: Tick/bỏ tick không làm thay đổi bất kỳ dữ liệu đơn hàng/trạng thái shop nào — chỉ là trạng thái UI tạm thời."
+          ],
+          "notes": [
+            "Tách từ AGA-PAYMENT-1 gốc (mục \"checkbox\" trong User Flow) — cơ chế MỚI, chưa từng có ở các bản trước khi chưa có chọn-nhiều (trước đó mỗi shop duyệt riêng từng dòng).",
+            "Story này CHỈ mô tả cơ chế chọn — xem AGA-PAYMENT-7 để biết điều gì xảy ra khi thực sự bấm nút \"✓ Duyệt N shop đã chọn\" (window.confirm, gọi API duyệt, v.v.).",
+            "Xem AGA-PAYMENT-1 (bố cục bảng chính); AGA-PAYMENT-4 (bộ lọc/tìm kiếm — quyết định pagedPendingIds nào checkbox header tác động tới)."
+          ]
+        },
+        {
+          "id": "AGA-PAYMENT-6",
+          "jiraKey": "",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Màn \"Chi tiết\" shop (full-page)",
+          "status": "draft",
+          "userStory": "Tách từ AGA-PAYMENT-1 (bước \"Bấm 👁 Chi tiết\" của bản gộp trước) — nay thành story riêng vì đây là 1 màn hình/route-nội-bộ hoàn chỉnh (header, thẻ tổng quan, tab, tìm kiếm, bảng, phân trang riêng), không chỉ là 1 hành vi nhỏ của trang danh sách. Nút \"✓ Đã nhận\" trong header của màn này — hành động duyệt khi bấm — xem AGA-PAYMENT-8.\n\nLà Agency Admin, khi cần xem đầy đủ lịch sử đơn tiền mặt của MỘT shop cụ thể (không chỉ số tổng ở bảng danh sách), tôi muốn mở 1 màn hình riêng liệt kê từng đơn kèm trạng thái chi tiết, lọc theo Tất cả/Chưa thanh toán/Đã thanh toán và tìm theo mã đơn, để kiểm tra kỹ trước khi quyết định duyệt cho shop đó.",
+          "userFlow": [
+            "Bấm \"👁 Chi tiết\" ở 1 dòng shop bất kỳ (tab nào, xem AGA-PAYMENT-1) → MỞ MÀN HÌNH RIÊNG full trang (KHÔNG phải modal/popup — thay thế hẳn toàn bộ nội dung bảng/tab danh sách đang xem, không có overlay tối phía sau).",
+            "Header: nút \"←\" quay lại (góc trái) + tên shop (to, đậm) + mã shop (xám, dưới tên) + 1 badge pill tròn cạnh tên (\"🚫 Đã khoá tạo đơn\" đỏ hoặc \"✓ Cho phép tạo đơn\" xanh, theo đúng trạng thái của shop) + nút xanh \"✓ Đã nhận\" (góc phải, xám/disabled nếu shop không còn đơn chờ — xem AGA-PAYMENT-8 cho hành động khi bấm).",
+            "3 thẻ tổng quan RIÊNG CHO SHOP NÀY: \"Tổng đơn hàng\" (mọi đơn tiền mặt của shop, không lọc), \"Tổng đơn hàng chưa thanh toán\" (đỏ nếu > 0), \"Tổng phí ship chưa thanh toán (đ)\" (đỏ nếu > 0).",
+            "3 tab riêng của màn này: \"Tất cả {n}\" (mặc định) / \"Chưa thanh toán {n}\" (mọi đơn KHÔNG confirmed, gồm cả pending_review lẫn rejected) / \"Đã thanh toán {n}\" (đơn confirmed).",
+            "Ô tìm kiếm \"Tìm kiếm theo mã đơn hàng\" — lọc bảng theo trackingCode, không phân biệt hoa/thường.",
+            "Bảng đơn (sắp theo giờ shop khai mới nhất lên đầu): Mã đơn hàng (chữ xanh đậm + nhãn loại nhỏ \"📦 Hàng hoá\"/\"✉️ Thư\" ngay dưới) | Phí dịch vụ (số âm, tổng phí của đơn) | Đã thanh toán (số dương, phần đại lý đã duyệt) | Chưa thanh toán (số âm, tô NỀN CAM đậm #FF5200 chữ trắng khi khác 0 — dễ nhận ra ngay, giống cách bảng \"Phí dịch vụ\" bên Web Shop hiển thị) | Shop khai lúc (giờ:phút ngày/tháng) | Trạng thái (2 dòng CHỮ MÀU THUẦN, không nền pill — xem System Flow).",
+            "3 cột tiền (Phí dịch vụ/Đã thanh toán/Chưa thanh toán) tách rõ phần GỐC đã duyệt khỏi phần MỚI PHÁT SINH sau khi duyệt (phí hoàn hàng/phụ phí đổi địa chỉ — xem SHOP-ORDER-56): đơn đã duyệt mà sau đó fee tăng thêm → \"Đã thanh toán\" vẫn giữ đúng số gốc đã duyệt, \"Chưa thanh toán\" hiện đúng phần tăng thêm (tô cam) — Agency Admin thấy NGAY số tiền cụ thể cần duyệt thêm, không cần tự nhẩm tính từ số liệu rời rạc.",
+            "Phân trang RIÊNG của màn này (không dùng chung state trang với danh sách bên ngoài).",
+            "Bấm \"←\" → quay lại ĐÚNG danh sách bên ngoài (tab/trang/bộ lọc/tìm kiếm giữ nguyên như trước khi mở Chi tiết), không đổi dữ liệu gì nếu chưa bấm \"✓ Đã nhận\".",
+            "Mở màn này (xem/tìm kiếm/đổi tab) THUẦN XEM — không có thao tác nào ở đây làm thay đổi dữ liệu đơn/shop ngoại trừ bấm nút \"✓ Đã nhận\" (xem AGA-PAYMENT-8)."
+          ],
+          "systemFlow": [
+            "ShopDetailView({ stats, onBack, onApproved }) (CashRemittance.tsx) — component cha render <ShopDetailView .../> THAY HẲN cho JSX danh sách chính (if (detailStats) return <ShopDetailView .../> — early return, không phải overlay đè lên JSX danh sách) khi detailShopId (state, chỉ lưu ID shop) khác null; detailStats = allStats.find(s => s.shop.id === detailShopId) tính lại MỖI LẦN RENDER nên luôn khớp dữ liệu mới nhất.",
+            "Bên trong: confirmed = stats.orders.filter(confirmed), unpaid = stats.orders.filter(!== confirmed) (gồm cả pending_review lẫn rejected) → 3 tab all/unpaid/paid lọc từ 2 mảng này; filtered lọc tiếp theo search trên trackingCode; sorted theo paymentPaidAt giảm dần; state tab/search/page/pageSize RIÊNG của component này (không chia sẻ với danh sách chính) — useEffect reset page về 1 khi đổi tab/search.",
+            "SendKindTag({ order }): badge nhỏ theo order.sendKind ('letter' → tím \"✉️ Thư\", khác → cam \"📦 Hàng hoá\").",
+            "rowAmounts(order) (hàm MỚI, CashRemittance.tsx) — DÙNG CHUNG đúng công thức với rowAmounts() ở Web Shop (CashFlowReport.tsx) để 2 bên LUÔN khớp số: đơn chưa confirmed → { phiDichVu: -fee, daThanhToan: 0, chuaThanhToan: -fee }; đơn đã confirmed → approvedAmount = paymentApprovedAmount ?? fee, extra = fee - approvedAmount, trả { phiDichVu: -fee, daThanhToan: approvedAmount, chuaThanhToan: extra > 0 ? -extra : 0 }. Ô \"Chưa thanh toán\" chỉ tô nền cam khi chuaThanhToan !== 0.",
+            "OrderStatusLine({ order }): 2 dòng CHỮ MÀU THUẦN (không nền pill) — confirmed VÀ KHÔNG còn phần chưa duyệt (fee - approvedAmount <= 0) → xanh \"Đã thanh toán\" + giờ/ngày paymentApprovedAt; confirmed NHƯNG CÒN phần chưa duyệt (fee - approvedAmount > 0) → cam \"Phát sinh thêm\" + \"{Phí hoàn hàng | Phụ phí đổi địa chỉ | Khoản mới} chưa duyệt\" (xác định loại theo order.status === 'returning' hay feeAddressChange > 0); rejected → đỏ \"Chưa thanh toán\" + \"Bị từ chối: {lý do}\"; pending_review → đỏ \"Chưa thanh toán\" + (nếu daysSince >= 1) \"Quá {N} ngày\".",
+            "Pagination tái dùng Pagination đã export sẵn từ AgencyOrders.tsx — instance RIÊNG, độc lập với Pagination ở danh sách chính.",
+            "Nút \"✓ Đã nhận\" trong header — hành vi khi bấm xem AGA-PAYMENT-8 (handleApprove())."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Bấm \"👁 Chi tiết\" → MỞ MÀN HÌNH RIÊNG full trang đúng shop (không phải modal, không còn thấy bảng/tab danh sách chính phía sau), có nút \"←\" + tên shop + mã shop + badge trạng thái + nút \"✓ Đã nhận\".",
+            "AC2: 3 thẻ tổng quan hiện đúng số liệu RIÊNG của shop đang xem (không lẫn số liệu đại lý).",
+            "AC3: 3 tab Tất cả/Chưa thanh toán/Đã thanh toán hiện đúng số đếm; chuyển tab → bảng lọc đúng tập đơn tương ứng.",
+            "AC4: Gõ vào ô \"Tìm kiếm theo mã đơn hàng\" → bảng chỉ còn đơn khớp trackingCode, không phân biệt hoa/thường; xoá ô tìm kiếm → đủ lại toàn bộ (theo tab đang chọn).",
+            "AC5: Mỗi dòng bảng có badge loại đơn (📦 Hàng hoá/✉️ Thư) đúng sendKind, và 2 dòng trạng thái màu thuần đúng nội dung (Đã thanh toán+giờ xác nhận / Phát sinh thêm+loại khoản mới / Chưa thanh toán+lý do từ chối / Chưa thanh toán+số ngày trễ).",
+            "AC5b: 3 cột Phí dịch vụ/Đã thanh toán/Chưa thanh toán hiện đúng số theo công thức rowAmounts(); luôn thoả |Phí dịch vụ| = Đã thanh toán + |Chưa thanh toán|; ô \"Chưa thanh toán\" tô nền cam #FF5200 chữ trắng khi khác 0, hiện số thường (không tô) khi bằng 0.",
+            "AC5c: Đơn đã confirmed mà phát sinh thêm phí hoàn hàng/đổi địa chỉ CHƯA được duyệt lại (fee > paymentApprovedAmount) → cột \"Chưa thanh toán\" tô cam đúng số tiền phát sinh, cột \"Trạng thái\" hiện \"Phát sinh thêm\" (cam) thay vì \"Đã thanh toán\" (xanh) — 2 cột này LUÔN khớp nhau (cùng báo có/không còn khoản chưa duyệt), không được mâu thuẫn.",
+            "AC6: Phân trang của màn này hoạt động độc lập, không ảnh hưởng trang đang xem ở danh sách chính.",
+            "AC7: Bấm \"←\" → quay lại ĐÚNG danh sách bên ngoài (tab/trang/bộ lọc/tìm kiếm giữ nguyên), không đổi dữ liệu gì nếu chưa bấm \"✓ Đã nhận\".",
+            "AC8: Mở/xem/tìm kiếm/đổi tab ở màn này KHÔNG làm thay đổi scanCount-tương-đương nào của đơn/shop — thuần xem, trừ hành động \"✓ Đã nhận\" (AGA-PAYMENT-8)."
+          ],
+          "notes": [
+            "Thêm mới (3 cột tiền + nhãn \"Phát sinh thêm\"): trước đây bảng chỉ có 1 cột \"Phí ship (đ)\" (tổng gộp) — không cho Agency Admin thấy được phần nào đã duyệt, phần nào mới phát sinh (phí hoàn hàng/đổi địa chỉ) chưa duyệt, dù Web Shop đã hiện rõ việc này ở \"Báo cáo dòng tiền\" (xem SHOP-ORDER-55). Đã thay bằng 3 cột Phí dịch vụ/Đã thanh toán/Chưa thanh toán (dùng CHUNG công thức rowAmounts() với Web Shop) + đổi OrderStatusLine thêm nhánh \"Phát sinh thêm\" (cam) để 2 cột Chưa-thanh-toán và Trạng thái luôn nhất quán, không còn trường hợp 1 bên nói \"Đã thanh toán\" (xanh) trong khi bên kia vẫn tô cam báo còn tiền chưa duyệt.",
+            "Giới hạn còn lại (chưa xử lý): dù giờ đã THẤY RÕ khoản phát sinh, đơn này vẫn tính vào tab \"Đã thanh toán\" (vì paymentApprovalStatus vẫn là confirmed) — CHƯA có cách Agency Admin duyệt RIÊNG phần phát sinh đó qua UI (không quay lại tab \"Chưa thanh toán\"/hàng chờ duyệt của shop ở danh sách ngoài). Đây là quyết định kiến trúc còn để ngỏ, cần chọn 1 trong 2 hướng: (a) coi đơn này vẫn \"còn phần chưa duyệt\" trong buildShopStats/pendingShops dù paymentApprovalStatus === 'confirmed', khi duyệt thì set paymentApprovedAmount = fee; hoặc (b) tách phụ phí thành bản ghi riêng có trạng thái duyệt độc lập.",
+            "Lịch sử: màn này từng là ShopDetailModal (overlay + nền tối + nút X, bản v3) rồi được đổi thành full-page ShopDetailView (v4, xem AGA-PAYMENT-1/2 bản cũ đã tách) theo đúng 1 UI tham khảo thật mới cung cấp (mobile-app-style: header + badge + nút hành động, thẻ tổng quan, tab, tìm kiếm, bảng). UAT (Playwright, localhost:2000) đã xác nhận: màn này là full component-swap thật (JSX danh sách chính không còn render khi đang xem Chi tiết), không có lỗi console.",
+            "Cột \"Trạng thái\" THEO TỪNG ĐƠN ở đây (dòng phụ \"Quá {N} ngày\") là nơi DUY NHẤT còn thể hiện mức cảnh báo trung gian — bảng danh sách chính (AGA-PAYMENT-1) chỉ còn 2 mức tổng quát (Đã khoá/Cho phép tạo đơn).",
+            "Xem AGA-PAYMENT-1 (bảng danh sách chính, nơi nút \"👁 Chi tiết\" nằm); AGA-PAYMENT-8 (hành động duyệt khi bấm \"✓ Đã nhận\" trong màn này); SHOP-ORDER-55 (Web Shop — nơi 3 cột tiền này được định nghĩa gốc)."
           ]
         },
         {
           "id": "AGA-PAYMENT-2",
           "jiraKey": "",
-          "title": "[AGA] Duyệt thanh toán tiền mặt: Duyệt theo từng Shop",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Duyệt 1 shop ở bảng chính (nút \"✓ Đã nhận\")",
           "status": "draft",
-          "userStory": "Là Agency Admin, sau khi đã thực nhận đủ tiền mặt từ MỘT Shop cụ thể chuyển lên, tôi muốn duyệt hàng loạt tất cả đơn tiền mặt đang \"Chờ duyệt\" của RIÊNG SHOP ĐÓ chỉ bằng 1 lần bấm — mà KHÔNG ảnh hưởng tới các shop khác chưa chuyển tiền.",
+          "userStory": "Tách nhỏ (lần 2) từ bản AGA-PAYMENT-2 gộp trước đó (từng mô tả cả 3 cách duyệt trong 1 story) — nay CHỈ còn CÁCH 1: nút \"✓ Đã nhận\" ở mỗi dòng shop trên bảng danh sách chính (tab \"Chờ xác nhận\"). 2 cách còn lại tách riêng: AGA-PAYMENT-7 (duyệt hàng loạt qua checkbox), AGA-PAYMENT-8 (duyệt từ màn \"Chi tiết\").\n\nLà Agency Admin, sau khi đã thực nhận đủ tiền mặt từ MỘT Shop (bưu cục) cụ thể chuyển lên, tôi muốn duyệt hết đơn tiền mặt đang \"Chờ duyệt\" của RIÊNG SHOP ĐÓ chỉ bằng 1 lần bấm ngay trên dòng của shop đó, mà KHÔNG ảnh hưởng tới các shop khác chưa chuyển tiền, để mở lại ngay việc tạo đơn cho shop đó nếu đang bị khoá.",
           "userFlow": [
-            "Tại mỗi khối Shop (xem AGA-PAYMENT-1), góc phải có nút \"Duyệt shop này (N)\" — N là số đơn chờ duyệt CỦA RIÊNG SHOP ĐÓ.",
-            "N = 0 → nút xám, không bấm được.",
-            "Bấm nút → window.confirm nêu rõ tên shop và số đơn sẽ bị ảnh hưởng.",
-            "Xác nhận → CHỈ đơn tiền mặt \"Chờ duyệt\" của SHOP ĐÓ chuyển \"✓ Đã nhận tiền\" — các shop khác HOÀN TOÀN không bị ảnh hưởng.",
-            "Hệ quả tức thì: nếu shop đó đang bị khoá tạo đơn (≥3 ngày) → mở lại NGAY.",
-            "Huỷ confirm → không đổi gì.",
-            "Badge trạng thái tổng quát của khối Shop đó tự cập nhật ngay sau khi duyệt.",
-            "Nếu có đơn còn nghi ngờ, xử lý NGOÀI hệ thống trước khi bấm \"Duyệt shop này\"."
+            "Ở tab \"Chờ xác nhận\" (xem AGA-PAYMENT-1), mỗi dòng shop có nút xanh \"✓ Đã nhận\" ở cột Thao tác.",
+            "Bấm \"✓ Đã nhận\" → window.confirm: \"Duyệt N đơn tiền mặt đang chờ của shop '{tên shop}'? Thao tác này xác nhận ĐÃ THỰC NHẬN đủ tiền shop chuyển lên — nếu shop đang bị khoá tạo đơn, sẽ được mở lại ngay.\"",
+            "Xác nhận → CHỈ đơn tiền mặt \"Chờ duyệt\" của SHOP ĐÓ chuyển \"✓ Đã nhận tiền\"; shop đó rời tab \"Chờ xác nhận\" sang \"Đã xác nhận\" NGAY; shop khác (kể cả đang hiện cùng trang) hoàn toàn không bị đổi gì.",
+            "Huỷ window.confirm → không có gì thay đổi.",
+            "Hệ quả tức thì bên Web Shop: shop vừa được duyệt nếu đang bị tự động khoá tạo đơn (vì trễ đủ số ngày cấu hình) → được MỞ LẠI NGAY lập tức (nút \"+ Tạo đơn hàng\" hết xám).",
+            "Không có cách chọn lọc duyệt RIÊNG 1 vài đơn trong cùng 1 shop qua nút này — luôn áp dụng cho TẤT CẢ đơn pending_review của shop đó. Nếu có 1 đơn cụ thể còn nghi ngờ (Shop khai nhưng chưa chắc đã chuyển tiền thật), Agency Admin phải xử lý đơn đó NGOÀI hệ thống (liên hệ Shop) TRƯỚC KHI bấm \"✓ Đã nhận\"."
           ],
           "systemFlow": [
-            "ShopGroup: pending = orders.filter(o => o.paymentApprovalStatus === 'pending_review') — tính RIÊNG trên mảng orders đã được lọc sẵn theo shopId của khối này (xem AGA-PAYMENT-1).",
-            "handleApproveShop(): guard if (pending.length === 0) return; window.confirm(...) có tên shop trong nội dung; nếu xác nhận, lặp for (const o of pending) approveOrderPayment(o.id, CURRENT_AGENT).",
-            "approveOrderPayment(orderId, approvedBy) (dùng chung, trong orderStore.ts): chỉ áp dụng khi đơn đang paymentApprovalStatus === 'pending_review'; set paymentApprovalStatus: 'confirmed', paymentApprovedAt, paymentApprovedBy. Hàm này KHÔNG đổi gì — chỉ khác CẤP GỌI (mỗi khối Shop tự gọi cho đúng pending của mình, không có vòng lặp nào gộp nhiều shop).",
-            "shopCashOverdueDays(shopId) (orderStore.ts) chỉ đếm đơn CÒN pending_review CỦA ĐÚNG shop đó — sau khi duyệt xong shop A, shopCashOverdueDays('A') về 0 ngay, trong khi shop B (chưa duyệt) vẫn giữ nguyên số ngày trễ — 2 shop hoàn toàn độc lập.",
-            "onApproved (= refresh ở component cha CashRemittance) được gọi sau khi duyệt xong 1 shop — re-render LẠI TOÀN TRANG (mọi khối Shop), nhưng vì dữ liệu các shop khác không đổi nên UI của họ không có gì khác biệt."
+            "approveShop(stats: ShopCashStats): boolean (hàm dùng CHUNG, CashRemittance.tsx): gói window.confirm(...) (có tên shop + số đơn trong nội dung) rồi lặp for (const o of stats.pending) approveOrderPayment(o.id, CURRENT_AGENT) nếu xác nhận; trả true/false để nơi gọi biết có nên refresh() hay không — CÙNG 1 HÀM được dùng lại ở AGA-PAYMENT-7 và AGA-PAYMENT-8.",
+            "approveOrderPayment(orderId, approvedBy) (dùng chung, orderStore.ts): chỉ áp dụng khi đơn đang paymentApprovalStatus === 'pending_review'; set paymentApprovalStatus: 'confirmed', paymentApprovedAt, paymentApprovedBy, VÀ paymentApprovedAmount (snapshot fee tại thời điểm duyệt — xem SHOP-ORDER-56, Web Shop).",
+            "shopCashOverdueDays(shopId) (orderStore.ts) chỉ đếm đơn CÒN pending_review CỦA ĐÚNG shop đó — sau khi duyệt xong shop A, shopCashOverdueDays('A') về 0 ngay, shop B (chưa duyệt) giữ nguyên số ngày trễ.",
+            "Nút \"✓ Đã nhận\" gọi approveShop(stats), nếu trả true thì gọi refresh() (tick state ở component cha) — re-render lại allStats/pendingShops/confirmedShops."
           ],
-          "crossPlatformImpact": [
-            "Mở lại khả năng tạo đơn của Web Shop ngay lập tức (xem AGA-PAYMENT-3)."
-          ],
+          "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Nút \"Duyệt shop này (N)\" hiện đúng N = số đơn chờ duyệt CỦA RIÊNG shop đó.",
-            "AC2: N = 0 → nút xám, disabled.",
-            "AC3: Bấm nút (N>0) → luôn hiện window.confirm có TÊN SHOP trong nội dung.",
-            "AC4: Xác nhận → CHỈ đơn của shop đó chuyển \"✓ Đã nhận tiền\"; shop khác giữ nguyên.",
-            "AC5: Shop đang bị khoá → sau khi duyệt RIÊNG shop đó, Web Shop mở lại tạo đơn ngay.",
-            "AC6: Huỷ window.confirm → không đơn nào của shop đó đổi trạng thái.",
-            "AC7: Không có cách chọn lọc duyệt riêng 1 vài đơn trong CÙNG 1 shop."
+            "AC1: Nút \"✓ Đã nhận\" ở mỗi dòng áp dụng đúng N = số đơn tiền mặt \"Chờ duyệt\" CỦA RIÊNG shop đó.",
+            "AC2: Bấm nút (N > 0) → luôn hiện window.confirm có TÊN SHOP + SỐ ĐƠN trong nội dung, trước khi thực hiện.",
+            "AC3: Xác nhận → CHỈ đơn tiền mặt \"Chờ duyệt\" của shop đó chuyển confirmed; shop khác (kể cả đang hiện trên cùng trang) giữ nguyên.",
+            "AC4: Shop đang bị tự động khoá tạo đơn → sau khi duyệt, Web Shop của shop đó MỞ LẠI tạo đơn NGAY (F5 là thấy).",
+            "AC5: Huỷ window.confirm → không có đơn nào bị đổi trạng thái.",
+            "AC6: Không có cách chọn lọc duyệt RIÊNG 1 vài đơn trong cùng 1 shop qua nút này — luôn áp dụng cho TẤT CẢ đơn pending_review của shop đó."
           ],
           "notes": [
-            "Thay đổi lớn (v2): trước đây (v1) chỉ có 1 nút \"Duyệt tất cả đơn chờ\" DUY NHẤT cho TOÀN ĐẠI LÝ (mọi shop cùng lúc) — đã đổi thành mỗi shop có nút \"Duyệt shop này\" RIÊNG, để Agency Admin kiểm soát chính xác từng shop, tránh duyệt nhầm/duyệt gộp khi chỉ 1 vài shop đã thực sự chuyển tiền.",
-            "KHÔNG có cách Từ chối 1 đơn cụ thể qua UI (hàm rejectOrderPayment() còn tồn tại trong code nhưng chưa có nút gọi — kế thừa hạn chế từ thiết kế cũ). Nếu phát hiện 1 đơn gian lận/sai sót, xử lý NGOÀI hệ thống (liên hệ Shop) trước khi bấm \"Duyệt shop này\" cho các đơn còn lại của shop đó.",
-            "Xem AGA-PAYMENT-1 để biết cấu trúc trang (nhóm theo shop); AGA-PAYMENT-3 để biết cơ chế cảnh báo/khoá tự động phía Web Shop mà hành động này ảnh hưởng tới; GSA-PAYMENT-CONFIG-1 (Super Admin) để biết nơi cấu hình ngưỡng ≥3 ngày (mặc định) quyết định khi nào shop bị khoá."
+            "Lịch sử tách story: bản gốc AGA-PAYMENT-2 (v4) mô tả chung 3 cách duyệt (dòng/hàng loạt/màn Chi tiết) trong 1 story. Nay tách thành 3 story riêng (AGA-PAYMENT-2/7/8) để mỗi cách ước lượng/test độc lập được — nghiệp vụ duyệt dùng CHUNG 1 hàm approveShop(), KHÔNG đổi.",
+            "Lịch sử xa hơn: v1 chỉ có 1 nút \"Duyệt tất cả đơn chờ\" DUY NHẤT cho TOÀN ĐẠI LÝ (không chọn lọc được shop nào) — v2 đổi thành mỗi shop 1 nút riêng để kiểm soát chính xác hơn, giữ nguyên tới nay.",
+            "KHÔNG có cách Từ chối 1 đơn cụ thể qua UI (hàm rejectOrderPayment() còn tồn tại trong code nhưng chưa có nút gọi). Nếu phát hiện 1 đơn gian lận/sai sót, xử lý NGOÀI hệ thống (liên hệ Shop) trước khi duyệt các đơn còn lại của shop đó.",
+            "Xem AGA-PAYMENT-1 (bảng danh sách chính); AGA-PAYMENT-7 (duyệt hàng loạt qua checkbox); AGA-PAYMENT-8 (duyệt từ màn \"Chi tiết\"); AGA-PAYMENT-3 (cảnh báo/khoá tự động phía Web Shop); GSA-PAYMENT-CONFIG-1 (Super Admin — nơi cấu hình ngưỡng khoá, riêng từng đại lý)."
+          ]
+        },
+        {
+          "id": "AGA-PAYMENT-7",
+          "jiraKey": "",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Duyệt hàng loạt nhiều shop đã chọn",
+          "status": "draft",
+          "userStory": "Tách từ bản AGA-PAYMENT-2 gộp trước đó (cách 2 trong 3 cách duyệt) — ghép cặp với AGA-PAYMENT-5 (cơ chế tick chọn). Story này CHỈ mô tả điều gì xảy ra khi bấm nút \"✓ Duyệt N shop đã chọn\".\n\nLà Agency Admin, khi đã thực nhận tiền mặt từ NHIỀU shop cùng lúc, tôi muốn tick chọn hàng loạt rồi duyệt 1 lần thay vì bấm từng shop một, để xử lý nhanh khi đại lý quản lý nhiều shop.",
+          "userFlow": [
+            "Sau khi tick ≥1 checkbox (xem AGA-PAYMENT-5), nút xanh \"✓ Duyệt N shop đã chọn\" hiện ra cạnh ô tìm kiếm.",
+            "Bấm vào → ĐÚNG 1 window.confirm DUY NHẤT, nêu TỔNG SỐ ĐƠN gộp của TẤT CẢ shop đã chọn (không hỏi lại từng shop riêng lẻ).",
+            "Xác nhận → mọi shop đã chọn duyệt xong CÙNG LÚC, rời tab \"Chờ xác nhận\" sang \"Đã xác nhận\"; lựa chọn (checkbox) tự xoá sạch.",
+            "Huỷ window.confirm → không có gì thay đổi, lựa chọn (checkbox) VẪN GIỮ NGUYÊN (không bị xoá khi huỷ).",
+            "Shop KHÔNG được tick (dù đang hiện cùng trang/cùng tab) hoàn toàn không bị ảnh hưởng.",
+            "Hệ quả tức thì bên Web Shop: mỗi shop vừa được duyệt, nếu đang bị tự động khoá tạo đơn, đều được MỞ LẠI NGAY lập tức — độc lập cho từng shop trong nhóm vừa duyệt.",
+            "Không có cách chọn lọc duyệt RIÊNG 1 vài đơn trong CÙNG 1 shop qua cách này — luôn áp dụng cho TẤT CẢ đơn pending_review của MỌI shop đã chọn."
+          ],
+          "systemFlow": [
+            "handleApproveSelected() (component cha CashRemittance): lọc pendingShops.filter(s => selectedShopIds.has(s.shop.id) && s.pending.length > 0), cộng dồn tổng số đơn của TẤT CẢ shop đã chọn vào ĐÚNG 1 window.confirm (khác với approveShop() ở AGA-PAYMENT-2/8 — không tái dùng được vì cần gộp nhiều shop vào 1 câu hỏi duy nhất).",
+            "Nếu xác nhận: lặp lồng 2 tầng (từng shop đã chọn → từng đơn pending của shop đó) gọi approveOrderPayment(o.id, CURRENT_AGENT) (hàm dùng chung, orderStore.ts — xem AGA-PAYMENT-2).",
+            "Xong: setSelectedShopIds(new Set()) (xoá sạch lựa chọn) + refresh() (re-render lại allStats/pendingShops/confirmedShops).",
+            "shopCashOverdueDays(shopId) tính RIÊNG từng shop — duyệt gộp nhiều shop không làm thay đổi cách tính của shop khác chưa nằm trong nhóm vừa duyệt."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Tick ≥2 checkbox → hiện nút \"✓ Duyệt N shop đã chọn\" với N đúng.",
+            "AC2: Bấm nút → ĐÚNG 1 window.confirm gộp tổng số đơn của TẤT CẢ shop đã chọn (không hỏi lại từng shop).",
+            "AC3: Xác nhận → TẤT CẢ shop đã chọn chuyển sang tab \"Đã xác nhận\" cùng lúc, lựa chọn (checkbox) tự xoá sạch.",
+            "AC4: Shop KHÔNG được tick giữ nguyên dù đang hiện cùng trang/cùng tab.",
+            "AC5: Huỷ window.confirm → không có đơn nào bị đổi trạng thái, lựa chọn (checkbox) KHÔNG bị xoá.",
+            "AC6: Mỗi shop trong nhóm vừa duyệt, nếu đang bị khoá tạo đơn, đều được mở lại NGAY (độc lập, không phụ thuộc shop khác trong cùng nhóm).",
+            "AC7: Không có cách chọn lọc duyệt RIÊNG 1 vài đơn trong cùng 1 shop qua cách này — luôn áp dụng cho TẤT CẢ đơn pending_review của MỌI shop đã chọn."
+          ],
+          "notes": [
+            "Tách từ bản AGA-PAYMENT-2 gộp trước đó (cách 2/3) — hành vi KHÔNG đổi, chỉ tách ra thành story riêng.",
+            "Cách này KHÔNG phải quay lại hành vi v1 (1 nút \"Duyệt tất cả đơn chờ\" cho TOÀN ĐẠI LÝ, không chọn được shop nào) — ở đây Agency Admin TỰ CHỌN chính xác những shop nào muốn gộp duyệt, các shop khác (dù cùng thoả điều kiện \"có đơn chờ\") không bị đụng tới nếu không tick.",
+            "Xem AGA-PAYMENT-5 (cơ chế tick chọn — điều kiện để nút này xuất hiện); AGA-PAYMENT-1 (bảng danh sách chính); AGA-PAYMENT-2 (duyệt 1 dòng — dùng hàm approveShop() khác với hàm handleApproveSelected() ở đây); AGA-PAYMENT-8 (duyệt từ màn \"Chi tiết\")."
+          ]
+        },
+        {
+          "id": "AGA-PAYMENT-8",
+          "jiraKey": "",
+          "title": "[AGA] Duyệt thanh toán tiền mặt: Duyệt từ màn \"Chi tiết\"",
+          "status": "draft",
+          "userStory": "Tách từ bản AGA-PAYMENT-2 gộp trước đó (cách 3 trong 3 cách duyệt) — ghép cặp với AGA-PAYMENT-6 (màn \"Chi tiết\" full-page). Story này CHỈ mô tả điều gì xảy ra khi bấm nút \"✓ Đã nhận\" trong header của màn \"Chi tiết\".\n\nLà Agency Admin, sau khi đã xem kỹ toàn bộ lịch sử đơn tiền mặt của 1 shop ở màn \"Chi tiết\" (đối chiếu sổ quỹ thật), tôi muốn duyệt luôn cho shop đó ngay tại màn đang xem, mà không cần quay lại danh sách rồi tìm đúng dòng để bấm \"✓ Đã nhận\".",
+          "userFlow": [
+            "Ở màn \"Chi tiết\" của 1 shop (xem AGA-PAYMENT-6), header có nút xanh \"✓ Đã nhận\" (xám/disabled nếu shop không còn đơn chờ).",
+            "Bấm vào → window.confirm giống hệt nội dung ở AGA-PAYMENT-2 (nêu tên shop + số đơn).",
+            "Xác nhận → duyệt xong, MÀN \"CHI TIẾT\" TỰ ĐÓNG LẠI (quay thẳng về danh sách chính, không cần bấm \"←\" thêm); shop đó đã chuyển sang tab \"Đã xác nhận\" khi danh sách hiện ra lại.",
+            "Huỷ window.confirm → không có đơn nào bị đổi trạng thái, màn \"Chi tiết\" KHÔNG tự thoát, vẫn đứng nguyên ở màn đó.",
+            "Hệ quả tức thì bên Web Shop: giống hệt AGA-PAYMENT-2 — shop vừa được duyệt, nếu đang bị tự động khoá tạo đơn, được mở lại tạo đơn NGAY.",
+            "Không có cách chọn lọc duyệt RIÊNG 1 vài đơn trong CÙNG 1 shop qua nút này — luôn áp dụng cho TẤT CẢ đơn pending_review của shop đang xem."
+          ],
+          "systemFlow": [
+            "ShopDetailView's handleApprove() (CashRemittance.tsx): gọi approveShop(stats) (CÙNG hàm dùng ở AGA-PAYMENT-2, bảng chính), nếu trả true thì gọi tiếp CẢ onApproved() (= refresh ở component cha) VÀ onBack() (= setDetailShopId(null), thoát màn \"Chi tiết\") — khác với nút \"✓ Đã nhận\" ở bảng chính (chỉ gọi refresh(), không có gì để \"quay lại\" vì vốn đã đang ở danh sách).",
+            "approveShop(stats) giữ nguyên logic đã mô tả ở AGA-PAYMENT-2 (window.confirm + lặp approveOrderPayment() cho từng đơn pending của shop).",
+            "Vì detailStats = allStats.find(s => s.shop.id === detailShopId) tính lại MỖI LẦN RENDER (xem AGA-PAYMENT-6), nếu huỷ window.confirm thì màn \"Chi tiết\" tiếp tục hiển thị ĐÚNG dữ liệu hiện tại của shop, không có gì bị \"đứng hình\" hay sai lệch."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Nút \"✓ Đã nhận\" trong header màn \"Chi tiết\" áp dụng đúng N = số đơn tiền mặt \"Chờ duyệt\" CỦA RIÊNG shop đang xem; N = 0 thì nút xám, disabled, không bấm được.",
+            "AC2: Bấm nút (N > 0) → hiện window.confirm có tên shop + số đơn, giống nội dung ở AGA-PAYMENT-2.",
+            "AC3: Xác nhận → CHỈ đơn của shop đang xem chuyển confirmed; TỰ ĐỘNG quay lại danh sách chính (không cần bấm \"←\" thêm).",
+            "AC4: Huỷ window.confirm → không có đơn nào bị đổi trạng thái; màn \"Chi tiết\" KHÔNG tự thoát, vẫn đứng nguyên ở màn đó.",
+            "AC5: Shop đang bị tự động khoá tạo đơn → sau khi duyệt từ màn này, Web Shop của shop đó MỞ LẠI tạo đơn NGAY.",
+            "AC6: Không có cách chọn lọc duyệt RIÊNG 1 vài đơn trong cùng 1 shop qua nút này — luôn áp dụng cho TẤT CẢ đơn pending_review của shop đang xem."
+          ],
+          "notes": [
+            "Lịch sử: ở bản v3 (modal \"Chi tiết\"), nút tương đương tên là \"Duyệt shop này (N)\" và khi duyệt xong thì \"tự đóng modal\". Ở bản v4 (full-page, xem AGA-PAYMENT-6), nút đổi tên thành \"✓ Đã nhận\" (khớp tên với nút ở bảng chính) và hành vi đổi từ \"tự đóng modal\" thành \"tự quay lại danh sách chính\" (onBack()) — nghiệp vụ duyệt (dùng approveShop()) KHÔNG đổi qua các bản.",
+            "Tách từ bản AGA-PAYMENT-2 gộp trước đó (cách 3/3) — hành vi KHÔNG đổi, chỉ tách ra thành story riêng.",
+            "Xem AGA-PAYMENT-6 (màn \"Chi tiết\", nơi nút này nằm); AGA-PAYMENT-2 (duyệt 1 dòng ở bảng chính — dùng chung hàm approveShop()); AGA-PAYMENT-7 (duyệt hàng loạt qua checkbox — dùng hàm khác, handleApproveSelected())."
           ]
         },
         {
@@ -3259,7 +3448,7 @@
           ],
           "systemFlow": [
             "shopCashOverdueDays(shopId) (orderStore.ts): lọc đơn o.shopId === shopId && o.paymentMethod === 'cash' && o.paymentApprovalStatus === 'pending_review' && o.paymentPaidAt; nếu rỗng → trả 0; nếu có → lấy paymentPaidAt CŨ NHẤT, gọi daysSinceCalendar() tính SỐ NGÀY LỊCH chênh lệch (so ngày dương lịch, KHÔNG phải số giờ trôi qua chia 24) — đơn tạo lúc 23h50 hôm nay đã tính \"trễ 1 ngày\" ngay khi sang 00h01 hôm sau, không cần đợi đủ 24 giờ, vì Shop gộp tất cả đơn phát sinh trong 1 ngày thành 1 đợt cần chuyển.",
-            "isOrderCreationBlocked(shopId): trả về shopCashOverdueDays(shopId) >= loadRemittanceConfig().blockDays — THAY THẾ HOÀN TOÀN công tắc thủ công cũ (setOrderCreationBlocked/ghn_order_creation_blocked trong localStorage, đã xoá) — không còn lưu trạng thái gì, tính TOÀN BỘ từ dữ liệu đơn hiện có mỗi lần gọi. Ngưỡng blockDays (và warningDays) nay đọc từ loadRemittanceConfig() — Super Admin cấu hình được ở /super-admin/settings/cash-remittance-rules (xem GSA-PAYMENT-CONFIG-1), mặc định { warningDays: 1, blockDays: 3 }.",
+            "isOrderCreationBlocked(shopId): trả về shopCashOverdueDays(shopId) >= loadRemittanceConfig(shop.agencyId).blockDays (tự tra agencyId của shop qua loadShops()) — THAY THẾ HOÀN TOÀN công tắc thủ công cũ (setOrderCreationBlocked/ghn_order_creation_blocked trong localStorage, đã xoá) — không còn lưu trạng thái gì, tính TOÀN BỘ từ dữ liệu đơn hiện có mỗi lần gọi. Ngưỡng blockDays (và warningDays) nay đọc RIÊNG THEO TỪNG ĐẠI LÝ từ loadRemittanceConfig(agencyId) — Super Admin cấu hình được ở /super-admin/settings/cash-remittance-rules (xem GSA-PAYMENT-CONFIG-1), mặc định { warningDays: 1, blockDays: 3 } cho đại lý nào chưa từng cấu hình riêng.",
             "Orders.tsx (Web Shop): remittanceConfig = loadRemittanceConfig(); cashOverdueDays = shopCashOverdueDays('SHP001'); creationBlocked = cashOverdueDays >= remittanceConfig.blockDays; cashOverdueWarning = cashOverdueDays >= remittanceConfig.warningDays && cashOverdueDays < remittanceConfig.blockDays.",
             "Nút \"+ Tạo đơn hàng\" dùng creationBlocked để disable/đổi label/tooltip — giống hệt cách UI cũ phản ứng với công tắc thủ công, chỉ khác NGUỒN của biến creationBlocked.",
             "Banner cảnh báo (JSX ngay dưới \"Page header\", TRƯỚC khối \"Tabs\" trong Orders.tsx): {cashOverdueWarning && (<div>...</div>)} — nền #FEF3C7, chữ #92400E, full-width, render MỖI LẦN trang re-render (không phải 1 lần duy nhất) nên LUÔN khớp đúng cashOverdueDays hiện tại. Menu con \"Tạo đơn hàng\" (mở CreateOrderDrawer) KHÔNG còn gọi window.alert(...) nữa — onClick chỉ còn setDrawerOpen(true).",
@@ -3279,7 +3468,7 @@
           ],
           "notes": [
             "Thay đổi lớn: thay thế hoàn toàn công tắc thủ công \"Chặn tạo đơn mới\" của GHN Super Admin (GSA-PAYMENT-3, đã xoá — vốn là 1 cờ boolean TOÀN HỆ THỐNG, bật/tắt tay) bằng cơ chế TỰ ĐỘNG, tính TOÀN BỘ từ dữ liệu, áp dụng RIÊNG từng shop theo số ngày trễ thực tế — không cần ai bấm nút \"bật chặn\" nữa.",
-            "Cập nhật: ngưỡng 1 ngày (cảnh báo)/3 ngày (khoá) KHÔNG còn hardcode — Super Admin cấu hình được ở /super-admin/settings/cash-remittance-rules (xem GSA-PAYMENT-CONFIG-1), áp dụng CHUNG cho toàn hệ thống (chưa hỗ trợ cấu hình riêng từng đại lý — nếu cần, phải thiết kế lại CashRemittanceConfig).",
+            "Cập nhật: ngưỡng 1 ngày (cảnh báo)/3 ngày (khoá) KHÔNG còn hardcode — Super Admin cấu hình được ở /super-admin/settings/cash-remittance-rules (xem GSA-PAYMENT-CONFIG-1), RIÊNG TỪNG ĐẠI LÝ (mỗi đại lý tự đặt mức của mình, không còn dùng chung 1 cặp ngưỡng cho toàn hệ thống như bản đầu).",
             "Sửa quan trọng: cách đếm số ngày trễ đổi từ \"24 giờ trôi qua kể từ đúng giờ phút tạo đơn\" sang \"NGÀY LỊCH chênh lệch\" (daysSinceCalendar()) — khớp đúng mô hình Shop gộp TẤT CẢ đơn phát sinh trong 1 ngày thành 1 đợt cần chuyển cho Agency; đơn tạo cuối ngày hôm nay vẫn tính \"trễ 1 ngày\" ngay khi sang ngày mai, không cần đợi đủ 24 giờ.",
             "PROTOTYPE THUẦN — không có cơ chế nhắc qua email/SMS/push notification nào, chỉ có banner vàng ngay trên trang khi Shop đang mở Web Shop.",
             "Thay đổi (banner thay cho alert): bản đầu dùng window.alert hiện 1 LẦN mỗi khi Shop bấm \"Tạo đơn hàng\" lúc đang trong ngưỡng cảnh báo — dễ bị bỏ sót (Shop tắt alert rồi quên luôn) và gây gián đoạn thao tác. Đã đổi sang banner vàng full-width hiện LIÊN TỤC ngay dưới tiêu đề trang \"Đơn hàng\" trong suốt thời gian Shop còn ở ngưỡng cảnh báo — không cần bấm gì để thấy, không tự ẩn, và không còn window.alert nào ở bước này nữa (guard window.alert trong handleCreate() khi THỰC SỰ đã bị khoá — xem điểm 6 — KHÔNG đổi).",

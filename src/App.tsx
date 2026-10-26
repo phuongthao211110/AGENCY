@@ -52,6 +52,7 @@ import ShopSettings from './platforms/shop/pages/Settings'
 import AccountInfoShop from './platforms/shop/pages/settings/AccountInfo'
 import ShopSettingsPricing from './platforms/shop/pages/settings/ShopSettingsPricing'
 import BankAccounts from './platforms/shop/pages/settings/BankAccounts'
+import QrCodes from './platforms/shop/pages/settings/QrCodes'
 
 export default function App() {
   return (
@@ -123,6 +124,7 @@ export default function App() {
             <Route path="account" element={<AccountInfoShop />} />
             <Route path="pricing" element={<ShopSettingsPricing />} />
             <Route path="bank" element={<BankAccounts />} />
+            <Route path="qr-codes" element={<QrCodes />} />
             <Route index element={<Navigate to="account" replace />} />
           </Route>
           <Route index element={<Navigate to="orders" replace />} />

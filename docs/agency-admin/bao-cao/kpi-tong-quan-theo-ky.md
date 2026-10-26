@@ -17,7 +17,7 @@ Là nhân viên đại lý (Agency Admin), tôi muốn xem nhanh 6 chỉ số v�
 
 1. Ngay dưới header trang, hiện 2 hàng thẻ KPI: hàng 1 gồm 4 thẻ đều nhau (Doanh thu, Sản lượng, Khách hàng mới, Khách quay lại); hàng 2 gồm 2 thẻ RỘNG HƠN (AOV theo cân, AOV theo sản lượng).
 2. Mỗi thẻ gồm: nhãn xám nhỏ ở trên, số lớn đậm và badge % nằm CÙNG 1 hàng ngay bên dưới (mũi tên xanh khi tăng, đỏ khi giảm, chữ "Mới" màu xanh dương nếu kỳ trước = 0 và kỳ này > 0).
-3. 2 thẻ "Khách hàng mới"/"Khách quay lại" có thêm tooltip (hover) giải thích định nghĩa — logic chi tiết xem AGA-REPORT-8 và AGA-REPORT-9.
+3. 2 thẻ "Khách hàng mới"/"Khách quay lại" có thêm 1 dòng chú thích nhỏ LUÔN HIỆN (không cần rê chuột) ngay dưới số lớn, giải thích ngắn gọn định nghĩa ("Đơn hợp lệ đầu tiên trong kỳ này (không tính đơn đã huỷ)" / "Đã mua lần thứ 2 trở lên (không tính đơn đã huỷ)") — kèm `title` gốc của trình duyệt (hover) làm lớp dự phòng; 4 thẻ còn lại (Doanh thu/Sản lượng/2 AOV) không có dòng chú thích này. Logic định nghĩa/công thức đầy đủ xem AGA-REPORT-8 và AGA-REPORT-9.
 4. Đổi dropdown "Thời gian" (đặt ở header trang — xem AGA-REPORT-7) → cả 6 thẻ cập nhật lại theo đúng khoảng Kỳ này/Kỳ trước của lựa chọn đó.
 5. Màn hình hẹp → mỗi hàng thẻ tự xuống dòng (wrap) độc lập, thẻ hàng 1 rộng tối thiểu ~150px, thẻ hàng 2 rộng tối thiểu ~300px.
 
@@ -27,9 +27,9 @@ Là nhân viên đại lý (Agency Admin), tôi muốn xem nhanh 6 chỉ số v�
 2. "Doanh thu" = `trend.current`/`trend.previous` (Σ `order.fee` trong khoảng, từ `computePeriodComparison()`). "Sản lượng" = `totalVolume` = Σ `volume` của mọi shop trong `shopStatsCur` (kết quả `buildShopPeriodStats()` cho từng shop).
 3. "AOV theo sản lượng" = `trend.current / totalVolume`; "AOV theo cân" = `trend.current / (Σ order.weight trong kỳ / 1000)` — cả 2 chia cho 0 → trả 0, không lỗi/NaN.
 4. "Khách hàng mới"/"Khách quay lại" = Σ `newCustomers`/`reactiveCustomers` qua mọi shop trong `shopStatsCur` — logic 2 hàm `countNewCustomers()`/`countReactiveCustomers()` xem AGA-REPORT-8/AGA-REPORT-9 (không lặp lại ở đây để tránh 2 nguồn dễ lệch khi sửa).
-5. Giá trị "kỳ trước" của cả 6 KPI tính lại bằng chính công thức tương ứng nhưng áp khoảng `trend.prevStart/prevEnd` (làm "kỳ hiện tại" của phép tính lùi) và `prevCycle.prevStart/prevEnd` (làm "kỳ trước" của phép tính lùi), với `prevCycle = getComparisonRanges(period, trend.prevEnd)`.
+5. Giá trị "kỳ trước" của cả 6 KPI tính lại bằng chính công thức tương ứng nhưng áp khoảng `trend.prevStart/prevEnd` làm "kỳ hiện tại" của phép tính lùi — `shopStatsPrev = shops.map(s => buildShopPeriodStats(s, agencyOrders, trend.prevStart, trend.prevEnd))`. Riêng "Khách hàng mới"/"Khách quay lại" không cần thêm mốc lùi nào khác nữa (đã bỏ hẳn `prevCycle`/`getCycleBeforePrev()` — 2 công thức này giờ chỉ cần đúng `curStart`/`curEnd`, tự nhìn lại TOÀN BỘ lịch sử trước đó, không cần biết "kỳ trước của kỳ trước" — xem AGA-REPORT-8/9).
 6. `pctDelta(cur, prev)`: `prev > 0` → % bình thường; `prev = 0` và `cur > 0` → trả `null` (hiện badge "Mới" màu xanh dương); cả 2 = 0 → 0%. Dùng CHUNG cho cả 6 thẻ.
-7. Component `CompactKpiCard({label, value, deltaPct, tooltip?, flexBasis?})` — thẻ trắng bo góc 10px, viền `#E5E7EB`, render nhãn (dòng riêng) rồi số + `DeltaBadge` CÙNG 1 hàng flex (`gap: 8`); `flexBasis` mặc định `150px` (hàng 1), truyền `300px` cho 2 thẻ AOV ở hàng 2 để chúng rộng hơn; `DeltaBadge` render icon `RiseOutlined`/`FallOutlined` + % hoặc chữ "Mới" màu `#3B82F6`.
+7. Component `CompactKpiCard({label, value, deltaPct, tooltip?, flexBasis?})` — thẻ trắng bo góc 10px, viền `#E5E7EB`, render nhãn (dòng riêng) rồi số + `DeltaBadge` CÙNG 1 hàng flex (`gap: 8`); nếu có truyền `tooltip` thì render THÊM 1 dòng text nhỏ (`11px`, màu xám) ngay dưới số — hiện LUÔN, không chỉ lúc hover — đồng thời vẫn gán `tooltip` vào `title` gốc của div làm lớp dự phòng; `flexBasis` mặc định `150px` (hàng 1), truyền `300px` cho 2 thẻ AOV ở hàng 2 để chúng rộng hơn; `DeltaBadge` render icon `RiseOutlined`/`FallOutlined` + % hoặc chữ "Mới" màu `#3B82F6`.
 8. 6 giá trị này CŨNG là TỔNG (Σ) đúng bằng bảng "Chi tiết theo shop" (AGA-REPORT-13) — dùng chung 1 nguồn tính (`shopStatsCur`), không phải 2 nguồn tính riêng.
 
 ## Acceptance Criteria
@@ -50,6 +50,7 @@ Là nhân viên đại lý (Agency Admin), tôi muốn xem nhanh 6 chỉ số v�
 
 ## Notes
 
+- **Cập nhật (2026-10-21)**: dòng giải thích "Khách hàng mới"/"Khách quay lại" trước đây CHỈ hiện qua `title` gốc của trình duyệt (phải rê chuột đúng vào thẻ mới thấy) — không hiện được trên màn hình cảm ứng, và không hiện trong ảnh chụp/export báo cáo. Đã đổi sang hiện LUÔN thành 1 dòng chú thích nhỏ dưới số liệu (vẫn giữ `title` làm lớp dự phòng) — chỉ áp dụng cho 2 thẻ này vì chỉ 2 thẻ này truyền `tooltip` vào `CompactKpiCard`, không ảnh hưởng 4 thẻ còn lại.
 - **Redesign lần 2 (2026-09-27)**: đổi layout từ 1 hàng 6 thẻ đều nhau sang 2 hàng (4 thẻ chính + 2 thẻ AOV rộng hơn), badge % chuyển từ dòng riêng lên CÙNG hàng với số lớn — theo đúng ảnh mockup UI thật do người yêu cầu cung cấp.
 - **Tách ra từ AGA-REPORT-7** (redesign tổng thể trang "Báo cáo") theo yêu cầu quản lý riêng từng phần của trang.
 - 2 thẻ "Khách hàng mới"/"Khách quay lại" ở đây chỉ mô tả VỊ TRÍ/HÀNH VI HIỂN THỊ trong khối KPI — định nghĩa/công thức tính đầy đủ xem [AGA-REPORT-8](./khach-hang-moi.md) và [AGA-REPORT-9](./khach-quay-lai.md).

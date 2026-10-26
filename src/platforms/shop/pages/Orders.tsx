@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import { PlusOutlined, SearchOutlined, CloseOutlined, StopOutlined, PrinterOutlined, ArrowLeftOutlined, CopyOutlined, InboxOutlined, MailOutlined } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
@@ -6,6 +7,7 @@ import allShops from '../../../mock-data/shops.json'
 import { loadOrders, addOrder, cancelOrder, updateOrder, appendActionHistory, isOrderCreationBlocked, shopCashOverdueDays, loadRemittanceConfig, type Order } from '../../../mock-data/orderStore'
 import { printSettings, updatePrintSetting, type PrintKindConfig } from '../../../mock-data/printSettingsStore'
 import { loadPricing } from '../../../mock-data/pricingStore'
+import { findQrCode, recordQrScan, isQrCodeUsable } from '../../../mock-data/qrStore'
 import { servicesList, type AgencyService } from '../../agency-admin/serviceStore'
 import { clientHubs247, agenciesList, DEFAULT_ORDER_FORM_COMPONENTS, hasActiveGhnConnection } from '../../super-admin/agencyStore'
 
@@ -68,6 +70,29 @@ function currentShopReturnFee(): number {
   const table = tables.find(t => t.isDefault) ?? tables[0]
   const surcharges = (table?.surcharges ?? {}) as ShopPricingSurcharges
   return parseInt(surcharges.returnFee?.value ?? '0', 10) || 0
+}
+
+export type AddressChangeTier = 'same_ward' | 'same_province' | 'inter_province'
+
+function currentShopAddressChangeSurcharges(): ShopPricingSurcharges['addressChange'] {
+  const tables = loadPricing() as any[]
+  const table = tables.find(t => t.isDefault) ?? tables[0]
+  const surcharges = (table?.surcharges ?? {}) as ShopPricingSurcharges
+  return surcharges.addressChange
+}
+
+// Phí đổi địa chỉ chỉ phát sinh khi người nhận THỰC SỰ yêu cầu đổi địa chỉ sau khi đơn đã tạo (xem
+// confirmAddressChangeOrder) — khác feeReturn ở chỗ có 3 mức, Shop tự chọn mức áp dụng (hệ thống
+// không có dữ liệu phường/xã để tự so khớp địa chỉ cũ/mới). Mức "Khác Tỉnh/Thành" tính theo % trên
+// phí giao hàng gốc (feeShipping) — đúng nghĩa "% cước phí tuyến/lần" đã định nghĩa ở Agency Admin
+// (PricingCreate.tsx), không tính trên tổng fee (đã gồm cả phụ phí khác, không liên quan tới tuyến).
+function currentShopAddressChangeFee(tier: AddressChangeTier, baseShippingFee: number): number {
+  const addressChange = currentShopAddressChangeSurcharges()
+  if (!addressChange) return 0
+  if (tier === 'same_ward') return parseInt(addressChange.sameWardFee, 10) || 0
+  if (tier === 'same_province') return parseInt(addressChange.sameProvinceFee, 10) || 0
+  const percent = parseFloat(addressChange.interProvincePercent) || 0
+  return Math.round((baseShippingFee * percent) / 100)
 }
 
 // 10 tỉnh đủ để demo (không phải danh sách 63 tỉnh thật) — dùng đúng token 'TP.HCM' như
@@ -1018,6 +1043,10 @@ function LinkText({ children }: { children: React.ReactNode }) {
 // phí ship từ NGƯỜI NHẬN lúc giao hàng, không phải shop trả trước nên không có khái niệm thanh
 // toán online. Prototype thuần mock data — không có SDK/backend thật, toàn bộ là mô phỏng UI.
 
+function methodLabelOf(method?: 'cash' | 'momo' | 'bank_transfer'): string {
+  return method === 'momo' ? 'MoMo' : method === 'bank_transfer' ? 'Chuyển khoản ngân hàng' : 'Tiền mặt'
+}
+
 // Cùng pattern pill-button với PaperSizePicker (L211-232) nhưng dùng C_ACTION cho lựa chọn đang
 // chọn — khớp quy ước "Action buttons = #FF5200" của dự án thay vì màu xanh đậm riêng của print.
 function PaymentMethodPicker({ value, onChange }: { value: 'cash' | 'momo' | 'bank_transfer'; onChange: (v: 'cash' | 'momo' | 'bank_transfer') => void }) {
@@ -1273,7 +1302,7 @@ function OnlinePaymentModal({ open, method, amount, orderRef, onConfirmPaid, onC
 }
 
 // ── CreateOrderDrawer ────────────────────────────────────────
-function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClose: () => void; onUpdated?: () => void }) {
+function CreateOrderDrawer({ open, onClose, onUpdated, initialNote }: { open: boolean; onClose: () => void; onUpdated?: () => void; initialNote?: string }) {
   // ── State ──
   const [pickupType, setPickupType]             = useState<'home' | 'post'>('home')
   const [rcvName, setRcvName]                   = useState('Nguyễn Văn An')
@@ -1302,6 +1331,14 @@ function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClos
   const [collectOnFail, setCollectOnFail]       = useState(true)
   const [collectOnFailAmt, setCollectOnFailAmt] = useState(0)
   const [orderNote, setOrderNote]               = useState('')
+
+  // Đơn từ "Tem QR" (xem Cài đặt → Tem QR): drawer này LUÔN mount sẵn (ẩn/hiện bằng transform, xem
+  // comment ở component Orders), nên không thể dựa vào mount lúc đầu để seed ghi chú — phải tự theo
+  // dõi lúc `open` chuyển sang true kèm `initialNote` mới có giá trị, set thẳng vào `orderNote`.
+  useEffect(() => {
+    if (open && initialNote) setOrderNote(initialNote)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialNote])
 
   const currentShop = allShops.find(s => s.id === 'SHP001')!
   // Super Admin bật/tắt từng thành phần trong form tạo đơn theo TỪNG đại lý (agencyStore.ts,
@@ -1353,6 +1390,9 @@ function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClos
   // Đơn đã tạo xong (xem handleCreate) mà modal thanh toán online đang chờ xác nhận cho — modal
   // CẬP NHẬT đơn này qua updateOrder(), không tạo thêm đơn mới nào nữa.
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
+  // Dropdown "Thanh toán phí ship" đặt ở khối action cuối form (trên nút Lưu nháp/Tạo đơn) — thay
+  // thế dãy pill cũ, khớp đúng UI tham khảo: 1 ô gọn hiện kênh đang chọn, bấm vào mở list radio.
+  const [paymentDropdownOpen, setPaymentDropdownOpen] = useState(false)
 
   function handleSelectPaymentMethod(m: 'cash' | 'momo' | 'bank_transfer') {
     setPaymentMethod(m)
@@ -1368,6 +1408,15 @@ function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClos
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveFeePayer])
+
+  useEffect(() => {
+    if (!paymentDropdownOpen) return
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-payment-method-menu]')) setPaymentDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [paymentDropdownOpen])
 
   const now = new Date()
   const createdAt = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} - ${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`
@@ -1458,6 +1507,7 @@ function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClos
       paymentApprovalStatus: !needsPaymentApproval ? undefined : isOnlineMethod ? (isOnlineConfirmed ? 'confirmed' : undefined) : 'pending_review',
       paymentApprovedAt: isOnlineConfirmed ? now.toISOString() : undefined,
       paymentApprovedBy: isOnlineConfirmed ? 'Hệ thống (MoMo/Ngân hàng xác nhận tự động)' : undefined,
+      paymentApprovedAmount: isOnlineConfirmed ? totalShipping : undefined,
       status: 'pickup',
       createdAt: now.toISOString().split('T')[0],
       actionHistory,
@@ -1485,7 +1535,7 @@ function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClos
     // Agency ngay khi drawer này đang mở sẵn — menu "+ Tạo đơn hàng" đã ẩn item để chặn từ đầu,
     // guard thêm ở đây cho chắc (xem AGA-PAYMENT-1/2, Agency Admin).
     if (isOrderCreationBlocked('SHP001')) {
-      window.alert(`Đại lý tạm khoá tạo đơn mới vì shop còn tiền mặt chưa chuyển quá ${loadRemittanceConfig().blockDays} ngày. Vui lòng chuyển tiền cho đại lý để mở lại.`)
+      window.alert(`Đại lý tạm khoá tạo đơn mới vì shop còn tiền mặt chưa chuyển quá ${loadRemittanceConfig(currentShop.agencyId).blockDays} ngày. Vui lòng chuyển tiền cho đại lý để mở lại.`)
       return
     }
     const isOnline = paymentMethod !== 'cash'
@@ -1509,6 +1559,7 @@ function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClos
       paymentApprovalStatus: 'confirmed',
       paymentApprovedAt: paidAt,
       paymentApprovedBy: 'Hệ thống (MoMo/Ngân hàng xác nhận tự động)',
+      paymentApprovedAmount: totalShipping,
     })
     setPaymentModalOpen(false)
     onUpdated?.()
@@ -1916,18 +1967,8 @@ function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClos
                 </div>
               </div>
               <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
-              {/* Hình thức thanh toán phí ship — CHỈ áp dụng khi Shop trả ship. "Khách trả ship"
-                  nghĩa là GHN thu hộ phí từ người nhận lúc giao, shop không tự trả trước nên
-                  không có khái niệm thanh toán online ở đây. */}
-              {effectiveFeePayer === 'sender' && (
-                <>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 8 }}>
-                    <span style={{ fontSize: 13, color: C_TEXT_SECONDARY, lineHeight: '18px' }}>Hình thức thanh toán phí ship</span>
-                    <PaymentMethodPicker value={paymentMethod} onChange={handleSelectPaymentMethod} />
-                  </div>
-                  <div style={{ height: 1, background: C_BORDER, flexShrink: 0 }} />
-                </>
-              )}
+              {/* Hình thức thanh toán phí ship chuyển xuống dropdown "Thanh toán phí ship" ở khối
+                  action cuối form (ngay trên nút Lưu nháp/Tạo đơn) — xem bên dưới. */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
                 {serviceGroups.length === 0 ? (
                   <div style={{ padding: '12px 4px', fontSize: 13, color: C_TEXT_SECONDARY }}>
@@ -2038,6 +2079,61 @@ function CreateOrderDrawer({ open, onClose, onUpdated }: { open: boolean; onClos
                   </span>
                 </div>
               </div>
+              {/* Dropdown "Thanh toán phí ship" — thay cho dãy pill cũ (xem card "Phí vận chuyển"
+                  phía trên), khớp UI tham khảo: 1 ô gọn hiện kênh đang chọn ngay trên nút Lưu nháp/
+                  Tạo đơn, bấm vào mở list radio xổ LÊN TRÊN (đủ chỗ hơn xổ xuống vì đã ở cuối form).
+                  Chỉ hiện khi Shop tự trả ship — "Khách trả ship" không có khái niệm kênh thanh toán. */}
+              {effectiveFeePayer === 'sender' && (
+                <div style={{ position: 'relative' }} data-payment-method-menu>
+                  <div
+                    onClick={() => setPaymentDropdownOpen(v => !v)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                      border: '1px dashed #FECBA1', borderRadius: 6, cursor: 'pointer', background: '#FFF9F7',
+                    }}
+                  >
+                    <span style={{ flex: 1, fontSize: 14, color: C_TEXT_SECONDARY, lineHeight: '20px' }}>Thanh toán phí ship</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C_ACTION, lineHeight: '20px' }}>{methodLabelOf(paymentMethod)}</span>
+                    <div style={{ display: 'flex', transform: paymentDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                      <IcChevronDown size={16} />
+                    </div>
+                  </div>
+                  {paymentDropdownOpen && (
+                    <div style={{
+                      position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: 4,
+                      background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 8,
+                      boxShadow: '0 -4px 16px rgba(0,0,0,0.12)', zIndex: 30, overflow: 'hidden',
+                    }}>
+                      {([
+                        { value: 'cash', label: 'Tiền mặt' },
+                        { value: 'momo', label: 'MoMo' },
+                        { value: 'bank_transfer', label: 'Chuyển khoản ngân hàng' },
+                      ] as const).map(o => {
+                        const selected = paymentMethod === o.value
+                        return (
+                          <div
+                            key={o.value}
+                            onClick={() => { handleSelectPaymentMethod(o.value); setPaymentDropdownOpen(false) }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', cursor: 'pointer' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <div style={{
+                              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                              border: `2px solid ${selected ? '#111827' : C_BORDER}`,
+                              background: selected ? '#111827' : '#fff',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              {selected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                            </div>
+                            <span style={{ fontSize: 14, color: C_TEXT_PRIMARY, lineHeight: '20px' }}>{o.label}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
                   style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
@@ -2144,7 +2240,7 @@ function CreateLetterDrawer({ open, onClose }: { open: boolean; onClose: () => v
     // Phòng hờ trường hợp shop vừa quá hạn 3 ngày chuyển tiền mặt cho Agency đúng lúc drawer này
     // đang mở sẵn (xem AGA-PAYMENT-1/2, Agency Admin).
     if (isOrderCreationBlocked('SHP001')) {
-      window.alert(`Đại lý tạm khoá tạo đơn mới vì shop còn tiền mặt chưa chuyển quá ${loadRemittanceConfig().blockDays} ngày. Vui lòng chuyển tiền cho đại lý để mở lại.`)
+      window.alert(`Đại lý tạm khoá tạo đơn mới vì shop còn tiền mặt chưa chuyển quá ${loadRemittanceConfig(currentShop.agencyId).blockDays} ngày. Vui lòng chuyển tiền cho đại lý để mở lại.`)
       return
     }
     const now = new Date()
@@ -2602,6 +2698,16 @@ function isReturnEligible(order: Order): boolean {
     || lastAction === 'WAITING_TO_RETURN'
 }
 
+// Chỉ cho yêu cầu đổi địa chỉ khi đơn còn "đang đi" (chưa huỷ/giao xong/đang hoàn/đã hoàn) — đổi
+// địa chỉ sau khi đơn đã kết thúc hành trình không còn ý nghĩa. Ẩn hẳn nút nếu bảng giá mặc định của
+// shop chưa cấu hình mức phí nào (khớp AC3, SHOP-ORDER-37) — không có gì để tính thì không cho bấm.
+function isAddressChangeEligible(order: Order): boolean {
+  if (!['pending', 'pickup', 'in_transit', 'redelivery'].includes(order.status)) return false
+  const ac = currentShopAddressChangeSurcharges()
+  if (!ac) return false
+  return !!(ac.sameWardFee?.trim() || ac.sameProvinceFee?.trim() || ac.interProvincePercent?.trim())
+}
+
 // Trạng thái hiển thị ngay dưới mã đơn trong bảng — khớp UI thật (mỗi dòng tự hiện trạng thái,
 // không chỉ dựa vào tab đang xem). Nhãn "Chờ lấy hàng" theo đúng cách gọi thật của GHN cho status
 // 'pickup' (khác "Chờ bàn giao" ở tên tab — cùng 1 status, chỉ khác góc nhìn diễn đạt).
@@ -2623,9 +2729,9 @@ function rowStatus(order: Order): { label: string; color: string } {
     return { label: 'Chờ xử lý', color: '#F59E0B' }
   }
   const base = ROW_STATUS_STYLE[order.status] ?? { label: order.status, color: '#6B7280' }
-  // Huỷ đơn mà GHN ĐÃ XÁC NHẬN nhận tiền rồi — không xử lý hoàn tiền thật (prototype), chỉ hiển
+  // Huỷ đơn mà đại lý ĐÃ XÁC NHẬN nhận tiền rồi — không xử lý hoàn tiền thật (prototype), chỉ hiển
   // thị nhắc còn nợ hoàn tiền cho khách. Chưa xác nhận (pending_review) hoặc đã bị từ chối thì
-  // GHN chưa thực sự có tiền trong tay, không cần nhắc hoàn.
+  // đại lý chưa thực sự có tiền trong tay, không cần nhắc hoàn.
   if (order.status === 'cancelled' && order.paymentApprovalStatus === 'confirmed') {
     return { ...base, label: `${base.label} · Chờ hoàn tiền` }
   }
@@ -2638,6 +2744,14 @@ function rowStatus(order: Order): { label: string; color: string } {
   if (order.status === 'pending' && order.paymentApprovalStatus === 'rejected') {
     return { ...base, label: `${base.label} · GHN từ chối xác nhận`, color: '#EF4444' }
   }
+  // SHOP-ORDER-54: nhắc "đã xong phần tiền" ngay ở cột Trạng thái, không cần liếc sang cột Phí ship
+  // riêng — không giới hạn order.status === 'pending' (khác 2 nhánh cũ phía trên) vì tại thời điểm
+  // approveOrderPayment() chuyển paymentApprovalStatus sang 'confirmed', status đã rời 'pending'
+  // sang 'pickup' ngay lập tức rồi (xem orderStore.ts). Đặt SAU nhánh 'cancelled' phía trên để đơn
+  // huỷ đã có "· Chờ hoàn tiền" không bị cộng thêm "· Đã thanh toán" chồng lên.
+  if (order.paymentApprovalStatus === 'confirmed') {
+    return { ...base, label: `${base.label} · Đã thanh toán` }
+  }
   return base
 }
 
@@ -2645,6 +2759,7 @@ function rowStatus(order: Order): { label: string; color: string } {
 type OrderDraft = {
   receiverName: string; receiverPhone: string; receiverAddress: string
   weightKg: string; cod: string; fee: string; status: string
+  paymentMethod: 'cash' | 'momo' | 'bank_transfer'
 }
 
 function draftFromOrder(order: Order): OrderDraft {
@@ -2656,6 +2771,7 @@ function draftFromOrder(order: Order): OrderDraft {
     cod: order.cod.toString(),
     fee: order.fee.toString(),
     status: order.status,
+    paymentMethod: order.paymentMethod ?? 'cash',
   }
 }
 
@@ -2712,10 +2828,19 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
   const [draft, setDraft] = useState<OrderDraft | null>(null)
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [confirmingReturn, setConfirmingReturn] = useState(false)
+  const [confirmingAddressChange, setConfirmingAddressChange] = useState(false)
+  const [newAddressInput, setNewAddressInput] = useState('')
+  const [addressChangeTier, setAddressChangeTier] = useState<AddressChangeTier | null>(null)
   const [printOpen, setPrintOpen] = useState(false)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
 
-  useEffect(() => { if (order) { setActiveTab('info'); setEditMode(false); setDraft(null); setConfirmingCancel(false); setConfirmingReturn(false); setPrintOpen(false); setPaymentModalOpen(false) } }, [order?.id])
+  useEffect(() => {
+    if (order) {
+      setActiveTab('info'); setEditMode(false); setDraft(null); setConfirmingCancel(false); setConfirmingReturn(false)
+      setConfirmingAddressChange(false); setNewAddressInput(''); setAddressChangeTier(null)
+      setPrintOpen(false); setPaymentModalOpen(false)
+    }
+  }, [order?.id])
 
   function startEdit() {
     if (!order) return
@@ -2728,7 +2853,7 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
     setDraft(null)
   }
 
-  function commitSave(status: string) {
+  function commitSave(status: string, extraFields?: Partial<Order>) {
     if (!order || !draft) return
     const operator = allShops.find(s => s.id === order.shopId)?.ownerName ?? order.senderName
     const newCod = Number(draft.cod) || 0
@@ -2742,6 +2867,9 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
       const label = order.status === 'pending' && status !== 'pending' ? 'Xác nhận gửi đơn' : 'Cập nhật trạng thái đơn hàng'
       appendActionHistory(order.id, operator, label, ROW_STATUS_STYLE[order.status]?.label ?? order.status, ROW_STATUS_STYLE[status]?.label ?? status)
     }
+    if (draft.paymentMethod !== order.paymentMethod) {
+      appendActionHistory(order.id, operator, 'Đổi phương thức thanh toán', methodLabelOf(order.paymentMethod), methodLabelOf(draft.paymentMethod))
+    }
     updateOrder(order.id, {
       receiverName: draft.receiverName,
       receiverPhone: draft.receiverPhone,
@@ -2750,6 +2878,7 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
       cod: newCod,
       fee: newFee,
       status,
+      ...extraFields,
     })
     setEditMode(false)
     setDraft(null)
@@ -2760,9 +2889,42 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
   // (AGA-PAYMENT-1/2) giờ chỉ là hậu kiểm/đối soát ngoài hệ thống, không chặn Shop thao tác trên
   // đơn nữa. Nếu Agency Admin từ chối 1 đơn, Shop có thể tự nguyện thanh toán lại qua nút "Thanh
   // toán lại" ở tab Thông tin (xem renderPaymentStatusRow bên dưới) — không gắn vào luồng lưu này.
+  //
+  // Đổi PHƯƠNG THỨC thanh toán (SHOP-ORDER-51) là 1 nhánh RIÊNG trong saveEdit(), không chỉ
+  // commitSave thường: đổi sang tiền mặt → lưu ngay kèm pending_review (giống buildOrder() lúc tạo
+  // đơn); đổi sang online (hoặc giữa 2 kênh online) → lưu phương thức mới + XOÁ sạch trạng thái
+  // duyệt kênh CŨ rồi mở OnlinePaymentModal cho kênh MỚI (tái dùng handlePaymentPaidInDetail/
+  // Expire/RetryInDetail bên dưới, vốn đọc `order.paymentMethod` trực tiếp nên tự đúng kênh mới
+  // sau khi `onUpdated()` đồng bộ lại `order` từ trang cha).
   function saveEdit() {
     if (!order || !draft) return
-    commitSave(draft.status)
+    if (draft.paymentMethod === order.paymentMethod) {
+      commitSave(draft.status)
+      return
+    }
+    const isNewOnline = draft.paymentMethod === 'momo' || draft.paymentMethod === 'bank_transfer'
+    if (isNewOnline) {
+      commitSave(draft.status, {
+        paymentMethod: draft.paymentMethod,
+        paymentStatus: 'pending',
+        paymentApprovalStatus: undefined,
+        paymentPaidAt: undefined,
+        paymentApprovedAt: undefined,
+        paymentApprovedBy: undefined,
+        paymentApprovalRejectedReason: undefined,
+      })
+      setPaymentModalOpen(true)
+    } else {
+      commitSave(draft.status, {
+        paymentMethod: 'cash',
+        paymentStatus: 'not_required',
+        paymentApprovalStatus: 'pending_review',
+        paymentPaidAt: new Date().toISOString(),
+        paymentApprovedAt: undefined,
+        paymentApprovedBy: undefined,
+        paymentApprovalRejectedReason: undefined,
+      })
+    }
   }
 
   // Chỉ gọi từ nút "Thanh toán lại" (chỉ hiện cho MoMo/Chuyển khoản, xem renderPaymentStatusRow) —
@@ -2779,6 +2941,7 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
       paymentApprovalStatus: 'confirmed',
       paymentApprovedAt: paidAt,
       paymentApprovedBy: 'Hệ thống (MoMo/Ngân hàng xác nhận tự động)',
+      paymentApprovedAmount: order.fee,
       paymentApprovalRejectedReason: undefined,
     })
     setPaymentModalOpen(false)
@@ -2828,6 +2991,33 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
     }
     updateOrder(order.id, { status: 'returning', feeReturn, fee: order.fee + feeReturn })
     setConfirmingReturn(false)
+    onUpdated?.()
+    onClose()
+  }
+
+  // Người nhận yêu cầu đổi địa chỉ SAU khi đơn đã tạo — Shop tự chọn mức áp dụng (hệ thống không có
+  // dữ liệu phường/xã để tự so khớp địa chỉ cũ/mới ra đúng mức). Phí tính theo mức chọn CỘNG THÊM
+  // vào fee ngay lúc này, giống hệt cách confirmReturnOrder() xử lý feeReturn phía trên — kể cả khi
+  // đơn ĐÃ được đại lý duyệt thanh toán (paymentApprovalStatus === 'confirmed'): phần phát sinh thêm
+  // này KHÔNG được coi là đã duyệt — xem paymentApprovedAmount (orderStore.ts) + rowAmounts()
+  // (CashFlowReport.tsx), nơi tách riêng phần đã duyệt khỏi phần mới phát sinh để hiện đúng cột
+  // "Chưa thanh toán" thay vì ngộ nhận gộp cả vào "Đã thanh toán".
+  function confirmAddressChangeOrder() {
+    if (!order || !addressChangeTier || !newAddressInput.trim()) return
+    const operator = allShops.find(s => s.id === order.shopId)?.ownerName ?? order.senderName
+    const feeAddressChange = currentShopAddressChangeFee(addressChangeTier, order.feeShipping ?? order.fee)
+    appendActionHistory(order.id, operator, 'Cập nhật địa chỉ giao hàng', order.receiverAddress, newAddressInput.trim())
+    if (feeAddressChange > 0) {
+      appendActionHistory(order.id, operator, 'Phát sinh phí đổi địa chỉ', '0', `${feeAddressChange.toLocaleString('vi-VN')} đ`)
+    }
+    updateOrder(order.id, {
+      receiverAddress: newAddressInput.trim(),
+      feeAddressChange: (order.feeAddressChange ?? 0) + feeAddressChange,
+      fee: order.fee + feeAddressChange,
+    })
+    setConfirmingAddressChange(false)
+    setNewAddressInput('')
+    setAddressChangeTier(null)
     onUpdated?.()
     onClose()
   }
@@ -3209,11 +3399,22 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2px 0' }}>
                     <span style={{ color: C_TEXT_PRIMARY, whiteSpace: 'nowrap', flexShrink: 0 }}>Thanh toán</span>
-                    <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>
-                      {order.paymentMethod === 'momo' ? 'Thanh toán qua MoMo'
-                        : order.paymentMethod === 'bank_transfer' ? 'Thanh toán qua chuyển khoản ngân hàng'
-                        : 'Thanh toán Tiền mặt (Thu hộ COD)'}
-                    </span>
+                    {/* SHOP-ORDER-51: cho đổi lại phương thức thanh toán phí ship ngay trong edit mode —
+                        chỉ khi Shop tự trả ship (feePayer 'sender', mới có khái niệm kênh thanh toán)
+                        và CHƯA được đại lý xác nhận (paymentApprovalStatus !== 'confirmed'). KHÔNG còn
+                        gate theo order.status === 'pending' như spec cũ — đơn Shop trả ship nay đi
+                        thẳng 'pickup' ngay từ lúc tạo, status đó không bao giờ còn là 'pending' nữa. */}
+                    {editMode && draft && order.feePayer === 'sender' && order.paymentApprovalStatus !== 'confirmed' ? (
+                      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                        <PaymentMethodPicker value={draft.paymentMethod} onChange={v => setDraft({ ...draft, paymentMethod: v })} />
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 14, color: C_LINK, lineHeight: '20px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>
+                        {order.paymentMethod === 'momo' ? 'Thanh toán qua MoMo'
+                          : order.paymentMethod === 'bank_transfer' ? 'Thanh toán qua chuyển khoản ngân hàng'
+                          : 'Thanh toán Tiền mặt (Thu hộ COD)'}
+                      </span>
+                    )}
                   </div>
                   {/* Dùng paymentBadge(order) !== null làm điều kiện hiện (thay vì chỉ check momo/
                       bank_transfer) để KHỚP đúng với cash Shop trả ship cũng phải hiện dòng này
@@ -3399,6 +3600,45 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
                 </div>
               )}
 
+              {confirmingAddressChange && !editMode && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#FFF4ED', border: '1px solid #FECBA1', borderRadius: 6, padding: 10 }}>
+                  <span style={{ fontSize: 13, color: C_ACTION }}>Người nhận yêu cầu đổi địa chỉ — nhập địa chỉ mới và chọn mức áp dụng, phụ phí sẽ được cộng thêm vào đơn.</span>
+                  <input
+                    value={newAddressInput}
+                    onChange={e => setNewAddressInput(e.target.value)}
+                    placeholder="Địa chỉ giao hàng mới"
+                    style={{ height: 32, border: `1px solid ${C_BORDER}`, borderRadius: 6, padding: '0 8px', fontSize: 14, color: C_TEXT_PRIMARY, outline: 'none' }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {([
+                      { value: 'same_ward' as const, label: 'Cùng Phường/Xã' },
+                      { value: 'same_province' as const, label: 'Cùng Tỉnh/Thành' },
+                      { value: 'inter_province' as const, label: 'Khác Tỉnh/Thành' },
+                    ]).map(opt => {
+                      const fee = currentShopAddressChangeFee(opt.value, order.feeShipping ?? order.fee)
+                      const selected = addressChangeTier === opt.value
+                      return (
+                        <div
+                          key={opt.value}
+                          onClick={() => setAddressChangeTier(opt.value)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '2px 0' }}
+                        >
+                          <div style={{
+                            width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                            border: `2px solid ${selected ? '#111827' : C_BORDER}`, background: selected ? '#111827' : '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {selected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                          </div>
+                          <span style={{ fontSize: 13, color: C_TEXT_PRIMARY, flex: 1 }}>{opt.label}</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_PRIMARY }}>{fee.toLocaleString('vi-VN')}đ</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Đơn Thư đã dispatch và đang trong luồng hoàn hàng — "Huỷ đơn"/"Cập nhật" không
                   còn hợp lý về nghiệp vụ (hàng đã ra khỏi shop, đang hoàn hoặc đã hoàn xong),
                   nên bỏ hẳn 2 nút này cho case isLetterReturnCase — chỉ hiện khối cảnh báo đọc. */}
@@ -3449,6 +3689,26 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
                         Xác nhận hoàn hàng
                       </button>
                     </>
+                  ) : confirmingAddressChange ? (
+                    <>
+                      <button
+                        onClick={() => { setConfirmingAddressChange(false); setNewAddressInput(''); setAddressChangeTier(null) }}
+                        style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                      >
+                        Không đổi
+                      </button>
+                      <button
+                        onClick={confirmAddressChangeOrder}
+                        disabled={!addressChangeTier || !newAddressInput.trim()}
+                        style={{
+                          flex: 1, padding: '8px 12px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px',
+                          background: !addressChangeTier || !newAddressInput.trim() ? '#FBD0AE' : C_ACTION,
+                          cursor: !addressChangeTier || !newAddressInput.trim() ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        Xác nhận đổi địa chỉ
+                      </button>
+                    </>
                   ) : (
                     <>
                       {isPrintable(order) && (
@@ -3471,6 +3731,14 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
                           style={{ flex: 1, padding: '8px 12px', background: '#FFF4ED', border: `1px solid #FECBA1`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_ACTION, lineHeight: '20px' }}
                         >
                           Hoàn hàng
+                        </button>
+                      )}
+                      {isAddressChangeEligible(order) && (
+                        <button
+                          onClick={() => { setConfirmingAddressChange(true); setNewAddressInput(order.receiverAddress) }}
+                          style={{ flex: 1, padding: '8px 12px', background: '#FFF4ED', border: `1px solid #FECBA1`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_ACTION, lineHeight: '20px' }}
+                        >
+                          Đổi địa chỉ
                         </button>
                       )}
                       <button
@@ -3917,10 +4185,43 @@ export default function ShopOrders() {
   // (không chỉ riêng luồng online); [warningDays, blockDays): vẫn cho tạo nhưng nhắc nhở (xem
   // cashOverdueWarning). Cả 2 ngưỡng do Super Admin cấu hình (Cài đặt → Quy tắc thanh toán tiền mặt,
   // xem GSA-PAYMENT-CONFIG-1) — mặc định 1/3 ngày khi chưa từng lưu cấu hình nào.
-  const remittanceConfig = loadRemittanceConfig()
+  const remittanceConfig = loadRemittanceConfig(shopForLetterCheck.agencyId)
   const cashOverdueDays = shopCashOverdueDays('SHP001')
   const creationBlocked = cashOverdueDays >= remittanceConfig.blockDays
   const cashOverdueWarning = cashOverdueDays >= remittanceConfig.warningDays && cashOverdueDays < remittanceConfig.blockDays
+
+  // Khách quét "Tem QR" (xem Cài đặt → Tem QR) → link đích trỏ về đúng trang này kèm `?qr=<id>` —
+  // tự nhận diện, ghi nhận lượt quét, rồi mở sẵn form "Tạo đơn hàng" với ghi chú nguồn gốc. Chỉ
+  // chạy 1 lần khi `qr` xuất hiện trên URL — xoá param ngay sau khi xử lý (dù hợp lệ hay không) để
+  // F5 lại trang không tính thêm lượt quét/không mở lại drawer ngoài ý muốn.
+  //
+  // Bug đã phát hiện qua UAT: effect có side-effect KHÔNG idempotent (`recordQrScan` cộng dồn) nên
+  // bị React.StrictMode (dev mode, xem main.tsx) tự gọi 2 lần lúc mount → 1 lượt quét thật bị tính
+  // thành 2. `handledQrIdRef` chặn xử lý trùng 1 `qrId` lần thứ 2 trở đi (dù StrictMode double-invoke
+  // hay URL vô tình giữ nguyên `qr` qua lần render khác), không phụ thuộc đợi `setSearchParams` kịp
+  // cập nhật state.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [qrSourceNote, setQrSourceNote] = useState<string | undefined>(undefined)
+  const handledQrIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    const qrId = searchParams.get('qr')
+    if (!qrId || handledQrIdRef.current === qrId) return
+    handledQrIdRef.current = qrId
+    setSearchParams(prev => { const next = new URLSearchParams(prev); next.delete('qr'); return next }, { replace: true })
+    const qr = findQrCode(qrId)
+    if (!qr || !isQrCodeUsable(qr)) {
+      window.alert('Mã QR không hợp lệ, đã hết hạn, hoặc đã ngừng hoạt động.')
+      return
+    }
+    if (isOrderCreationBlocked('SHP001')) {
+      window.alert(`Đại lý tạm khoá tạo đơn mới vì shop còn tiền mặt chưa chuyển quá ${remittanceConfig.blockDays} ngày. Vui lòng chuyển tiền cho đại lý để mở lại.`)
+      return
+    }
+    recordQrScan(qrId)
+    setQrSourceNote(`Đơn từ Tem QR: ${qr.name}`)
+    setDrawerOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   // Đồng bộ CẢ danh sách lẫn `selectedOrder` (nếu Chi tiết đơn đang mở trúng đơn vừa đổi) — nếu chỉ
   // refresh mảng `orders` mà bỏ qua `selectedOrder`, Chi tiết đơn đang mở sẽ KHÔNG tự cập nhật khi
@@ -4217,7 +4518,7 @@ export default function ShopOrders() {
       </div>
 
       {/* Create Order Drawer */}
-      <CreateOrderDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); refreshOrders() }} onUpdated={refreshOrders} />
+      <CreateOrderDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); refreshOrders() }} onUpdated={refreshOrders} initialNote={qrSourceNote} />
       <CreateLetterDrawer open={letterDrawerOpen} onClose={() => { setLetterDrawerOpen(false); refreshOrders() }} />
       <OrderSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       {/* Order Detail Drawer */}

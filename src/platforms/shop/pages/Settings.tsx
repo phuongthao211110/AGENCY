@@ -1,5 +1,5 @@
 import { ConfigProvider } from 'antd'
-import { UserOutlined, BankOutlined } from '@ant-design/icons'
+import { UserOutlined, BankOutlined, QrcodeOutlined } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { shopTheme } from '../../../theme/platforms'
 import {
@@ -18,6 +18,7 @@ import {
 const SETTINGS_NAV = [
   { key: '/shop/settings/account', icon: <UserOutlined />, label: 'Thông tin tài khoản' },
   { key: '/shop/settings/bank',    icon: <BankOutlined />,  label: 'Tài khoản ngân hàng' },
+  { key: '/shop/settings/qr-codes', icon: <QrcodeOutlined />, label: 'Tem QR' },
 ]
 
 export default function Settings() {
