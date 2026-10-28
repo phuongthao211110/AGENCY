@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { agencyAdminTheme } from '../../../theme/platforms'
-import { loadOrders, addOrder, dispatchOrderToCarrier, updateOrder, cancelOrder, type Order } from '../../../mock-data/orderStore'
+import { loadOrders, addOrder, dispatchOrderToCarrier, updateOrder, cancelOrder, confirmCancelRefund, type Order } from '../../../mock-data/orderStore'
 import allShops from '../../../mock-data/shops.json'
 import allServices from '../../../mock-data/services.json'
 import allPricing from '../../../mock-data/pricing.json'
@@ -90,11 +90,12 @@ function isLetterReturnCase(o: Order): boolean {
     && (o.status === 'returning' || o.status === 'cancelled' || o.status === 'failed')
 }
 
-// Chỉ cho huỷ đơn ở 2 tab "Đơn nháp" và "Chờ xử lý" — cả 2 đều là status 'pending' (Hàng hoá
-// nháp chưa dispatch, hoặc Thư đang chờ đại lý chọn hub) — đơn đã dispatch/đang giao/đã xong
-// không cho huỷ theo cách này nữa.
+// Cho huỷ đơn ở 3 tab "Đơn nháp"/"Chờ xử lý" (status 'pending' — Hàng hoá nháp chưa dispatch, hoặc
+// Thư đang chờ đại lý chọn hub) VÀ "Chờ bàn giao"/"Chờ lấy hàng" (status 'pickup' — đã có mã vận
+// đơn/carrier nhưng nhà vận chuyển CHƯA thực sự đến lấy hàng, hàng còn nguyên ở shop) — đơn đã
+// THỰC SỰ rời khỏi shop (in_transit trở đi) mới không cho huỷ theo cách này nữa.
 function isCancellable(o: Order): boolean {
-  return o.status === 'pending'
+  return o.status === 'pending' || o.status === 'pickup'
 }
 
 // Trạng thái hiển thị ngay dưới mã đơn trong bảng — mỗi dòng tự hiện trạng thái, không chỉ
@@ -118,6 +119,14 @@ function rowStatus(order: Order): { label: string; color: string } {
     return { label: 'Chờ xử lý', color: '#F59E0B' }
   }
   const base = ROW_STATUS_STYLE[order.status] ?? { label: order.status, color: '#6B7280' }
+  // Huỷ đơn mà đại lý ĐÃ XÁC NHẬN nhận tiền rồi — đồng bộ với rowStatus() của Web Shop (Orders.tsx).
+  // `cancelRefundConfirmedAt` phân biệt ĐÃ hoàn hay CÒN nợ — xem confirmCancelRefund() (orderStore.ts)
+  // + nút "Xác nhận đã hoàn tiền cho Shop" trong OrderDetailDrawer (AGA-ORDER-29).
+  if (order.status === 'cancelled' && order.paymentApprovalStatus === 'confirmed') {
+    return order.cancelRefundConfirmedAt
+      ? { ...base, label: `${base.label} · Đã hoàn tiền`, color: '#16A34A' }
+      : { ...base, label: `${base.label} · Chờ hoàn tiền` }
+  }
   // Đơn "Đơn nháp" (status 'pending') có 2 lý do KHÁC NHAU: nháp thật (Shop chưa hoàn tất) hoặc
   // đang bị giữ vì chờ GHN xác nhận thanh toán (xem orderStore.ts). Không phân biệt dễ khiến đại
   // lý tưởng nhầm là nháp bỏ quên rồi huỷ/giục shop, trong khi đơn này không cần đại lý làm gì —
@@ -1639,6 +1648,13 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
     onClose()
   }
 
+  function handleConfirmCancelRefund() {
+    if (!order) return
+    const ok = window.confirm(`Xác nhận đã hoàn ${order.fee.toLocaleString('vi-VN')}đ cho shop vì đơn này đã bị huỷ sau khi đã thanh toán?`)
+    if (!ok) return
+    if (confirmCancelRefund(order.id, 'Agency Admin')) onUpdated?.()
+  }
+
   const log: GHNLogEntry[] = order?.log ?? []
   const actionHistory: ActionHistoryItem[] = order?.actionHistory ?? []
 
@@ -2101,6 +2117,28 @@ function OrderDetailDrawer({ order, open, onClose, onDispatch247, onUpdated }: {
                       style={{ padding: '8px 12px', background: '#B45309', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
                     >
                       Xác nhận đã giao hoàn cho shop
+                    </button>
+                  </div>
+                )
+              )}
+
+              {/* Đơn đã huỷ SAU KHI đại lý đã xác nhận nhận tiền — đại lý đang nợ Shop đúng số fee
+                  đã thu, cần chủ động hoàn lại (ngoài hệ thống) rồi xác nhận lại ở đây. */}
+              {!editMode && order && order.status === 'cancelled' && order.paymentApprovalStatus === 'confirmed' && (
+                order.cancelRefundConfirmedAt ? (
+                  <div style={{ fontSize: 13, color: '#065F46', background: '#D1FAE5', border: '1px solid #A7F3D0', borderRadius: 6, padding: 10 }}>
+                    Đã hoàn {order.fee.toLocaleString('vi-VN')}đ cho shop lúc {new Date(order.cancelRefundConfirmedAt).toLocaleString('vi-VN')}.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#DBEAFE', border: '1px solid #93C5FD', borderRadius: 6, padding: 10 }}>
+                    <span style={{ fontSize: 13, color: '#1D4ED8' }}>
+                      Đơn này đã huỷ nhưng Shop đã thanh toán phí ship trước đó ({order.fee.toLocaleString('vi-VN')}đ) — đại lý cần hoàn lại khoản này cho Shop.
+                    </span>
+                    <button
+                      onClick={handleConfirmCancelRefund}
+                      style={{ padding: '8px 12px', background: '#1D4ED8', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: '20px' }}
+                    >
+                      Xác nhận đã hoàn tiền cho Shop
                     </button>
                   </div>
                 )

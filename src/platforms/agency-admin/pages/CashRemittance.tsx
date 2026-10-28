@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { ConfigProvider } from 'antd'
-import { CheckOutlined, EyeOutlined, SearchOutlined, DownOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { CheckOutlined, EyeOutlined, SearchOutlined, DownOutlined, ArrowLeftOutlined, CloseOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
-import { loadOrders, approveOrderPayment, loadRemittanceConfig, type Order } from '../../../mock-data/orderStore'
+import { loadOrders, approveOrderPayment, confirmFeeRefund, confirmCancelRefund, loadRemittanceConfig, type Order } from '../../../mock-data/orderStore'
 import { loadShops, type Shop } from '../../../mock-data/shopStore'
 import { Pagination } from './AgencyOrders'
 
@@ -81,21 +81,68 @@ function SendKindTag({ order }: { order: Order }) {
   )
 }
 
+// "Phí dịch vụ hiệu lực" của 1 đơn — ĐÚNG order.fee, TRỪ 1 ngoại lệ: đơn đã huỷ mà chưa xác nhận
+// hoàn tiền thì coi như fee hiệu lực = 0 (đơn huỷ không còn nghĩa vụ phí ship nào nữa, toàn bộ số
+// đã duyệt trước đó cần hoàn lại). Dùng đúng 1 công thức DUY NHẤT (rowAmounts/OrderStatusLine) cho
+// CẢ 2 nguyên nhân cần hoàn tiền (huỷ đơn / phí điều chỉnh giảm) thay vì tách UI riêng — tránh
+// người dùng phải học 2 nhãn khác nhau cho cùng 1 khái niệm "đại lý nợ Shop".
+function effectiveFee(order: Order): number {
+  if (order.status === 'cancelled' && !order.cancelRefundConfirmedAt) return 0
+  return order.fee
+}
+
+// Gọi đúng hàm xác nhận hoàn tiền tương ứng với NGUYÊN NHÂN thật của đơn — người dùng chỉ thấy 1
+// nút "Xác nhận đã hoàn" duy nhất, không cần biết có 2 hàm khác nhau phía sau.
+function confirmRefundFor(order: Order, confirmedBy: string): boolean {
+  return order.status === 'cancelled'
+    ? confirmCancelRefund(order.id, confirmedBy)
+    : confirmFeeRefund(order.id, confirmedBy)
+}
+
 // Dòng Trạng thái trong bảng Chi tiết — 2 dòng chữ màu thuần (không nền), KHÁC StatusCell (vốn có
 // nền pill) để khớp đúng ảnh tham khảo của màn Chi tiết: "Đã thanh toán"/giờ xác nhận (xanh) hoặc
-// "Chưa thanh toán"/số ngày trễ (đỏ).
-function OrderStatusLine({ order }: { order: Order }) {
+// "Chưa thanh toán"/số ngày trễ (đỏ). Bấm "Chi tiết" mở breakdown giải thích lý do — xem
+// OrderFeeBreakdownModal.
+function OrderStatusLine({ order, onRefunded }: { order: Order; onRefunded?: () => void }) {
   if (order.paymentApprovalStatus === 'confirmed') {
+    const approvedAmount = order.paymentApprovedAmount ?? order.fee
+    const extra = effectiveFee(order) - approvedAmount
     // Đơn đã duyệt nhưng fee TĂNG THÊM sau đó (phí hoàn hàng/đổi địa chỉ, xem SHOP-ORDER-56) mà
     // phần tăng chưa được duyệt lại — KHÔNG được ghi "Đã thanh toán" (gây hiểu lầm đơn đã xong hẳn)
     // trong khi cột Chưa thanh toán bên cạnh vẫn đang tô cam báo còn khoản chưa duyệt.
-    const approvedAmount = order.paymentApprovedAmount ?? order.fee
-    if (order.fee - approvedAmount > 0) {
+    if (extra > 0) {
       const reason = order.status === 'returning' ? 'Phí hoàn hàng' : (order.feeAddressChange ?? 0) > 0 ? 'Phụ phí đổi địa chỉ' : 'Khoản mới'
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#FF5200' }}>Phát sinh thêm</span>
           <span style={{ fontSize: 12, color: '#FF5200' }}>{reason} chưa duyệt</span>
+        </div>
+      )
+    }
+    // Chiều NGƯỢC: fee hiệu lực GIẢM xuống dưới số đã duyệt — HOẶC vì phúc tra phát hiện phí thật
+    // thấp hơn (đơn còn sống), HOẶC vì đơn đã bị huỷ (fee hiệu lực về 0) — đại lý đã thực nhận
+    // NHIỀU HƠN mức đúng, cần chủ động hoàn lại phần chênh lệch cho Shop. Nút "Xác nhận đã hoàn"
+    // gọi đúng hàm tương ứng qua confirmRefundFor().
+    if (extra < 0) {
+      const refundAmount = -extra
+      function handleRefund() {
+        const reason = order.status === 'cancelled'
+          ? 'vì đơn này đã bị huỷ sau khi đã thanh toán'
+          : `vì phí ship giảm từ ${approvedAmount.toLocaleString('vi-VN')}đ xuống ${order.fee.toLocaleString('vi-VN')}đ`
+        const ok = window.confirm(`Xác nhận đã hoàn ${refundAmount.toLocaleString('vi-VN')}đ cho shop ${reason}?`)
+        if (!ok) return
+        if (confirmRefundFor(order, CURRENT_AGENT)) onRefunded?.()
+      }
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#3B82F6' }}>Cần hoàn tiền Shop</span>
+          <span style={{ fontSize: 12, color: '#3B82F6' }}>{refundAmount.toLocaleString('vi-VN')}đ</span>
+          <button
+            onClick={handleRefund}
+            style={{ alignSelf: 'flex-start', fontSize: 11, fontWeight: 700, color: '#fff', background: '#3B82F6', border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
+          >
+            Xác nhận đã hoàn
+          </button>
         </div>
       )
     }
@@ -124,15 +171,154 @@ function OrderStatusLine({ order }: { order: Order }) {
 }
 
 // Tách Phí dịch vụ / Đã thanh toán / Chưa thanh toán THEO TỪNG ĐƠN — DÙNG CHUNG đúng công thức với
-// rowAmounts() ở Web Shop (CashFlowReport.tsx) để 2 bên LUÔN khớp số, không lệch cách tính: đơn
-// confirmed mà fee tăng thêm SAU thời điểm duyệt (phí hoàn hàng/đổi địa chỉ, xem SHOP-ORDER-56) thì
-// phần tăng thêm đó hiện ở Chưa thanh toán, không bị gộp nhầm vào Đã thanh toán.
+// rowAmounts() ở Web Shop (CashFlowReport.tsx) để 2 bên LUÔN khớp số, không lệch cách tính. `fee` có
+// thể đổi CẢ 2 CHIỀU sau khi confirmed: TĂNG (phí hoàn hàng/đổi địa chỉ, SHOP-ORDER-56) → chuaThanhToan
+// ÂM (Shop còn nợ thêm); GIẢM (phúc tra phát hiện phí thật thấp hơn) → chuaThanhToan DƯƠNG (đại lý
+// cần hoàn lại phần chênh lệch cho Shop, xem OrderStatusLine). KHÔNG kẹp về 0 nữa — kẹp sẽ làm mất
+// thông tin. Bất biến đúng: `fee = daThanhToan - chuaThanhToan` (dùng được cho cả 2 chiều, vì
+// chuaThanhToan = -extra luôn đổi dấu đúng theo extra).
 function rowAmounts(order: Order) {
-  const fee = order.fee
-  if (order.paymentApprovalStatus !== 'confirmed') return { phiDichVu: -fee, daThanhToan: 0, chuaThanhToan: -fee }
+  const fee = effectiveFee(order)
+  // `|| 0` chuẩn hoá -0 thành 0 — effectiveFee() trả 0 cho đơn huỷ chưa hoàn, nên -fee ra đúng giá
+  // trị -0 (hợp lệ về mặt số học nhưng toLocaleString() hiện thành chuỗi "-0" xấu, gây khó hiểu).
+  if (order.paymentApprovalStatus !== 'confirmed') return { phiDichVu: -fee || 0, daThanhToan: 0, chuaThanhToan: -fee || 0 }
   const approvedAmount = order.paymentApprovedAmount ?? fee
   const extra = fee - approvedAmount
-  return { phiDichVu: -fee, daThanhToan: approvedAmount, chuaThanhToan: extra > 0 ? -extra : 0 }
+  return { phiDichVu: -fee || 0, daThanhToan: approvedAmount, chuaThanhToan: -extra || 0 }
+}
+
+// Breakdown phí ship THEO ĐÚNG hạng mục GHN thật — DÙNG CHUNG công thức với Web Shop
+// (feeBreakdownRows, CashFlowReport.tsx) để Agency Admin thấy ĐÚNG những gì Shop đã thấy, không bịa
+// thêm hạng mục nào riêng cho phía đại lý.
+function feeBreakdownRows(order: Order): Array<{ label: string; amount: number }> {
+  const hasBreakdown = order.feeShipping !== undefined
+  const fallbackShipping = order.fee - (order.feeReturn ?? 0) - (order.feeAddressChange ?? 0)
+  return [
+    { label: 'Phí giao hàng', amount: -(hasBreakdown ? order.feeShipping! : fallbackShipping) },
+    { label: 'Phí bảo hiểm (khai giá)', amount: -(order.feeInsurance ?? 0) },
+    { label: 'Phí giao trả 1 phần', amount: -(order.feePartial ?? 0) },
+    { label: 'Phí giao thất bại thu tiền', amount: -(order.feeDeliveryFail ?? 0) },
+    { label: 'Phí thu hộ', amount: -(order.feeCod ?? 0) },
+    { label: 'Phí trả hàng (hoàn hàng)', amount: -(order.feeReturn ?? 0) },
+    { label: 'Phụ phí đổi địa chỉ', amount: -(order.feeAddressChange ?? 0) },
+  ]
+}
+
+// Modal giải thích LÝ DO cụ thể của cột "Chưa thanh toán"/"Cần hoàn tiền Shop" — mở khi bấm "Chi
+// tiết" trong OrderStatusLine, giống hệt cách Web Shop giải thích qua FeeBreakdownModal (bấm vào số
+// "Phí dịch vụ" ở Báo cáo dòng tiền, SHOP-ORDER-55) — Agency Admin trước đây chỉ có nhãn ngắn gọn
+// ("Phát sinh thêm"/"Cần hoàn tiền Shop"), không có nơi nào giải thích rõ RA SAO mà ra số đó.
+// Breakdown của cột "Đã thanh toán" — KHÔNG phải breakdown PHÍ (OrderFeeBreakdownModal ở trên), mà
+// là breakdown KÊNH THANH TOÁN (tiền trả bằng cách nào) — PORT nguyên vẹn từ Web Shop
+// (paymentBreakdownRows/PaymentBreakdownModal, CashFlowReport.tsx) để Agency Admin thấy ĐÚNG những
+// gì Shop đã thấy. Prototype chỉ có 1 field `paymentMethod` duy nhất mỗi đơn, nên ĐÚNG 1 dòng khớp
+// sẽ bằng toàn bộ số đã thanh toán, 4 dòng còn lại luôn = 0.
+function paymentBreakdownRows(order: Order): Array<{ label: string; amount: number }> {
+  const paid = order.paymentApprovalStatus === 'confirmed' ? (order.paymentApprovedAmount ?? order.fee) : 0
+  return [
+    { label: 'Cấn bằng COD', amount: 0 },
+    { label: 'Thanh toán qua ví', amount: order.paymentMethod === 'momo' ? paid : 0 },
+    { label: 'Tiền mặt thu người nhận', amount: 0 },
+    { label: 'Tiền mặt thu người gửi', amount: order.paymentMethod === 'cash' ? paid : 0 },
+    { label: 'Thanh toán qua ck ngân hàng', amount: order.paymentMethod === 'bank_transfer' ? paid : 0 },
+  ]
+}
+
+function PaymentBreakdownModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const paid = order.paymentApprovalStatus === 'confirmed' ? (order.paymentApprovedAmount ?? order.fee) : 0
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: 440, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}
+      >
+        <div style={{ padding: '16px 24px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>{order.trackingCode}</span>
+          <CloseOutlined onClick={onClose} style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, fontSize: 16 }} />
+        </div>
+
+        <div style={{ padding: '16px 24px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_SECONDARY, letterSpacing: 0.5 }}>ĐÃ THANH TOÁN</span>
+          <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY }}>{paid.toLocaleString('vi-VN')}</span>
+        </div>
+        <div style={{ margin: '0 24px', borderTop: `2px solid ${C_TEXT_PRIMARY}` }} />
+
+        <div style={{ padding: '4px 24px 8px' }}>
+          {paymentBreakdownRows(order).map(row => (
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: `1px dashed ${C_BORDER}` }}>
+              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{row.label}</span>
+              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{row.amount.toLocaleString('vi-VN')}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OrderFeeBreakdownModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const approvedAmount = order.paymentApprovedAmount ?? order.fee
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: 440, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}
+      >
+        <div style={{ padding: '16px 24px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>{order.trackingCode}</span>
+          <CloseOutlined onClick={onClose} style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, fontSize: 16 }} />
+        </div>
+
+        {order.status === 'cancelled' ? (
+          <div style={{ margin: 16, padding: 12, borderRadius: 8, background: '#DBEAFE', border: '1px solid #93C5FD' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', marginBottom: 4 }}>Vì sao cần hoàn tiền?</div>
+            <div style={{ fontSize: 13, color: '#1D4ED8' }}>
+              Đơn này đã HUỶ, nhưng Shop đã thanh toán {approvedAmount.toLocaleString('vi-VN')}đ trước khi huỷ — đơn huỷ không còn nghĩa vụ phí ship nào, nên đại lý cần hoàn lại toàn bộ số tiền đó cho Shop.
+            </div>
+          </div>
+        ) : order.fee < approvedAmount ? (
+          <div style={{ margin: 16, padding: 12, borderRadius: 8, background: '#DBEAFE', border: '1px solid #93C5FD' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', marginBottom: 4 }}>Vì sao cần hoàn tiền?</div>
+            <div style={{ fontSize: 13, color: '#1D4ED8' }}>
+              Phí ship đã điều chỉnh GIẢM từ {approvedAmount.toLocaleString('vi-VN')}đ (mức đã duyệt trước đó) xuống còn {order.fee.toLocaleString('vi-VN')}đ — đại lý đã thực nhận nhiều hơn mức đúng, cần hoàn lại phần chênh lệch {(approvedAmount - order.fee).toLocaleString('vi-VN')}đ cho Shop.
+            </div>
+          </div>
+        ) : order.fee > approvedAmount ? (
+          <div style={{ margin: 16, padding: 12, borderRadius: 8, background: '#FFF4ED', border: '1px solid #FECBA1' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#FF5200', marginBottom: 4 }}>Vì sao còn chưa thanh toán?</div>
+            <div style={{ fontSize: 13, color: '#FF5200' }}>
+              Phí ship đã điều chỉnh TĂNG từ {approvedAmount.toLocaleString('vi-VN')}đ (mức đã duyệt trước đó) lên {order.fee.toLocaleString('vi-VN')}đ (phí hoàn hàng/đổi địa chỉ phát sinh sau khi duyệt) — phần tăng thêm {(order.fee - approvedAmount).toLocaleString('vi-VN')}đ chưa được duyệt lại, Shop còn cần thanh toán thêm khoản này.
+            </div>
+          </div>
+        ) : null}
+
+        <div style={{ padding: '16px 24px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_SECONDARY, letterSpacing: 0.5 }}>PHÍ DỊCH VỤ (hiện tại)</span>
+          <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY }}>{(-order.fee).toLocaleString('vi-VN')}</span>
+        </div>
+        <div style={{ margin: '0 24px', borderTop: `2px solid ${C_TEXT_PRIMARY}` }} />
+
+        <div style={{ padding: '4px 24px 16px' }}>
+          {feeBreakdownRows(order).map(row => (
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: `1px dashed ${C_BORDER}` }}>
+              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{row.label}</span>
+              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{row.amount.toLocaleString('vi-VN')}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>Đại lý đã duyệt (snapshot)</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>{approvedAmount.toLocaleString('vi-VN')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 type DetailTab = 'all' | 'unpaid' | 'paid'
@@ -146,6 +332,8 @@ function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; o
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
+  const [breakdownOrder, setBreakdownOrder] = useState<Order | null>(null)
+  const [paymentBreakdownOrder, setPaymentBreakdownOrder] = useState<Order | null>(null)
 
   useEffect(() => { setPage(1) }, [tab, search])
 
@@ -168,6 +356,7 @@ function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; o
   const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   return (
+    <>
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', background: '#fff' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', flexShrink: 0 }}>
@@ -274,11 +463,27 @@ function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; o
                   </div>,
                   '1.2 0 0', 150
                 )}
-                {cell(<span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>{a.phiDichVu.toLocaleString('vi-VN')}</span>, '0.8 0 0', 110, 'right')}
-                {cell(<span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{a.daThanhToan.toLocaleString('vi-VN')}</span>, '0.8 0 0', 110, 'right')}
+                {cell(
+                  <span
+                    onClick={() => setBreakdownOrder(order)}
+                    style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, textDecoration: 'underline', cursor: 'pointer' }}
+                  >
+                    {a.phiDichVu.toLocaleString('vi-VN')}
+                  </span>,
+                  '0.8 0 0', 110, 'right'
+                )}
+                {cell(
+                  <span
+                    onClick={() => setPaymentBreakdownOrder(order)}
+                    style={{ fontSize: 14, color: C_TEXT_PRIMARY, textDecoration: 'underline', cursor: 'pointer' }}
+                  >
+                    {a.daThanhToan.toLocaleString('vi-VN')}
+                  </span>,
+                  '0.8 0 0', 110, 'right'
+                )}
                 {cell(
                   a.chuaThanhToan !== 0 ? (
-                    <span style={{ display: 'inline-block', fontSize: 13, fontWeight: 700, color: '#fff', background: '#FF5200', borderRadius: 4, padding: '2px 8px' }}>
+                    <span style={{ display: 'inline-block', fontSize: 13, fontWeight: 700, color: '#fff', background: a.chuaThanhToan < 0 ? '#FF5200' : '#3B82F6', borderRadius: 4, padding: '2px 8px' }}>
                       {a.chuaThanhToan.toLocaleString('vi-VN')}
                     </span>
                   ) : (
@@ -287,7 +492,7 @@ function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; o
                   '0.8 0 0', 120, 'right'
                 )}
                 {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{formatTime(order.paymentPaidAt)}</span>, '0.8 0 0', 120)}
-                {cell(<OrderStatusLine order={order} />, '0.9 0 0', 150)}
+                {cell(<OrderStatusLine order={order} onRefunded={onApproved} />, '0.9 0 0', 150)}
               </div>
             )
           })}
@@ -302,6 +507,13 @@ function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; o
         onPageSizeChange={s => { setPageSize(s); setPage(1) }}
       />
     </div>
+    {breakdownOrder && (
+      <OrderFeeBreakdownModal order={breakdownOrder} onClose={() => setBreakdownOrder(null)} />
+    )}
+    {paymentBreakdownOrder && (
+      <PaymentBreakdownModal order={paymentBreakdownOrder} onClose={() => setPaymentBreakdownOrder(null)} />
+    )}
+    </>
   )
 }
 

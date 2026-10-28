@@ -43,17 +43,34 @@ function fmtMoney(n: number): string {
   return n.toLocaleString('vi-VN')
 }
 
-// Đơn đã `confirmed` (đại lý đã duyệt) nhưng `fee` sau đó tăng thêm (phí hoàn hàng/đổi địa chỉ phát
-// sinh SAU thời điểm duyệt — xem confirmReturnOrder/confirmAddressChangeOrder, Orders.tsx) thì phần
-// tăng thêm đó CHƯA được duyệt lại, dù cả đơn vẫn hiện "đã thanh toán" phần gốc. Badge này báo ngay
-// trên bảng chính để Shop không phải bấm vào breakdown từng đơn mới biết có khoản mới phát sinh.
-function pendingSurchargeLabel(order: Order): string | null {
+// "Phí dịch vụ hiệu lực" của 1 đơn — ĐÚNG order.fee, TRỪ 1 ngoại lệ: đơn đã huỷ mà chưa xác nhận
+// hoàn tiền thì coi fee hiệu lực = 0 (đơn huỷ không còn nghĩa vụ phí ship nào, toàn bộ số đã duyệt
+// trước đó cần hoàn lại). CÙNG CÔNG THỨC với Agency Admin (CashRemittance.tsx) để 2 platform LUÔN
+// khớp số — Shop và Agency không được nhìn thấy 2 câu chuyện khác nhau cho cùng 1 đơn.
+function effectiveFee(order: Order): number {
+  if (order.status === 'cancelled' && !order.cancelRefundConfirmedAt) return 0
+  return order.fee
+}
+
+// Đơn đã `confirmed` (đại lý đã duyệt) mà fee HIỆU LỰC sau đó đổi khác số đã duyệt thì phần chênh
+// lệch đó CHƯA được xử lý xong, dù cả đơn vẫn hiện "đã thanh toán" phần gốc. Badge này báo ngay
+// trên bảng chính để Shop không phải bấm vào breakdown từng đơn mới biết. 3 nguyên nhân khác nhau:
+// `fee` TĂNG (phí hoàn hàng/đổi địa chỉ phát sinh — xem confirmReturnOrder/confirmAddressChangeOrder,
+// Orders.tsx) = Shop còn nợ thêm (tone cảnh báo, vàng); `fee` GIẢM do phúc tra = đại lý cần hoàn lại
+// phần chênh lệch (tone thông tin, xanh dương); đơn HUỶ (fee hiệu lực về 0) = đại lý cần hoàn lại
+// TOÀN BỘ (cùng tone thông tin, xanh dương — dùng chung nhãn với trường hợp phúc tra, không tách
+// riêng) — Shop chỉ xem, không có hành động nào ở cả 2 chiều hoàn tiền.
+function pendingSurchargeLabel(order: Order): { label: string; tone: 'warn' | 'info' } | null {
   if (order.paymentApprovalStatus !== 'confirmed') return null
   const approvedAmount = order.paymentApprovedAmount ?? order.fee
-  if (order.fee - approvedAmount <= 0) return null
-  if (order.status === 'returning') return 'Phí hoàn hàng chưa duyệt'
-  if ((order.feeAddressChange ?? 0) > 0) return 'Phụ phí đổi địa chỉ chưa duyệt'
-  return 'Phát sinh thêm chưa duyệt'
+  const extra = effectiveFee(order) - approvedAmount
+  if (extra === 0) return null
+  if (extra > 0) {
+    if (order.status === 'returning') return { label: 'Phí hoàn hàng chưa duyệt', tone: 'warn' }
+    if ((order.feeAddressChange ?? 0) > 0) return { label: 'Phụ phí đổi địa chỉ chưa duyệt', tone: 'warn' }
+    return { label: 'Phát sinh thêm chưa duyệt', tone: 'warn' }
+  }
+  return { label: `Đại lý sẽ hoàn ${(-extra).toLocaleString('vi-VN')}đ`, tone: 'info' }
 }
 
 function downloadXlsx(filename: string, headers: string[], rows: (string | number)[][]) {
@@ -92,6 +109,70 @@ function feeBreakdownRows(order: Order): Array<{ label: string; amount: number }
     { label: 'Phí trả hàng (hoàn hàng)', amount: -(order.feeReturn ?? 0) },
     { label: 'Phụ phí đổi địa chỉ', amount: -(order.feeAddressChange ?? 0) },
   ]
+}
+
+// Breakdown của cột "Đã thanh toán" — KHÔNG phải breakdown PHÍ (cấu thành từ đâu), mà là breakdown
+// KÊNH THANH TOÁN (tiền trả bằng cách nào) — đúng mô phỏng theo 1 popup thật của GHN: "Cấn bằng COD"
+// (bù trừ từ COD thu hộ), "Thanh toán qua ví" (MoMo), "Tiền mặt thu người nhận"/"Tiền mặt thu người
+// gửi" (ai là người đưa tiền mặt), "Thanh toán qua ck ngân hàng". Prototype chỉ có 1 field
+// `paymentMethod` duy nhất mỗi đơn (không mô phỏng thanh toán 1 phần qua nhiều kênh cùng lúc như hệ
+// thống GHN thật) — nên ĐÚNG 1 dòng khớp `paymentMethod` sẽ bằng toàn bộ số đã thanh toán, 4 dòng
+// còn lại luôn = 0. "Cấn bằng COD"/"Tiền mặt thu người nhận" KHÔNG ánh xạ được vào field nào hiện có
+// (prototype không có khái niệm thu hộ COD bù trừ phí ship, hay người NHẬN trả tiền mặt phí ship)
+// nên LUÔN = 0.
+function paymentBreakdownRows(order: Order): Array<{ label: string; amount: number }> {
+  const paid = order.paymentApprovalStatus === 'confirmed' ? (order.paymentApprovedAmount ?? order.fee) : 0
+  return [
+    { label: 'Cấn bằng COD', amount: 0 },
+    { label: 'Thanh toán qua ví', amount: order.paymentMethod === 'momo' ? paid : 0 },
+    { label: 'Tiền mặt thu người nhận', amount: 0 },
+    { label: 'Tiền mặt thu người gửi', amount: order.paymentMethod === 'cash' ? paid : 0 },
+    { label: 'Thanh toán qua ck ngân hàng', amount: order.paymentMethod === 'bank_transfer' ? paid : 0 },
+  ]
+}
+
+function PaymentBreakdownModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const { phoneTail, city } = maskedReceiver(order)
+  const paid = order.paymentApprovalStatus === 'confirmed' ? (order.paymentApprovedAmount ?? order.fee) : 0
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: 440, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}
+      >
+        <div style={{ padding: '16px 24px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: C_TEXT_PRIMARY }}>{order.trackingCode}</span>
+          <CloseOutlined onClick={onClose} style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, fontSize: 16 }} />
+        </div>
+
+        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${C_BORDER}` }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY, marginBottom: 4 }}>Người nhận</div>
+          <div style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>
+            {order.receiverName} - xxxx {phoneTail} - {city}
+          </div>
+        </div>
+
+        <div style={{ padding: '16px 24px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_SECONDARY, letterSpacing: 0.5 }}>ĐÃ THANH TOÁN</span>
+          <span style={{ fontSize: 24, fontWeight: 700, color: C_TEXT_PRIMARY }}>{fmtMoney(paid)}</span>
+        </div>
+        <div style={{ margin: '0 24px', borderTop: `2px solid ${C_TEXT_PRIMARY}` }} />
+
+        <div style={{ padding: '4px 24px 8px' }}>
+          {paymentBreakdownRows(order).map(row => (
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: `1px dashed ${C_BORDER}` }}>
+              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{row.label}</span>
+              <span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{fmtMoney(row.amount)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function FeeBreakdownModal({ order, onClose }: { order: Order; onClose: () => void }) {
@@ -304,6 +385,7 @@ function RemittanceModal({ onClose, onDeclared }: { onClose: () => void; onDecla
 
 export default function CashFlowReport() {
   const [breakdownOrder, setBreakdownOrder] = useState<Order | null>(null)
+  const [paymentBreakdownOrder, setPaymentBreakdownOrder] = useState<Order | null>(null)
   const [remittanceModalOpen, setRemittanceModalOpen] = useState(false)
   const [, tick] = useState(0)
   const refresh = () => tick(n => n + 1)
@@ -315,21 +397,26 @@ export default function CashFlowReport() {
     .sort((a, b) => (b.paymentPaidAt ?? '').localeCompare(a.paymentPaidAt ?? ''))
 
   // Quy ước dấu giống bảng đối soát phí thật: Phí dịch vụ luôn ÂM (khoản Shop phải trả); Đã thanh
-  // toán DƯƠNG (phần đã khấu trừ xong); Chưa thanh toán ÂM nếu còn nợ, 0 nếu đã xong — 2 cột sau
-  // luôn cộng lại đúng bằng Phí dịch vụ.
-  // `fee` có thể TĂNG THÊM sau khi đại lý đã duyệt (phí hoàn hàng/đổi địa chỉ phát sinh sau khi
-  // paymentApprovalStatus đã là 'confirmed', xem confirmReturnOrder/confirmAddressChangeOrder) —
-  // paymentApprovedAmount lưu đúng số đại lý đã duyệt TẠI THỜI ĐIỂM đó; phần tăng thêm sau đó CHƯA
-  // được ai duyệt, phải hiện ở cột Chưa thanh toán thay vì ngộ nhận gộp cả vào Đã thanh toán chỉ vì
-  // đơn đang ở trạng thái confirmed. `paymentApprovedAmount ?? fee` giữ đúng hành vi cũ cho đơn không
-  // có phần phát sinh thêm (snapshot bằng fee hiện tại → extra = 0).
+  // toán DƯƠNG (phần đã khấu trừ xong); Chưa thanh toán ÂM nếu còn nợ, DƯƠNG nếu đại lý cần hoàn lại
+  // (xem Notes), 0 nếu đã xong — 2 cột sau luôn cộng lại đúng bằng Phí dịch vụ.
+  // `fee` có thể đổi CẢ 2 CHIỀU sau khi đại lý đã duyệt (`paymentApprovalStatus === 'confirmed'`):
+  // TĂNG (phí hoàn hàng/đổi địa chỉ phát sinh, xem confirmReturnOrder/confirmAddressChangeOrder) →
+  // Shop còn nợ thêm; GIẢM (phúc tra phát hiện phí thật thấp hơn lúc duyệt) → đại lý thực nhận nhiều
+  // hơn mức đúng, cần hoàn lại phần chênh lệch — `paymentApprovedAmount` lưu đúng số đại lý đã duyệt
+  // TẠI THỜI ĐIỂM đó, phần chênh lệch sau đó (dù tăng hay giảm) đều hiện ở cột Chưa thanh toán thay
+  // vì ngộ nhận gộp cả vào Đã thanh toán chỉ vì đơn đang ở trạng thái confirmed. KHÔNG kẹp về 0 khi
+  // dương nữa — kẹp sẽ làm mất thông tin. Bất biến đúng: `fee = daThanhToan - chuaThanhToan` (thử
+  // với extra<0: daThanhToan = approvedAmount, chuaThanhToan = -extra = approvedAmount - fee đảo dấu
+  // → approvedAmount - (approvedAmount - fee) = fee, khớp).
   function rowAmounts(o: Order) {
-    const fee = o.fee
+    const fee = effectiveFee(o)
     const paid = o.paymentApprovalStatus === 'confirmed'
-    if (!paid) return { phiDichVu: -fee, daThanhToan: 0, chuaThanhToan: -fee }
+    // `|| 0` chuẩn hoá -0 thành 0 — effectiveFee() trả 0 cho đơn huỷ chưa hoàn, nên -fee ra đúng
+    // giá trị -0 (hợp lệ về mặt số học nhưng toLocaleString() hiện thành chuỗi "-0" xấu).
+    if (!paid) return { phiDichVu: -fee || 0, daThanhToan: 0, chuaThanhToan: -fee || 0 }
     const approvedAmount = o.paymentApprovedAmount ?? fee
     const extra = fee - approvedAmount
-    return { phiDichVu: -fee, daThanhToan: approvedAmount, chuaThanhToan: extra > 0 ? -extra : 0 }
+    return { phiDichVu: -fee || 0, daThanhToan: approvedAmount, chuaThanhToan: -extra || 0 }
   }
 
   const totals = relevantOrders.reduce((acc, o) => {
@@ -444,8 +531,12 @@ export default function CashFlowReport() {
                       <span style={{ fontSize: 14, fontWeight: 700, color: C_LINK, textDecoration: 'underline' }}>{order.trackingCode}</span>
                       {surchargeLabel && (
                         <div style={{ marginTop: 2 }}>
-                          <span style={{ fontSize: 11, fontWeight: 600, borderRadius: 4, padding: '1px 6px', background: '#FEF3C7', color: '#92400E', whiteSpace: 'nowrap' }}>
-                            ⚠️ {surchargeLabel}
+                          <span style={{
+                            fontSize: 11, fontWeight: 600, borderRadius: 4, padding: '1px 6px', whiteSpace: 'nowrap',
+                            background: surchargeLabel.tone === 'warn' ? '#FEF3C7' : '#DBEAFE',
+                            color: surchargeLabel.tone === 'warn' ? '#92400E' : '#1D4ED8',
+                          }}>
+                            {surchargeLabel.tone === 'warn' ? '⚠️' : '💙'} {surchargeLabel.label}
                           </span>
                         </div>
                       )}
@@ -473,7 +564,15 @@ export default function CashFlowReport() {
                     </span>,
                     '0.9 0 0', 110, 'right'
                   )}
-                  {cell(<span style={{ fontSize: 14, color: C_TEXT_PRIMARY, textDecoration: 'underline' }}>{fmtMoney(a.daThanhToan)}</span>, '0.9 0 0', 110, 'right')}
+                  {cell(
+                    <span
+                      onClick={() => setPaymentBreakdownOrder(order)}
+                      style={{ fontSize: 14, color: C_TEXT_PRIMARY, textDecoration: 'underline', cursor: 'pointer' }}
+                    >
+                      {fmtMoney(a.daThanhToan)}
+                    </span>,
+                    '0.9 0 0', 110, 'right'
+                  )}
                   {cell(<span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{fmtMoney(a.chuaThanhToan)}</span>, '0.9 0 0', 110, 'right')}
                 </div>
               )
@@ -484,6 +583,9 @@ export default function CashFlowReport() {
 
       {breakdownOrder && (
         <FeeBreakdownModal order={breakdownOrder} onClose={() => setBreakdownOrder(null)} />
+      )}
+      {paymentBreakdownOrder && (
+        <PaymentBreakdownModal order={paymentBreakdownOrder} onClose={() => setPaymentBreakdownOrder(null)} />
       )}
       {remittanceModalOpen && (
         <RemittanceModal onClose={() => setRemittanceModalOpen(false)} onDeclared={refresh} />

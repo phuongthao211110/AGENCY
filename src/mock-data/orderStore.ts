@@ -82,6 +82,12 @@ export interface Order {
   // Agency Admin vẫn phải tự bấm "Duyệt shop này" (AGA-PAYMENT-2) sau khi đối chiếu thực nhận được
   // tiền mới thực sự xác nhận — field này chỉ là tín hiệu nhắc Agency ưu tiên kiểm tra sớm.
   cashRemittanceDeclaredAt?: string
+  // Đơn huỷ SAU KHI đại lý đã xác nhận nhận tiền (`status: 'cancelled' && paymentApprovalStatus:
+  // 'confirmed'`) thì đại lý đang nợ Shop đúng số `fee` đã thu — field này đánh dấu đại lý đã THỰC
+  // SỰ hoàn lại khoản đó (ngoài hệ thống, prototype không có luồng chuyển tiền thật), set qua
+  // confirmCancelRefund(). undefined = chưa hoàn, hiện nhãn "Chờ hoàn tiền" (xem rowStatus()).
+  cancelRefundConfirmedAt?: string
+  cancelRefundConfirmedBy?: string
   status: string
   createdAt: string
   // Optional fields present in some JSON entries
@@ -342,6 +348,41 @@ export function approveOrderPayment(orderId: string, approvedBy: string): Order[
     appendActionHistory(orderId, approvedBy, 'Đại lý xác nhận đã nhận thanh toán', '-', 'Đã duyệt (hậu kiểm/đối soát)')
   }
   return orders
+}
+
+// Chiều NGƯỢC với phí hoàn hàng/đổi địa chỉ (fee TĂNG sau khi confirmed): đơn đã confirmed nhưng
+// fee sau đó GIẢM xuống dưới paymentApprovedAmount (VD: phúc tra phát hiện phí thật thấp hơn lúc
+// duyệt) — đại lý đã THỰC NHẬN nhiều hơn mức đúng, cần hoàn lại phần chênh lệch cho Shop. Hàm này
+// chỉ đơn giản đồng bộ paymentApprovedAmount xuống đúng fee hiện tại (coi như đã hoàn xong) — không
+// có luồng chuyển tiền thật nào trong prototype này.
+export function confirmFeeRefund(orderId: string, confirmedBy: string): boolean {
+  const orders = loadOrders()
+  const idx = orders.findIndex(o => o.id === orderId)
+  if (idx === -1) return false
+  const o = orders[idx]
+  const approvedAmount = o.paymentApprovedAmount ?? o.fee
+  if (o.paymentApprovalStatus !== 'confirmed' || o.fee >= approvedAmount) return false
+  const refundAmount = approvedAmount - o.fee
+  orders[idx] = { ...o, paymentApprovedAmount: o.fee }
+  saveOrders(orders)
+  appendActionHistory(orderId, confirmedBy, 'Đại lý xác nhận đã hoàn tiền thừa cho Shop', `${approvedAmount.toLocaleString('vi-VN')}đ`, `Hoàn ${refundAmount.toLocaleString('vi-VN')}đ`)
+  return true
+}
+
+// Đơn HUỶ sau khi đại lý đã xác nhận nhận tiền (status 'cancelled' + paymentApprovalStatus
+// 'confirmed') — đại lý đang nợ Shop đúng số `fee` đã thu cho 1 đơn giờ không còn giao nữa. Hàm
+// này chỉ đánh dấu đại lý đã THỰC SỰ hoàn lại khoản đó (ngoài hệ thống) — không có luồng chuyển
+// tiền thật nào trong prototype, giống đúng tinh thần confirmFeeRefund().
+export function confirmCancelRefund(orderId: string, confirmedBy: string): boolean {
+  const orders = loadOrders()
+  const idx = orders.findIndex(o => o.id === orderId)
+  if (idx === -1) return false
+  const o = orders[idx]
+  if (o.status !== 'cancelled' || o.paymentApprovalStatus !== 'confirmed' || o.cancelRefundConfirmedAt) return false
+  orders[idx] = { ...o, cancelRefundConfirmedAt: new Date().toISOString(), cancelRefundConfirmedBy: confirmedBy }
+  saveOrders(orders)
+  appendActionHistory(orderId, confirmedBy, 'Đại lý xác nhận đã hoàn tiền cho Shop (đơn huỷ)', '-', `Hoàn ${o.fee.toLocaleString('vi-VN')}đ`)
+  return true
 }
 
 // Agency Admin xác nhận KHÔNG nhận được tiền — chỉ còn là 1 cảnh báo hậu kiểm (hiện badge/nhãn

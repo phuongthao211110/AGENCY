@@ -78,6 +78,7 @@
 | [AGENCY] Đơn hàng - Chi tiết đơn: Redesign tab Lịch sử trạng thái theo đúng UI thật | [redesign-lich-su-trang-thai.md](./orders/redesign-lich-su-trang-thai.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Chi tiết đơn: Redesign tab Lịch sử thao tác theo đúng UI thật | [redesign-lich-su-thao-tac.md](./orders/redesign-lich-su-thao-tac.md) | — | [Draft] |
 | [AGENCY] Đơn hàng - Nhập đơn hàng: Ghi nhận lịch sử thao tác khi import | [ghi-nhan-lich-su-thao-tac-khi-import.md](./orders/ghi-nhan-lich-su-thao-tac-khi-import.md) | — | [Draft] |
+| [AGENCY] Đơn hàng - Chi tiết: Xác nhận đã hoàn tiền cho Shop (đơn huỷ sau khi đã thanh toán) | [xac-nhan-hoan-tien-huy-don-da-thanh-toan.md](./orders/xac-nhan-hoan-tien-huy-don-da-thanh-toan.md) | — | [Draft] |
 
 ## Đối soát & Chuyển khoản
 
@@ -110,6 +111,7 @@
 | [AGA] Duyệt thanh toán tiền mặt: Duyệt 1 shop ở bảng chính (nút "✓ Đã nhận") | [duyet-tat-ca-don-cho.md](./cash-remittance/duyet-tat-ca-don-cho.md) | — | [Draft] |
 | [AGA] Duyệt thanh toán tiền mặt: Duyệt hàng loạt nhiều shop đã chọn | [duyet-hang-loat-nhieu-shop.md](./cash-remittance/duyet-hang-loat-nhieu-shop.md) | — | [Draft] |
 | [AGA] Duyệt thanh toán tiền mặt: Duyệt từ màn "Chi tiết" | [duyet-tu-man-chi-tiet.md](./cash-remittance/duyet-tu-man-chi-tiet.md) | — | [Draft] |
+| [AGA] Duyệt thanh toán tiền mặt: Xác nhận đã hoàn tiền thừa cho Shop | [xac-nhan-hoan-tien-thua-cho-shop.md](./cash-remittance/xac-nhan-hoan-tien-thua-cho-shop.md) | — | [Draft] |
 | [AGA] Duyệt thanh toán tiền mặt: Cảnh báo trễ 1 ngày, tự động khoá tạo đơn sau 3 ngày | [canh-bao-va-tu-dong-khoa-tao-don.md](./cash-remittance/canh-bao-va-tu-dong-khoa-tao-don.md) | — | [Draft] |
 
 ## Hệ thống

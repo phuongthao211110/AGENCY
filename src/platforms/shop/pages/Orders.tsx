@@ -29,10 +29,13 @@ function isLetterReturnCase(o: Order): boolean {
     && (o.status === 'returning' || o.status === 'cancelled' || o.status === 'failed')
 }
 
-// Chỉ cho huỷ đơn nhanh (nút trong bảng) ở 2 tab "Đơn nháp" và "Chờ xử lý" — cả 2 đều là
-// status 'pending' (Hàng hoá nháp chưa dispatch, hoặc Thư đang chờ đại lý chọn hub).
+// Cho huỷ đơn nhanh (nút trong bảng, drawer chi tiết, huỷ hàng loạt) ở 3 tab "Đơn nháp"/"Chờ xử
+// lý" (status 'pending' — Hàng hoá nháp chưa dispatch, hoặc Thư đang chờ đại lý chọn hub) VÀ
+// "Chờ bàn giao"/"Chờ lấy hàng" (status 'pickup' — đã có mã vận đơn/carrier nhưng nhà vận chuyển
+// CHƯA thực sự đến lấy hàng, hàng còn nguyên ở shop) — đơn đã THỰC SỰ rời khỏi shop (in_transit trở
+// đi) mới không cho huỷ theo cách này nữa.
 function isCancellable(o: Order): boolean {
-  return o.status === 'pending'
+  return o.status === 'pending' || o.status === 'pickup'
 }
 
 // In đơn được khi đã có mã vận đơn thật: Hàng hoá có ngay lúc tạo (gửi trực tiếp GHN); Thư chỉ
@@ -2729,11 +2732,14 @@ function rowStatus(order: Order): { label: string; color: string } {
     return { label: 'Chờ xử lý', color: '#F59E0B' }
   }
   const base = ROW_STATUS_STYLE[order.status] ?? { label: order.status, color: '#6B7280' }
-  // Huỷ đơn mà đại lý ĐÃ XÁC NHẬN nhận tiền rồi — không xử lý hoàn tiền thật (prototype), chỉ hiển
-  // thị nhắc còn nợ hoàn tiền cho khách. Chưa xác nhận (pending_review) hoặc đã bị từ chối thì
-  // đại lý chưa thực sự có tiền trong tay, không cần nhắc hoàn.
+  // Huỷ đơn mà đại lý ĐÃ XÁC NHẬN nhận tiền rồi — chưa xác nhận (pending_review) hoặc đã bị từ chối
+  // thì đại lý chưa thực sự có tiền trong tay, không cần nhắc hoàn. `cancelRefundConfirmedAt` phân
+  // biệt ĐÃ hoàn hay CÒN nợ — đại lý xác nhận qua confirmCancelRefund() (orderStore.ts), Shop chỉ
+  // xem kết quả ở đây, không có hành động nào (xem AGA-ORDER-29).
   if (order.status === 'cancelled' && order.paymentApprovalStatus === 'confirmed') {
-    return { ...base, label: `${base.label} · Chờ hoàn tiền` }
+    return order.cancelRefundConfirmedAt
+      ? { ...base, label: `${base.label} · Đã hoàn tiền`, color: '#16A34A' }
+      : { ...base, label: `${base.label} · Chờ hoàn tiền` }
   }
   // Đơn nháp đang bị giữ lại vì chờ GHN xác nhận thanh toán — nhắc shop lý do đơn chưa đi tiếp.
   if (order.status === 'pending' && order.paymentApprovalStatus === 'pending_review') {
@@ -3719,12 +3725,14 @@ function OrderDetailDrawer({ order, open, onClose, onUpdated }: { order: Order |
                           In đơn hàng
                         </button>
                       )}
-                      <button
-                        onClick={() => setConfirmingCancel(true)}
-                        style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
-                      >
-                        Huỷ đơn
-                      </button>
+                      {isCancellable(order) && (
+                        <button
+                          onClick={() => setConfirmingCancel(true)}
+                          style={{ flex: 1, padding: '8px 12px', background: '#fff', border: `1px solid ${C_BORDER}`, borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: C_TEXT_PRIMARY, lineHeight: '20px' }}
+                        >
+                          Huỷ đơn
+                        </button>
+                      )}
                       {isReturnEligible(order) && (
                         <button
                           onClick={() => setConfirmingReturn(true)}

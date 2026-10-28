@@ -25,7 +25,7 @@ Là chủ shop, tôi muốn phải xác nhận trước khi huỷ đơn dù hu�
 
 ## System Flow
 
-1. `isCancellable(o) = o.status === 'pending'` — quyết định nút "Huỷ đơn" nhanh có hiện cho từng dòng hay không, dựa theo TRẠNG THÁI THẬT của đơn thay vì gate cứng theo `activeTab` như trước (trước đây chỉ `activeTab === 'pending_carrier'` mới thấy nút, bỏ sót tab "Đơn nháp")
+1. `isCancellable(o) = o.status === 'pending' || o.status === 'pickup'` — quyết định nút "Huỷ đơn" nhanh có hiện cho từng dòng hay không, dựa theo TRẠNG THÁI THẬT của đơn thay vì gate cứng theo `activeTab` như trước (trước đây chỉ `activeTab === 'pending_carrier'` mới thấy nút, bỏ sót tab "Đơn nháp"). Điều kiện `'pickup'` ("Chờ bàn giao") được thêm SAU, áp dụng chung cho mọi loại đơn — xem AGA-ORDER-23.
 2. State `cancelOrders: Order[] | null` — dùng chung 1 modal (`CancelOrderModal`) cho cả nút nhanh từng dòng (mảng 1 phần tử) lẫn nút hàng loạt (mảng nhiều phần tử), cùng pattern `dispatchModal` đã có bên Agency Admin cho gửi 247Express
 3. `CancelOrderModal` nhận `orders: Order[]`, tự đổi text/nút giữa số ít ("Huỷ đơn hàng", "Xác nhận huỷ đơn") và số nhiều ("Huỷ N đơn hàng", "Xác nhận huỷ N đơn")
 4. Xác nhận → `orders.forEach(o => handleCancelOrder(o.id))` (dùng `cancelOrder()` có sẵn từ `orderStore.ts`) cho từng đơn trong mảng; nếu là huỷ hàng loạt thì gọi thêm `setSelected(new Set())` để tự bỏ chọn
@@ -35,7 +35,7 @@ Là chủ shop, tôi muốn phải xác nhận trước khi huỷ đơn dù hu�
 
 ## Acceptance Criteria
 
-**AC1:** Nút "Huỷ đơn" nhanh chỉ hiện cho đơn có `status: 'pending'` — đơn ở trạng thái khác (đã dispatch/đang giao/đã xong...) không có nút này.
+**AC1:** Nút "Huỷ đơn" nhanh chỉ hiện cho đơn có `status: 'pending'` hoặc `status: 'pickup'` — đơn ở trạng thái khác (đang giao/đã xong... từ `in_transit` trở đi) không có nút này.
 
 **AC2:** Bấm nút → hiện popup xác nhận (nền mờ phủ toàn trang, card trắng giữa màn hình) — KHÔNG huỷ ngay lập tức khi bấm lần đầu.
 
@@ -55,6 +55,7 @@ Là chủ shop, tôi muốn phải xác nhận trước khi huỷ đơn dù hu�
 
 ## Notes
 
+- **Mở rộng phạm vi `isCancellable` (sau khi story này đã viết lần đầu)**: ban đầu chỉ `status === 'pending'`. Theo yêu cầu trực tiếp, đã thêm `status === 'pickup'` ("Chờ bàn giao") — áp dụng chung cho mọi loại đơn, không phân biệt Hàng hoá GHN hay Thư 247Express (xem [AGA-ORDER-23](../../agency-admin/orders/huy-don-trang-thai-da-tiep-nhan.md) cho lý do đầy đủ). Vì `isCancellable` dùng chung cho nút nhanh/bulk-cancel ở đây LẪN nút "Huỷ đơn" trong drawer chi tiết (SHOP-ORDER-7), sửa 1 chỗ là áp dụng đồng loạt.
 - **GAP đã sửa:** trước đây nút huỷ nhanh trong bảng gọi `cancelOrder()` NGAY LẬP TỨC, không qua bất kỳ xác nhận nào — bấm nhầm là mất đơn vĩnh viễn không cách nào cứu lại. Story này thêm popup xác nhận cho đúng chuẩn thao tác phá huỷ dữ liệu (destructive action).
 - **GAP đã sửa:** nút huỷ nhanh trước đây chỉ hiện ở tab "Chờ xử lý" (`activeTab === 'pending_carrier'`), bỏ sót hẳn tab "Đơn nháp" — giờ dựa theo trạng thái thật của từng đơn (`isCancellable`) nên đúng cho cả 2 tab.
 - Checkbox chọn dòng trong danh sách tồn tại từ trước (state `selected`) nhưng hoàn toàn không gắn hành động nào — dead state. Đây là lần đầu tiên checkbox có tác dụng thật, thông qua thanh "Đã chọn N" + nút huỷ hàng loạt.

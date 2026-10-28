@@ -68,8 +68,13 @@
 | SHOP-ORDER-52 | [Chi tiết đơn hàng: Trạng thái thanh toán và lịch sử thao tác](orders/trang-thai-thanh-toan-va-lich-su-chi-tiet-don.md) | [Draft] |
 | SHOP-ORDER-53 | [Chi tiết đơn hàng: Tự reset phương thức thanh toán ⚠️ đã đóng — trùng SHOP-ORDER-46](orders/tu-reset-phuong-thuc-thanh-toan-chi-tiet-don.md) | [Draft] |
 | SHOP-ORDER-54 | [Danh sách đơn hàng: Nhãn "Đã thanh toán" ở cột Trạng thái](orders/nhan-da-thanh-toan-cot-trang-thai-danh-sach-don.md) | [Draft] |
-| SHOP-ORDER-55 | [Báo cáo dòng tiền: Bảng phí dịch vụ đã/chưa thanh toán](orders/bao-cao-dong-tien.md) | [Draft] |
+| SHOP-ORDER-55 | [Báo cáo dòng tiền: Trang & bảng phí dịch vụ đã/chưa thanh toán](orders/bao-cao-dong-tien.md) | [Draft] |
 | SHOP-ORDER-56 | [Chi tiết đơn hàng: Yêu cầu đổi địa chỉ phát sinh phụ phí](orders/dieu-chinh-dia-chi-phat-sinh-phu-phi.md) | [Draft] |
+| SHOP-ORDER-57 | [Báo cáo dòng tiền: Badge cảnh báo phát sinh thêm / cần hoàn tiền](orders/bao-cao-dong-tien-badge-canh-bao.md) | [Draft] |
+| SHOP-ORDER-58 | [Báo cáo dòng tiền: Modal breakdown "Phí dịch vụ"](orders/bao-cao-dong-tien-breakdown-phi-dich-vu.md) | [Draft] |
+| SHOP-ORDER-59 | [Báo cáo dòng tiền: Modal breakdown "Đã thanh toán" (kênh thanh toán)](orders/bao-cao-dong-tien-breakdown-da-thanh-toan.md) | [Draft] |
+| SHOP-ORDER-60 | [Báo cáo dòng tiền: Nút "Thanh toán cho đại lý" (khai đã chuyển tiền mặt)](orders/bao-cao-dong-tien-thanh-toan-cho-dai-ly.md) | [Draft] |
+| SHOP-ORDER-61 | [Báo cáo dòng tiền: Cột "Lịch sử thanh toán"](orders/bao-cao-dong-tien-lich-su-thanh-toan.md) | [Draft] |
 
 ## Đối soát
 

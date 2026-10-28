@@ -199,29 +199,35 @@
             "Card tổng tiền cập nhật live theo giá trị đang sửa; có dòng nhắc \"Đang sửa thông tin đơn...\"",
             "Bấm \"Lưu thay đổi\" → lưu vào orderStore, quay về hiển thị bình thường với dữ liệu mới",
             "Bấm \"Huỷ\" (thay cho \"Cập nhật\" lúc đang sửa) → bỏ hết thay đổi đang nhập, không lưu gì",
-            "Bấm \"Huỷ đơn\" (nút riêng) → hiện cảnh báo đỏ xác nhận, kèm 2 nút \"Không huỷ\"/\"Xác nhận huỷ đơn\"",
+            "Nút \"Huỷ đơn\" (nút riêng, không phải \"Huỷ\" của chế độ sửa) CHỈ hiện khi đơn còn status: 'pending' HOẶC status: 'pickup' (\"Đơn nháp\"/\"Chờ xử lý\"/\"Chờ bàn giao\" — isCancellable, xem SHOP-ORDER-21 và AGA-ORDER-23) — đơn đã THỰC SỰ rời khỏi shop (in_transit trở đi) KHÔNG còn nút này trong drawer, khớp đúng quy tắc đang áp dụng ở nút huỷ nhanh/huỷ hàng loạt trong danh sách.",
+            "Bấm \"Huỷ đơn\" (khi đủ điều kiện) → hiện cảnh báo đỏ \"Bạn chắc chắn muốn huỷ đơn này? Thao tác này không thể hoàn tác.\" kèm 2 nút \"Không huỷ\"/\"Xác nhận huỷ đơn\"",
             "Bấm \"Xác nhận huỷ đơn\" → đơn chuyển trạng thái \"Đơn huỷ\", drawer tự đóng"
           ],
           "systemFlow": [
-            "OrderDetailDrawer (Web Shop) thêm state editMode/draft (giống Agency) và confirmingCancel (riêng cho luồng huỷ)",
-            "Field sửa ánh xạ đúng field thật của Order: receiverName/receiverPhone/receiverAddress, weight, cod, fee, status",
-            "\"Lưu thay đổi\" → gọi updateOrder(order.id, patch) (hàm dùng chung orderStore.ts) → onUpdated() refresh cả orders và selectedOrder",
-            "\"Xác nhận huỷ đơn\" → gọi cancelOrder(order.id) (hàm có sẵn từ trước) → onUpdated() → onClose() đóng drawer",
-            "editMode và confirmingCancel loại trừ nhau"
+            "OrderDetailDrawer (Web Shop, Orders.tsx) thêm state editMode/draft (giống Agency) và confirmingCancel (boolean, riêng cho luồng huỷ)",
+            "Field sửa ánh xạ đúng field thật của Order: receiverName/receiverPhone/receiverAddress, weight (nhập kg, lưu nhân 1000 ra gram), cod, fee, status",
+            "\"Lưu thay đổi\" → gọi updateOrder(order.id, patch) (hàm dùng chung orderStore.ts, đã thêm trước đó cho Agency) → onUpdated() refresh cả orders và selectedOrder",
+            "\"Xác nhận huỷ đơn\" → gọi cancelOrder(order.id) (hàm có sẵn từ trước, đã dùng ở nút huỷ nhanh trong danh sách tab \"Chờ xử lý\") → onUpdated() → onClose() đóng drawer",
+            "editMode và confirmingCancel loại trừ nhau — đang sửa thì không hiện được cảnh báo huỷ và ngược lại",
+            "Nút \"Huỷ đơn\" bọc trong {isCancellable(order) && (...)} (hàm dùng CHUNG với danh sách/bulk-cancel — xem SHOP-ORDER-21) — TRƯỚC ĐÂY nút này không có điều kiện gì, cho huỷ được ở BẤT KỲ status nào kể cả đơn đã dispatch/đã thanh toán, khác hẳn quy tắc isCancellable áp dụng ở mọi nơi khác trong app (xem Notes).",
+            "isCancellable(o) = o.status === 'pending' || o.status === 'pickup' (xem AGA-ORDER-23) — KHÔNG kèm điều kiện sendKind/carrierCode, áp dụng chung cho mọi loại đơn Hàng hoá lẫn Thư."
           ],
           "acceptanceCriteria": [
-            "AC1: Bấm \"Cập nhật\" → field chuyển thành ô nhập được, có dòng cảnh báo nhỏ.",
-            "AC2: Sửa xong bấm \"Lưu thay đổi\" → dữ liệu lưu đúng vào orderStore, danh sách + drawer hiển thị đúng giá trị mới.",
-            "AC3: Bấm \"Huỷ\" khi đang sửa → bỏ hết thay đổi, không lưu gì.",
-            "AC4: Bấm \"Huỷ đơn\" → hiện đúng cảnh báo xác nhận, không huỷ ngay lập tức.",
+            "AC1: Bấm \"Cập nhật\" → field liệt kê ở User Flow bước 1 chuyển thành ô nhập được, có dòng cảnh báo nhỏ.",
+            "AC2: Sửa xong bấm \"Lưu thay đổi\" → dữ liệu lưu đúng vào orderStore, danh sách + drawer hiển thị đúng giá trị mới (VD: đổi Trạng thái → đơn chuyển đúng tab).",
+            "AC3: Bấm \"Huỷ\" khi đang sửa → bỏ hết thay đổi, không lưu gì vào orderStore.",
+            "AC4: Bấm \"Huỷ đơn\" → hiện đúng cảnh báo xác nhận (nền đỏ nhạt), có 2 lựa chọn rõ ràng, không huỷ ngay lập tức khi bấm lần đầu.",
+            "AC4b: Nút \"Huỷ đơn\" CHỈ hiện khi order.status === 'pending' HOẶC order.status === 'pickup' (isCancellable) — mở drawer của đơn đang giao/đã xong/đã huỷ (từ in_transit trở đi) thì KHÔNG thấy nút này (dù trước đây vẫn hiện được, xem Notes).",
             "AC5: Bấm \"Không huỷ\" → quay về trạng thái bình thường, đơn không đổi gì.",
             "AC6: Bấm \"Xác nhận huỷ đơn\" → order.status đổi thành 'cancelled', đơn chuyển sang tab \"Đơn huỷ\", drawer tự đóng."
           ],
           "notes": [
-            "Tái sử dụng đúng updateOrder()/cancelOrder() có sẵn trong orderStore.ts — không tạo cơ chế lưu riêng cho Web Shop.",
-            "Phạm vi field sửa giống hệt Agency (AGA-ORDER-12) — không thêm sửa cho card \"Sản phẩm\"/\"Phụ phí\" vì không có field tương ứng.",
-            "Khác với Agency: Web Shop không có field \"Đơn vị vận chuyển\" trong form sửa, và có nút \"Huỷ đơn\" thật với xác nhận 2 bước — trong khi Agency (AGA-ORDER-12) nút \"Huỷ đơn\" vẫn còn là gap. Không đối xứng hoàn toàn giữa 2 platform ở thời điểm này.",
-            "Nút huỷ nhanh sẵn có trong danh sách (tab \"Chờ xử lý\") dùng chung cancelOrder() — không đổi logic đó."
+            "Mở rộng phạm vi (sau khi đã thêm guard isCancellable): ban đầu isCancellable chỉ cho status === 'pending'. Theo yêu cầu trực tiếp, đã mở rộng thêm status === 'pickup' (\"Chờ bàn giao\") — áp dụng chung cho MỌI loại đơn (Hàng hoá GHN lẫn Thư 247Express), không giới hạn riêng loại nào. Thay đổi này nằm ở đúng 1 hàm isCancellable() dùng chung, nên tự động áp dụng cho CẢ nút trong drawer này LẪN nút nhanh trong bảng/huỷ hàng loạt (SHOP-ORDER-21) mà không cần sửa thêm nơi nào khác. Xem [AGA-ORDER-23](../../agency-admin/orders/huy-don-trang-thai-da-tiep-nhan.md) để biết chi tiết đầy đủ + lý do đổi phạm vi.",
+            "GAP đã sửa (phát hiện khi review logic huỷ đơn đã thanh toán): nút \"Huỷ đơn\" trong drawer chi tiết TRƯỚC ĐÂY không có điều kiện isCancellable nào — khác với mọi lối huỷ đơn khác trong app (nút nhanh trong bảng, nút huỷ hàng loạt, nút \"Huỷ đơn\" trong drawer chi tiết bên Agency Admin) đều chỉ cho huỷ khi status === 'pending'. Hậu quả: Shop có thể huỷ 1 đơn ĐÃ dispatch/đang giao/ĐÃ ĐƯỢC ĐẠI LÝ XÁC NHẬN THANH TOÁN qua đúng đường này, lách qua quy tắc áp dụng ở mọi nơi khác — huỷ xong thì rơi đúng vào trường hợp \"Đã huỷ · Chờ hoàn tiền\" (xem SHOP-ORDER-47) mà đáng lẽ không nên xảy ra dễ dàng như vậy (huỷ đơn đã thanh toán nên là trường hợp hiếm, không phải thao tác 1-click tuỳ tiện). Đã sửa: bọc nút trong isCancellable(order) &&, khớp đúng quy tắc chung.",
+            "Tái sử dụng đúng updateOrder()/cancelOrder() đã có sẵn trong orderStore.ts — không tạo cơ chế lưu riêng cho Web Shop, đảm bảo Agency và Shop luôn thao tác trên cùng 1 nguồn dữ liệu nhất quán.",
+            "Phạm vi field sửa được giữ giống hệt Agency (AGA-ORDER-12) — không thêm sửa cho card \"Sản phẩm\"/\"Phụ phí\" vì các card này vẫn hiển thị dữ liệu tĩnh/demo, không có field tương ứng trên Order.",
+            "Khác với Agency: Web Shop không có field \"Đơn vị vận chuyển\" trong form sửa (agency mới là bên quyết định carrier khi dispatch), và có thêm nút \"Huỷ đơn\" thật với xác nhận 2 bước — trong khi Agency (AGA-ORDER-12) hiện tại nút \"Huỷ đơn\" vẫn còn là gap chưa hoạt động. Đây là 2 story riêng biệt, không đối xứng hoàn toàn giữa 2 platform ở thời điểm này.",
+            "Nút huỷ nhanh sẵn có trong danh sách (cột thao tác, tab \"Chờ xử lý\") dùng chung cancelOrder() — không đổi logic đó, chỉ thêm điểm vào mới từ chi tiết đơn."
           ]
         },
         {
@@ -635,7 +641,7 @@
             "Bấm \"Huỷ đơn\" trên thanh → cùng popup xác nhận (nội dung đổi sang số nhiều \"N đơn đã chọn\") → xác nhận huỷ tất cả cùng lúc, tự bỏ chọn sau khi xong"
           ],
           "systemFlow": [
-            "isCancellable(o) = o.status === 'pending' — quyết định nút \"Huỷ đơn\" nhanh có hiện cho từng dòng hay không, dựa theo TRẠNG THÁI THẬT của đơn thay vì gate cứng theo activeTab như trước (trước đây chỉ activeTab === 'pending_carrier' mới thấy nút, bỏ sót tab \"Đơn nháp\")",
+            "isCancellable(o) = o.status === 'pending' || o.status === 'pickup' — quyết định nút \"Huỷ đơn\" nhanh có hiện cho từng dòng hay không, dựa theo TRẠNG THÁI THẬT của đơn thay vì gate cứng theo activeTab như trước (trước đây chỉ activeTab === 'pending_carrier' mới thấy nút, bỏ sót tab \"Đơn nháp\"). Điều kiện 'pickup' (\"Chờ bàn giao\") được thêm SAU, áp dụng chung cho mọi loại đơn — xem AGA-ORDER-23.",
             "State cancelOrders: Order[] | null — dùng chung 1 modal (CancelOrderModal) cho cả nút nhanh từng dòng (mảng 1 phần tử) lẫn nút hàng loạt (mảng nhiều phần tử), cùng pattern dispatchModal đã có bên Agency Admin cho gửi 247Express",
             "CancelOrderModal nhận orders: Order[], tự đổi text/nút giữa số ít (\"Huỷ đơn hàng\", \"Xác nhận huỷ đơn\") và số nhiều (\"Huỷ N đơn hàng\", \"Xác nhận huỷ N đơn\")",
             "Xác nhận → orders.forEach(o => handleCancelOrder(o.id)) (dùng cancelOrder() có sẵn từ orderStore.ts) cho từng đơn trong mảng; nếu là huỷ hàng loạt thì gọi thêm setSelected(new Set()) để tự bỏ chọn",
@@ -644,7 +650,7 @@
             "Checkbox chọn dòng (state selected: Set<string>) đã tồn tại sẵn từ trước nhưng trước đây không có action nào đọc giá trị này — lần này là nơi đầu tiên state đó thực sự được dùng"
           ],
           "acceptanceCriteria": [
-            "AC1: Nút \"Huỷ đơn\" nhanh chỉ hiện cho đơn có status 'pending' — đơn ở trạng thái khác (đã dispatch/đang giao/đã xong...) không có nút này.",
+            "AC1: Nút \"Huỷ đơn\" nhanh chỉ hiện cho đơn có status: 'pending' hoặc status: 'pickup' — đơn ở trạng thái khác (đang giao/đã xong... từ in_transit trở đi) không có nút này.",
             "AC2: Bấm nút → hiện popup xác nhận (nền mờ phủ toàn trang, card trắng giữa màn hình) — KHÔNG huỷ ngay lập tức khi bấm lần đầu.",
             "AC3: Bấm \"Không huỷ\" → đóng popup, đơn giữ nguyên trạng thái, không có gì thay đổi.",
             "AC4: Bấm \"Xác nhận huỷ đơn\" → order.status đổi thành 'cancelled', đơn chuyển sang tab \"Đơn huỷ\".",
@@ -655,11 +661,12 @@
             "AC9: Xác nhận huỷ hàng loạt → toàn bộ N đơn hợp lệ chuyển 'cancelled' cùng lúc, thanh \"Đã chọn\" tự biến mất (lựa chọn tự xoá)."
           ],
           "notes": [
+            "Mở rộng phạm vi isCancellable (sau khi story này đã viết lần đầu): ban đầu chỉ status === 'pending'. Theo yêu cầu trực tiếp, đã thêm status === 'pickup' (\"Chờ bàn giao\") — áp dụng chung cho mọi loại đơn, không phân biệt Hàng hoá GHN hay Thư 247Express (xem [AGA-ORDER-23](../../agency-admin/orders/huy-don-trang-thai-da-tiep-nhan.md) cho lý do đầy đủ). Vì isCancellable dùng chung cho nút nhanh/bulk-cancel ở đây LẪN nút \"Huỷ đơn\" trong drawer chi tiết (SHOP-ORDER-7), sửa 1 chỗ là áp dụng đồng loạt.",
             "GAP đã sửa: trước đây nút huỷ nhanh trong bảng gọi cancelOrder() NGAY LẬP TỨC, không qua bất kỳ xác nhận nào — bấm nhầm là mất đơn vĩnh viễn không cách nào cứu lại. Story này thêm popup xác nhận cho đúng chuẩn thao tác phá huỷ dữ liệu (destructive action).",
             "GAP đã sửa: nút huỷ nhanh trước đây chỉ hiện ở tab \"Chờ xử lý\" (activeTab === 'pending_carrier'), bỏ sót hẳn tab \"Đơn nháp\" — giờ dựa theo trạng thái thật của từng đơn (isCancellable) nên đúng cho cả 2 tab.",
-            "Checkbox chọn dòng trong danh sách tồn tại từ trước (state `selected`) nhưng hoàn toàn không gắn hành động nào — dead state. Đây là lần đầu tiên checkbox có tác dụng thật, thông qua thanh \"Đã chọn N\" + nút huỷ hàng loạt.",
+            "Checkbox chọn dòng trong danh sách tồn tại từ trước (state selected) nhưng hoàn toàn không gắn hành động nào — dead state. Đây là lần đầu tiên checkbox có tác dụng thật, thông qua thanh \"Đã chọn N\" + nút huỷ hàng loạt.",
             "Dùng chung 1 modal cho cả nút nhanh và nút hàng loạt (mảng 1 hoặc nhiều phần tử) thay vì tạo 2 UI riêng biệt — cùng cách tiếp cận với dispatchModal bên Agency Admin.",
-            "Drawer chi tiết đơn đã có sẵn cơ chế xác nhận riêng từ trước, không đổi (banner cảnh báo inline, xem SHOP-ORDER-7) — story này chỉ bổ sung 2 lối vào MỚI (nút nhanh trong bảng + nút hàng loạt), dùng popup thay vì banner vì bảng danh sách không có chỗ hiển thị banner cảnh báo dài như trong drawer.",
+            "Drawer chi tiết đơn đã có sẵn cơ chế xác nhận riêng từ trước, không đổi (banner cảnh báo inline, xem [SHOP-ORDER-7](./chi-tiet-huy-cap-nhat-don-hang.md)) — story này chỉ bổ sung 2 lối vào MỚI (nút nhanh trong bảng + nút hàng loạt), dùng popup thay vì banner vì bảng danh sách không có chỗ hiển thị banner cảnh báo dài như trong drawer.",
             "REDESIGN (sau khi story này đã viết lần đầu): thanh \"Đã chọn N\" đổi từ dạng inline màu xanh nhạt phía trên bảng sang dạng nổi cố định ở đáy màn hình (nền tối, nút X tròn để bỏ chọn thay cho nút chữ \"Bỏ chọn\", nút hành động dạng button đặc có icon thay vì text-link) — theo đúng yêu cầu \"làm giống ảnh tham khảo\" (màn Agency Admin thật của GHN). Agency Admin được áp style này trước, Web Shop áp lại y hệt ngay sau đó để 2 platform nhất quán.",
             "Agency Admin cũng có thanh hành động hàng loạt cùng style (nổi đáy màn hình, nền tối) với 2 nút: \"Gửi qua 247Express\" (xanh dương) và \"Huỷ đơn\" (đỏ nhạt) — Agency là platform DUY NHẤT có bulk dispatch vì chỉ đại lý mới thao tác với carrier; Web Shop chỉ có bulk \"Huỷ đơn\" vì shop không tự chọn carrier."
           ]
@@ -1507,25 +1514,30 @@
           "userStory": "Là chủ shop, khi một đơn đã được ĐẠI LÝ XÁC NHẬN nhận tiền phí ship (tiền mặt hoặc online) bị huỷ, tôi muốn thấy nhắc nhở \"Chờ hoàn tiền\" trong danh sách đơn, để biết cần liên hệ đại lý để được hoàn lại khoản đã trả — thay vì tưởng đơn đã huỷ là xong hẳn, mất luôn khoản tiền đó.",
           "userFlow": [
             "Đơn ĐÃ ĐƯỢC ĐẠI LÝ XÁC NHẬN nhận tiền (paymentApprovalStatus = 'confirmed') bị huỷ (status = 'cancelled').",
-            "Trong danh sách đơn, cột trạng thái hiển thị \"Đã huỷ · Chờ hoàn tiền\" thay vì chỉ \"Đã huỷ\".",
-            "Đơn bị huỷ mà đại lý CHƯA xác nhận (đang pending_review), hoặc ĐÃ TỪ CHỐI (rejected), hoặc không có paymentApprovalStatus (tiền mặt do Khách trả, hoặc online chưa tự khai xong) → trạng thái chỉ là \"Đã huỷ\" bình thường, không có suffix — vì đại lý chưa thực sự có tiền trong tay nên không có gì để hoàn."
+            "Trong danh sách đơn (Web Shop LẪN Agency Admin — xem Notes), cột trạng thái hiển thị \"Đã huỷ · Chờ hoàn tiền\" (đỏ) thay vì chỉ \"Đã huỷ\".",
+            "Đơn bị huỷ mà đại lý CHƯA xác nhận (đang pending_review), hoặc ĐÃ TỪ CHỐI (rejected), hoặc không có paymentApprovalStatus (tiền mặt do Khách trả, hoặc online chưa tự khai xong) → trạng thái chỉ là \"Đã huỷ\" bình thường, không có suffix — vì đại lý chưa thực sự có tiền trong tay nên không có gì để hoàn.",
+            "Sau khi Agency Admin bấm \"Xác nhận đã hoàn tiền cho Shop\" (chỉ có bên Agency Admin — xem AGA-ORDER-29) → nhãn đổi thành \"Đã huỷ · Đã hoàn tiền\" (xanh lá) ở CẢ 2 platform — Shop chỉ xem kết quả, không có hành động nào ở chiều này."
           ],
           "systemFlow": [
-            "rowStatus(order):\n   js\n   if (order.status === 'cancelled' && order.paymentApprovalStatus === 'confirmed') {\n     return { ...base, label: ${base.label} · Chờ hoàn tiền }\n   }",
+            "rowStatus(order) (src/platforms/shop/pages/Orders.tsx VÀ src/platforms/agency-admin/pages/AgencyOrders.tsx — 2 bản SONG SONG, cùng 1 công thức):\n   js\n   if (order.status === 'cancelled' && order.paymentApprovalStatus === 'confirmed') {\n     return order.cancelRefundConfirmedAt\n       ? { ...base, label: ${base.label} · Đã hoàn tiền, color: '#16A34A' }\n       : { ...base, label: ${base.label} · Chờ hoàn tiền }\n   }\n   ",
             "Điều kiện dựa trên paymentApprovalStatus === 'confirmed' — áp dụng cho MỌI phương thức Shop trả (tiền mặt lẫn MoMo/chuyển khoản), không giới hạn paymentMethod === 'momo'/'bank_transfer' như thiết kế ban đầu.",
-            "TRow: rowStatus(order).label hiển thị trong cột trạng thái, màu rowStatus(order).color (kế thừa màu base của 'cancelled' trong ROW_STATUS_STYLE, không đổi màu riêng cho suffix này)."
+            "TRow: rowStatus(order).label hiển thị trong cột trạng thái, màu rowStatus(order).color (kế thừa màu base của 'cancelled' trong ROW_STATUS_STYLE ở nhánh \"Chờ hoàn tiền\"; đổi riêng thành xanh lá #16A34A ở nhánh \"Đã hoàn tiền\") — áp dụng ĐỒNG NHẤT ở cả bảng đơn Web Shop lẫn bảng đơn Agency Admin.",
+            "cancelRefundConfirmedAt/cancelRefundConfirmedBy (field MỚI, Order interface) — set bởi confirmCancelRefund() (orderStore.ts), gọi từ nút \"Xác nhận đã hoàn tiền cho Shop\" CHỈ có bên Agency Admin (xem AGA-ORDER-29) — Web Shop chỉ ĐỌC field này để đổi nhãn, không có hành động nào ghi vào field đó."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Đơn status='cancelled' + paymentApprovalStatus='confirmed' (bất kỳ phương thức nào: tiền mặt/MoMo/chuyển khoản) → nhãn trạng thái trong danh sách là \"Đã huỷ · Chờ hoàn tiền\".",
+            "AC1: Đơn status='cancelled' + paymentApprovalStatus='confirmed' (bất kỳ phương thức nào: tiền mặt/MoMo/chuyển khoản) → nhãn trạng thái trong danh sách là \"Đã huỷ · Chờ hoàn tiền\" — đúng ở CẢ danh sách đơn Web Shop VÀ danh sách đơn Agency Admin.",
             "AC2: Đơn status='cancelled' + Khách trả ship (không có paymentApprovalStatus) → nhãn chỉ là \"Đã huỷ\", không có suffix.",
             "AC3: Đơn status='cancelled' + paymentApprovalStatus='pending_review' hoặc 'rejected' → nhãn chỉ là \"Đã huỷ\" (GHN chưa thực sự nhận tiền, không cần hoàn).",
-            "AC4: Đơn status khác 'cancelled' (dù paymentApprovalStatus = 'confirmed') → không hiện suffix \"Chờ hoàn tiền\"."
+            "AC4: Đơn status khác 'cancelled' (dù paymentApprovalStatus = 'confirmed') → không hiện suffix \"Chờ hoàn tiền\".",
+            "AC5: Sau khi Agency Admin xác nhận đã hoàn (AGA-ORDER-29) → nhãn đổi thành \"Đã huỷ · Đã hoàn tiền\" (xanh lá) ở CẢ Web Shop lẫn Agency Admin, không còn \"Chờ hoàn tiền\" (đỏ) nữa."
           ],
           "notes": [
+            "Thêm mới (có hành động xác nhận hoàn, không còn treo mãi): trước đây \"Chờ hoàn tiền\" chỉ là nhãn TREO VĨNH VIỄN, không có cách nào trong UI để đánh dấu đã xử lý xong dù Agency Admin đã thực sự chuyển tiền lại cho Shop. Đã thêm cancelRefundConfirmedAt/cancelRefundConfirmedBy + hàm confirmCancelRefund() + nút \"Xác nhận đã hoàn tiền cho Shop\" trong OrderDetailDrawer (Agency Admin) — xem đầy đủ ở [AGA-ORDER-29](../../agency-admin/orders/xac-nhan-hoan-tien-huy-don-da-thanh-toan.md). \"PROTOTYPE THUẦN\" ở note dưới đây vẫn đúng — hành động xác nhận chỉ đồng bộ lại trạng thái, không có luồng chuyển tiền thật.",
+            "Thêm mới (mirror sang Agency Admin): trước đây nhãn \"Chờ hoàn tiền\" CHỈ có ở rowStatus() của Web Shop (Orders.tsx) — Agency Admin hoàn toàn không có gì tương ứng, nên đại lý không biết đơn nào bị huỷ-mà-đã-thu-tiền cần xử lý hoàn (mất đối xứng thông tin, phát hiện khi review logic huỷ đơn). Đã thêm ĐÚNG nhánh điều kiện này vào rowStatus() của Agency Admin (AgencyOrders.tsx) — cùng công thức, cùng nhãn, không lệch nhau giữa 2 platform.",
             "Thay đổi quan trọng so với bản gốc: điều kiện trước đây dựa trên paymentStatus === 'paid' (Shop tự khai) — nay đổi sang paymentApprovalStatus === 'confirmed' (đại lý đã THỰC SỰ xác nhận), vì chỉ khi đại lý xác nhận thì mới chắc chắn có tiền thật để cần hoàn; đơn Shop tự khai \"đã trả\" nhưng đại lý chưa duyệt/đã từ chối thì đại lý chưa có tiền, không có gì để hoàn.",
             "PROTOTYPE THUẦN — không có quy trình hoàn tiền thật. Đây CHỈ là nhắc nhở hiển thị trong UI. Hệ thống không gửi request hoàn tiền đến MoMo hay ngân hàng, không tạo ticket support tự động, không tính lại công nợ đối soát.",
-            "Chỉ áp dụng cho danh sách đơn (TRow). Giao diện chi tiết đơn (OrderDetailDrawer) không hiện suffix \"Chờ hoàn tiền\" — chỉ hiện trạng thái thanh toán qua paymentBadge() (xem SHOP-ORDER-44/45).",
+            "Nhãn \"· Chờ hoàn tiền\"/\"· Đã hoàn tiền\" CHỈ áp dụng cho danh sách đơn (TRow), KHÔNG lặp lại trong OrderDetailDrawer (vẫn chỉ hiện trạng thái thanh toán qua paymentBadge(), xem SHOP-ORDER-44/45) — riêng drawer bên AGENCY ADMIN (không phải Web Shop) có thêm 1 khối cảnh báo + nút hành động RIÊNG cho chính xác trường hợp này (xem AGA-ORDER-29), nội dung/vị trí khác hẳn paymentBadge().",
             "Xem SHOP-ORDER-48 để biết 2 nhánh còn lại của rowStatus() dành cho đơn CHƯA bị huỷ (đang \"Đơn nháp · Chờ GHN xác nhận\" / \"Đơn nháp · GHN từ chối xác nhận\") — cùng 1 hàm rowStatus() nhưng khác điều kiện status."
           ]
         },
@@ -1761,77 +1773,221 @@
         {
           "id": "SHOP-ORDER-55",
           "jiraKey": "",
-          "title": "[WEB SHOP] Báo cáo dòng tiền: Bảng phí dịch vụ đã/chưa thanh toán",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Trang & bảng phí dịch vụ đã/chưa thanh toán",
           "status": "draft",
           "userStory": "Là chủ shop, tôi muốn có 1 trang riêng dạng bảng đối soát (giống bảng \"Phí dịch vụ\" thật của GHN) để xem rõ tổng phí ship đã thanh toán và còn nợ bao nhiêu, cùng chi tiết từng đơn, thay vì phải tự cộng tay hay lướt từng dòng trong danh sách đơn.",
           "userFlow": [
             "Vào menu \"Báo cáo dòng tiền\" trong sidebar Web Shop (icon 💲, giữa \"Đơn hàng\" và \"Đối soát\") → route /shop/cash-flow.",
             "Đầu trang hiện nhãn \"Phí dịch vụ\" (gạch chân cam) — trang chỉ tập trung vào phí ship, không có tab \"Tiền thu hộ\" nào (COD đã có trang \"Đối soát\" riêng, không lặp lại ở đây).",
-            "Góc phải: ghi chú ngắn + nút \"Tải file excel\" (tải thật 1 file .xlsx chứa đúng dữ liệu đang hiển thị) + nút \"Thanh toán cho đại lý (Xđ)\" (nền xanh navy) — X là tổng phí ship các đơn TIỀN MẶT đang pending_review HOẶC rejected (\"Nợ tồn\") của shop này. Không có đơn nào cần chuyển → nút disabled, label \"Không có đơn cần chuyển\".",
-            "Bấm nút \"Thanh toán cho đại lý\" → mở modal \"Thanh toán hạn mức đã dùng\" (2 cột, mô phỏng đúng 1 UI thật tham khảo):\n   - Cột trái: chip trạng thái \"⏱ Chưa thanh toán\" (xám); dòng \"Phí giao hàng (Đơn hàng đã bàn giao/ Hoàn tất) [Tải danh sách đơn]\" (link cam, xuất file riêng danh sách đơn cần trả) = tổng đơn pending_review; dòng \"Nợ tồn\" = tổng đơn rejected; \"Tổng tiền cần thanh toán\" (cam, đậm, to) = 2 dòng trên cộng lại; ghi chú nhắc đọc kỹ; checkbox \"Tôi đã đọc, hiểu và chấp nhận điều khoản thanh toán của GHN\" (BẮT BUỘC tick mới bấm được nút); nút \"Xác nhận thanh toán\" (cam, disabled nếu chưa tick hoặc tổng = 0) — bấm vào gọi declareCashRemittance(), hiện banner xanh \"✓ Đã gửi yêu cầu thanh toán Xđ cho đại lý — mã ...\" ngay trong modal; đơn đang rejected (\"Nợ tồn\") được ĐƯA VỀ pending_review để Agency duyệt lại được (không kẹt mãi).\n   - Cột phải \"Lịch sử thanh toán\": liệt kê MỌI lần Shop đã bấm \"Xác nhận thanh toán\" trước đó, mỗi card: chip xanh \"✓ Đã gửi yêu cầu thanh toán\", \"Mã thanh toán: {code}\" (icon copy), \"Thời gian: dd/mm/yyyy hh:mm:ss\", \"Tổng tiền: Xđ\", nút \"Xem chi tiết\" (hiện danh sách mã vận đơn của lần đó).",
+            "Góc phải: ghi chú ngắn + nút \"Tải file excel\" (tải thật 1 file .xlsx chứa đúng dữ liệu đang hiển thị) + nút \"Thanh toán cho đại lý (Xđ)\" (xem SHOP-ORDER-60 cho hành vi đầy đủ của nút này).",
             "Bảng: dòng đầu tiên luôn là \"Tổng\" (nền cam nhạt), cộng dồn 3 cột tiền của TOÀN BỘ đơn.",
-            "Các dòng sau, mỗi dòng 1 đơn: STT, Mã đơn (gạch chân xanh), Ngày thanh toán (giờ + ngày), Người nhận (tên + SĐT che bớt \"xxxx 1234\" + tỉnh/thành), Trạng thái (tên kênh: MoMo/Chuyển khoản/Tiền mặt), Phí dịch vụ (số ÂM — toàn bộ phí ship của đơn), Đã thanh toán (số DƯƠNG nếu GHN đã xác nhận, 0 nếu chưa), Chưa thanh toán (số ÂM nếu GHN chưa xác nhận, 0 nếu đã xong).",
-            "Đơn đã confirmed (đại lý đã duyệt) nhưng SAU ĐÓ phát sinh thêm phí (phí hoàn hàng/phụ phí đổi địa chỉ — xem SHOP-ORDER-56) mà phần phát sinh đó CHƯA được duyệt lại → ngay dưới \"Mã đơn\" hiện thêm 1 badge nhỏ màu vàng \"⚠️ Phí hoàn hàng chưa duyệt\" (nếu do trả hàng) hoặc \"⚠️ Phụ phí đổi địa chỉ chưa duyệt\" (nếu do đổi địa chỉ) — để Shop biết NGAY trên bảng chính lý do cột \"Chưa thanh toán\" của đơn đó khác 0 dù \"Trạng thái\" tổng thể vẫn là đơn đã thanh toán, không cần bấm vào xem breakdown mới biết.",
-            "Chỉ hiện đơn Shop TỰ TRẢ SHIP (tiền mặt/MoMo/chuyển khoản) của shop đang đăng nhập — đơn Khách trả ship (COD) không xuất hiện.",
-            "Bấm vào SỐ TIỀN ở cột \"Phí dịch vụ\" của 1 dòng bất kỳ → mở modal chi tiết: mã vận đơn ở header, dòng \"Người nhận\" (tên + giờ/ngày + SĐT che bớt + tỉnh/thành), tổng \"PHÍ DỊCH VỤ\" (số âm, to, đậm), rồi breakdown 5 hạng mục phí GHN THẬT (đúng những khoản đã tính khi tạo đơn ở CreateOrderDrawer): \"Phí giao hàng\", \"Phí bảo hiểm (khai giá)\", \"Phí giao trả 1 phần\", \"Phí giao thất bại thu tiền\", \"Phí thu hộ\" — cộng dồn 5 dòng này LUÔN đúng bằng tổng \"PHÍ DỊCH VỤ\". Bấm X hoặc click ra ngoài overlay để đóng."
+            "Các dòng sau, mỗi dòng 1 đơn: STT, Mã đơn (gạch chân xanh — có thể kèm badge cảnh báo ngay dưới, xem SHOP-ORDER-57), Ngày thanh toán (giờ + ngày), Người nhận (tên + SĐT che bớt \"xxxx 1234\" + tỉnh/thành), Trạng thái (tên kênh: MoMo/Chuyển khoản/Tiền mặt), Phí dịch vụ (số ÂM — toàn bộ phí ship hiệu lực của đơn, có thể bấm vào xem breakdown, xem SHOP-ORDER-58), Đã thanh toán (số DƯƠNG nếu đại lý đã xác nhận, 0 nếu chưa, có thể bấm vào xem breakdown kênh, xem SHOP-ORDER-59), Chưa thanh toán (số ÂM nếu Shop còn nợ thêm, số DƯƠNG nếu đại lý cần hoàn, 0 nếu đã xong).",
+            "Chỉ hiện đơn Shop TỰ TRẢ SHIP (tiền mặt/MoMo/chuyển khoản) của shop đang đăng nhập — đơn Khách trả ship (COD) không xuất hiện."
           ],
           "systemFlow": [
             "src/platforms/shop/pages/CashFlowReport.tsx, route cash-flow trong App.tsx, nav item trong ShopLayout.tsx.",
             "relevantOrders = loadOrders().filter(o => o.shopId === 'SHP001' && !!o.paymentApprovalStatus).sort(...) — sắp xếp theo paymentPaidAt giảm dần, KHÔNG nhóm theo ngày (bảng phẳng, khớp đúng dạng bảng đối soát thật).",
-            "rowAmounts(order): phiDichVu = -order.fee. Nếu chưa confirmed: daThanhToan = 0, chuaThanhToan = -order.fee. Nếu đã confirmed: daThanhToan = order.paymentApprovedAmount ?? order.fee (snapshot fee NGAY TẠI THỜI ĐIỂM đại lý duyệt — xem SHOP-ORDER-56), chuaThanhToan = -(order.fee - daThanhToan) nếu hiệu số dương, ngược lại 0 — tách riêng phần ĐÃ DUYỆT khỏi phần phí phát sinh SAU KHI duyệt (phí hoàn hàng/đổi địa chỉ) để không ngộ nhận gộp cả vào \"Đã thanh toán\" chỉ vì đơn đang ở trạng thái confirmed. Đơn chưa từng phát sinh thêm gì sau duyệt (đa số) có paymentApprovedAmount === fee → hành vi giống hệt bản nhị phân cũ, vẫn giữ đúng quy ước dấu: |phiDichVu| = daThanhToan + |chuaThanhToan|.",
+            "effectiveFee(order) (hàm DÙNG CHUNG công thức với Agency Admin CashRemittance.tsx): trả 0 nếu order.status === 'cancelled' && !order.cancelRefundConfirmedAt (đơn huỷ chưa hoàn — không còn nghĩa vụ phí ship nào), ngược lại trả đúng order.fee. rowAmounts(order): fee = effectiveFee(order), phiDichVu = -fee || 0 (|| 0 chuẩn hoá -0 thành 0). Nếu chưa confirmed: daThanhToan = 0, chuaThanhToan = -fee || 0. Nếu đã confirmed: daThanhToan = order.paymentApprovedAmount ?? fee (snapshot fee NGAY TẠI THỜI ĐIỂM đại lý duyệt — xem SHOP-ORDER-56), chuaThanhToan = -(fee - daThanhToan) || 0 — tách riêng phần ĐÃ DUYỆT khỏi phần phí/nghĩa vụ thay đổi SAU KHI duyệt (phí hoàn hàng/đổi địa chỉ TĂNG, phúc tra GIẢM, HOẶC đơn bị HUỶ — fee hiệu lực về 0) để không ngộ nhận gộp cả vào \"Đã thanh toán\" chỉ vì đơn đang ở trạng thái confirmed. Đơn chưa từng phát sinh/thay đổi gì sau duyệt (đa số) có paymentApprovedAmount === fee → hành vi giống hệt bản nhị phân cũ. Đây là NỀN TẢNG mà cả badge (SHOP-ORDER-57) lẫn 2 modal breakdown (SHOP-ORDER-58/59) đều dựa vào.",
             "Dòng \"Tổng\" = reduce cộng dồn 3 giá trị trên qua TOÀN BỘ relevantOrders (không phụ thuộc trang/phân trang).",
-            "pendingSurchargeLabel(order): trả null nếu đơn chưa confirmed hoặc fee - (paymentApprovedAmount ?? fee) <= 0 (không có gì phát sinh thêm); nếu có phát sinh → trả 'Phí hoàn hàng chưa duyệt' khi order.status === 'returning', 'Phụ phí đổi địa chỉ chưa duyệt' khi feeAddressChange > 0 (và không phải đang returning), hoặc 'Phát sinh thêm chưa duyệt' cho trường hợp còn lại không xác định được loại cụ thể. Badge CHỈ hiện khi hàm này trả về chuỗi khác null, render ngay dưới mã vận đơn ở cột \"Mã đơn\" (nền #FEF3C7, chữ #92400E, cùng tông với banner cảnh báo trễ hạn ở AGA-PAYMENT-3).",
             "handleExport(): dùng thư viện xlsx (đã có sẵn trong project, xem Shops.tsx/AgencyOrders.tsx), build headers + rows từ đúng dữ liệu đang hiển thị, XLSX.writeFile(...) tải file phi-dich-vu-{ngày}.xlsx — XUẤT FILE THẬT, không phải nút giả.",
             "maskedReceiver(order): che SĐT chỉ còn 4 số cuối (slice(-4)), lấy phần cuối cùng của receiverAddress (sau dấu phẩy cuối) làm \"tỉnh/thành\" hiển thị.",
-            "Không có tab \"Tiền thu hộ\" nào trong trang này (đã bỏ theo yêu cầu) — COD xem ở trang \"Đối soát\" (/shop/reconciliation) riêng.",
-            "Order (orderStore.ts) có thêm 5 field mới lưu ĐÚNG breakdown phí lúc tạo đơn: feeShipping, feeInsurance (phí bảo hiểm/khai giá), feePartial (phí giao trả 1 phần), feeDeliveryFail (phí giao thất bại thu tiền), feeCod (phí thu hộ) — trước đây các khoản này chỉ được TÍNH trong state cục bộ của CreateOrderDrawer/CreateLetterDrawer để hiện trên form, rồi CỘNG GỘP vào order.fee khi lưu, làm MẤT breakdown; giờ buildOrder() lưu riêng từng field luôn.",
-            "feeBreakdownRows(order) (CashFlowReport.tsx): trả về 7 dòng { label, amount } (5 khoản tính lúc tạo đơn + \"Phí trả hàng (hoàn hàng)\" = -(order.feeReturn ?? 0) + \"Phụ phí đổi địa chỉ\" = -(order.feeAddressChange ?? 0) — SHOP-ORDER-56 — cả 2 chỉ phát sinh SAU khi có sự kiện thật xảy ra, xem confirmReturnOrder()/confirmAddressChangeOrder(), Orders.tsx). Đơn CŨ không có field breakdown (feeShipping === undefined) → fallback \"Phí giao hàng\" = -(order.fee - (order.feeReturn ?? 0) - (order.feeAddressChange ?? 0)) — PHẢI trừ cả 2 khoản phát sinh sau ra trước vì order.fee đã cộng sẵn khi chúng xảy ra, nếu không sẽ bị đếm trùng 2 lần (bug feeReturn đã phát hiện và sửa qua UAT; áp dụng tương tự cho feeAddressChange).",
-            "Click vào số tiền cột \"Phí dịch vụ\" (onClick={() => setBreakdownOrder(order)}) mở modal; click overlay nền hoặc icon X đóng modal — state breakdownOrder reset về null.",
-            "declareCashRemittance(shopId, declaredBy) (orderStore.ts): trả về 1 CashRemittanceBatch (hoặc null nếu không có gì để khai) — đánh dấu cashRemittanceDeclaredAt (ISO timestamp) trên MỌI đơn paymentMethod === 'cash' đang pending_review HOẶC rejected của shop đó; đơn rejected được ĐỔI NGƯỢC về pending_review (xoá paymentApprovalRejectedReason) vì approveOrderPayment() chỉ nhận đơn pending_review — nếu không reset, đơn rejected sẽ kẹt vĩnh viễn không bao giờ duyệt lại được; ghi 1 dòng \"Báo đã chuyển tiền mặt cho đại lý\" vào Lịch sử thao tác của TỪNG đơn liên quan.",
-            "CashRemittanceBatch (orderStore.ts, kiểu MỚI): { id, shopId, declaredAt, declaredBy, totalAmount, orderIds } — id sinh kiểu YYMMDD + 5 ký tự ngẫu nhiên (generateRemittanceCode()), lưu vào localStorage key ghn_cash_remittance_batches_v1 qua loadRemittanceBatches(shopId)/saveRemittanceBatch() — ĐÂY LÀ LỊCH SỬ LỜI KHAI của Shop, KHÁC với lịch sử Agency đã duyệt (đọc paymentApprovalStatus của từng đơn trong orderIds để biết Agency đã duyệt hay chưa).",
-            "RemittanceModal (CashFlowReport.tsx, component MỚI): tự tính phiGiaoHang/noTon/tongTien từ dữ liệu LIVE (không nhận props số liệu) để luôn khớp đúng lúc mở modal; handleConfirm() gọi declareCashRemittance(), lưu kết quả vào state justDeclared để hiện banner xanh NGAY TRONG modal (không cần đóng/mở lại); handleViewDetail() tra trackingCode từng orderId trong batch rồi window.alert liệt kê. unpaidOrders/overdueOrders (và unremittedCashOrders ở component cha) đều lọc thêm && !o.cashRemittanceDeclaredAt — đơn đã khai rồi (đang chờ Agency đối chiếu) KHÔNG được tính lại vào khoản cần thanh toán, tránh khai trùng lặp vô hạn lần.",
-            "Bên Agency Admin (CashRemittance.tsx): StatusCell KHÔNG hiện bất kỳ dòng \"Shop báo đã chuyển...\" nào dù order.cashRemittanceDeclaredAt có giá trị hay không — Agency không dựa vào lời khai này để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi duyệt (xem AGA-PAYMENT-1 Notes). cashRemittanceDeclaredAt vẫn được ghi và dùng ở declareCashRemittance()/RemittanceModal phía Web Shop như mô tả ở trên — chỉ KHÔNG hiển thị gì thêm ở phía Agency Admin."
+            "Không có tab \"Tiền thu hộ\" nào trong trang này (đã bỏ theo yêu cầu) — COD xem ở trang \"Đối soát\" (/shop/reconciliation) riêng."
           ],
           "crossPlatformImpact": [
-            "Dữ liệu và quy ước hiển thị (nhóm theo ngày, 3 trạng thái, màu sắc) thống nhất với trang Duyệt thanh toán tiền mặt bên Agency Admin (AGA-PAYMENT-1) để 2 phía nhìn cùng ngôn ngữ dữ liệu."
+            "Dữ liệu và quy ước hiển thị (3 cột tiền, effectiveFee()/rowAmounts()) thống nhất với trang Duyệt thanh toán tiền mặt bên Agency Admin (AGA-PAYMENT-1/6) để 2 phía nhìn cùng ngôn ngữ dữ liệu."
           ],
           "acceptanceCriteria": [
             "AC1: Sidebar Web Shop có mục \"Báo cáo dòng tiền\", route /shop/cash-flow mở đúng trang, không lỗi console.",
             "AC2: Trang chỉ hiện nhãn \"Phí dịch vụ\" (gạch chân cam) — KHÔNG có tab \"Tiền thu hộ\" nào.",
             "AC3: Dòng \"Tổng\" hiện đúng tổng 3 cột tiền của toàn bộ đơn khớp bộ lọc shop; luôn thoả |Phí dịch vụ| = Đã thanh toán + |Chưa thanh toán|.",
-            "AC4: Đơn paymentApprovalStatus === 'confirmed' → \"Đã thanh toán\" > 0 (= order.paymentApprovedAmount, mặc định bằng order.fee nếu chưa từng phát sinh phí sau khi duyệt), \"Chưa thanh toán\" = 0 — TRỪ KHI đơn có phí phát sinh SAU thời điểm duyệt (phí hoàn hàng/đổi địa chỉ, xem SHOP-ORDER-56), khi đó \"Đã thanh toán\" giữ nguyên số đã duyệt, \"Chưa thanh toán\" < 0 bằng đúng phần phát sinh thêm.",
+            "AC4: Đơn paymentApprovalStatus === 'confirmed' → \"Đã thanh toán\" > 0 (= order.paymentApprovedAmount, mặc định bằng order.fee nếu chưa từng phát sinh phí sau khi duyệt), \"Chưa thanh toán\" = 0 — TRỪ KHI đơn có chênh lệch phát sinh sau duyệt (xem SHOP-ORDER-57 cho đầy đủ 2 chiều phát sinh/hoàn).",
             "AC5: Đơn paymentApprovalStatus !== 'confirmed' (pending_review/rejected) → \"Đã thanh toán\" = 0, \"Chưa thanh toán\" < 0 (= -order.fee).",
             "AC6: Cột \"Người nhận\" hiện SĐT che bớt dạng \"xxxx 1234\" (chỉ 4 số cuối) + tỉnh/thành — KHÔNG hiện SĐT đầy đủ.",
             "AC7: Bấm \"Tải file excel\" → tải thật 1 file .xlsx đúng dữ liệu đang hiển thị (STT/Mã đơn/Ngày/Người nhận/Trạng thái/3 cột tiền), không lỗi JS.",
-            "AC8: Đơn Khách trả ship (COD) không xuất hiện trong bảng.",
-            "AC9: Bấm vào số tiền cột \"Phí dịch vụ\" của 1 dòng → mở modal đúng mã vận đơn của dòng đó, tổng \"PHÍ DỊCH VỤ\" = đúng -order.fee, cộng dồn 5 dòng breakdown (Phí giao hàng/Phí bảo hiểm/Phí giao trả 1 phần/Phí giao thất bại thu tiền/Phí thu hộ) LUÔN khớp đúng 100% với tổng đó.",
-            "AC10: Bấm X hoặc click ra vùng overlay bên ngoài modal → modal đóng; mở lại với đơn khác → luôn hiện đúng dữ liệu đơn vừa bấm, không dính dữ liệu đơn trước.",
-            "AC11: Đơn tạo TRƯỚC khi có field feeShipping (dữ liệu cũ) → modal vẫn mở đúng, \"Phí giao hàng\" fallback = -order.fee (không phải 0/NaN), 4 dòng phụ phí còn lại = 0.",
-            "AC12: Nút \"Thanh toán cho đại lý\" hiện đúng tổng phí ship các đơn TIỀN MẶT pending_review HOẶC rejected (CHƯA có cashRemittanceDeclaredAt) của shop; disabled \"Không có đơn cần chuyển\" khi không còn đơn nào thoả điều kiện đó.",
-            "AC13: Modal \"Thanh toán hạn mức đã dùng\" hiện đúng \"Phí giao hàng\" (= tổng đơn pending_review chưa khai), \"Nợ tồn\" (= tổng đơn rejected chưa khai), \"Tổng tiền cần thanh toán\" = 2 dòng cộng lại; nút \"Xác nhận thanh toán\" disabled khi chưa tick checkbox HOẶC tổng = 0.",
-            "AC14: Sau khi bấm \"Xác nhận thanh toán\": banner xanh hiện NGAY trong modal (không cần đóng/mở lại), 1 card mới xuất hiện ở \"Lịch sử thanh toán\"; đơn rejected trong lô vừa khai được ĐƯA VỀ pending_review (xoá lý do từ chối) để Agency duyệt lại được.",
-            "AC15: Đóng rồi mở lại modal (hoặc nhìn nút ngoài trang) SAU KHI đã khai: các đơn vừa khai KHÔNG được tính lại vào \"Phí giao hàng\"/\"Nợ tồn\"/tổng tiền cần thanh toán nữa (dù vẫn đang pending_review, chưa được Agency duyệt) — Shop KHÔNG bấm \"Xác nhận thanh toán\" lặp lại được cho cùng 1 lô đơn (bug phát hiện qua UAT, xem Notes).",
-            "AC16: Sau khi Shop khai, Agency Admin (/agency-admin/cash-remittance) KHÔNG hiện thêm bất kỳ dòng \"Shop báo đã chuyển...\" nào — badge trạng thái (Chờ duyệt/⚠ Trễ N ngày) giữ nguyên như khi chưa khai, Agency vẫn phải tự đối chiếu sổ quỹ rồi bấm \"Duyệt shop này\" mới chuyển \"✓ Đã nhận tiền\".",
-            "AC17: Nếu Agency từ chối (rejectOrderPayment) 1 đơn đã từng được Shop khai trước đó → đơn quay về trạng thái \"chưa khai\" (cashRemittanceDeclaredAt bị xoá), xuất hiện LẠI trong \"Nợ tồn\" ở lần mở modal tiếp theo để Shop khai lại — không bị loại vĩnh viễn.",
-            "AC18: Đơn đã confirmed mà phát sinh thêm phí hoàn hàng/đổi địa chỉ CHƯA được duyệt lại (fee > paymentApprovedAmount) → hiện đúng badge vàng tương ứng (\"Phí hoàn hàng chưa duyệt\" nếu do trả hàng, \"Phụ phí đổi địa chỉ chưa duyệt\" nếu do đổi địa chỉ) ngay dưới mã vận đơn ở bảng chính; đơn KHÔNG có phát sinh gì thêm (đa số) hoặc đơn chưa từng confirmed → KHÔNG hiện badge nào."
+            "AC8: Đơn Khách trả ship (COD) không xuất hiện trong bảng."
           ],
           "notes": [
-            "Thêm mới (badge cảnh báo phát sinh chưa duyệt): trước đây, đơn confirmed có phí hoàn hàng/đổi địa chỉ phát sinh thêm chỉ lộ ra ở cột \"Chưa thanh toán\" bằng 1 con số thường (cùng màu/cỡ chữ các số khác) — Shop dễ bỏ sót nếu không tự bấm vào breakdown từng đơn. Đã thêm badge vàng \"⚠️ ...\" ngay dưới mã vận đơn (xem pendingSurchargeLabel()) để báo trước, không cần đổi màu cột số tiền (giữ nguyên theo yêu cầu, chỉ thêm badge).",
-            "Bug đã phát hiện qua UAT và sửa (phát hiện khi làm SHOP-SETTINGS-3, Tem QR): icon copy 'Mã thanh toán' ở cột 'Lịch sử thanh toán' dùng try { navigator.clipboard.writeText(batch.id) } catch { ... } — writeText() trả về Promise, lỗi quyền clipboard bị từ chối xảy ra BẤT ĐỒNG BỘ nên try/catch đồng bộ không bắt được, rơi thành unhandled promise rejection. Đã sửa thành navigator.clipboard.writeText(batch.id).catch(() => {}).",
             "Đây là BẢN LÀM LẠI (v2) sau khi đối chiếu với 1 ảnh UI thật của GHN (bảng \"Phí dịch vụ\" trong trang đối soát) — bản v1 trước đó (chip tổng + 4 tab lọc + badge theo đơn, nhóm theo ngày) đã bị thay thế hoàn toàn vì không khớp cách trình bày thật.",
             "Tab \"Tiền thu hộ\" (có ở bản tham khảo ban đầu) đã bị BỎ theo yêu cầu — trang này giờ CHỈ còn \"Phí dịch vụ\", không có cơ chế điều hướng/tab nào khác.",
-            "Sửa quan trọng (sau phản hồi \"phí phát sinh phải dựa theo phí GHN\"): bản đầu của modal breakdown dùng 6 nhãn phụ phí BỊA theo đúng chữ trong ảnh tham khảo (Phí trả hàng/Phí giao lại/Phí khai giá/Phí khuyến mãi/Phí đồng kiểm/Phí thu hồi chứng từ) nhưng gán cứng = 0, không map với dữ liệu thật nào. Đã sửa: bỏ hẳn 6 nhãn bịa đó, dùng ĐÚNG 5 hạng mục phí GHN thật mà form Tạo đơn (CreateOrderDrawer) đã có sẵn công thức tính (shopFeeFromPriceTable, checkbox Khai giá/Giao 1 phần/Giao thất bại thu tiền/Thu hộ) — đồng thời thêm field lưu persist các khoản này vào Order (trước đó chỉ tính rồi cộng gộp, không lưu riêng).",
-            "Quy ước dấu (Phí dịch vụ âm, Đã thanh toán dương, Chưa thanh toán âm) và dòng \"Tổng\" ở đầu bảng là MÔ PHỎNG đúng theo ảnh tham khảo thật — không phải quy ước tự nghĩ ra.",
+            "Quy ước dấu (Phí dịch vụ âm, Đã thanh toán dương, Chưa thanh toán âm/dương) và dòng \"Tổng\" ở đầu bảng là MÔ PHỎNG đúng theo ảnh tham khảo thật — không phải quy ước tự nghĩ ra.",
             "Cột \"Trạng thái\" trong ảnh gốc là LÝ DO NGOẠI LỆ GIAO HÀNG (hàng ngoại lệ/chuyển hoàn/hư hỏng) của 1 loại phí phát sinh khác hẳn — ở đây CỐ TÌNH đổi nghĩa thành KÊNH THANH TOÁN (MoMo/CK/Tiền mặt) để khớp với mô hình dữ liệu paymentApprovalStatus đang có, KHÔNG xây dựng tính năng \"phí phát sinh ngoại lệ\" mới (ngoài phạm vi).",
             "Trang này THAY THẾ vai trò hiển thị trạng thái thanh toán trước đây nằm ở cột \"Phí ship\" trong danh sách Đơn hàng — xem SHOP-ORDER-44 (đã bỏ badge khỏi danh sách đơn).",
             "PROTOTYPE THUẦN cho phần số liệu (đọc trực tiếp orderStore.ts) nhưng nút \"Tải file excel\" xuất file THẬT (dùng thư viện xlsx, không phải mock).",
             "Xem SHOP-ORDER-43 (vì sao MoMo/CK gần như luôn \"Đã thanh toán\" ngay), SHOP-ORDER-45 (Chi tiết đơn vẫn còn dòng \"Trạng thái {kênh}\" riêng, không bị ảnh hưởng).",
+            "Tách story (meta): effectiveFee()/rowAmounts() ở đây là 1 ĐIỂM DUY NHẤT mà SHOP-ORDER-57/58/59/60 đều phụ thuộc vào — sửa công thức ở story này (nếu cần) sẽ ảnh hưởng tới cả 4 story kia, cần test lại toàn bộ khi đổi.",
+            "Xem AGA-PAYMENT-1/6 (Agency Admin) — bảng tương đương bên phía đại lý, dùng chung công thức effectiveFee()/rowAmounts()."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-57",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Badge cảnh báo phát sinh thêm / cần hoàn tiền",
+          "status": "draft",
+          "userStory": "Là chủ shop, khi 1 đơn đã thanh toán xong nhưng SAU ĐÓ phát sinh thêm phí (hoàn hàng/đổi địa chỉ) hoặc được đại lý hoàn lại 1 phần (phí giảm/đơn huỷ), tôi muốn thấy ngay badge cảnh báo dưới mã vận đơn trong bảng chính, để biết lý do \"Chưa thanh toán\" khác 0 mà không cần bấm vào xem breakdown từng đơn mới biết.",
+          "userFlow": [
+            "Đơn đã confirmed (đại lý đã duyệt) nhưng SAU ĐÓ phát sinh thêm phí (phí hoàn hàng/phụ phí đổi địa chỉ — xem SHOP-ORDER-56) mà phần phát sinh đó CHƯA được duyệt lại → ngay dưới \"Mã đơn\" hiện thêm 1 badge nhỏ màu VÀNG \"⚠️ Phí hoàn hàng chưa duyệt\" (nếu do trả hàng) hoặc \"⚠️ Phụ phí đổi địa chỉ chưa duyệt\" (nếu do đổi địa chỉ).",
+            "Chiều NGƯỢC: đơn đã confirmed mà fee SAU ĐÓ giảm xuống dưới số đã duyệt (VD: đại lý phúc tra phát hiện phí thật thấp hơn lúc duyệt), HOẶC đơn bị HUỶ sau khi đã thanh toán → badge MÀU XANH DƯƠNG \"💙 Đại lý sẽ hoàn {X}đ\" (nêu đúng số tiền) — CÙNG 1 BADGE cho cả 2 nguyên nhân, không tách nhãn riêng cho đơn huỷ.",
+            "Badge xanh dương thuần thông báo — Shop KHÔNG có hành động nào ở đây; bên XỬ LÝ (xác nhận đã hoàn) là Agency Admin, xem AGA-PAYMENT-9/AGA-ORDER-29.",
+            "Đơn không có chênh lệch gì (đa số) → KHÔNG hiện badge nào."
+          ],
+          "systemFlow": [
+            "pendingSurchargeLabel(order) (CashFlowReport.tsx): trả null nếu đơn chưa confirmed hoặc extra = effectiveFee(order) - (paymentApprovedAmount ?? fee) bằng 0.",
+            "Nếu extra > 0 (Shop còn nợ thêm) → trả { label: 'Phí hoàn hàng chưa duyệt', tone: 'warn' } khi order.status === 'returning', { label: 'Phụ phí đổi địa chỉ chưa duyệt', tone: 'warn' } khi feeAddressChange > 0, hoặc { label: 'Phát sinh thêm chưa duyệt', tone: 'warn' } cho trường hợp còn lại.",
+            "Nếu extra < 0 (đại lý cần hoàn — DÙ do phúc tra phí giảm HAY do đơn bị huỷ, GỘP CHUNG cùng 1 nhánh, không tách nhãn riêng cho đơn huỷ) → trả { label: 'Đại lý sẽ hoàn {X}đ', tone: 'info' } với X = -extra.",
+            "Badge CHỈ hiện khi hàm này trả khác null, render ngay dưới mã vận đơn ở cột \"Mã đơn\" — tone: 'warn' tô vàng (#FEF3C7/#92400E, icon ⚠️, cùng tông banner cảnh báo trễ hạn ở AGA-PAYMENT-3), tone: 'info' tô xanh dương (#DBEAFE/#1D4ED8, icon 💙).",
+            "Đơn status: 'cancelled' tự rơi vào nhánh extra < 0 ở bước 3 nhờ effectiveFee() (SHOP-ORDER-55) coi fee hiệu lực = 0 cho đơn huỷ-chưa-hoàn — KHÔNG có nhánh if (order.status === 'cancelled') riêng nào trong pendingSurchargeLabel()."
+          ],
+          "crossPlatformImpact": [
+            "Nguyên nhân/màu badge khớp với các action xác nhận hoàn tiền bên Agency Admin (AGA-PAYMENT-9, AGA-ORDER-29) — Shop chỉ thấy, Agency Admin là bên xử lý."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Đơn đã confirmed mà phát sinh thêm phí hoàn hàng/đổi địa chỉ CHƯA được duyệt lại (fee > paymentApprovedAmount) → hiện đúng badge VÀNG tương ứng (\"Phí hoàn hàng chưa duyệt\" nếu do trả hàng, \"Phụ phí đổi địa chỉ chưa duyệt\" nếu do đổi địa chỉ) ngay dưới mã vận đơn ở bảng chính; đơn KHÔNG có phát sinh gì thêm (đa số) hoặc đơn chưa từng confirmed → KHÔNG hiện badge nào.",
+            "AC2: Đơn đã confirmed mà fee GIẢM xuống dưới paymentApprovedAmount → hiện badge XANH DƯƠNG \"💙 Đại lý sẽ hoàn {X}đ\" đúng số tiền chênh lệch ngay dưới mã vận đơn; cột \"Chưa thanh toán\" hiện đúng số DƯƠNG bằng số tiền đó (khác dấu với trường hợp Shop còn nợ thêm).",
+            "AC3: Đơn status: 'cancelled' mà paymentApprovalStatus: 'confirmed' CHƯA xác nhận hoàn (cancelRefundConfirmedAt rỗng) → hiện ĐÚNG badge xanh dương \"💙 Đại lý sẽ hoàn {X}đ\" GIỐNG HỆT trường hợp phí giảm (X = paymentApprovedAmount, toàn bộ số đã duyệt, vì effectiveFee() coi fee hiệu lực = 0) — KHÔNG có nhãn/badge riêng nào khác cho đơn huỷ; cột \"Phí dịch vụ\" hiện 0 (không phải số âm thật của order.fee)."
+          ],
+          "notes": [
+            "Thêm mới (badge cảnh báo phát sinh chưa duyệt): trước đây, đơn confirmed có phí hoàn hàng/đổi địa chỉ phát sinh thêm chỉ lộ ra ở cột \"Chưa thanh toán\" bằng 1 con số thường (cùng màu/cỡ chữ các số khác) — Shop dễ bỏ sót nếu không tự bấm vào breakdown từng đơn (SHOP-ORDER-58). Đã thêm badge vàng \"⚠️ ...\" ngay dưới mã vận đơn để báo trước, không cần đổi màu cột số tiền (giữ nguyên theo yêu cầu, chỉ thêm badge).",
+            "Thêm mới (chiều ngược — \"Đại lý sẽ hoàn\"): fee không chỉ TĂNG (phí hoàn hàng/đổi địa chỉ) mà còn có thể GIẢM sau khi đã duyệt (VD: phúc tra phát hiện phí thật thấp hơn). Trước đây chiều này hoàn toàn chưa được xử lý — rowAmounts() kẹp \"Chưa thanh toán\" về 0, khiến Shop không biết đại lý đang nợ lại mình 1 khoản. Đã bỏ kẹp, cho \"Chưa thanh toán\" hiện số DƯƠNG đúng khoản đó, kèm badge xanh dương \"💙 Đại lý sẽ hoàn {X}đ\".",
+            "Mở rộng (đơn huỷ-đã-thanh-toán dùng CHUNG đúng nhánh này, không tách riêng): đơn cancelled mà confirmed chưa hoàn (xem AGA-ORDER-29) CŨNG cần đại lý hoàn tiền — ban đầu định làm badge/nhãn riêng (\"(đơn huỷ)\"), nhưng theo phản hồi trực tiếp đã sửa lại: dùng NGAY nhánh \"Đại lý sẽ hoàn\" sẵn có thông qua effectiveFee() (SHOP-ORDER-55) — không viết thêm nhãn/màu riêng nào. Nhờ vậy badge cho đơn huỷ và đơn-phí-giảm trông Y HỆT nhau, đúng tinh thần \"đồng bộ UI\" đã yêu cầu.",
+            "Xem AGA-PAYMENT-9 (Agency Admin xác nhận đã hoàn khi phí giảm), AGA-ORDER-29 (Agency Admin xác nhận đã hoàn khi huỷ đơn), SHOP-ORDER-56 (nguồn gốc phụ phí đổi địa chỉ), SHOP-ORDER-55 (bảng chính + effectiveFee()/rowAmounts() mà badge này phụ thuộc vào)."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-58",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Modal breakdown \"Phí dịch vụ\"",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn bấm vào số tiền \"Phí dịch vụ\" của 1 đơn để xem rõ phí đó gồm những khoản phí GHN thật nào (giao hàng/bảo hiểm/giao trả 1 phần/giao thất bại thu tiền/thu hộ/trả hàng/đổi địa chỉ), để đối chiếu đúng với lúc tạo đơn thay vì phải tin suông 1 con số không rõ cấu thành.",
+          "userFlow": [
+            "Bấm vào SỐ TIỀN ở cột \"Phí dịch vụ\" của 1 dòng bất kỳ → mở modal: mã vận đơn ở header, dòng \"Người nhận\" (tên + giờ/ngày + SĐT che bớt + tỉnh/thành), tổng \"PHÍ DỊCH VỤ\" (số âm, to, đậm).",
+            "Rồi breakdown 5 hạng mục phí GHN THẬT (đúng những khoản đã tính khi tạo đơn ở CreateOrderDrawer): \"Phí giao hàng\", \"Phí bảo hiểm (khai giá)\", \"Phí giao trả 1 phần\", \"Phí giao thất bại thu tiền\", \"Phí thu hộ\" — cộng dồn 5 dòng này LUÔN đúng bằng tổng \"PHÍ DỊCH VỤ\".",
+            "Nếu đơn có phát sinh phí hoàn hàng hoặc đổi địa chỉ sau khi tạo (xem SHOP-ORDER-56) → breakdown có thêm dòng \"Phí trả hàng (hoàn hàng)\" và/hoặc \"Phụ phí đổi địa chỉ\".",
+            "Bấm X hoặc click ra ngoài overlay để đóng."
+          ],
+          "systemFlow": [
+            "Order (orderStore.ts) có thêm 5 field lưu ĐÚNG breakdown phí lúc tạo đơn: feeShipping, feeInsurance (phí bảo hiểm/khai giá), feePartial (phí giao trả 1 phần), feeDeliveryFail (phí giao thất bại thu tiền), feeCod (phí thu hộ) — trước đây các khoản này chỉ được TÍNH trong state cục bộ của CreateOrderDrawer/CreateLetterDrawer để hiện trên form, rồi CỘNG GỘP vào order.fee khi lưu, làm MẤT breakdown; giờ buildOrder() lưu riêng từng field luôn.",
+            "feeBreakdownRows(order) (CashFlowReport.tsx): trả về 7 dòng { label, amount } (5 khoản tính lúc tạo đơn + \"Phí trả hàng (hoàn hàng)\" = -(order.feeReturn ?? 0) + \"Phụ phí đổi địa chỉ\" = -(order.feeAddressChange ?? 0) — SHOP-ORDER-56 — cả 2 chỉ phát sinh SAU khi có sự kiện thật xảy ra, xem confirmReturnOrder()/confirmAddressChangeOrder(), Orders.tsx).",
+            "Đơn CŨ không có field breakdown (feeShipping === undefined) → fallback \"Phí giao hàng\" = -(order.fee - (order.feeReturn ?? 0) - (order.feeAddressChange ?? 0)) — PHẢI trừ cả 2 khoản phát sinh sau ra trước vì order.fee đã cộng sẵn khi chúng xảy ra, nếu không sẽ bị đếm trùng 2 lần (bug feeReturn đã phát hiện và sửa qua UAT; áp dụng tương tự cho feeAddressChange).",
+            "Click vào số tiền cột \"Phí dịch vụ\" (onClick={() => setBreakdownOrder(order)}) mở FeeBreakdownModal; click overlay nền hoặc icon X đóng modal — state breakdownOrder reset về null."
+          ],
+          "crossPlatformImpact": [
+            "Modal này được PORT sang Agency Admin (CashRemittance.tsx, màn \"Chi tiết\" shop — AGA-PAYMENT-6) dùng chung đúng công thức feeBreakdownRows()."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm vào số tiền cột \"Phí dịch vụ\" của 1 dòng → mở modal đúng mã vận đơn của dòng đó, tổng \"PHÍ DỊCH VỤ\" = đúng -order.fee (hoặc -effectiveFee(order) nếu đã huỷ-chưa-hoàn — xem SHOP-ORDER-57), cộng dồn các dòng breakdown LUÔN khớp đúng 100% với tổng đó.",
+            "AC2: Bấm X hoặc click ra vùng overlay bên ngoài modal → modal đóng; mở lại với đơn khác → luôn hiện đúng dữ liệu đơn vừa bấm, không dính dữ liệu đơn trước.",
+            "AC3: Đơn tạo TRƯỚC khi có field feeShipping (dữ liệu cũ) → modal vẫn mở đúng, \"Phí giao hàng\" fallback = -order.fee (không phải 0/NaN), 4 dòng phụ phí còn lại = 0."
+          ],
+          "notes": [
+            "Sửa quan trọng (sau phản hồi \"phí phát sinh phải dựa theo phí GHN\"): bản đầu của modal breakdown dùng 6 nhãn phụ phí BỊA theo đúng chữ trong ảnh tham khảo (Phí trả hàng/Phí giao lại/Phí khai giá/Phí khuyến mãi/Phí đồng kiểm/Phí thu hồi chứng từ) nhưng gán cứng = 0, không map với dữ liệu thật nào. Đã sửa: bỏ hẳn 6 nhãn bịa đó, dùng ĐÚNG 5 hạng mục phí GHN thật mà form Tạo đơn (CreateOrderDrawer) đã có sẵn công thức tính (shopFeeFromPriceTable, checkbox Khai giá/Giao 1 phần/Giao thất bại thu tiền/Thu hộ) — đồng thời thêm field lưu persist các khoản này vào Order (trước đó chỉ tính rồi cộng gộp, không lưu riêng).",
+            "Modal này HOÀN TOÀN KHÁC modal breakdown \"Đã thanh toán\" (xem SHOP-ORDER-59) — đây là breakdown CẤU THÀNH PHÍ, còn SHOP-ORDER-59 là breakdown KÊNH THANH TOÁN, dù cả 2 cùng style click-số-để-mở-modal.",
+            "Xem SHOP-ORDER-56 (nguồn gốc 2 dòng phụ phí phát sinh sau khi tạo đơn: trả hàng/đổi địa chỉ), SHOP-ORDER-55 (bảng chính nơi cột \"Phí dịch vụ\" này nằm)."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-59",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Modal breakdown \"Đã thanh toán\" (kênh thanh toán)",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn bấm vào số tiền \"Đã thanh toán\" của 1 đơn để xem rõ khoản đó được thanh toán qua kênh nào (tiền mặt/MoMo/chuyển khoản...), giống đúng popup \"ĐÃ THANH TOÁN\" thật của GHN, thay vì chỉ thấy 1 con số không rõ nguồn.",
+          "userFlow": [
+            "Bấm vào SỐ TIỀN ở cột \"Đã thanh toán\" của 1 dòng bất kỳ → mở modal KHÁC hẳn modal \"Phí dịch vụ\" (breakdown KÊNH THANH TOÁN, không phải breakdown phí): mã vận đơn ở header, tổng \"ĐÃ THANH TOÁN\" (số dương, to, đậm).",
+            "Rồi breakdown 5 kênh: \"Cấn bằng COD\", \"Thanh toán qua ví\", \"Tiền mặt thu người nhận\", \"Tiền mặt thu người gửi\", \"Thanh toán qua ck ngân hàng\" — ĐÚNG 1 dòng khớp kênh thanh toán thật của đơn (paymentMethod) bằng toàn bộ số đã thanh toán, 4 dòng còn lại luôn = 0.",
+            "Bấm X hoặc click ra ngoài overlay để đóng."
+          ],
+          "systemFlow": [
+            "paymentBreakdownRows(order) + PaymentBreakdownModal (CashFlowReport.tsx) — breakdown KÊNH THANH TOÁN (khác hẳn feeBreakdownRows, vốn là breakdown PHÍ): paid = paymentApprovalStatus === 'confirmed' ? (paymentApprovedAmount ?? fee) : 0; trả 5 dòng { label, amount } — \"Cấn bằng COD\" LUÔN 0 (prototype không có khái niệm thu hộ COD bù trừ phí ship), \"Thanh toán qua ví\" = paid nếu paymentMethod === 'momo' else 0, \"Tiền mặt thu người nhận\" LUÔN 0 (không có khái niệm người NHẬN trả tiền mặt phí ship), \"Tiền mặt thu người gửi\" = paid nếu paymentMethod === 'cash' else 0, \"Thanh toán qua ck ngân hàng\" = paid nếu paymentMethod === 'bank_transfer' else 0 — ĐÚNG 1 dòng khớp paymentMethod của đơn sẽ khác 0, 4 dòng còn lại luôn 0 (prototype chỉ có 1 field paymentMethod duy nhất mỗi đơn, không mô phỏng thanh toán 1 phần qua nhiều kênh cùng lúc).",
+            "Click vào số cột \"Đã thanh toán\" (onClick={() => setPaymentBreakdownOrder(order)}) mở PaymentBreakdownModal; trước đây span này đã có sẵn textDecoration: 'underline' (trông như link) nhưng KHÔNG có onClick nào — dead UI affordance, phát hiện khi đối chiếu với 1 ảnh tham khảo UI thật của GHN cho đúng popup \"ĐÃ THANH TOÁN\" này.",
+            "Click overlay nền hoặc icon X đóng modal — state paymentBreakdownOrder reset về null."
+          ],
+          "crossPlatformImpact": [
+            "Modal này được PORT sang Agency Admin (CashRemittance.tsx, màn \"Chi tiết\" shop — AGA-PAYMENT-6) dùng chung đúng công thức/breakdown này."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Bấm vào số tiền cột \"Đã thanh toán\" của 1 dòng → mở modal \"ĐÃ THANH TOÁN\" (KHÁC modal \"Phí dịch vụ\") đúng mã vận đơn của dòng đó, tổng = đúng a.daThanhToan, breakdown 5 kênh thanh toán — ĐÚNG 1 dòng khớp paymentMethod của đơn bằng toàn bộ số đã thanh toán, 4 dòng còn lại = 0.",
+            "AC2: Bấm X hoặc click ra vùng overlay bên ngoài modal → modal đóng; mở lại với đơn khác → luôn hiện đúng dữ liệu đơn vừa bấm, không dính dữ liệu đơn trước."
+          ],
+          "notes": [
+            "Thêm mới (hoàn thiện 1 UI affordance bỏ dở từ trước): cột \"Đã thanh toán\" đã có sẵn style textDecoration: 'underline' từ trước (trông giống hệt link như cột \"Phí dịch vụ\") nhưng CHƯA TỪNG có onClick — bấm vào không có phản ứng gì. Phát hiện khi đối chiếu với 1 ảnh chụp UI thật của GHN cho đúng popup này (header mã vận đơn, \"Người nhận\", tổng \"ĐÃ THANH TOÁN\" to đậm, breakdown 5 kênh). Đã thêm paymentBreakdownRows()/PaymentBreakdownModal hoàn thiện đúng affordance đó.",
+            "Modal này sau đó được PORT sang Agency Admin (CashRemittance.tsx, màn \"Chi tiết\" shop) — xem AGA-PAYMENT-6 — dùng chung đúng công thức/breakdown này.",
+            "Xem SHOP-ORDER-58 (modal breakdown PHÍ — khái niệm hoàn toàn khác, đừng nhầm 2 modal này với nhau), SHOP-ORDER-55 (bảng chính nơi cột \"Đã thanh toán\" này nằm)."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-60",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Nút \"Thanh toán cho đại lý\" (khai đã chuyển tiền mặt)",
+          "status": "draft",
+          "userStory": "Là chủ shop, sau khi đã chuyển tiền mặt phí ship cho đại lý ngoài hệ thống, tôi muốn khai lại trong hệ thống, để đại lý tiện đối chiếu và để các đơn từng bị từ chối có cơ hội được duyệt lại thay vì kẹt vĩnh viễn.",
+          "userFlow": [
+            "Góc phải trang: nút \"Thanh toán cho đại lý (Xđ)\" (nền xanh navy) — X là tổng phí ship các đơn TIỀN MẶT đang pending_review HOẶC rejected (\"Nợ tồn\") của shop này, CHƯA từng khai. Không có đơn nào cần chuyển → nút disabled, label \"Không có đơn cần chuyển\".",
+            "Bấm nút → mở modal \"Thanh toán hạn mức đã dùng\", cột TRÁI (cột phải \"Lịch sử thanh toán\" xem SHOP-ORDER-61): chip trạng thái \"⏱ Chưa thanh toán\" (xám); dòng \"Phí giao hàng (Đơn hàng đã bàn giao/ Hoàn tất) [Tải danh sách đơn]\" (link cam, xuất file riêng danh sách đơn cần trả) = tổng đơn pending_review; dòng \"Nợ tồn\" = tổng đơn rejected; \"Tổng tiền cần thanh toán\" (cam, đậm, to) = 2 dòng trên cộng lại; ghi chú nhắc đọc kỹ; checkbox \"Tôi đã đọc, hiểu và chấp nhận điều khoản thanh toán của GHN\" (BẮT BUỘC tick mới bấm được nút); nút \"Xác nhận thanh toán\" (cam, disabled nếu chưa tick hoặc tổng = 0).",
+            "Bấm \"Xác nhận thanh toán\" → gọi declareCashRemittance(), hiện banner xanh \"✓ Đã gửi yêu cầu thanh toán Xđ cho đại lý — mã ...\" ngay trong modal; đơn đang rejected (\"Nợ tồn\") được ĐƯA VỀ pending_review để Agency duyệt lại được (không kẹt mãi).",
+            "Đóng rồi mở lại modal (hoặc nhìn nút ngoài trang): các đơn vừa khai KHÔNG được tính lại vào khoản cần thanh toán nữa — không khai trùng được cùng 1 lô đơn.",
+            "Nếu Agency sau đó từ chối lại 1 đơn đã từng khai → đơn quay về \"chưa khai\", xuất hiện LẠI trong \"Nợ tồn\" ở lần mở modal tiếp theo để Shop khai lại.",
+            "Agency Admin (trang \"Duyệt thanh toán\") KHÔNG hiện thêm bất kỳ gợi ý nào về việc Shop đã khai hay chưa — Agency tự dựa vào số ngày trễ rồi tự đối chiếu sổ quỹ thật trước khi duyệt, không dựa vào lời khai này để tin."
+          ],
+          "systemFlow": [
+            "declareCashRemittance(shopId, declaredBy) (orderStore.ts): trả về 1 CashRemittanceBatch (hoặc null nếu không có gì để khai) — đánh dấu cashRemittanceDeclaredAt (ISO timestamp) trên MỌI đơn paymentMethod === 'cash' đang pending_review HOẶC rejected của shop đó; đơn rejected được ĐỔI NGƯỢC về pending_review (xoá paymentApprovalRejectedReason) vì approveOrderPayment() chỉ nhận đơn pending_review — nếu không reset, đơn rejected sẽ kẹt vĩnh viễn không bao giờ duyệt lại được; ghi 1 dòng \"Báo đã chuyển tiền mặt cho đại lý\" vào Lịch sử thao tác của TỪNG đơn liên quan.",
+            "CashRemittanceBatch (orderStore.ts, kiểu dữ liệu riêng): { id, shopId, declaredAt, declaredBy, totalAmount, orderIds } — id sinh kiểu YYMMDD + 5 ký tự ngẫu nhiên (generateRemittanceCode()), lưu vào localStorage key ghn_cash_remittance_batches_v1 qua saveRemittanceBatch(). Đây là bản ghi mà SHOP-ORDER-61 đọc lại để liệt kê lịch sử.",
+            "RemittanceModal (CashFlowReport.tsx): tự tính phiGiaoHang/noTon/tongTien từ dữ liệu LIVE (không nhận props số liệu) để luôn khớp đúng lúc mở modal; handleConfirm() gọi declareCashRemittance(), lưu kết quả vào state justDeclared để hiện banner xanh NGAY TRONG modal (không cần đóng/mở lại).",
+            "unpaidOrders/overdueOrders (và unremittedCashOrders ở component cha) đều lọc thêm && !o.cashRemittanceDeclaredAt — đơn đã khai rồi (đang chờ Agency đối chiếu) KHÔNG được tính lại vào khoản cần thanh toán, tránh khai trùng lặp vô hạn lần.",
+            "rejectOrderPayment() (Agency Admin) XOÁ cashRemittanceDeclaredAt khi từ chối 1 đơn đã từng được khai — nếu không xoá, đơn bị từ chối sau khi đã khai 1 lần sẽ bị loại vĩnh viễn khỏi \"cần thanh toán\" dù Agency chưa thực sự nhận tiền.",
+            "Bên Agency Admin (CashRemittance.tsx): StatusCell KHÔNG hiện bất kỳ dòng \"Shop báo đã chuyển...\" nào dù order.cashRemittanceDeclaredAt có giá trị hay không — Agency không dựa vào lời khai này để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi duyệt (xem AGA-PAYMENT-1 Notes)."
+          ],
+          "crossPlatformImpact": [
+            "Lời khai của Shop ảnh hưởng trực tiếp tới danh sách đơn pending_review/rejected bên Agency Admin (AGA-PAYMENT-1/2) — đơn rejected được đưa về pending_review khi Shop khai lại."
+          ],
+          "acceptanceCriteria": [
+            "AC1: Nút \"Thanh toán cho đại lý\" hiện đúng tổng phí ship các đơn TIỀN MẶT pending_review HOẶC rejected (CHƯA có cashRemittanceDeclaredAt) của shop; disabled \"Không có đơn cần chuyển\" khi không còn đơn nào thoả điều kiện đó.",
+            "AC2: Modal \"Thanh toán hạn mức đã dùng\" (cột trái) hiện đúng \"Phí giao hàng\" (= tổng đơn pending_review chưa khai), \"Nợ tồn\" (= tổng đơn rejected chưa khai), \"Tổng tiền cần thanh toán\" = 2 dòng cộng lại; nút \"Xác nhận thanh toán\" disabled khi chưa tick checkbox HOẶC tổng = 0.",
+            "AC3: Sau khi bấm \"Xác nhận thanh toán\": banner xanh hiện NGAY trong modal (không cần đóng/mở lại); đơn rejected trong lô vừa khai được ĐƯA VỀ pending_review (xoá lý do từ chối) để Agency duyệt lại được.",
+            "AC4: Đóng rồi mở lại modal (hoặc nhìn nút ngoài trang) SAU KHI đã khai: các đơn vừa khai KHÔNG được tính lại vào \"Phí giao hàng\"/\"Nợ tồn\"/tổng tiền cần thanh toán nữa (dù vẫn đang pending_review, chưa được Agency duyệt) — Shop KHÔNG bấm \"Xác nhận thanh toán\" lặp lại được cho cùng 1 lô đơn.",
+            "AC5: Sau khi Shop khai, Agency Admin (/agency-admin/cash-remittance) KHÔNG hiện thêm bất kỳ dòng \"Shop báo đã chuyển...\" nào — badge trạng thái (Chờ duyệt/⚠ Trễ N ngày) giữ nguyên như khi chưa khai, Agency vẫn phải tự đối chiếu sổ quỹ rồi bấm \"Duyệt shop này\" mới chuyển \"✓ Đã nhận tiền\".",
+            "AC6: Nếu Agency từ chối (rejectOrderPayment) 1 đơn đã từng được Shop khai trước đó → đơn quay về trạng thái \"chưa khai\" (cashRemittanceDeclaredAt bị xoá), xuất hiện LẠI trong \"Nợ tồn\" ở lần mở modal tiếp theo để Shop khai lại — không bị loại vĩnh viễn."
+          ],
+          "notes": [
+            "Bug đã phát hiện qua UAT và sửa (v3 — modal \"Thanh toán hạn mức đã dùng\"): bản đầu của unpaidOrders/overdueOrders/unremittedCashOrders chỉ lọc theo paymentApprovalStatus, KHÔNG loại trừ đơn đã có cashRemittanceDeclaredAt — khiến Shop xác nhận thanh toán xong, đóng rồi mở lại modal vẫn thấy y nguyên số tiền cũ và có thể bấm \"Xác nhận thanh toán\" lặp lại vô hạn lần cho cùng 1 lô đơn chưa được Agency duyệt (tạo nhiều CashRemittanceBatch trùng lặp cho cùng 1 khoản nợ). Đã sửa: thêm điều kiện !o.cashRemittanceDeclaredAt vào cả 3 chỗ lọc trên. Đồng thời sửa rejectOrderPayment() để XOÁ cashRemittanceDeclaredAt khi Agency từ chối (cùng dạng lỗi \"kẹt vĩnh viễn\" như bug rejected đã sửa ở AGA-PAYMENT-1).",
             "Nút \"Thanh toán cho đại lý\" chỉ áp dụng cho TIỀN MẶT — MoMo/Chuyển khoản tự \"Đã nhận\" ngay từ lúc tạo đơn (xem SHOP-ORDER-43), không có gì để Shop \"khai\" thêm, nên không tính vào unremittedCashOrders.",
             "Đây là lời khai TỰ NGUYỆN, một chiều — không có cơ chế nào bắt Shop phải bấm nút này trước khi Agency duyệt; Agency vẫn có thể tự chủ động \"Duyệt shop này\" (AGA-PAYMENT-2) bất cứ lúc nào mà không cần chờ Shop khai trước.",
-            "Xem AGA-PAYMENT-1/2 (Agency Admin) để biết cách Agency nhìn thấy và xử lý lời khai này.",
-            "Thay đổi (bỏ hint \"Shop báo đã chuyển\" bên Agency Admin): trước đây Agency Admin (CashRemittance.tsx) hiện thêm dòng \"💬 Shop báo đã chuyển lúc...\" khi đơn có cashRemittanceDeclaredAt — đã BỎ theo yêu cầu (xem AGA-PAYMENT-1 Notes): Agency không cần \"thông báo\" kiểu Shop tự khai để tin, mà tự dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật. Cơ chế khai của Shop ở trang này (nút \"Thanh toán cho đại lý\", declareCashRemittance(), \"Lịch sử thanh toán\") KHÔNG đổi gì — Shop vẫn khai bình thường, chỉ là lời khai đó không còn hiển thị gì thêm ở phía Agency Admin nữa.",
-            "Bug đã phát hiện qua UAT và sửa (v3 — modal \"Thanh toán hạn mức đã dùng\"): bản đầu của unpaidOrders/overdueOrders/unremittedCashOrders chỉ lọc theo paymentApprovalStatus, KHÔNG loại trừ đơn đã có cashRemittanceDeclaredAt — khiến Shop xác nhận thanh toán xong, đóng rồi mở lại modal vẫn thấy y nguyên số tiền cũ và có thể bấm \"Xác nhận thanh toán\" lặp lại vô hạn lần cho cùng 1 lô đơn chưa được Agency duyệt (tạo nhiều CashRemittanceBatch trùng lặp cho cùng 1 khoản nợ). Đã sửa: thêm điều kiện !o.cashRemittanceDeclaredAt vào cả 3 chỗ lọc trên. Đồng thời sửa rejectOrderPayment() để XOÁ cashRemittanceDeclaredAt khi Agency từ chối — nếu không xoá, đơn bị từ chối sau khi đã khai 1 lần sẽ bị loại vĩnh viễn khỏi \"cần thanh toán\" dù Agency chưa thực sự nhận tiền (cùng dạng lỗi \"kẹt vĩnh viễn\" như bug rejected đã sửa ở AGA-PAYMENT-1).",
-            "Cập nhật sau SHOP-ORDER-56 (phụ phí đổi địa chỉ phát sinh sau khi tạo đơn): phát hiện đơn đã confirmed mà phát sinh thêm phí (hoàn hàng/đổi địa chỉ) bị rowAmounts() cũ ngộ nhận gộp CẢ phần mới phát sinh vào \"Đã thanh toán\", dù đại lý chưa hề duyệt phần đó. Đã sửa bằng cách thêm field order.paymentApprovedAmount (snapshot fee tại đúng thời điểm duyệt, set ở MỌI nơi paymentApprovalStatus chuyển 'confirmed': approveOrderPayment() orderStore.ts, handlePaymentPaid()/handlePaymentPaidInDetail()/buildOrder() Orders.tsx) rồi tách rowAmounts() theo field này thay vì dùng thẳng order.fee. Xem chi tiết đầy đủ ở SHOP-ORDER-56."
+            "Thay đổi (bỏ hint \"Shop báo đã chuyển\" bên Agency Admin): trước đây Agency Admin (CashRemittance.tsx) hiện thêm dòng \"💬 Shop báo đã chuyển lúc...\" khi đơn có cashRemittanceDeclaredAt — đã BỎ theo yêu cầu (xem AGA-PAYMENT-1 Notes): Agency không cần \"thông báo\" kiểu Shop tự khai để tin, mà tự dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật. Cơ chế khai của Shop ở story này KHÔNG đổi gì — Shop vẫn khai bình thường, chỉ là lời khai đó không còn hiển thị gì thêm ở phía Agency Admin nữa.",
+            "Tách story: cột phải \"Lịch sử thanh toán\" trong CÙNG modal này được tách thành story riêng (SHOP-ORDER-61) vì có hành vi/bug riêng (copy mã, xem chi tiết) không phụ thuộc vào luồng khai nộp — 2 story cùng render trong 1 modal nhưng độc lập về mặt code (RemittanceModal 2 cột).",
+            "Xem AGA-PAYMENT-1/2 (Agency Admin) để biết cách Agency nhìn thấy và xử lý lời khai này; SHOP-ORDER-55 (bảng chính nơi nút này nằm)."
+          ]
+        },
+        {
+          "id": "SHOP-ORDER-61",
+          "jiraKey": "",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Cột \"Lịch sử thanh toán\"",
+          "status": "draft",
+          "userStory": "Là chủ shop, tôi muốn xem lại lịch sử các lần đã khai \"đã chuyển tiền mặt\" cho đại lý (mã, thời gian, tổng tiền, danh sách đơn), để tra cứu lại khi cần đối chiếu mà không phải nhớ hoặc hỏi lại đại lý.",
+          "userFlow": [
+            "Trong modal \"Thanh toán hạn mức đã dùng\" (mở từ nút \"Thanh toán cho đại lý\", xem SHOP-ORDER-60), cột PHẢI \"Lịch sử thanh toán\" liệt kê MỌI lần Shop đã bấm \"Xác nhận thanh toán\" trước đó (mới nhất lên đầu).",
+            "Mỗi card: chip xanh \"✓ Đã gửi yêu cầu thanh toán\", \"Mã thanh toán: {code}\" (kèm icon copy), \"Thời gian: dd/mm/yyyy hh:mm:ss\", \"Tổng tiền: Xđ\", nút \"Xem chi tiết\".",
+            "Bấm icon copy cạnh \"Mã thanh toán\" → copy mã vào clipboard.",
+            "Bấm \"Xem chi tiết\" → hiện danh sách mã vận đơn thuộc lô đó.",
+            "Vừa khai xong 1 lượt mới (SHOP-ORDER-60) → card mới xuất hiện NGAY đầu danh sách, không cần đóng/mở lại modal."
+          ],
+          "systemFlow": [
+            "loadRemittanceBatches(shopId) (orderStore.ts) đọc CashRemittanceBatch[] từ localStorage key ghn_cash_remittance_batches_v1 (ghi bởi declareCashRemittance(), xem SHOP-ORDER-60), lọc đúng shopId, sắp xếp declaredAt giảm dần.",
+            "Mỗi card đọc trực tiếp từ 1 CashRemittanceBatch: { id, declaredAt, totalAmount, orderIds } — ĐÂY LÀ LỊCH SỬ LỜI KHAI của Shop, KHÁC với lịch sử Agency đã duyệt (không đọc paymentApprovalStatus ở đây, chỉ hiện đúng những gì Shop đã khai, không phản ánh Agency đã duyệt hay chưa).",
+            "Icon copy: navigator.clipboard.writeText(batch.id).catch(() => {}).",
+            "handleViewDetail(batch): tra trackingCode từng orderId trong batch.orderIds (qua loadOrders()) rồi window.alert liệt kê — PROTOTYPE THUẦN, không mở modal/trang riêng.",
+            "State justDeclared ở RemittanceModal (component cha, SHOP-ORDER-60) khi có giá trị thì được PREPEND vào đầu danh sách batches hiển thị ở cột này — card mới hiện ngay, không cần re-fetch/đóng-mở modal."
+          ],
+          "crossPlatformImpact": [],
+          "acceptanceCriteria": [
+            "AC1: Cột \"Lịch sử thanh toán\" liệt kê đúng toàn bộ các lần Shop đã khai trước đó, mới nhất lên đầu; shop chưa khai lần nào → danh sách rỗng (không lỗi).",
+            "AC2: Mỗi card hiện đúng mã thanh toán, thời gian, tổng tiền khớp đúng CashRemittanceBatch tương ứng.",
+            "AC3: Bấm icon copy → mã thanh toán được copy vào clipboard, không phát sinh lỗi console (kể cả khi trình duyệt từ chối quyền clipboard).",
+            "AC4: Bấm \"Xem chi tiết\" → hiện đúng danh sách mã vận đơn thuộc lô đó, không thiếu/thừa đơn nào.",
+            "AC5: Sau khi khai 1 lượt mới ở cột trái (SHOP-ORDER-60), card tương ứng xuất hiện NGAY ở đầu cột \"Lịch sử thanh toán\" trong cùng modal, không cần đóng/mở lại."
+          ],
+          "notes": [
+            "Bug đã phát hiện qua UAT và sửa (phát hiện khi làm SHOP-SETTINGS-3, Tem QR): icon copy \"Mã thanh toán\" dùng try { navigator.clipboard.writeText(batch.id) } catch { ... } — writeText() trả về Promise, lỗi quyền clipboard bị từ chối xảy ra BẤT ĐỒNG BỘ nên try/catch đồng bộ không bắt được, rơi thành unhandled promise rejection. Đã sửa thành navigator.clipboard.writeText(batch.id).catch(() => {}).",
+            "PROTOTYPE THUẦN: \"Xem chi tiết\" chỉ window.alert liệt kê mã vận đơn — không có modal/trang chi tiết riêng, không xuất file.",
+            "Dữ liệu này ĐỘC LẬP với trạng thái Agency đã duyệt hay chưa — 1 batch đã khai xong vẫn hiện ở đây dù Agency sau đó duyệt, từ chối, hay chưa xử lý gì; muốn biết Agency đã duyệt chưa phải xem lại bảng chính (SHOP-ORDER-55, cột \"Đã thanh toán\"/\"Chưa thanh toán\"), không phải ở đây.",
+            "Xem SHOP-ORDER-60 (nơi tạo ra các CashRemittanceBatch mà cột này đọc lại), SHOP-ORDER-55 (bảng chính)."
           ]
         },
         {

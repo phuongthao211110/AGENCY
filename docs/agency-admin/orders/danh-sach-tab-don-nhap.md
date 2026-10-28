@@ -24,7 +24,7 @@ Là Agency Admin (Đại lý), tôi muốn xem tab "Đơn nháp" trong danh sác
 
 1. `AgencyOrders.tsx` dòng 2629: `ordersByTab.draft = orders.filter(o => o.status === 'pending' && !isPending247(o))` — `isPending247(o) = o.sendKind === 'letter' && o.dispatchStatus === 'pending_agency'` (dòng 2625). Tách 2 nhánh vì cùng `status: 'pending'` gốc nhưng ý nghĩa khác nhau: Hàng hoá `pending` = đơn thật sự còn "nháp"; Thư `pending` + `pending_agency` = đơn đã shop gửi, đang chờ đại lý chọn hub — nhánh này hiện ở tab "Chờ xử lý" riêng, không phải "Đơn nháp".
 2. Tab mặc định khi load trang: `useState('draft')` (dòng 2563).
-3. `isCancellable(o) = o.status === 'pending'` (dòng 89-91) — Đơn nháp và Chờ xử lý là 2 tab DUY NHẤT cho phép huỷ đơn theo cách này; đơn đã dispatch/đang giao không huỷ được nữa qua nút này.
+3. `isCancellable(o) = o.status === 'pending' || o.status === 'pickup'` (dòng 96-98 — đã mở rộng thêm `'pickup'`, áp dụng cho MỌI loại đơn không phân biệt carrier, xem [AGA-ORDER-23](./huy-don-trang-thai-da-tiep-nhan.md)) — Đơn nháp, Chờ xử lý, VÀ Chờ bàn giao giờ đều cho phép huỷ đơn theo cách này; chỉ đơn đã THỰC SỰ rời khỏi shop (`in_transit` trở đi) mới không huỷ được nữa qua nút này.
 4. Badge số đếm tab dùng `countColor: '#F59E0B'` (cam), icon `<FileOutlined />` (dòng 2668).
 5. **Phát hiện quan trọng — hiện KHÔNG có luồng tạo đơn nào đưa đơn mới vào tab này:**
    - Đơn Hàng hoá (`CreateOrderDrawer`, Web Shop) tạo đơn với `status: 'pickup'` NGAY LẬP TỨC (`Orders.tsx` dòng 1097), kèm `dispatchStatus: 'dispatched'`, `carrierCode: 'GHN'` — bỏ qua hẳn trạng thái `pending`, vào thẳng tab "Chờ bàn giao".
