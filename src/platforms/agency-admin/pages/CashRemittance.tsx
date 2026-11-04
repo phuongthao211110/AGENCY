@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { ConfigProvider } from 'antd'
-import { CheckOutlined, EyeOutlined, SearchOutlined, DownOutlined, ArrowLeftOutlined, CloseOutlined } from '@ant-design/icons'
+import { SearchOutlined, DownOutlined, ArrowLeftOutlined, CloseOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
-import { loadOrders, approveOrderPayment, confirmFeeRefund, confirmCancelRefund, loadRemittanceConfig, type Order } from '../../../mock-data/orderStore'
+import { loadOrders, confirmFeeRefund, confirmCancelRefund, isOrderCreationBlocked, isManuallyLocked, setManualLock, grantTemporaryUnlock, type Order } from '../../../mock-data/orderStore'
 import { loadShops, type Shop } from '../../../mock-data/shopStore'
 import { Pagination } from './AgencyOrders'
 
@@ -52,20 +52,17 @@ interface ShopCashStats {
   blocked: boolean
 }
 
-function buildShopStats(shop: Shop, relevantOrders: Order[], blockDays: number): ShopCashStats {
+function buildShopStats(shop: Shop, relevantOrders: Order[]): ShopCashStats {
   const orders = relevantOrders.filter(o => o.shopId === shop.id)
   const pending = orders.filter(o => o.paymentApprovalStatus === 'pending_review')
   const maxDays = pending.reduce((max, o) => Math.max(max, daysSince(o.paymentPaidAt)), 0)
   const pendingFeeTotal = pending.reduce((sum, o) => sum + o.fee, 0)
-  return { shop, orders, pending, pendingFeeTotal, maxDays, blocked: pending.length > 0 && maxDays >= blockDays }
-}
-
-function approveShop(stats: ShopCashStats): boolean {
-  if (stats.pending.length === 0) return false
-  const ok = window.confirm(`Duyệt ${stats.pending.length} đơn tiền mặt đang chờ của shop "${stats.shop.name}"? Thao tác này xác nhận ĐÃ THỰC NHẬN đủ tiền shop chuyển lên — nếu shop đang bị khoá tạo đơn, sẽ được mở lại ngay.`)
-  if (!ok) return false
-  for (const o of stats.pending) approveOrderPayment(o.id, CURRENT_AGENT)
-  return true
+  // Dùng ĐÚNG isOrderCreationBlocked() (orderStore.ts) làm NGUỒN DUY NHẤT — hàm đó đã tự tôn trọng
+  // cả ENFORCE_ORDER_CREATION_BLOCK (Giai đoạn 1: false = không khoá thật) lẫn cờ "Mở khoá tạm".
+  // KHÔNG tự tính riêng công thức maxDays >= blockDays ở đây nữa — làm vậy trước đây khiến Agency
+  // Admin thấy "Đã khoá tạo đơn" cho shop thực ra chưa hề bị khoá khi Giai đoạn 1 đang tắt khoá thật.
+  const blocked = isOrderCreationBlocked(shop.id)
+  return { shop, orders, pending, pendingFeeTotal, maxDays, blocked }
 }
 
 // Nhãn loại đơn nhỏ dưới mã vận đơn trong bảng Chi tiết — "📦 Hàng hoá" / "✉️ Thư".
@@ -323,11 +320,11 @@ function OrderFeeBreakdownModal({ order, onClose }: { order: Order; onClose: () 
 
 type DetailTab = 'all' | 'unpaid' | 'paid'
 
-// Màn Chi tiết — THAY HẲN modal cũ bằng 1 view full-trang (có nút "←" quay lại), đúng theo ảnh tham
-// khảo thật: header + badge trạng thái + nút "Đã nhận", 3 thẻ tổng quan, 3 tab Tất cả/Chưa/Đã thanh
-// toán, tìm kiếm theo mã đơn, bảng + phân trang riêng — mô phỏng lại ĐÚNG bố cục trang danh sách bên
-// ngoài nhưng thu hẹp phạm vi về 1 shop.
-function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; onBack: () => void; onApproved: () => void }) {
+// Màn Chi tiết — view full-trang (có nút "←" quay lại): header + badge trạng thái + nút "Mở khoá"
+// (khi đang bị khoá), 3 thẻ tổng quan, 3 tab Tất cả/Chưa/Đã thanh toán, tìm kiếm theo mã đơn, bảng +
+// phân trang riêng. KHÔNG còn nút duyệt tay — chuyển khoản đã tự xác nhận (xem confirmCashRemittance,
+// orderStore.ts), không còn gì để Agency Admin "nhận" thủ công ở đây nữa.
+function ShopDetailView({ stats, onBack, onChanged }: { stats: ShopCashStats; onBack: () => void; onChanged: () => void }) {
   const [tab, setTab] = useState<DetailTab>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -340,11 +337,23 @@ function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; o
   const confirmed = stats.orders.filter(o => o.paymentApprovalStatus === 'confirmed')
   const unpaid = stats.orders.filter(o => o.paymentApprovalStatus !== 'confirmed')
 
-  function handleApprove() {
-    if (approveShop(stats)) {
-      onApproved()
-      onBack()
-    }
+  // Gỡ ĐÚNG loại khoá đang áp dụng cho shop này — khoá thủ công (setManualLock) hoặc khoá tự động
+  // theo số ngày trễ (grantTemporaryUnlock) — xem handleToggleLock (danh sách) cho cùng logic.
+  function handleUnlockTemp() {
+    const ok = window.confirm(`Mở khoá tạo đơn cho shop "${stats.shop.name}"? Khoản nợ (nếu có) KHÔNG bị xoá, shop vẫn phải thanh toán như bình thường.`)
+    if (!ok) return
+    if (isManuallyLocked(stats.shop.id)) setManualLock(stats.shop.id, false, CURRENT_AGENT)
+    else grantTemporaryUnlock(stats.shop.id, CURRENT_AGENT)
+    onChanged()
+  }
+
+  // Chỉ cho khoá MỚI khi shop còn nợ (có đơn chưa thanh toán) — shop đã thanh toán hết thì không có
+  // lý do liên quan THANH TOÁN để khoá ở màn này nữa (xem handleToggleLock, danh sách, cùng quy tắc).
+  function handleLock() {
+    const ok = window.confirm(`Khoá tạo đơn cho shop "${stats.shop.name}"? Shop sẽ KHÔNG tạo được đơn hàng mới cho đến khi được mở khoá lại.`)
+    if (!ok) return
+    setManualLock(stats.shop.id, true, CURRENT_AGENT)
+    onChanged()
   }
 
   const byTab = tab === 'all' ? stats.orders : tab === 'unpaid' ? unpaid : confirmed
@@ -373,25 +382,38 @@ function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; o
           </div>
           <div style={{ fontSize: 13, color: C_TEXT_SECONDARY, marginTop: 2 }}>{stats.shop.id}</div>
         </div>
-        <button
-          onClick={handleApprove}
-          disabled={stats.pending.length === 0}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6,
-            border: 'none', cursor: stats.pending.length === 0 ? 'not-allowed' : 'pointer',
-            background: stats.pending.length === 0 ? '#D1D5DB' : '#16A34A', color: '#fff', fontSize: 13, fontWeight: 700,
-            whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-        >
-          <CheckOutlined /> Đã nhận
-        </button>
+        {stats.blocked ? (
+          <button
+            onClick={handleUnlockTemp}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6,
+              border: 'none', cursor: 'pointer',
+              background: '#16A34A', color: '#fff', fontSize: 13, fontWeight: 700,
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}
+          >
+            <UnlockOutlined /> Mở khoá
+          </button>
+        ) : stats.pending.length > 0 ? (
+          <button
+            onClick={handleLock}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6,
+              border: 'none', cursor: 'pointer',
+              background: '#DC2626', color: '#fff', fontSize: 13, fontWeight: 700,
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}
+          >
+            <LockOutlined /> Khoá
+          </button>
+        ) : null}
       </div>
 
       {/* Summary cards */}
       <div style={{ display: 'flex', gap: 12, padding: '0 16px 16px', flexShrink: 0 }}>
         <SummaryCard label="Tổng đơn hàng" value={String(stats.orders.length)} />
         <SummaryCard label="Tổng đơn hàng chưa thanh toán" value={String(unpaid.length)} color={unpaid.length > 0 ? '#DC2626' : undefined} />
-        <SummaryCard label="Tổng phí ship chưa thanh toán (đ)" value={unpaid.reduce((sum, o) => sum + o.fee, 0).toLocaleString('vi-VN')} color={unpaid.length > 0 ? '#DC2626' : undefined} />
+        <SummaryCard label="Tổng phí dịch vụ chưa thanh toán (đ)" value={unpaid.reduce((sum, o) => sum + o.fee, 0).toLocaleString('vi-VN')} color={unpaid.length > 0 ? '#DC2626' : undefined} />
       </div>
 
       {/* Tabs */}
@@ -492,7 +514,7 @@ function ShopDetailView({ stats, onBack, onApproved }: { stats: ShopCashStats; o
                   '0.8 0 0', 120, 'right'
                 )}
                 {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>{formatTime(order.paymentPaidAt)}</span>, '0.8 0 0', 120)}
-                {cell(<OrderStatusLine order={order} onRefunded={onApproved} />, '0.9 0 0', 150)}
+                {cell(<OrderStatusLine order={order} onRefunded={onChanged} />, '0.9 0 0', 150)}
               </div>
             )
           })}
@@ -536,15 +558,12 @@ export default function CashRemittance() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
-  const [selectedShopIds, setSelectedShopIds] = useState<Set<string>>(new Set())
   const [detailShopId, setDetailShopId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
 
   useEffect(() => { setPage(1) }, [activeTab, search, statusFilter])
-  useEffect(() => { setSelectedShopIds(new Set()) }, [activeTab])
 
-  const { blockDays } = loadRemittanceConfig(CURRENT_AGENCY_ID)
   const agencyShops = loadShops().filter(s => s.agencyId === CURRENT_AGENCY_ID)
   const orders = loadOrders()
   // Chỉ TIỀN MẶT — MoMo/Chuyển khoản tự "Đã nhận" ngay lúc tạo đơn (xem SHOP-ORDER-43), không bao
@@ -555,7 +574,7 @@ export default function CashRemittance() {
   // CHỈ hiện shop nào có ít nhất 1 đơn tiền mặt liên quan — shop chưa từng phát sinh đơn tiền mặt
   // không có gì để duyệt, không cần xuất hiện ở đây.
   const allStats = agencyShops
-    .map(shop => buildShopStats(shop, relevantOrders, blockDays))
+    .map(shop => buildShopStats(shop, relevantOrders))
     .filter(s => s.orders.length > 0)
 
   const pendingShops = allStats.filter(s => s.pending.length > 0)
@@ -581,39 +600,20 @@ export default function CashRemittance() {
   const safePage = Math.min(page, totalPages)
   const pagedRows = activeRows.slice((safePage - 1) * pageSize, safePage * pageSize)
 
-  function handleApproveShopRow(stats: ShopCashStats) {
-    if (approveShop(stats)) refresh()
-  }
-
-  function toggleSelect(shopId: string) {
-    setSelectedShopIds(prev => {
-      const next = new Set(prev)
-      if (next.has(shopId)) next.delete(shopId)
-      else next.add(shopId)
-      return next
-    })
-  }
-
-  const pagedPendingIds = pagedRows.map(s => s.shop.id)
-  const allPagedSelected = pagedPendingIds.length > 0 && pagedPendingIds.every(id => selectedShopIds.has(id))
-
-  function toggleSelectAllPaged() {
-    setSelectedShopIds(prev => {
-      const next = new Set(prev)
-      if (allPagedSelected) pagedPendingIds.forEach(id => next.delete(id))
-      else pagedPendingIds.forEach(id => next.add(id))
-      return next
-    })
-  }
-
-  function handleApproveSelected() {
-    const targets = pendingShops.filter(s => selectedShopIds.has(s.shop.id) && s.pending.length > 0)
-    if (targets.length === 0) return
-    const totalOrders = targets.reduce((sum, s) => sum + s.pending.length, 0)
-    const ok = window.confirm(`Duyệt tổng cộng ${totalOrders} đơn tiền mặt đang chờ của ${targets.length} shop đã chọn? Thao tác này xác nhận ĐÃ THỰC NHẬN đủ tiền từng shop chuyển lên.`)
-    if (!ok) return
-    for (const s of targets) for (const o of s.pending) approveOrderPayment(o.id, CURRENT_AGENT)
-    setSelectedShopIds(new Set())
+  // Chuyển khoản ngân hàng giờ được hệ thống tự xác nhận ngay (xem confirmCashRemittance,
+  // orderStore.ts), nên màn danh sách này không còn cần nút "Đã nhận"/chọn hàng loạt để duyệt tay
+  // nữa — việc còn lại Agency chủ động làm ở đây là khoá/mở khoá tạo đơn cho từng shop.
+  function handleToggleLock(stats: ShopCashStats) {
+    if (stats.blocked) {
+      const ok = window.confirm(`Mở khoá tạo đơn cho shop "${stats.shop.name}"?`)
+      if (!ok) return
+      if (isManuallyLocked(stats.shop.id)) setManualLock(stats.shop.id, false, CURRENT_AGENT)
+      else grantTemporaryUnlock(stats.shop.id, CURRENT_AGENT)
+    } else {
+      const ok = window.confirm(`Khoá tạo đơn cho shop "${stats.shop.name}"? Shop sẽ KHÔNG tạo được đơn hàng mới cho đến khi được mở khoá lại.`)
+      if (!ok) return
+      setManualLock(stats.shop.id, true, CURRENT_AGENT)
+    }
     refresh()
   }
 
@@ -624,7 +624,7 @@ export default function CashRemittance() {
   if (detailStats) {
     return (
       <ConfigProvider theme={agencyAdminTheme}>
-        <ShopDetailView stats={detailStats} onBack={() => setDetailShopId(null)} onApproved={refresh} />
+        <ShopDetailView stats={detailStats} onBack={() => setDetailShopId(null)} onChanged={refresh} />
       </ConfigProvider>
     )
   }
@@ -635,25 +635,25 @@ export default function CashRemittance() {
         {/* Page header */}
         <div style={{ padding: '12px 16px', flexShrink: 0 }}>
           <h1 style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, margin: 0, lineHeight: '28px' }}>
-            Duyệt thanh toán
+            Đối soát thanh toán
           </h1>
           <p style={{ fontSize: 14, color: C_TEXT_SECONDARY, margin: '4px 0 0', lineHeight: '20px' }}>
-            Đối soát và xác nhận phí ship shop phải chuyển cho đại lý
+            Theo dõi phí dịch vụ shop đã/chưa thanh toán và quản lý khoá tạo đơn
           </p>
         </div>
 
         {/* Summary cards */}
         <div style={{ display: 'flex', gap: 12, padding: '0 16px 16px', flexShrink: 0 }}>
           <SummaryCard label="Tổng đơn hàng chưa thanh toán" value={String(pendingOrders.length)} color={pendingOrders.length > 0 ? '#DC2626' : undefined} />
-          <SummaryCard label="Tổng phí ship chưa thanh toán (đ)" value={pendingOrders.reduce((sum, o) => sum + o.fee, 0).toLocaleString('vi-VN')} color={pendingOrders.length > 0 ? '#DC2626' : undefined} />
+          <SummaryCard label="Tổng phí dịch vụ chưa thanh toán (đ)" value={pendingOrders.reduce((sum, o) => sum + o.fee, 0).toLocaleString('vi-VN')} color={pendingOrders.length > 0 ? '#DC2626' : undefined} />
           <SummaryCard label="Shop bị khoá tạo đơn" value={`${blockedShopsCount} / ${allStats.length}`} />
         </div>
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, padding: '0 16px', flexShrink: 0 }}>
           {([
-            { key: 'pending' as const, label: 'Chờ xác nhận', count: pendingShops.length },
-            { key: 'confirmed' as const, label: 'Đã xác nhận', count: confirmedShops.length },
+            { key: 'pending' as const, label: 'Chưa thanh toán', count: pendingShops.length },
+            { key: 'confirmed' as const, label: 'Đã thanh toán', count: confirmedShops.length },
           ]).map(tab => (
             <div
               key={tab.key}
@@ -718,15 +718,6 @@ export default function CashRemittance() {
               style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: C_TEXT_PRIMARY, background: 'transparent' }}
             />
           </div>
-
-          {activeTab === 'pending' && selectedShopIds.size > 0 && (
-            <button
-              onClick={handleApproveSelected}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#16A34A', color: '#fff', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}
-            >
-              <CheckOutlined /> Duyệt {selectedShopIds.size} shop đã chọn
-            </button>
-          )}
         </div>
 
         {/* Table */}
@@ -734,35 +725,32 @@ export default function CashRemittance() {
           <div style={{ border: `1px solid ${C_BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
             {activeTab === 'pending' ? (
               <div style={{ display: 'flex', background: C_BG_HEADER }}>
-                {cell(<input type="checkbox" checked={allPagedSelected} onChange={toggleSelectAllPaged} style={{ cursor: 'pointer' }} />, '0.3 0 0', 40)}
-                {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Shop</span>, '1.6 0 0', 220)}
+                {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Shop</span>, '1.8 0 0', 220)}
                 {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Trạng thái</span>, '1 0 0', 150)}
                 {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Đơn hàng chưa thanh toán</span>, '1 0 0', 180, 'right')}
-                {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Phí ship chưa thanh toán (đ)</span>, '1.1 0 0', 190, 'right')}
-                {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Thao tác</span>, '1.3 0 0', 210)}
+                {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Phí dịch vụ chưa thanh toán (đ)</span>, '1.1 0 0', 190, 'right')}
+                {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Thao tác</span>, '1 0 0', 140)}
               </div>
             ) : (
               <div style={{ display: 'flex', background: C_BG_HEADER }}>
                 {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Shop</span>, '2 0 0', 220)}
                 {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Trạng thái</span>, '1 0 0', 160)}
-                {cell(<span style={{ fontSize: 13, color: C_TEXT_SECONDARY }}>Thao tác</span>, '1 0 0', 140)}
               </div>
             )}
 
             {pagedRows.length === 0 ? (
               <div style={{ padding: '32px 0', textAlign: 'center', color: C_TEXT_SECONDARY, fontSize: 14, borderTop: `1px solid ${C_BORDER}` }}>
-                {activeTab === 'pending' ? 'Không có shop nào đang chờ xác nhận' : 'Không có shop nào đã xác nhận'}
+                {activeTab === 'pending' ? 'Không có shop nào chưa thanh toán' : 'Không có shop nào đã thanh toán'}
               </div>
             ) : activeTab === 'pending' ? (
               pagedRows.map(stats => (
                 <div key={stats.shop.id} style={{ display: 'flex', alignItems: 'center', borderTop: `1px solid ${C_BORDER}` }}>
-                  {cell(<input type="checkbox" checked={selectedShopIds.has(stats.shop.id)} onChange={() => toggleSelect(stats.shop.id)} style={{ cursor: 'pointer' }} />, '0.3 0 0', 40)}
                   {cell(
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>{stats.shop.name}</div>
+                    <div style={{ minWidth: 0, cursor: 'pointer' }} onClick={() => setDetailShopId(stats.shop.id)}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: C_LINK }}>{stats.shop.name}</div>
                       <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{stats.shop.id}</div>
                     </div>,
-                    '1.6 0 0', 220
+                    '1.8 0 0', 220
                   )}
                   {cell(
                     <span style={{ fontSize: 13, fontWeight: 700, color: stats.blocked ? '#DC2626' : '#16A34A' }}>
@@ -773,21 +761,13 @@ export default function CashRemittance() {
                   {cell(<span style={{ fontSize: 14, color: C_TEXT_PRIMARY }}>{stats.pending.length}</span>, '1 0 0', 180, 'right')}
                   {cell(<span style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>{stats.pendingFeeTotal.toLocaleString('vi-VN')}</span>, '1.1 0 0', 190, 'right')}
                   {cell(
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={() => handleApproveShopRow(stats)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: '#16A34A', color: '#fff', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}
-                      >
-                        <CheckOutlined /> Đã nhận
-                      </button>
-                      <button
-                        onClick={() => setDetailShopId(stats.shop.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: `1px solid ${C_BORDER}`, cursor: 'pointer', background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}
-                      >
-                        <EyeOutlined /> Chi tiết
-                      </button>
-                    </div>,
-                    '1.3 0 0', 210
+                    <button
+                      onClick={() => handleToggleLock(stats)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: stats.blocked ? '#16A34A' : '#DC2626', color: '#fff', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}
+                    >
+                      {stats.blocked ? <><UnlockOutlined /> Mở khoá</> : <><LockOutlined /> Khoá</>}
+                    </button>,
+                    '1 0 0', 140
                   )}
                 </div>
               ))
@@ -795,21 +775,17 @@ export default function CashRemittance() {
               pagedRows.map(stats => (
                 <div key={stats.shop.id} style={{ display: 'flex', alignItems: 'center', borderTop: `1px solid ${C_BORDER}` }}>
                   {cell(
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: C_TEXT_PRIMARY }}>{stats.shop.name}</div>
+                    <div style={{ minWidth: 0, cursor: 'pointer' }} onClick={() => setDetailShopId(stats.shop.id)}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: C_LINK }}>{stats.shop.name}</div>
                       <div style={{ fontSize: 12, color: C_TEXT_SECONDARY }}>{stats.shop.id}</div>
                     </div>,
                     '2 0 0', 220
                   )}
-                  {cell(<span style={{ fontSize: 13, fontWeight: 700, color: '#16A34A' }}>Cho phép tạo đơn</span>, '1 0 0', 160)}
                   {cell(
-                    <button
-                      onClick={() => setDetailShopId(stats.shop.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: `1px solid ${C_BORDER}`, cursor: 'pointer', background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}
-                    >
-                      <EyeOutlined /> Chi tiết
-                    </button>,
-                    '1 0 0', 140
+                    <span style={{ fontSize: 13, fontWeight: 700, color: stats.blocked ? '#DC2626' : '#16A34A' }}>
+                      {stats.blocked ? 'Đã khoá tạo đơn' : 'Cho phép tạo đơn'}
+                    </span>,
+                    '1 0 0', 160
                   )}
                 </div>
               ))

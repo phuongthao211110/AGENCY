@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { agencyAdminTheme } from '../../../theme/platforms'
-import { loadOrders, addOrder, dispatchOrderToCarrier, updateOrder, cancelOrder, confirmCancelRefund, type Order } from '../../../mock-data/orderStore'
+import { loadOrders, addOrder, dispatchOrderToCarrier, updateOrder, cancelOrder, confirmCancelRefund, shopCashOverdueDays, loadRemittanceConfig, type Order } from '../../../mock-data/orderStore'
 import allShops from '../../../mock-data/shops.json'
 import allServices from '../../../mock-data/services.json'
 import allPricing from '../../../mock-data/pricing.json'
@@ -3194,6 +3194,24 @@ export default function AgencyOrders() {
                 {dispatchExcludedCount} đơn đã chọn không hợp lệ (đơn Hàng hoá, hoặc đơn Thư đã gửi rồi) sẽ bị bỏ qua, không nằm trong lần gửi này.
               </div>
             )}
+
+            {/* Giai đoạn 1: chỉ CẢNH BÁO shop đang nợ tiền mặt phí ship, KHÔNG chặn đẩy ship — khác
+                hẳn "+ Tạo đơn hàng" bên Web Shop (đã có cảnh báo tương ứng), trước đây hành động
+                gửi 247Express này hoàn toàn không có bất kỳ kiểm tra nào, kể cả hiển thị. */}
+            {(() => {
+              const { warningDays } = loadRemittanceConfig(CURRENT_AGENCY_ID)
+              const overdueShops = Array.from(new Set(dispatchModal.map(o => o.shopId)))
+                .map(shopId => ({ shopId, days: shopCashOverdueDays(shopId) }))
+                .filter(s => s.days >= warningDays)
+              if (overdueShops.length === 0) return null
+              return (
+                <div style={{ fontSize: 13, color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 6, padding: '8px 10px', lineHeight: '20px' }}>
+                  ⚠️ {overdueShops.length === 1
+                    ? `Shop ${overdueShops[0].shopId} đang trễ ${overdueShops[0].days} ngày chưa chuyển tiền mặt phí ship cho đại lý.`
+                    : `${overdueShops.length} shop trong lô này đang trễ nộp tiền mặt phí ship cho đại lý.`} Vẫn gửi được bình thường — chỉ là lời nhắc, không chặn thao tác.
+                </div>
+              )
+            })()}
 
             {/* Bắt buộc xác nhận hub xuất phát trước khi gửi được — dịch vụ không còn gắn
                 cứng 1 hub nữa nên phải chọn ở đây */}

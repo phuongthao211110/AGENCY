@@ -4,7 +4,7 @@ import { ConfigProvider } from 'antd'
 import { PlusOutlined, SearchOutlined, CloseOutlined, StopOutlined, PrinterOutlined, ArrowLeftOutlined, CopyOutlined, InboxOutlined, MailOutlined } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
 import allShops from '../../../mock-data/shops.json'
-import { loadOrders, addOrder, cancelOrder, updateOrder, appendActionHistory, isOrderCreationBlocked, shopCashOverdueDays, loadRemittanceConfig, type Order } from '../../../mock-data/orderStore'
+import { loadOrders, addOrder, cancelOrder, updateOrder, appendActionHistory, isOrderCreationBlocked, shopCashOverdueDays, loadRemittanceConfig, ENFORCE_ORDER_CREATION_BLOCK, type Order } from '../../../mock-data/orderStore'
 import { printSettings, updatePrintSetting, type PrintKindConfig } from '../../../mock-data/printSettingsStore'
 import { loadPricing } from '../../../mock-data/pricingStore'
 import { findQrCode, recordQrScan, isQrCodeUsable } from '../../../mock-data/qrStore'
@@ -1475,9 +1475,10 @@ function CreateOrderDrawer({ open, onClose, onUpdated, initialNote }: { open: bo
     //    === 'paid'` (modal đã tự xác nhận xong — xem handlePaymentPaid/handlePaymentPaidInDetail),
     //    còn lúc tạo đơn ban đầu (`payStatus === 'pending'`) để `undefined`, hiện badge "Chờ thanh
     //    toán {kênh}" cho tới khi modal xác nhận.
-    //  - Tiền mặt: KHÔNG có tín hiệu số nào báo cho hệ thống biết — chỉ Shop tự khai, Agency Admin
-    //    phải xác nhận tay đã thực nhận đủ tiền → vẫn cần `pending_review` + Agency Admin duyệt
-    //    thủ công ở trang Duyệt thanh toán (xem AGA-PAYMENT-1/2).
+    //  - Tiền mặt: vẫn bắt đầu `pending_review` (Shop chưa chuyển khoản phí dịch vụ lên đại lý) —
+    //    khi Shop chuyển khoản ngân hàng qua trang Báo cáo dòng tiền, hệ thống TỰ XÁC NHẬN ngay
+    //    (xem confirmCashRemittance, orderStore.ts), không cần Agency Admin duyệt tay nữa (trang
+    //    Đối soát thanh toán giờ chỉ còn theo dõi công nợ + khoá/mở khoá tạo đơn, xem AGA-PAYMENT-1/2).
     // "Khách trả ship" (feePayer === 'receiver') không qua cờ này — GHN tự thu COD lúc giao hàng.
     const needsPaymentApproval = effectiveFeePayer === 'sender'
     const isOnlineMethod = paymentMethod === 'momo' || paymentMethod === 'bank_transfer'
@@ -2741,22 +2742,22 @@ function rowStatus(order: Order): { label: string; color: string } {
       ? { ...base, label: `${base.label} · Đã hoàn tiền`, color: '#16A34A' }
       : { ...base, label: `${base.label} · Chờ hoàn tiền` }
   }
-  // Đơn nháp đang bị giữ lại vì chờ GHN xác nhận thanh toán — nhắc shop lý do đơn chưa đi tiếp.
-  if (order.status === 'pending' && order.paymentApprovalStatus === 'pending_review') {
-    return { ...base, label: `${base.label} · Chờ GHN xác nhận` }
-  }
-  // GHN đã từ chối xác nhận nhận tiền — khác hẳn "Đơn nháp" thường, cần đổi màu đỏ để shop chú ý
-  // xử lý ngay (không chỉ dựa vào paymentBadge() riêng, dễ bị bỏ sót khi lướt nhanh danh sách).
-  if (order.status === 'pending' && order.paymentApprovalStatus === 'rejected') {
-    return { ...base, label: `${base.label} · GHN từ chối xác nhận`, color: '#EF4444' }
-  }
   // SHOP-ORDER-54: nhắc "đã xong phần tiền" ngay ở cột Trạng thái, không cần liếc sang cột Phí ship
-  // riêng — không giới hạn order.status === 'pending' (khác 2 nhánh cũ phía trên) vì tại thời điểm
-  // approveOrderPayment() chuyển paymentApprovalStatus sang 'confirmed', status đã rời 'pending'
-  // sang 'pickup' ngay lập tức rồi (xem orderStore.ts). Đặt SAU nhánh 'cancelled' phía trên để đơn
-  // huỷ đã có "· Chờ hoàn tiền" không bị cộng thêm "· Đã thanh toán" chồng lên.
+  // riêng. Đặt SAU nhánh 'cancelled' phía trên để đơn huỷ đã có "· Chờ hoàn tiền" không bị cộng
+  // thêm "· Đã thanh toán" chồng lên.
   if (order.paymentApprovalStatus === 'confirmed') {
     return { ...base, label: `${base.label} · Đã thanh toán` }
+  }
+  // Đơn giản hoá cho golive: CHỈ còn 2 trạng thái thanh toán hiển thị trong danh sách — "Đã thanh
+  // toán" (nhánh trên) và "Chờ thanh toán" (nhánh này, gộp chung pending_review lẫn rejected, không
+  // phân biệt sâu hơn ở đây) — không có bất kỳ gate nào chặn đẩy ship dựa trên trạng thái này, đơn
+  // vẫn đi vận chuyển bình thường dù đang "Chờ thanh toán". Trước đây có thêm 2 nhánh riêng cho lúc
+  // order.status === 'pending' ("Chờ GHN xác nhận"/"GHN từ chối xác nhận") nhưng đơn Hàng hoá
+  // (CreateOrderDrawer) không bao giờ còn ở 'pending' một khi đã chọn phương thức thanh toán (đi
+  // thẳng 'pickup' ngay lúc tạo — xem SHOP-ORDER-43), nên 2 nhánh đó gần như không bao giờ chạy tới
+  // — đã bỏ để khỏi gây hiểu nhầm có nhiều trạng thái hơn thực tế.
+  if (order.paymentApprovalStatus) {
+    return { ...base, label: `${base.label} · Chờ thanh toán` }
   }
   return base
 }
@@ -4193,10 +4194,20 @@ export default function ShopOrders() {
   // (không chỉ riêng luồng online); [warningDays, blockDays): vẫn cho tạo nhưng nhắc nhở (xem
   // cashOverdueWarning). Cả 2 ngưỡng do Super Admin cấu hình (Cài đặt → Quy tắc thanh toán tiền mặt,
   // xem GSA-PAYMENT-CONFIG-1) — mặc định 1/3 ngày khi chưa từng lưu cấu hình nào.
+  //
+  // Giai đoạn 1 của kế hoạch triển khai thật (ENFORCE_ORDER_CREATION_BLOCK = false): KHÔNG thực sự
+  // khoá — Shop vẫn tạo đơn được dù quá hạn, chỉ hiện banner cảnh báo liên tục (không tự tắt ở mốc
+  // blockDays như trước, vì không còn trạng thái "đã khoá" nào để bàn giao cho). Bật lại khoá thật
+  // bằng cách đổi hằng số đó sang true, không cần sửa gì ở đây.
   const remittanceConfig = loadRemittanceConfig(shopForLetterCheck.agencyId)
   const cashOverdueDays = shopCashOverdueDays('SHP001')
-  const creationBlocked = cashOverdueDays >= remittanceConfig.blockDays
-  const cashOverdueWarning = cashOverdueDays >= remittanceConfig.warningDays && cashOverdueDays < remittanceConfig.blockDays
+  const creationBlocked = ENFORCE_ORDER_CREATION_BLOCK && cashOverdueDays >= remittanceConfig.blockDays
+  const cashOverdueWarning = cashOverdueDays >= remittanceConfig.warningDays
+    && (!ENFORCE_ORDER_CREATION_BLOCK || cashOverdueDays < remittanceConfig.blockDays)
+  // Chỉ có ý nghĩa khi ENFORCE_ORDER_CREATION_BLOCK=false: Shop đã trễ quá mốc đáng lẽ bị khoá,
+  // nhưng giai đoạn này vẫn tạm cho tạo đơn — đổi câu chữ banner cho đúng thực tế, tránh nói "sẽ
+  // khoá nếu quá X ngày" trong khi đã quá X ngày từ lâu rồi.
+  const cashOverduePastBlockThreshold = !ENFORCE_ORDER_CREATION_BLOCK && cashOverdueDays >= remittanceConfig.blockDays
 
   // Khách quét "Tem QR" (xem Cài đặt → Tem QR) → link đích trỏ về đúng trang này kèm `?qr=<id>` —
   // tự nhận diện, ghi nhận lượt quét, rồi mở sẵn form "Tạo đơn hàng" với ghi chú nguồn gốc. Chỉ
@@ -4386,11 +4397,14 @@ export default function ShopOrders() {
         {cashOverdueWarning && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px',
-            background: '#FEF3C7', borderBottom: `1px solid #FDE68A`, flexShrink: 0,
+            background: cashOverduePastBlockThreshold ? '#FEE2E2' : '#FEF3C7',
+            borderBottom: `1px solid ${cashOverduePastBlockThreshold ? '#FECACA' : '#FDE68A'}`, flexShrink: 0,
           }}>
             <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}>
-              Shop còn {cashOverdueDays} ngày chưa chuyển tiền mặt đã thu cho đại lý. Vui lòng chuyển sớm — quá {remittanceConfig.blockDays} ngày hệ thống sẽ tự động khoá tạo đơn mới.
+            <span style={{ fontSize: 13, fontWeight: 600, color: cashOverduePastBlockThreshold ? '#991B1B' : '#92400E' }}>
+              {cashOverduePastBlockThreshold
+                ? `Shop đã trễ ${cashOverdueDays} ngày chưa chuyển tiền mặt đã thu cho đại lý — quá mốc ${remittanceConfig.blockDays} ngày đáng lẽ bị khoá tạo đơn. Vẫn tạm cho phép tạo đơn trong giai đoạn thử nghiệm, vui lòng thanh toán ngay.`
+                : `Shop còn ${cashOverdueDays} ngày chưa chuyển tiền mặt đã thu cho đại lý. Vui lòng chuyển sớm — quá ${remittanceConfig.blockDays} ngày hệ thống sẽ tự động khoá tạo đơn mới.`}
             </span>
           </div>
         )}

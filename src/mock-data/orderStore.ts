@@ -44,7 +44,7 @@ export interface Order {
   // addressChange). Khi phát sinh, CỘNG THÊM vào `fee`, lưu riêng ở đây để hiện breakdown.
   feeAddressChange?: number
   // Snapshot của `fee` NGAY TẠI THỜI ĐIỂM paymentApprovalStatus chuyển sang 'confirmed' (xem
-  // approveOrderPayment, handlePaymentPaid*). Cần tách riêng vì `fee` có thể TĂNG THÊM SAU đó (phí
+  // confirmCashRemittance, handlePaymentPaid*). Cần tách riêng vì `fee` có thể TĂNG THÊM SAU đó (phí
   // hoàn hàng/đổi địa chỉ phát sinh sau khi đã duyệt) — nếu không lưu lại con số ĐÃ DUYỆT, báo cáo
   // dòng tiền (CashFlowReport.tsx) sẽ ngộ nhận luôn cả phần phụ phí mới (chưa ai duyệt) là "Đã
   // thanh toán" chỉ vì đơn đang ở trạng thái confirmed. undefined (đơn cũ/chưa duyệt lần nào) được
@@ -68,19 +68,18 @@ export interface Order {
   paymentStatus?: 'not_required' | 'pending' | 'paid' | 'failed'
   // ISO timestamp lúc bấm "Tôi đã thanh toán" — chỉ set khi paymentStatus chuyển sang 'paid'.
   paymentPaidAt?: string
-  // Lớp DUYỆT của Agency Admin — ngăn Shop tự khai "đã thanh toán" (paymentStatus='paid')
-  // nhưng thực tế chưa chuyển tiền. 'pending_review' = Shop đã khai đã thanh toán/đã thu tiền mặt.
-  // 'confirmed' = Agency Admin đã xác nhận nhận được tiền (xem `approveOrderPayment`). 'rejected' =
-  // Agency Admin xác nhận KHÔNG nhận được tiền — Shop phải thanh toán lại/khai lại từ đầu.
+  // Lớp DUYỆT phí ship Shop nợ Agency. 'pending_review' = phí COD đang chờ Shop nộp lên Agency
+  // (chưa chuyển khoản). 'confirmed' = đã nộp qua chuyển khoản ngân hàng VÀ được hệ thống tự xác
+  // nhận NGAY (xem `confirmCashRemittance` — không qua bước Agency Admin duyệt tay nữa). 'rejected'
+  // = trường hợp cũ/hãn hữu Agency Admin tự đánh dấu KHÔNG nhận được tiền — Shop phải nộp lại.
   paymentApprovalStatus?: 'pending_review' | 'confirmed' | 'rejected'
   // Lý do từ chối — bắt buộc nhập khi Agency Admin bấm "Từ chối".
   paymentApprovalRejectedReason?: string
   paymentApprovedAt?: string
   paymentApprovedBy?: string | null
-  // Shop tự báo "đã chuyển tiền mặt cho Agency" qua nút "Thanh toán cho đại lý" (Báo cáo dòng tiền,
-  // Web Shop) — CHỈ là lời khai của Shop, KHÔNG tự đổi paymentApprovalStatus thành 'confirmed'.
-  // Agency Admin vẫn phải tự bấm "Duyệt shop này" (AGA-PAYMENT-2) sau khi đối chiếu thực nhận được
-  // tiền mới thực sự xác nhận — field này chỉ là tín hiệu nhắc Agency ưu tiên kiểm tra sớm.
+  // Shop chuyển khoản ngân hàng cho Agency qua nút "Thanh toán phí dịch vụ cho đại lý" (Báo cáo
+  // dòng tiền, Web Shop) — đặt CÙNG LÚC với lúc `paymentApprovalStatus` chuyển sang 'confirmed' (xem
+  // `confirmCashRemittance`), dùng để hiển thị mốc thời gian nộp tiền trong lịch sử thanh toán.
   cashRemittanceDeclaredAt?: string
   // Đơn huỷ SAU KHI đại lý đã xác nhận nhận tiền (`status: 'cancelled' && paymentApprovalStatus:
   // 'confirmed'`) thì đại lý đang nợ Shop đúng số `fee` đã thu — field này đánh dấu đại lý đã THỰC
@@ -190,7 +189,7 @@ function saveOrders(orders: Order[]): void {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(orders)) } catch { /* storage unavailable */ }
   // Báo cho các component KHÔNG trực tiếp gọi hàm này (VD: badge số đơn chờ duyệt trên sidebar
   // SuperAdminLayout) biết dữ liệu đơn hàng vừa đổi, để tự re-render mà không cần điều hướng trang —
-  // mọi hàm ghi (addOrder, updateOrder, approveOrderPayment...) đều đi qua đây nên phát 1 chỗ là đủ.
+  // mọi hàm ghi (addOrder, updateOrder, confirmCashRemittance...) đều đi qua đây nên phát 1 chỗ là đủ.
   try { window.dispatchEvent(new Event('ghn-orders-changed')) } catch { /* no window (SSR/test) */ }
 }
 
@@ -244,10 +243,10 @@ export function updateOrder(orderId: string, patch: Partial<Order>): Order[] {
   return orders
 }
 
-// ── Lịch sử các lần Shop khai "đã chuyển tiền mặt" ──────────────────────────
-// Mỗi lần bấm "Xác nhận thanh toán" ở modal "Thanh toán hạn mức đã dùng" (Báo cáo dòng tiền, Web
-// Shop) tạo 1 bản ghi ở đây — CHỈ là lịch sử lời khai của Shop, KHÔNG phải lịch sử Agency đã duyệt
-// (muốn biết Agency đã duyệt hay chưa, đọc `paymentApprovalStatus` của từng đơn trong `orderIds`).
+// ── Lịch sử các lần Shop chuyển khoản ngân hàng cho Agency ──────────────────
+// Mỗi lần hoàn tất modal QR chuyển khoản (Báo cáo dòng tiền, Web Shop) tạo 1 bản ghi ở đây — tại
+// thời điểm tạo bản ghi, các đơn trong `orderIds` ĐÃ được hệ thống tự xác nhận `confirmed` luôn
+// (xem `confirmCashRemittance`), nên đây vừa là lịch sử nộp tiền vừa là lịch sử đã xác nhận.
 export interface CashRemittanceBatch {
   id: string
   shopId: string
@@ -287,13 +286,13 @@ function generateRemittanceCode(): string {
   return `${yymmdd}${suffix}`
 }
 
-// Shop tự báo "đã chuyển tiền mặt cho Agency" (nút "Thanh toán cho đại lý", Báo cáo dòng tiền —
-// Web Shop) — đánh dấu `cashRemittanceDeclaredAt` trên MỌI đơn tiền mặt đang `pending_review`
-// HOẶC `rejected` của shop đó (rejected = nợ tồn từ lần khai trước chưa được Agency xác nhận, vẫn
-// cần khai lại). CHỈ là lời khai, KHÔNG tự đổi `paymentApprovalStatus` — Agency Admin vẫn phải tự
-// đối chiếu rồi bấm "Duyệt shop này" (AGA-PAYMENT-2) mới thực sự xác nhận (xem AGA-PAYMENT-1/2).
-// Trả về `CashRemittanceBatch` vừa tạo (hoặc `null` nếu không có gì để khai) để UI hiện ngay mã/tổng tiền.
-export function declareCashRemittance(shopId: string, declaredBy: string): CashRemittanceBatch | null {
+// Shop chuyển khoản ngân hàng cho Agency (modal QR, nút "Thanh toán phí dịch vụ cho đại lý" ở Báo
+// cáo dòng tiền — Web Shop) — hệ thống TỰ ĐỘNG xác nhận ngay khi chuyển khoản thành công (mô phỏng
+// ngân hàng báo có), KHÔNG cần Agency Admin duyệt tay nữa. Đánh dấu `paymentApprovalStatus:
+// 'confirmed'` NGAY cho mọi đơn tiền mặt đang `pending_review` HOẶC `rejected` của shop đó (rejected
+// = nợ tồn từ lần nộp trước chưa được xác nhận, vẫn được xác nhận lại trong lần nộp mới này).
+// Trả về `CashRemittanceBatch` vừa tạo (hoặc `null` nếu không có gì để nộp) để UI hiện ngay mã/tổng tiền.
+export function confirmCashRemittance(shopId: string, confirmedBy: string): CashRemittanceBatch | null {
   const orders = loadOrders()
   const now = new Date().toISOString()
   const affected = orders.filter(
@@ -303,51 +302,29 @@ export function declareCashRemittance(shopId: string, declaredBy: string): CashR
   if (affected.length === 0) return null
   for (const o of affected) {
     o.cashRemittanceDeclaredAt = now
-    // Đơn từng bị từ chối ("Nợ tồn") mà Shop khai đã trả lại → đưa về pending_review để Agency có
-    // thể DUYỆT LẠI qua "Duyệt shop này" (approveOrderPayment chỉ nhận đơn đang pending_review) —
-    // nếu không reset, đơn rejected sẽ kẹt vĩnh viễn, không bao giờ duyệt lại được.
-    if (o.paymentApprovalStatus === 'rejected') {
-      o.paymentApprovalStatus = 'pending_review'
-      o.paymentApprovalRejectedReason = undefined
-    }
+    o.paymentApprovalStatus = 'confirmed'
+    o.paymentApprovalRejectedReason = undefined
+    o.paymentApprovedAt = now
+    o.paymentApprovedBy = 'Hệ thống (ngân hàng xác nhận tự động)'
+    o.paymentApprovedAmount = o.fee
   }
   saveOrders(orders)
   for (const o of affected) {
-    appendActionHistory(o.id, declaredBy, 'Báo đã chuyển tiền mặt cho đại lý', '-', '-')
+    appendActionHistory(o.id, confirmedBy, 'Chuyển khoản cho đại lý qua ngân hàng — hệ thống tự xác nhận', '-', 'Đã thanh toán')
   }
+  // Shop vừa thanh toán xong — xoá cờ "mở khoá tạm" cũ (nếu có) để lần trễ MỚI phát sinh sau này
+  // phải xin mở khoá lại từ đầu, không "miễn phí" nhờ lần mở khoá trước đó.
+  clearTemporaryUnlock(shopId)
   const batch: CashRemittanceBatch = {
     id: generateRemittanceCode(),
     shopId,
     declaredAt: now,
-    declaredBy,
+    declaredBy: confirmedBy,
     totalAmount: affected.reduce((sum, o) => sum + o.fee, 0),
     orderIds: affected.map(o => o.id),
   }
   saveRemittanceBatch(batch)
   return batch
-}
-
-// Agency Admin xác nhận đã THỰC SỰ nhận được tiền từ Shop (phí ship thanh toán tiền mặt/MoMo/
-// chuyển khoản) — chỉ hợp lệ khi đơn đang 'pending_review'. Đơn Shop trả ship giờ đi NGAY vào
-// 'pickup' từ lúc tạo (xem buildOrder() ở Orders.tsx) nên nhánh `status === 'pending' ? 'pickup'
-// : ...` dưới đây chỉ còn là fallback vô hại cho dữ liệu cũ — hành động này KHÔNG còn mở khoá vận
-// hành gì nữa, chỉ là bước hậu kiểm/đối soát của Agency Admin (xem AGA-PAYMENT-1/2, SHOP-ORDER-43/45).
-export function approveOrderPayment(orderId: string, approvedBy: string): Order[] {
-  const orders = loadOrders()
-  const idx = orders.findIndex(o => o.id === orderId)
-  if (idx !== -1 && orders[idx].paymentApprovalStatus === 'pending_review') {
-    orders[idx] = {
-      ...orders[idx],
-      paymentApprovalStatus: 'confirmed',
-      paymentApprovedAt: new Date().toISOString(),
-      paymentApprovedBy: approvedBy,
-      paymentApprovedAmount: orders[idx].fee,
-      status: orders[idx].status === 'pending' ? 'pickup' : orders[idx].status,
-    }
-    saveOrders(orders)
-    appendActionHistory(orderId, approvedBy, 'Đại lý xác nhận đã nhận thanh toán', '-', 'Đã duyệt (hậu kiểm/đối soát)')
-  }
-  return orders
 }
 
 // Chiều NGƯỢC với phí hoàn hàng/đổi địa chỉ (fee TĂNG sau khi confirmed): đơn đã confirmed nhưng
@@ -522,11 +499,99 @@ export function saveRemittanceConfig(agencyId: string, config: CashRemittanceCon
   saveAllRemittanceConfigs(list)
 }
 
+// Giai đoạn 1 của kế hoạch triển khai thật: chỉ GHI NHẬN/CẢNH BÁO số ngày trễ, KHÔNG thực sự khoá
+// tạo đơn — vì đây là điểm DUY NHẤT trong toàn hệ thống mà 1 lỗi tính sai sẽ chặn luôn thao tác
+// thật của Shop (mọi chỗ khác chỉ sai số liệu hiển thị). Chỉ bật lại (true) sau khi đã quan sát đủ
+// lâu thấy số ngày trễ luôn tính đúng trong thực tế — xem AgencyOrders.tsx/Orders.tsx.
+export const ENFORCE_ORDER_CREATION_BLOCK = false
+
 // shopId → agencyId tra qua shopStore (loadShops) — giữ nguyên chữ ký cũ `isOrderCreationBlocked
 // (shopId)` cho mọi call site hiện có (Orders.tsx) không phải sửa gì, chỉ tự đổi NGUỒN ngưỡng bên
-// trong sang đúng đại lý quản lý shop đó.
+// trong sang đúng đại lý quản lý shop đó. Khoá THỦ CÔNG (isManuallyLocked) LUÔN có hiệu lực, kể cả
+// khi ENFORCE_ORDER_CREATION_BLOCK đang tắt — đây là quyết định chủ động của Agency Admin (Duyệt
+// thanh toán, CashRemittance.tsx), khác với khoá TỰ ĐỘNG theo số ngày trễ (vẫn tôn trọng cờ Giai
+// đoạn 1 như cũ).
 export function isOrderCreationBlocked(shopId: string): boolean {
+  if (isManuallyLocked(shopId)) return true
+  if (!ENFORCE_ORDER_CREATION_BLOCK) return false
+  if (isTemporarilyUnlocked(shopId)) return false
   const shop = loadShops().find(s => s.id === shopId)
   if (!shop) return false
   return shopCashOverdueDays(shopId) >= loadRemittanceConfig(shop.agencyId).blockDays
+}
+
+// Agency Admin chủ động mở khoá tạm cho 1 shop đang bị khoá tạo đơn — KHÔNG xoá khoản nợ, chỉ tạm
+// bỏ qua điều kiện khoá cho đến khi shop thanh toán hết nợ (confirmCashRemittance tự xoá cờ này khi
+// đó — xem clearTemporaryUnlock — tránh để lần trễ nợ HOÀN TOÀN MỚI sau này vô tình được "miễn phí"
+// nhờ cờ mở khoá của lần trễ trước). Dùng CHUNG đúng 1 nguồn (localStorage) cho cả
+// isOrderCreationBlocked() (Web Shop) lẫn stats.blocked (Agency Admin, CashRemittance.tsx).
+const TEMP_UNLOCK_KEY = 'ghn_temp_order_unlock_v1'
+
+function loadTempUnlockedShopIds(): string[] {
+  try {
+    const raw = localStorage.getItem(TEMP_UNLOCK_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveTempUnlockedShopIds(ids: string[]): void {
+  try { localStorage.setItem(TEMP_UNLOCK_KEY, JSON.stringify(ids)) } catch { /* storage unavailable */ }
+}
+
+export function isTemporarilyUnlocked(shopId: string): boolean {
+  return loadTempUnlockedShopIds().includes(shopId)
+}
+
+export function grantTemporaryUnlock(shopId: string, grantedBy: string): void {
+  const ids = loadTempUnlockedShopIds()
+  if (!ids.includes(shopId)) saveTempUnlockedShopIds([...ids, shopId])
+  const pendingOrders = loadOrders().filter(
+    o => o.shopId === shopId && o.paymentMethod === 'cash' && o.paymentApprovalStatus === 'pending_review'
+  )
+  pendingOrders.forEach(o =>
+    appendActionHistory(o.id, grantedBy, 'Agency Admin mở khoá tạm thời cho shop', '-', 'Đã mở khoá — khoản nợ chưa được xoá')
+  )
+}
+
+function clearTemporaryUnlock(shopId: string): void {
+  const ids = loadTempUnlockedShopIds()
+  if (ids.includes(shopId)) saveTempUnlockedShopIds(ids.filter(id => id !== shopId))
+}
+
+// Agency Admin chủ động KHOÁ tạo đơn cho 1 shop bất kỳ — độc lập với ngưỡng trễ hạn tự động (có thể
+// khoá dù shop không nợ gì, ví dụ nghi ngờ gian lận/yêu cầu nội bộ khác). Khác "Mở khoá tạm" ở trên
+// (vốn chỉ để GỠ khoá tự động do trễ hạn) — đây là NGUỒN khoá riêng, Agency tự bật/tắt, không tự hết
+// hạn. Dùng chung 1 nguồn (localStorage) cho isOrderCreationBlocked() lẫn stats.blocked.
+const MANUAL_LOCK_KEY = 'ghn_manual_order_lock_v1'
+
+function loadManuallyLockedShopIds(): string[] {
+  try {
+    const raw = localStorage.getItem(MANUAL_LOCK_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveManuallyLockedShopIds(ids: string[]): void {
+  try { localStorage.setItem(MANUAL_LOCK_KEY, JSON.stringify(ids)) } catch { /* storage unavailable */ }
+}
+
+export function isManuallyLocked(shopId: string): boolean {
+  return loadManuallyLockedShopIds().includes(shopId)
+}
+
+export function setManualLock(shopId: string, locked: boolean, actorName: string): void {
+  const ids = loadManuallyLockedShopIds()
+  const has = ids.includes(shopId)
+  if (locked && !has) saveManuallyLockedShopIds([...ids, shopId])
+  if (!locked && has) saveManuallyLockedShopIds(ids.filter(id => id !== shopId))
+  const relatedOrders = loadOrders().filter(o => o.shopId === shopId && o.paymentMethod === 'cash' && o.paymentApprovalStatus === 'pending_review')
+  relatedOrders.forEach(o =>
+    appendActionHistory(o.id, actorName, locked ? 'Agency Admin khoá tạo đơn của shop' : 'Agency Admin mở khoá tạo đơn của shop', '-', locked ? 'Đã khoá' : 'Đã mở khoá')
+  )
 }

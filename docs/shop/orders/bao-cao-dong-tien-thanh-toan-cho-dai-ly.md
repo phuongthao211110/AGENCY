@@ -7,53 +7,58 @@ figma:
 status: draft
 ---
 
-# [WEB SHOP] Báo cáo dòng tiền: Nút "Thanh toán cho đại lý" (khai đã chuyển tiền mặt)
+# [WEB SHOP] Báo cáo dòng tiền: Thanh toán phí dịch vụ cho đại lý (QR chuyển khoản)
 
 ## Bối cảnh
 
-Tách từ [SHOP-ORDER-55](./bao-cao-dong-tien.md) (bảng chính "Phí dịch vụ") — phần nút "Thanh toán cho đại lý" + modal "Thanh toán hạn mức đã dùng" (cột khai nộp), nơi Shop TỰ KHAI đã chuyển tiền mặt phí ship cho đại lý (ngoài hệ thống) để đại lý tiện đối chiếu và duyệt lại các đơn đang `rejected`. Cột "Lịch sử thanh toán" (bên phải modal) được tách riêng — xem [SHOP-ORDER-61](./bao-cao-dong-tien-lich-su-thanh-toan.md).
+Tách từ [SHOP-ORDER-55](./bao-cao-dong-tien.md) (bảng chính "Phí dịch vụ") — nút **"Thanh toán phí dịch vụ cho đại lý"** + màn hình QR chuyển khoản, nơi Shop thanh toán gộp khoản nợ phí ship tiền mặt cho đại lý. Bản đầu (v1) nút này mở 1 màn hình 2 cột gộp chung với "Lịch sử thanh toán" ([SHOP-ORDER-61](./bao-cao-dong-tien-lich-su-thanh-toan.md)), có checkbox điều khoản + nút "Xác nhận thanh toán" thủ công. Bản này (v2) tách hẳn thành 2 nút/màn hình độc lập, và đổi giao diện xác nhận sang QR + đếm ngược + tự động xác nhận — giống cảm giác thanh toán online lúc tạo đơn (SHOP-ORDER-42) — nhưng **KHÔNG đổi bản chất nghiệp vụ**: vẫn chỉ là lời khai, đại lý vẫn phải tự đối chiếu rồi duyệt tay.
 
 ## User Story
 
-Là chủ shop, sau khi đã chuyển tiền mặt phí ship cho đại lý ngoài hệ thống, tôi muốn khai lại trong hệ thống, để đại lý tiện đối chiếu và để các đơn từng bị từ chối có cơ hội được duyệt lại thay vì kẹt vĩnh viễn.
+Là chủ shop, sau khi đã chuyển khoản/chuyển tiền mặt phí ship cho đại lý, tôi muốn khai lại trong hệ thống qua màn hình quét QR quen thuộc, để đại lý tiện đối chiếu và để các đơn từng bị từ chối có cơ hội được duyệt lại thay vì kẹt vĩnh viễn.
 
 ## User Flow
 
-1. Góc phải trang: nút **"Thanh toán cho đại lý (Xđ)"** (nền xanh navy) — X là tổng phí ship các đơn TIỀN MẶT đang `pending_review` HOẶC `rejected` ("Nợ tồn") của shop này, CHƯA từng khai. Không có đơn nào cần chuyển → nút disabled, label "Không có đơn cần chuyển".
-2. Bấm nút → mở **modal "Thanh toán hạn mức đã dùng"**, cột TRÁI (cột phải "Lịch sử thanh toán" xem SHOP-ORDER-61): chip trạng thái "⏱ Chưa thanh toán" (xám); dòng "Phí giao hàng (Đơn hàng đã bàn giao/ Hoàn tất) [Tải danh sách đơn]" (link cam, xuất file riêng danh sách đơn cần trả) = tổng đơn `pending_review`; dòng "Nợ tồn" = tổng đơn `rejected`; "Tổng tiền cần thanh toán" (cam, đậm, to) = 2 dòng trên cộng lại; ghi chú nhắc đọc kỹ; checkbox "Tôi đã đọc, hiểu và chấp nhận điều khoản thanh toán của GHN" (BẮT BUỘC tick mới bấm được nút); nút **"Xác nhận thanh toán"** (cam, disabled nếu chưa tick hoặc tổng = 0).
-3. Bấm "Xác nhận thanh toán" → gọi `declareCashRemittance()`, hiện banner xanh "✓ Đã gửi yêu cầu thanh toán Xđ cho đại lý — mã ..." ngay trong modal; đơn đang `rejected` ("Nợ tồn") được ĐƯA VỀ `pending_review` để Agency duyệt lại được (không kẹt mãi).
-4. Đóng rồi mở lại modal (hoặc nhìn nút ngoài trang): các đơn vừa khai KHÔNG được tính lại vào khoản cần thanh toán nữa — không khai trùng được cùng 1 lô đơn.
-5. Nếu Agency sau đó từ chối lại 1 đơn đã từng khai → đơn quay về "chưa khai", xuất hiện LẠI trong "Nợ tồn" ở lần mở modal tiếp theo để Shop khai lại.
-6. Agency Admin (trang "Duyệt thanh toán") KHÔNG hiện thêm bất kỳ gợi ý nào về việc Shop đã khai hay chưa — Agency tự dựa vào số ngày trễ rồi tự đối chiếu sổ quỹ thật trước khi duyệt, không dựa vào lời khai này để tin.
+1. Toolbar góc phải trang: 2 nút TÁCH BIỆT — **"Lịch sử thanh toán"** (trắng, viền, xem SHOP-ORDER-61) và **"Thanh toán phí dịch vụ cho đại lý"** (nền cam) ngay cạnh. Nút thanh toán bị khoá khi không còn đơn tiền mặt nào đang chờ duyệt hoặc đã bị từ chối mà chưa khai, kèm chú thích "Không có đơn tiền mặt nào cần chuyển".
+2. Bấm nút → mở màn hình **"Thanh toán phí dịch vụ cho đại lý"**: nếu tổng tiền = 0 → "Không có khoản nào cần thanh toán"; ngược lại hiện: "Phương thức thanh toán: Chuyển khoản ngân hàng" (chữ xanh, CỐ ĐỊNH — chỉ 1 lựa chọn, không cho đổi), "Số tiền: Xđ" (= tổng phí các đơn đang chờ duyệt + đã bị từ chối, chưa khai), QR code bên phải, "Mã QR sẽ hết hạn sau: mm:ss" (đếm ngược từ 15:00), "Quét mã để thanh toán", link "Tải danh sách đơn cần thanh toán" (xuất Excel riêng).
+3. Màn hình **TỰ ĐỘNG xác nhận sau vài giây** (mô phỏng ngân hàng báo giao dịch thành công — Shop KHÔNG cần tự bấm "Tôi đã thanh toán") → hiện banner xanh "✓ Đã gửi yêu cầu thanh toán Xđ cho đại lý — mã ..." thay cho nội dung QR; đơn đang bị từ chối ("Nợ tồn") được ĐƯA VỀ trạng thái chờ duyệt để đại lý duyệt lại được (không kẹt mãi).
+4. Nếu đếm ngược về 0 TRƯỚC KHI tự xác nhận xong (hiếm) → QR mờ đi, hiện "Mã QR đã hết hạn" + nút "Tạo mã mới" để reset đếm ngược và thử lại.
+5. Đóng rồi mở lại màn hình (hoặc nhìn nút ngoài trang): các đơn vừa khai KHÔNG được tính lại vào khoản cần thanh toán nữa — không khai trùng được cùng 1 lô đơn.
+6. Nếu đại lý sau đó từ chối lại 1 đơn đã từng khai → đơn quay về "chưa khai", xuất hiện LẠI ở lần mở màn hình tiếp theo để Shop khai lại.
+7. Đại lý (trang "Duyệt thanh toán") KHÔNG thấy thêm bất kỳ gợi ý nào về việc Shop đã khai hay chưa — đại lý tự dựa vào số ngày trễ rồi tự đối chiếu sổ quỹ thật trước khi duyệt, không dựa vào lời khai này để tin.
 
 ## System Flow
 
-1. `declareCashRemittance(shopId, declaredBy)` (`orderStore.ts`): trả về 1 `CashRemittanceBatch` (hoặc `null` nếu không có gì để khai) — đánh dấu `cashRemittanceDeclaredAt` (ISO timestamp) trên MỌI đơn `paymentMethod === 'cash'` đang `pending_review` HOẶC `rejected` của shop đó; đơn `rejected` được ĐỔI NGƯỢC về `pending_review` (xoá `paymentApprovalRejectedReason`) vì `approveOrderPayment()` chỉ nhận đơn `pending_review` — nếu không reset, đơn `rejected` sẽ kẹt vĩnh viễn không bao giờ duyệt lại được; ghi 1 dòng "Báo đã chuyển tiền mặt cho đại lý" vào Lịch sử thao tác của TỪNG đơn liên quan.
-2. `CashRemittanceBatch` (`orderStore.ts`, kiểu dữ liệu riêng): `{ id, shopId, declaredAt, declaredBy, totalAmount, orderIds }` — `id` sinh kiểu `YYMMDD + 5 ký tự ngẫu nhiên` (`generateRemittanceCode()`), lưu vào `localStorage` key `ghn_cash_remittance_batches_v1` qua `saveRemittanceBatch()`. Đây là bản ghi mà [SHOP-ORDER-61](./bao-cao-dong-tien-lich-su-thanh-toan.md) đọc lại để liệt kê lịch sử.
-3. `RemittanceModal` (`CashFlowReport.tsx`): tự tính `phiGiaoHang`/`noTon`/`tongTien` từ dữ liệu LIVE (không nhận props số liệu) để luôn khớp đúng lúc mở modal; `handleConfirm()` gọi `declareCashRemittance()`, lưu kết quả vào state `justDeclared` để hiện banner xanh NGAY TRONG modal (không cần đóng/mở lại).
-4. `unpaidOrders`/`overdueOrders` (và `unremittedCashOrders` ở component cha) đều lọc thêm `&& !o.cashRemittanceDeclaredAt` — đơn đã khai rồi (đang chờ Agency đối chiếu) KHÔNG được tính lại vào khoản cần thanh toán, tránh khai trùng lặp vô hạn lần.
-5. `rejectOrderPayment()` (Agency Admin) XOÁ `cashRemittanceDeclaredAt` khi từ chối 1 đơn đã từng được khai — nếu không xoá, đơn bị từ chối sau khi đã khai 1 lần sẽ bị loại vĩnh viễn khỏi "cần thanh toán" dù Agency chưa thực sự nhận tiền.
-6. Bên Agency Admin (`CashRemittance.tsx`): `StatusCell` KHÔNG hiện bất kỳ dòng "Shop báo đã chuyển..." nào dù `order.cashRemittanceDeclaredAt` có giá trị hay không — Agency không dựa vào lời khai này để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi duyệt (xem AGA-PAYMENT-1 Notes).
+1. Số tiền cần thanh toán được tính lại MỖI LẦN mở màn hình (không dùng số liệu cũ) — luôn khớp đúng thời điểm hiện tại.
+2. Đồng hồ đếm ngược 15 phút bắt đầu chạy ngay khi mở màn hình.
+3. Sau một khoảng thời gian ngẫu nhiên vài giây (mô phỏng thời gian ngân hàng xử lý giao dịch thật), hệ thống tự động ghi nhận lời khai thanh toán của Shop, không cần thao tác xác nhận thủ công nào thêm.
+4. Mã QR hiển thị chỉ là hình minh hoạ, không mã hoá thông tin tài khoản ngân hàng thật.
+5. Quy tắc nghiệp vụ nền — ghi nhận lời khai, chuyển đơn bị từ chối về trạng thái chờ duyệt lại, không cho khai trùng cùng 1 lô đơn đang chờ đại lý đối chiếu — GIỮ NGUYÊN hoàn toàn như bản trước; lần đổi này chỉ đổi giao diện và cách kích hoạt hành động, không đổi logic nghiệp vụ nền.
+6. Nút "Lịch sử thanh toán" giờ mở một màn hình ĐỘC LẬP, không còn là cột bên cạnh màn hình thanh toán nữa — xem [SHOP-ORDER-61](./bao-cao-dong-tien-lich-su-thanh-toan.md).
 
 ## Acceptance Criteria
 
-**AC1:** Nút "Thanh toán cho đại lý" hiện đúng tổng phí ship các đơn TIỀN MẶT `pending_review` HOẶC `rejected` (CHƯA có `cashRemittanceDeclaredAt`) của shop; disabled "Không có đơn cần chuyển" khi không còn đơn nào thoả điều kiện đó.
+**AC1:** 2 nút "Lịch sử thanh toán" và "Thanh toán phí dịch vụ cho đại lý" hiện tách biệt trên toolbar, mở 2 màn hình độc lập. Nút thanh toán bị khoá khi không còn đơn tiền mặt đang chờ duyệt/đã bị từ chối mà chưa khai.
 
-**AC2:** Modal "Thanh toán hạn mức đã dùng" (cột trái) hiện đúng "Phí giao hàng" (= tổng đơn `pending_review` chưa khai), "Nợ tồn" (= tổng đơn `rejected` chưa khai), "Tổng tiền cần thanh toán" = 2 dòng cộng lại; nút "Xác nhận thanh toán" disabled khi chưa tick checkbox HOẶC tổng = 0.
+**AC2:** Màn hình thanh toán hiện đúng "Chuyển khoản ngân hàng" + Số tiền = tổng phí đơn tiền mặt đang chờ duyệt/đã bị từ chối, chưa khai; tổng = 0 → hiện "Không có khoản nào cần thanh toán", không có QR/đếm ngược.
 
-**AC3:** Sau khi bấm "Xác nhận thanh toán": banner xanh hiện NGAY trong modal (không cần đóng/mở lại); đơn `rejected` trong lô vừa khai được ĐƯA VỀ `pending_review` (xoá lý do từ chối) để Agency duyệt lại được.
+**AC3:** Đếm ngược chạy đúng từ 15:00 xuống 0; màn hình tự động ghi nhận lời khai sau vài giây mô phỏng — KHÔNG cần Shop bấm bất kỳ nút xác nhận nào.
 
-**AC4:** Đóng rồi mở lại modal (hoặc nhìn nút ngoài trang) SAU KHI đã khai: các đơn vừa khai KHÔNG được tính lại vào "Phí giao hàng"/"Nợ tồn"/tổng tiền cần thanh toán nữa (dù vẫn đang `pending_review`, chưa được Agency duyệt) — Shop KHÔNG bấm "Xác nhận thanh toán" lặp lại được cho cùng 1 lô đơn.
+**AC4:** Sau khi tự xác nhận: banner xanh hiện NGAY trong màn hình (không cần đóng/mở lại); đơn bị từ chối trong lô vừa khai được ĐƯA VỀ trạng thái chờ duyệt (xoá lý do từ chối).
 
-**AC5:** Sau khi Shop khai, Agency Admin (`/agency-admin/cash-remittance`) KHÔNG hiện thêm bất kỳ dòng "Shop báo đã chuyển..." nào — badge trạng thái (Chờ duyệt/⚠ Trễ N ngày) giữ nguyên như khi chưa khai, Agency vẫn phải tự đối chiếu sổ quỹ rồi bấm "Duyệt shop này" mới chuyển "✓ Đã nhận tiền".
+**AC5:** Nếu hết 15 phút mà chưa tự xác nhận xong → QR mờ, hiện "Mã QR đã hết hạn" + nút "Tạo mã mới" reset lại đếm ngược.
 
-**AC6:** Nếu Agency từ chối (`rejectOrderPayment`) 1 đơn đã từng được Shop khai trước đó → đơn quay về trạng thái "chưa khai" (`cashRemittanceDeclaredAt` bị xoá), xuất hiện LẠI trong "Nợ tồn" ở lần mở modal tiếp theo để Shop khai lại — không bị loại vĩnh viễn.
+**AC6:** Đóng rồi mở lại màn hình (hoặc nhìn nút ngoài trang) SAU KHI đã khai: các đơn vừa khai KHÔNG được tính lại vào tổng tiền nữa — Shop KHÔNG khai trùng được cùng 1 lô đơn.
+
+**AC7:** Sau khi Shop khai, đại lý KHÔNG thấy thêm bất kỳ dòng "Shop báo đã chuyển..." nào — badge trạng thái giữ nguyên như khi chưa khai.
+
+**AC8:** Nếu đại lý từ chối 1 đơn đã từng được Shop khai trước đó → đơn quay về trạng thái "chưa khai", xuất hiện LẠI để Shop khai lại — không bị loại vĩnh viễn.
 
 ## Notes
 
-- **Bug đã phát hiện qua UAT và sửa (v3 — modal "Thanh toán hạn mức đã dùng")**: bản đầu của `unpaidOrders`/`overdueOrders`/`unremittedCashOrders` chỉ lọc theo `paymentApprovalStatus`, KHÔNG loại trừ đơn đã có `cashRemittanceDeclaredAt` — khiến Shop xác nhận thanh toán xong, đóng rồi mở lại modal vẫn thấy y nguyên số tiền cũ và có thể bấm "Xác nhận thanh toán" lặp lại vô hạn lần cho cùng 1 lô đơn chưa được Agency duyệt (tạo nhiều `CashRemittanceBatch` trùng lặp cho cùng 1 khoản nợ). Đã sửa: thêm điều kiện `!o.cashRemittanceDeclaredAt` vào cả 3 chỗ lọc trên. Đồng thời sửa `rejectOrderPayment()` để XOÁ `cashRemittanceDeclaredAt` khi Agency từ chối (cùng dạng lỗi "kẹt vĩnh viễn" như bug `rejected` đã sửa ở AGA-PAYMENT-1).
-- Nút "Thanh toán cho đại lý" chỉ áp dụng cho TIỀN MẶT — MoMo/Chuyển khoản tự "Đã nhận" ngay từ lúc tạo đơn (xem SHOP-ORDER-43), không có gì để Shop "khai" thêm, nên không tính vào `unremittedCashOrders`.
-- Đây là lời khai TỰ NGUYỆN, một chiều — không có cơ chế nào bắt Shop phải bấm nút này trước khi Agency duyệt; Agency vẫn có thể tự chủ động "Duyệt shop này" (AGA-PAYMENT-2) bất cứ lúc nào mà không cần chờ Shop khai trước.
-- **Thay đổi (bỏ hint "Shop báo đã chuyển" bên Agency Admin)**: trước đây Agency Admin (`CashRemittance.tsx`) hiện thêm dòng "💬 Shop báo đã chuyển lúc..." khi đơn có `cashRemittanceDeclaredAt` — đã BỎ theo yêu cầu (xem AGA-PAYMENT-1 Notes): Agency không cần "thông báo" kiểu Shop tự khai để tin, mà tự dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật. Cơ chế khai của Shop ở story này KHÔNG đổi gì — Shop vẫn khai bình thường, chỉ là lời khai đó không còn hiển thị gì thêm ở phía Agency Admin nữa.
-- **Tách story**: cột phải "Lịch sử thanh toán" trong CÙNG modal này được tách thành story riêng ([SHOP-ORDER-61](./bao-cao-dong-tien-lich-su-thanh-toan.md)) vì có hành vi/bug riêng (copy mã, xem chi tiết) không phụ thuộc vào luồng khai nộp — 2 story cùng render trong 1 modal nhưng độc lập về mặt code (`RemittanceModal` 2 cột).
-- Xem AGA-PAYMENT-1/2 (Agency Admin) để biết cách Agency nhìn thấy và xử lý lời khai này; [SHOP-ORDER-55](./bao-cao-dong-tien.md) (bảng chính nơi nút này nằm).
+- **Đổi giao diện (v2), KHÔNG đổi bản chất nghiệp vụ**: giao diện đổi từ "checkbox điều khoản + nút Xác nhận thủ công" sang "QR + đếm ngược + tự xác nhận" để nhất quán trải nghiệm với luồng thanh toán online lúc tạo đơn — nhưng hành động xác nhận vẫn chỉ là lời khai một chiều, KHÔNG tích hợp cổng thanh toán ngân hàng thật, KHÔNG tự động chuyển đơn sang trạng thái "đã duyệt" — đại lý vẫn bắt buộc tự đối chiếu sổ quỹ rồi duyệt tay.
+- **Tách nút (v2)**: trước đây "Thanh toán cho đại lý" và "Lịch sử thanh toán" là 2 cột trong CÙNG 1 màn hình — nay tách hẳn thành 2 nút + 2 màn hình riêng theo yêu cầu thiết kế mới, không còn phụ thuộc UI vào nhau.
+- **"Chuyển khoản ngân hàng" ở đây ≠ "Chuyển khoản" của từng đơn lẻ**: nút này chỉ áp dụng cho khoản nợ TIỀN MẶT gộp lại — MoMo/Chuyển khoản của TỪNG ĐƠN (phí ship Shop trả GHN) tự "Đã nhận" ngay từ lúc tạo đơn (SHOP-ORDER-43), không có gì để Shop "khai" thêm nên không tính vào tổng này. "Chuyển khoản ngân hàng" hiển thị ở đây là kênh Shop NỘP TIỀN CHO ĐẠI LÝ (gộp nợ), khác bản chất với "Chuyển khoản" là phương thức trả phí ship của 1 đơn riêng lẻ — 2 khái niệm trùng tên, dễ nhầm.
+- Phương thức "Chuyển khoản ngân hàng" đang CỐ ĐỊNH, chưa gắn với cấu hình kênh nộp tiền nào — nếu sau này có nhiều kênh nộp tiền cho đại lý, cần bổ sung lựa chọn kênh ở bước này.
+- Đây là lời khai TỰ NGUYỆN — đại lý vẫn có thể tự chủ động duyệt bất cứ lúc nào mà không cần chờ Shop khai trước.
+- Xem AGA-PAYMENT-1/2 (Agency Admin) để biết cách đại lý nhìn thấy và xử lý lời khai này; [SHOP-ORDER-55](./bao-cao-dong-tien.md) (bảng chính nơi nút này nằm); [SHOP-ORDER-61](./bao-cao-dong-tien-lich-su-thanh-toan.md) (Lịch sử thanh toán, nay là màn hình riêng).

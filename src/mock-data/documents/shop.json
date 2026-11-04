@@ -1471,7 +1471,8 @@
             "Bug đã sửa: dòng \"Trạng thái {kênh}\" trước đây chỉ hiện cho MoMo/Chuyển khoản, thiếu Tiền mặt — trái AC2. Đã sửa điều kiện dựa theo paymentBadge(order) !== null.",
             "Bug đã sửa: sau khi modal QR (CreateOrderDrawer) tự xác nhận xong, Chi tiết đơn không tự cập nhật badge (phải F5). Đã thêm prop onUpdated cho CreateOrderDrawer, refreshOrders() giờ đồng bộ cả selectedOrder.",
             "PROTOTYPE THUẦN — không có SDK/gateway thật. \"GHN xác nhận\"/\"từ chối\" tiền mặt vẫn thủ công; MoMo/CK là mô phỏng tự động.",
-            "Xem SHOP-ORDER-42 (modal), SHOP-ORDER-43 (vì sao MoMo/CK confirmed ngay), SHOP-ORDER-44 (paymentBadge)."
+            "Xem SHOP-ORDER-42 (modal), SHOP-ORDER-43 (vì sao MoMo/CK confirmed ngay), SHOP-ORDER-44 (paymentBadge).",
+            "Nội dung story này đã được gộp nguyên vào SHOP-ORDER-52 (cùng màn hình, cùng tựa đề gốc) để task đó tự đầy đủ, không cần mở thêm doc này mới hiểu hết. File này vẫn giữ lại làm nguồn gốc/lịch sử — khi sửa nội dung phần \"Trạng thái thanh toán hiện tại\", nhớ sửa ĐỒNG THỜI ở cả 2 nơi để không bị lệch."
           ]
         },
         {
@@ -1683,34 +1684,60 @@
           "jiraKey": "AGENCY-1324",
           "title": "[WEB SHOP] Đơn hàng - Chi tiết đơn hàng: Trạng thái thanh toán và lịch sử thao tác",
           "status": "draft",
-          "userStory": "Là chủ shop xem chi tiết 1 đơn hàng, tôi muốn thấy trạng thái thanh toán hiện tại NGAY trong tab Thông tin, và xem lại được toàn bộ lịch sử các lần tôi/hệ thống thao tác liên quan tới thanh toán (chọn kênh, xác nhận, tạo mã lại...) trong 1 tab riêng, để truy vết lại chính xác chuyện gì đã xảy ra với đơn này.",
+          "userStory": "Là chủ shop xem chi tiết 1 đơn hàng, tôi muốn thấy phương thức thanh toán phí ship, trạng thái đại lý đã nhận tiền hay chưa (kèm lý do nếu bị từ chối) NGAY trong tab Thông tin, có cách tự nguyện thanh toán lại nếu bị từ chối, và xem lại được toàn bộ lịch sử các lần thao tác liên quan thanh toán trong 1 tab riêng — để vừa biết tình trạng hiện tại, vừa truy vết lại được chính xác chuyện gì đã xảy ra với đơn này. Việc xem/thao tác này không được làm gián đoạn đơn đã đi vận chuyển bình thường.",
           "userFlow": [
-            "Trạng thái hiện tại (tab \"Thông tin\"): dòng \"Thanh toán\" + \"Trạng thái {kênh}\" + \"Đại lý xác nhận lúc\"/\"Lý do đại lý từ chối\" — mô tả ĐẦY ĐỦ ở SHOP-ORDER-45, không lặp lại ở đây.",
-            "Lịch sử thao tác: mở tab \"Lịch sử thao tác\" (1 trong 3 tab của Chi tiết đơn, cạnh \"Thông tin đơn\" và \"Lịch sử trạng thái\") → bảng liệt kê mọi hành động đã xảy ra với đơn, nhóm theo ngày, mỗi dòng gồm: Thời gian / Người thao tác / Hành động / Nội dung cũ / Nội dung mới.",
-            "Các hành động LIÊN QUAN THANH TOÁN xuất hiện trong bảng này cùng với mọi hành động khác (sửa thông tin, huỷ đơn...), KHÔNG có tab/bộ lọc riêng chỉ cho thanh toán:\n   - \"Chọn hình thức thanh toán phí ship\" (ghi lúc tạo đơn, nếu chọn online).\n   - \"Xác nhận đã thanh toán\" (khi modal tự xác nhận hoặc Shop xác nhận lại trong Chi tiết đơn).\n   - \"Thanh toán thất bại (hết hạn mã)\" (khi đếm ngược 15 phút hết mà chưa xác nhận).\n   - \"Tạo mã thanh toán mới\" (khi bấm \"Tạo QR mới\"/\"Tạo mã mới\" để thử lại).",
+            "A. Trạng thái thanh toán hiện tại (tab \"Thông tin\"): mở chi tiết đơn, tab \"Thông tin\" — dòng \"Thanh toán\" luôn hiện, cho biết phí ship trả bằng MoMo / chuyển khoản ngân hàng / tiền mặt (thu hộ).",
+            "Với đơn Shop tự trả ship (mọi phương thức, kể cả tiền mặt): hiện thêm dòng \"Trạng thái {kênh}\" đúng màu theo đúng badge trạng thái đang dùng chung toàn hệ thống — với MoMo/chuyển khoản, badge này gần như LUÔN là \"Đã nhận\" ngay từ lúc tạo đơn, trừ khi đại lý hậu kiểm phát hiện bất thường và từ chối.",
+            "Nếu đại lý đã xác nhận: thêm dòng \"Đại lý xác nhận lúc\" — với MoMo/chuyển khoản gần như trùng thời điểm tạo đơn (tự động); với tiền mặt là thời điểm đại lý tự tay bấm duyệt.",
+            "Nếu đại lý từ chối (hiếm — chỉ khi hậu kiểm phát hiện không khớp): thêm dòng \"Lý do đại lý từ chối\" (chữ đỏ).",
+            "Nếu CHƯA được đại lý xác nhận (gồm cả bị từ chối, hoặc chưa từng được xác nhận) VÀ phương thức là MoMo/chuyển khoản: thêm 1 dòng link \"Thanh toán lại →\" — Shop có thể bấm để tự nguyện mở lại màn hình thanh toán, hoàn toàn TỰ NGUYỆN, không phải điều kiện bắt buộc để đơn đi tiếp (đơn đã đi từ trước rồi).",
+            "Nếu CHƯA được xác nhận VÀ phương thức là Tiền mặt: KHÔNG có link nào để bấm — tiền mặt không có giao dịch số nào để trả lại qua hệ thống, đại lý sẽ liên hệ Shop xử lý ngoài hệ thống.",
+            "Chỉnh sửa các thông tin khác của đơn (tên/SĐT/địa chỉ/COD/phí ship/trạng thái vận chuyển) và bấm \"Lưu thay đổi\" — lưu ngay lập tức, KHÔNG có gì bị chặn bởi trạng thái thanh toán ở bất kỳ giá trị nào.",
+            "B. Lịch sử thao tác (tab riêng): mở tab \"Lịch sử thao tác\" (1 trong 3 tab của Chi tiết đơn, cạnh \"Thông tin đơn\" và \"Lịch sử trạng thái\") → bảng liệt kê mọi hành động đã xảy ra với đơn, nhóm theo ngày, mỗi dòng gồm: Thời gian / Người thao tác / Hành động / Nội dung cũ / Nội dung mới.",
+            "Các hành động LIÊN QUAN THANH TOÁN xuất hiện trong bảng này cùng với mọi hành động khác (sửa thông tin, huỷ đơn...), KHÔNG có tab/bộ lọc riêng chỉ cho thanh toán:\n   - \"Chọn hình thức thanh toán phí ship\" (ghi lúc tạo đơn, nếu chọn online).\n   - \"Xác nhận đã thanh toán\" (khi hệ thống tự xác nhận hoặc Shop xác nhận lại trong Chi tiết đơn).\n   - \"Thanh toán thất bại (hết hạn mã)\" (khi đếm ngược 15 phút hết mà chưa xác nhận).\n   - \"Tạo mã thanh toán mới\" (khi bấm \"Tạo QR mới\"/\"Tạo mã mới\" để thử lại).",
             "Mỗi dòng lịch sử là bản ghi TĨNH tại thời điểm xảy ra — sửa/xoá dữ liệu đơn sau đó không làm đổi lại các dòng lịch sử cũ."
           ],
           "systemFlow": [
-            "3 tab trong OrderDetailDrawer: 'info' → \"Thông tin đơn\", 'status' → \"Lịch sử trạng thái\", 'action' → \"Lịch sử thao tác\".",
-            "Tab \"Lịch sử thao tác\" (activeTab === 'action') render bảng từ actionDates/actionByDate — nhóm order.actionHistory (mảng ActionHistoryItem[]) theo ngày, mới nhất lên đầu. Đây là bảng DÙNG CHUNG cho MỌI loại hành động, không riêng thanh toán.",
-            "Các dòng lịch sử LIÊN QUAN THANH TOÁN được ghi bởi nhiều hàm khác nhau, tại nhiều thời điểm:\n   - Lúc tạo đơn (buildOrder() trong CreateOrderDrawer): seed sẵn \"Chọn hình thức thanh toán phí ship\" nếu paymentMethod !== 'cash'.\n   - handlePaymentPaidInDetail(): ghi \"Xác nhận đã thanh toán\" qua appendActionHistory(...).\n   - handlePaymentExpireInDetail(): ghi \"Thanh toán thất bại (hết hạn mã)\".\n   - handlePaymentRetryInDetail(): ghi \"Tạo mã thanh toán mới\".",
-            "appendActionHistory(orderId, operator, action, oldContent, newContent) (trong orderStore.ts) là điểm ghi DUY NHẤT cho mọi hành động SAU KHI đơn đã tồn tại — mỗi lần gọi unshift 1 entry mới vào đầu order.actionHistory, không sửa/xoá entry cũ.",
-            "Dòng trạng thái ở tab \"Thông tin\" (SHOP-ORDER-45) đọc TRỰC TIẾP field hiện tại của order (paymentApprovalStatus, paymentApprovedAt...) — KHÔNG đọc từ actionHistory; 2 nguồn dữ liệu độc lập nhau dù mô tả cùng 1 câu chuyện."
+            "A. Trạng thái thanh toán hiện tại: dòng \"Thanh toán\" luôn hiện, đọc đúng phương thức và ai là người trả phí ship của đơn.",
+            "Dòng \"Trạng thái {kênh}\" hiện cho MỌI phương thức Shop tự trả (tiền mặt/MoMo/chuyển khoản) — dùng chung công thức badge với danh sách đơn.",
+            "Dòng \"Đại lý xác nhận lúc\" chỉ hiện khi đã được duyệt — với MoMo/chuyển khoản, thời điểm này được ghi nhận ngay lúc tạo đơn (xem như hệ thống tự xác nhận); với tiền mặt là đúng thời điểm đại lý bấm duyệt tay.",
+            "Dòng \"Lý do đại lý từ chối\" hiện khi bị từ chối, màu đỏ.",
+            "Link \"Thanh toán lại\" hiện ngay sau dòng lý do từ chối (nếu có), CHỈ khi đơn CHƯA được xác nhận VÀ phương thức là online (MoMo/chuyển khoản) — bấm vào mở lại màn hình thanh toán NGAY, hoạt động độc lập hoàn toàn với việc đơn có đang ở chế độ sửa hay không.",
+            "Việc lưu thay đổi các thông tin khác của đơn KHÔNG còn bị chặn bởi trạng thái thanh toán — luôn lưu được, bất kể trạng thái thanh toán đang là gì.",
+            "Thanh toán lại thành công → chuyển thẳng sang trạng thái \"đã xác nhận\" (không qua bước chờ duyệt trung gian, giống hệt lúc tạo đơn), xoá lý do từ chối cũ.",
+            "Bấm \"Tạo mã mới\" bên trong màn hình thanh toán lại → đưa đơn về trạng thái chờ thanh toán mới, xoá lý do từ chối cũ, không liên quan đến việc lưu các thông tin khác của đơn.",
+            "B. Lịch sử thao tác: Chi tiết đơn có 3 tab: \"Thông tin đơn\", \"Lịch sử trạng thái\", và \"Lịch sử thao tác\".",
+            "Tab \"Lịch sử thao tác\" hiện 1 bảng DÙNG CHUNG cho MỌI loại hành động của đơn (không riêng thanh toán), nhóm theo ngày, mới nhất lên đầu.",
+            "Các dòng lịch sử LIÊN QUAN THANH TOÁN được ghi tại nhiều thời điểm khác nhau trong vòng đời đơn: lúc tạo đơn (nếu chọn thanh toán online, ghi sẵn \"Chọn hình thức thanh toán phí ship\"); lúc xác nhận thanh toán thành công; lúc mã thanh toán hết hạn; lúc bấm tạo mã thanh toán mới.",
+            "Mọi hành động xảy ra SAU KHI đơn đã tồn tại đều đi qua CÙNG MỘT cơ chế ghi lịch sử dùng chung cho toàn hệ thống — mỗi lần có hành động mới, hệ thống thêm đúng 1 dòng mới lên đầu danh sách, không sửa/xoá dòng cũ.",
+            "Dòng trạng thái thanh toán hiện tại ở tab \"Thông tin\" (phần A) đọc TRỰC TIẾP dữ liệu hiện tại của đơn — KHÔNG đọc từ lịch sử thao tác; 2 nguồn dữ liệu độc lập nhau dù cùng mô tả 1 câu chuyện."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Tab \"Lịch sử thao tác\" liệt kê đủ các hành động liên quan thanh toán đã xảy ra với đơn, đúng thứ tự thời gian (mới nhất lên đầu), nhóm theo ngày.",
-            "AC2: Mỗi dòng lịch sử hiện đủ: Thời gian, Người thao tác, Hành động, Nội dung cũ, Nội dung mới.",
-            "AC3: \"Xác nhận đã thanh toán\" xuất hiện đúng 1 lần mỗi khi Shop/modal xác nhận thanh toán thành công (kể cả xác nhận lại sau khi bị từ chối).",
-            "AC4: \"Tạo mã thanh toán mới\" xuất hiện đúng 1 lần mỗi khi bấm \"Tạo QR mới\"/\"Tạo mã mới\".",
-            "AC5: \"Thanh toán thất bại (hết hạn mã)\" xuất hiện đúng 1 lần mỗi khi đếm ngược 15 phút hết mà chưa xác nhận.",
-            "AC6: Lịch sử là bản ghi TĨNH — các dòng cũ không tự đổi nội dung khi trạng thái hiện tại của đơn thay đổi sau đó.",
-            "AC7: Tab \"Lịch sử thao tác\" không có bộ lọc/tab con riêng cho thanh toán — hiển thị chung với mọi loại hành động khác của đơn (sửa thông tin, huỷ đơn, v.v.)."
+            "AC1: Tab \"Thông tin\" của mọi đơn đều hiển thị dòng \"Thanh toán\" với đúng phương thức.",
+            "AC2: Đơn Shop tự trả ship bằng tiền mặt/MoMo/chuyển khoản → hiện thêm dòng \"Trạng thái {kênh}\" đúng màu — áp dụng cho CẢ tiền mặt, không chỉ riêng online.",
+            "AC3: Đã được đại lý xác nhận → hiện thêm dòng \"Đại lý xác nhận lúc\" với thời điểm đúng; với MoMo/chuyển khoản thời điểm này gần như trùng lúc tạo đơn.",
+            "AC4: Bị đại lý từ chối → hiện thêm dòng \"Lý do đại lý từ chối\" (chữ đỏ) với đúng lý do đại lý đã nhập.",
+            "AC5: Chưa được xác nhận (kể cả bị từ chối, hoặc chưa từng được xác nhận) + phương thức MoMo/chuyển khoản → hiện thêm link \"Thanh toán lại →\", bấm vào mở màn hình thanh toán NGAY (không cần vào chế độ sửa trước).",
+            "AC6: Chưa được xác nhận + phương thức Tiền mặt → KHÔNG có link \"Thanh toán lại\" nào.",
+            "AC7: Thanh toán lại thành công → chuyển thẳng sang \"đã xác nhận\" (không qua bước chờ duyệt trung gian), xoá lý do từ chối cũ.",
+            "AC8: Đổi thông tin khác của đơn (tên/SĐT/địa chỉ/COD/phí ship/trạng thái) và bấm \"Lưu thay đổi\" → LUÔN lưu thành công ngay, không bị chặn bởi trạng thái thanh toán ở bất kỳ giá trị nào.",
+            "AC9: Tab \"Lịch sử thao tác\" liệt kê đủ các hành động liên quan thanh toán đã xảy ra với đơn, đúng thứ tự thời gian (mới nhất lên đầu), nhóm theo ngày.",
+            "AC10: Mỗi dòng lịch sử hiện đủ: Thời gian, Người thao tác, Hành động, Nội dung cũ, Nội dung mới.",
+            "AC11: \"Xác nhận đã thanh toán\" xuất hiện đúng 1 lần mỗi khi Shop/hệ thống xác nhận thanh toán thành công (kể cả xác nhận lại sau khi bị từ chối).",
+            "AC12: \"Tạo mã thanh toán mới\" xuất hiện đúng 1 lần mỗi khi bấm \"Tạo QR mới\"/\"Tạo mã mới\".",
+            "AC13: \"Thanh toán thất bại (hết hạn mã)\" xuất hiện đúng 1 lần mỗi khi đếm ngược 15 phút hết mà chưa xác nhận.",
+            "AC14: Lịch sử là bản ghi TĨNH — các dòng cũ không tự đổi nội dung khi trạng thái hiện tại của đơn thay đổi sau đó.",
+            "AC15: Tab \"Lịch sử thao tác\" không có bộ lọc/tab con riêng cho thanh toán — hiển thị chung với mọi loại hành động khác của đơn (sửa thông tin, huỷ đơn, v.v.)."
           ],
           "notes": [
-            "Đây là TÍNH NĂNG ĐÃ CÓ SẴN (tab \"Lịch sử thao tác\" là tab dùng chung cho toàn bộ hành động của đơn, không phải tính năng mới riêng cho thanh toán) — story này tách ra để khớp đúng phạm vi ticket Jira AGENCY-1324, tập trung vào GÓC NHÌN thanh toán của tab này.",
-            "Phần \"Trạng thái thanh toán\" (hiện tại, không phải lịch sử) đã có story riêng chi tiết hơn — xem SHOP-ORDER-45. Story này KHÔNG lặp lại nội dung đó, chỉ bổ sung phần \"Lịch sử thao tác\".",
-            "Xem thêm SHOP-ORDER-42 (modal) và SHOP-ORDER-43 (gate giữ đơn) để biết chính xác các hàm nào ghi log vào lúc nào."
+            "Thay đổi lớn so với thiết kế trước: trước đây bấm \"Lưu thay đổi\" khi đơn chưa được duyệt sẽ bị CHẶN LƯU. Đã bỏ hẳn chặn này — lưu đơn giờ luôn thành công. Hành động \"Thanh toán lại\" giờ là TỰ NGUYỆN, truy cập qua link riêng, không còn gắn vào luồng lưu đơn.",
+            "Điều kiện hiện link \"Thanh toán lại\" đã MỞ RỘNG: từ chỗ chỉ hiện khi bị từ chối, giờ hiện bất cứ khi nào đơn CHƯA được xác nhận (gồm cả trường hợp Shop đóng màn hình thanh toán sớm lúc tạo đơn, chưa từng được xác nhận lần nào) — nếu không mở rộng, đơn ở trạng thái \"chưa từng xác nhận\" sẽ không có cách nào quay lại thanh toán.",
+            "Bug đã sửa: dòng \"Trạng thái {kênh}\" trước đây chỉ hiện cho MoMo/chuyển khoản, thiếu Tiền mặt. Đã sửa để hiện cho mọi phương thức Shop tự trả.",
+            "Bug đã sửa: sau khi màn hình thanh toán lúc tạo đơn tự xác nhận xong, Chi tiết đơn không tự cập nhật trạng thái mới (phải tải lại trang). Đã sửa để Chi tiết đơn đang mở tự đồng bộ ngay khi có kết quả mới.",
+            "PROTOTYPE THUẦN — không có cổng thanh toán thật. \"Đại lý xác nhận/từ chối\" với tiền mặt vẫn là thao tác thủ công của đại lý; với MoMo/chuyển khoản là mô phỏng tự động, không có webhook thật.",
+            "Đây là TÍNH NĂNG ĐÃ CÓ SẴN cho phần (B) — tab \"Lịch sử thao tác\" là tab dùng chung cho toàn bộ hành động của đơn, không phải tính năng mới riêng cho thanh toán; story này tập trung vào GÓC NHÌN thanh toán của tab đó.",
+            "Xem thêm SHOP-ORDER-42 (màn hình thanh toán), SHOP-ORDER-43 (vì sao MoMo/chuyển khoản tự xác nhận ngay còn tiền mặt thì không), SHOP-ORDER-51 (Đổi phương thức thanh toán — khi đổi phương thức, hành động đó cũng ghi vào tab \"Lịch sử thao tác\" theo đúng cơ chế chung này)."
           ]
         },
         {
@@ -1773,49 +1800,55 @@
         {
           "id": "SHOP-ORDER-55",
           "jiraKey": "",
-          "title": "[WEB SHOP] Báo cáo dòng tiền: Trang & bảng phí dịch vụ đã/chưa thanh toán",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Bảng phí dịch vụ đã/chưa thanh toán",
           "status": "draft",
-          "userStory": "Là chủ shop, tôi muốn có 1 trang riêng dạng bảng đối soát (giống bảng \"Phí dịch vụ\" thật của GHN) để xem rõ tổng phí ship đã thanh toán và còn nợ bao nhiêu, cùng chi tiết từng đơn, thay vì phải tự cộng tay hay lướt từng dòng trong danh sách đơn.",
+          "userStory": "Là chủ shop, tôi muốn có 1 trang riêng dạng bảng đối soát (giống bảng \"Phí dịch vụ\" thật của GHN) để xem rõ tổng phí ship đã thanh toán và còn nợ bao nhiêu, cùng chi tiết từng đơn, lọc nhanh theo trạng thái/phương thức/thời gian, thay vì phải tự cộng tay hay lướt từng dòng trong danh sách đơn.",
           "userFlow": [
             "Vào menu \"Báo cáo dòng tiền\" trong sidebar Web Shop (icon 💲, giữa \"Đơn hàng\" và \"Đối soát\") → route /shop/cash-flow.",
             "Đầu trang hiện nhãn \"Phí dịch vụ\" (gạch chân cam) — trang chỉ tập trung vào phí ship, không có tab \"Tiền thu hộ\" nào (COD đã có trang \"Đối soát\" riêng, không lặp lại ở đây).",
-            "Góc phải: ghi chú ngắn + nút \"Tải file excel\" (tải thật 1 file .xlsx chứa đúng dữ liệu đang hiển thị) + nút \"Thanh toán cho đại lý (Xđ)\" (xem SHOP-ORDER-60 cho hành vi đầy đủ của nút này).",
-            "Bảng: dòng đầu tiên luôn là \"Tổng\" (nền cam nhạt), cộng dồn 3 cột tiền của TOÀN BỘ đơn.",
-            "Các dòng sau, mỗi dòng 1 đơn: STT, Mã đơn (gạch chân xanh — có thể kèm badge cảnh báo ngay dưới, xem SHOP-ORDER-57), Ngày thanh toán (giờ + ngày), Người nhận (tên + SĐT che bớt \"xxxx 1234\" + tỉnh/thành), Trạng thái (tên kênh: MoMo/Chuyển khoản/Tiền mặt), Phí dịch vụ (số ÂM — toàn bộ phí ship hiệu lực của đơn, có thể bấm vào xem breakdown, xem SHOP-ORDER-58), Đã thanh toán (số DƯƠNG nếu đại lý đã xác nhận, 0 nếu chưa, có thể bấm vào xem breakdown kênh, xem SHOP-ORDER-59), Chưa thanh toán (số ÂM nếu Shop còn nợ thêm, số DƯƠNG nếu đại lý cần hoàn, 0 nếu đã xong).",
+            "Góc phải: ghi chú ngắn + nút \"Tải file excel\" (tải thật 1 file dữ liệu chứa đúng những gì đang hiển thị, đã áp dụng bộ lọc) + 2 nút tách biệt \"Lịch sử thanh toán\" và \"Thanh toán phí dịch vụ cho đại lý\" (xem SHOP-ORDER-60/SHOP-ORDER-61 cho hành vi đầy đủ của 2 nút này).",
+            "Dưới toolbar là hàng bộ lọc: dropdown \"Trạng thái\" (Tất cả/Chờ duyệt/Đã duyệt/Đại lý từ chối, và tách riêng 2 lựa chọn \"Chưa đủ — cần đóng thêm\"/\"Dư — đại lý cần hoàn\" cho đơn đã duyệt nhưng phí sau đó thay đổi), dropdown \"Phương thức\" (Tất cả/Tiền mặt/MoMo/Chuyển khoản), 2 ô chọn ngày \"Từ\"/\"đến\" theo ngày thanh toán, ô \"Tìm kiếm\" theo mã đơn hoặc tên người nhận, và link \"Xoá lọc\" chỉ hiện khi đang áp dụng ít nhất 1 điều kiện lọc.",
+            "Bảng: dòng đầu tiên luôn là \"Tổng\" (nền cam nhạt), cộng dồn 3 cột tiền của các đơn đang khớp bộ lọc hiện tại (không phải toàn bộ đơn nếu đang lọc).",
+            "Các dòng sau, mỗi dòng 1 đơn: STT, Mã đơn (gạch chân xanh — có thể kèm badge cảnh báo ngay dưới, xem SHOP-ORDER-57), Ngày thanh toán (giờ + ngày), Người nhận (tên + SĐT che bớt \"xxxx 1234\" + tỉnh/thành), Phương thức (tên kênh: Tiền mặt/MoMo/Chuyển khoản — KHÔNG hiện trạng thái duyệt ở bảng, xem Notes), Phí dịch vụ (số ÂM — toàn bộ phí ship hiệu lực của đơn, có thể bấm vào xem breakdown, xem SHOP-ORDER-58), Đã thanh toán (số DƯƠNG nếu đại lý đã xác nhận, 0 nếu chưa, có thể bấm vào xem breakdown kênh, xem SHOP-ORDER-59), Chưa thanh toán (số ÂM nếu Shop còn nợ thêm, số DƯƠNG nếu đại lý cần hoàn, 0 nếu đã xong).",
+            "Không có đơn nào khớp bộ lọc đang chọn (nhưng shop vẫn có đơn khác) → thông báo riêng \"Không có đơn nào khớp bộ lọc đã chọn\", khác với thông báo \"Chưa có đơn nào\" khi shop chưa từng có đơn nào thuộc phạm vi trang này.",
             "Chỉ hiện đơn Shop TỰ TRẢ SHIP (tiền mặt/MoMo/chuyển khoản) của shop đang đăng nhập — đơn Khách trả ship (COD) không xuất hiện."
           ],
           "systemFlow": [
-            "src/platforms/shop/pages/CashFlowReport.tsx, route cash-flow trong App.tsx, nav item trong ShopLayout.tsx.",
-            "relevantOrders = loadOrders().filter(o => o.shopId === 'SHP001' && !!o.paymentApprovalStatus).sort(...) — sắp xếp theo paymentPaidAt giảm dần, KHÔNG nhóm theo ngày (bảng phẳng, khớp đúng dạng bảng đối soát thật).",
-            "effectiveFee(order) (hàm DÙNG CHUNG công thức với Agency Admin CashRemittance.tsx): trả 0 nếu order.status === 'cancelled' && !order.cancelRefundConfirmedAt (đơn huỷ chưa hoàn — không còn nghĩa vụ phí ship nào), ngược lại trả đúng order.fee. rowAmounts(order): fee = effectiveFee(order), phiDichVu = -fee || 0 (|| 0 chuẩn hoá -0 thành 0). Nếu chưa confirmed: daThanhToan = 0, chuaThanhToan = -fee || 0. Nếu đã confirmed: daThanhToan = order.paymentApprovedAmount ?? fee (snapshot fee NGAY TẠI THỜI ĐIỂM đại lý duyệt — xem SHOP-ORDER-56), chuaThanhToan = -(fee - daThanhToan) || 0 — tách riêng phần ĐÃ DUYỆT khỏi phần phí/nghĩa vụ thay đổi SAU KHI duyệt (phí hoàn hàng/đổi địa chỉ TĂNG, phúc tra GIẢM, HOẶC đơn bị HUỶ — fee hiệu lực về 0) để không ngộ nhận gộp cả vào \"Đã thanh toán\" chỉ vì đơn đang ở trạng thái confirmed. Đơn chưa từng phát sinh/thay đổi gì sau duyệt (đa số) có paymentApprovedAmount === fee → hành vi giống hệt bản nhị phân cũ. Đây là NỀN TẢNG mà cả badge (SHOP-ORDER-57) lẫn 2 modal breakdown (SHOP-ORDER-58/59) đều dựa vào.",
-            "Dòng \"Tổng\" = reduce cộng dồn 3 giá trị trên qua TOÀN BỘ relevantOrders (không phụ thuộc trang/phân trang).",
-            "handleExport(): dùng thư viện xlsx (đã có sẵn trong project, xem Shops.tsx/AgencyOrders.tsx), build headers + rows từ đúng dữ liệu đang hiển thị, XLSX.writeFile(...) tải file phi-dich-vu-{ngày}.xlsx — XUẤT FILE THẬT, không phải nút giả.",
-            "maskedReceiver(order): che SĐT chỉ còn 4 số cuối (slice(-4)), lấy phần cuối cùng của receiverAddress (sau dấu phẩy cuối) làm \"tỉnh/thành\" hiển thị.",
-            "Không có tab \"Tiền thu hộ\" nào trong trang này (đã bỏ theo yêu cầu) — COD xem ở trang \"Đối soát\" (/shop/reconciliation) riêng."
+            "Trang nằm trong mục \"Báo cáo dòng tiền\" ở sidebar Web Shop, chỉ hiện đơn của shop đang đăng nhập có ghi nhận trạng thái duyệt thanh toán, sắp xếp theo thời gian thanh toán gần nhất lên đầu — bảng phẳng, không nhóm theo ngày, khớp đúng dạng bảng đối soát thật.",
+            "Công thức tính 3 cột tiền dùng CHUNG với màn hình \"Duyệt thanh toán\" bên Agency Admin, để 2 phía luôn nhìn cùng 1 con số cho cùng 1 đơn: đơn huỷ mà chưa được hoàn tiền thì phí hiệu lực = 0 (không còn nghĩa vụ phí ship nào); đơn CHƯA được đại lý duyệt → Phí dịch vụ = Đã thanh toán 0, Chưa thanh toán = âm đúng bằng phí; đơn ĐÃ được duyệt → Đã thanh toán = đúng số tiền đại lý đã duyệt tại thời điểm đó, phần chênh lệch phát sinh SAU KHI duyệt (phí hoàn hàng/đổi địa chỉ, phúc tra, hoặc huỷ đơn) được tách riêng vào cột Chưa thanh toán thay vì gộp nhầm vào Đã thanh toán.",
+            "Dòng \"Tổng\" và file xuất Excel luôn tính trên đúng tập đơn đang khớp bộ lọc hiện tại (trạng thái/phương thức/khoảng ngày/từ khoá tìm kiếm) — đổi bộ lọc thì Tổng và file xuất cũng đổi theo tương ứng.",
+            "Bộ lọc KHÔNG ảnh hưởng đến khoản nợ thật dùng ở nút \"Thanh toán phí dịch vụ cho đại lý\" — khoản đó luôn tính trên toàn bộ đơn tiền mặt chưa khai, bất kể Shop đang lọc xem gì trên màn hình.",
+            "Cột \"Người nhận\" chỉ hiện 4 số cuối số điện thoại và phần cuối cùng của địa chỉ (coi như tỉnh/thành) — không hiện thông tin liên hệ đầy đủ.",
+            "Không có tab \"Tiền thu hộ\" nào trong trang này (đã bỏ theo yêu cầu) — COD xem ở trang \"Đối soát\" riêng."
           ],
           "crossPlatformImpact": [
-            "Dữ liệu và quy ước hiển thị (3 cột tiền, effectiveFee()/rowAmounts()) thống nhất với trang Duyệt thanh toán tiền mặt bên Agency Admin (AGA-PAYMENT-1/6) để 2 phía nhìn cùng ngôn ngữ dữ liệu."
+            "Dữ liệu và quy ước hiển thị (3 cột tiền, công thức tính phí/đã thanh toán/chưa thanh toán) thống nhất với trang Duyệt thanh toán tiền mặt bên Agency Admin (AGA-PAYMENT-1/6) để 2 phía nhìn cùng ngôn ngữ dữ liệu."
           ],
           "acceptanceCriteria": [
             "AC1: Sidebar Web Shop có mục \"Báo cáo dòng tiền\", route /shop/cash-flow mở đúng trang, không lỗi console.",
             "AC2: Trang chỉ hiện nhãn \"Phí dịch vụ\" (gạch chân cam) — KHÔNG có tab \"Tiền thu hộ\" nào.",
-            "AC3: Dòng \"Tổng\" hiện đúng tổng 3 cột tiền của toàn bộ đơn khớp bộ lọc shop; luôn thoả |Phí dịch vụ| = Đã thanh toán + |Chưa thanh toán|.",
-            "AC4: Đơn paymentApprovalStatus === 'confirmed' → \"Đã thanh toán\" > 0 (= order.paymentApprovedAmount, mặc định bằng order.fee nếu chưa từng phát sinh phí sau khi duyệt), \"Chưa thanh toán\" = 0 — TRỪ KHI đơn có chênh lệch phát sinh sau duyệt (xem SHOP-ORDER-57 cho đầy đủ 2 chiều phát sinh/hoàn).",
-            "AC5: Đơn paymentApprovalStatus !== 'confirmed' (pending_review/rejected) → \"Đã thanh toán\" = 0, \"Chưa thanh toán\" < 0 (= -order.fee).",
-            "AC6: Cột \"Người nhận\" hiện SĐT che bớt dạng \"xxxx 1234\" (chỉ 4 số cuối) + tỉnh/thành — KHÔNG hiện SĐT đầy đủ.",
-            "AC7: Bấm \"Tải file excel\" → tải thật 1 file .xlsx đúng dữ liệu đang hiển thị (STT/Mã đơn/Ngày/Người nhận/Trạng thái/3 cột tiền), không lỗi JS.",
-            "AC8: Đơn Khách trả ship (COD) không xuất hiện trong bảng."
+            "AC3: Dòng \"Tổng\" hiện đúng tổng 3 cột tiền của các đơn đang khớp bộ lọc hiện tại; luôn thoả |Phí dịch vụ| = Đã thanh toán + |Chưa thanh toán|.",
+            "AC4: Đơn đã được đại lý duyệt → \"Đã thanh toán\" > 0 (mặc định bằng đúng phí ship nếu chưa từng phát sinh gì sau khi duyệt), \"Chưa thanh toán\" = 0 — TRỪ KHI đơn có chênh lệch phát sinh sau duyệt (xem SHOP-ORDER-57 cho đầy đủ 2 chiều phát sinh/hoàn).",
+            "AC5: Đơn CHƯA được đại lý duyệt (đang chờ duyệt hoặc đã bị từ chối) → \"Đã thanh toán\" = 0, \"Chưa thanh toán\" < 0 (đúng bằng phí ship của đơn).",
+            "AC6: Cột \"Phương thức\" hiện đúng tên kênh thanh toán (Tiền mặt/MoMo/Chuyển khoản) — bảng KHÔNG hiện badge trạng thái duyệt (Chờ duyệt/Đã duyệt/Đại lý từ chối) cho Shop ở giai đoạn đầu golive (xem Notes).",
+            "AC7: Cột \"Người nhận\" hiện SĐT che bớt dạng \"xxxx 1234\" (chỉ 4 số cuối) + tỉnh/thành — KHÔNG hiện SĐT đầy đủ.",
+            "AC8: Bộ lọc Trạng thái/Phương thức/Khoảng ngày/Tìm kiếm hoạt động đúng, có thể kết hợp đồng thời; link \"Xoá lọc\" chỉ hiện khi có ít nhất 1 điều kiện đang áp dụng, bấm vào reset toàn bộ về mặc định.",
+            "AC9: Dòng \"Tổng\" và file xuất Excel luôn khớp đúng tập đơn đang hiển thị sau khi lọc — không tính trên toàn bộ đơn khi đang lọc.",
+            "AC10: Bấm \"Tải file excel\" → tải thật 1 file đúng dữ liệu đang hiển thị (đã áp dụng bộ lọc), không lỗi.",
+            "AC11: Đơn Khách trả ship (COD) không xuất hiện trong bảng."
           ],
           "notes": [
-            "Đây là BẢN LÀM LẠI (v2) sau khi đối chiếu với 1 ảnh UI thật của GHN (bảng \"Phí dịch vụ\" trong trang đối soát) — bản v1 trước đó (chip tổng + 4 tab lọc + badge theo đơn, nhóm theo ngày) đã bị thay thế hoàn toàn vì không khớp cách trình bày thật.",
+            "Đây là bản làm lại (v2) sau khi đối chiếu với 1 ảnh UI thật của GHN (bảng \"Phí dịch vụ\" trong trang đối soát) — bản v1 trước đó (chip tổng + 4 tab lọc + badge theo đơn, nhóm theo ngày) đã bị thay thế hoàn toàn vì không khớp cách trình bày thật.",
+            "Sửa lỗi cột \"Trạng thái\" (v3): bản trước đó (ghi trong note cũ là \"cố tình\") thực ra bị NHẦM — cột \"Trạng thái\" hiện tên kênh thanh toán (MoMo/CK/Tiền mặt) thay vì trạng thái duyệt, trong khi tiêu đề cột rõ ràng nói về trạng thái. Đã sửa (v3): cột này hiện đúng badge trạng thái duyệt (Chờ duyệt/Đã duyệt/Đại lý từ chối), tên kênh thanh toán chuyển xuống thành chữ nhỏ bên dưới badge.",
+            "Đơn giản hoá cho golive (v4): ngay sau khi sửa đúng (v3), quyết định BỎ hẳn badge trạng thái duyệt khỏi bảng này cho giai đoạn đầu golive — đổi cột lại thành \"Phương thức\" (chỉ hiện tên kênh, không có badge). Lý do: giai đoạn đầu golive nên đơn giản luồng hiển thị cho Shop, 2 cột \"Đã thanh toán\"/\"Chưa thanh toán\" đã đủ nói lên đơn nào xong/chưa xong mà không cần thêm badge trạng thái riêng. Đây CHỈ là ẩn ở lớp hiển thị — cơ chế duyệt tiền mặt nền (Agency Admin phải tự xác nhận đã nhận tiền mặt thật) HOÀN TOÀN KHÔNG đổi, 2 cột tiền vẫn tính đúng y như trước; bộ lọc \"Trạng thái\" vẫn giữ nguyên cho ai cần lọc sâu hơn dù không còn thấy badge trên từng dòng.",
+            "Thêm bộ lọc (v3): trước đây trang không có cách nào lọc/tìm nhanh, phải lướt hết cả bảng. Nay có đủ lọc theo trạng thái duyệt (gồm cả 2 trạng thái con \"chưa đủ\"/\"dư\" sau khi phát sinh phí), phương thức, khoảng ngày thanh toán, và tìm theo mã đơn/tên người nhận — kết hợp được nhiều điều kiện cùng lúc.",
             "Tab \"Tiền thu hộ\" (có ở bản tham khảo ban đầu) đã bị BỎ theo yêu cầu — trang này giờ CHỈ còn \"Phí dịch vụ\", không có cơ chế điều hướng/tab nào khác.",
             "Quy ước dấu (Phí dịch vụ âm, Đã thanh toán dương, Chưa thanh toán âm/dương) và dòng \"Tổng\" ở đầu bảng là MÔ PHỎNG đúng theo ảnh tham khảo thật — không phải quy ước tự nghĩ ra.",
-            "Cột \"Trạng thái\" trong ảnh gốc là LÝ DO NGOẠI LỆ GIAO HÀNG (hàng ngoại lệ/chuyển hoàn/hư hỏng) của 1 loại phí phát sinh khác hẳn — ở đây CỐ TÌNH đổi nghĩa thành KÊNH THANH TOÁN (MoMo/CK/Tiền mặt) để khớp với mô hình dữ liệu paymentApprovalStatus đang có, KHÔNG xây dựng tính năng \"phí phát sinh ngoại lệ\" mới (ngoài phạm vi).",
             "Trang này THAY THẾ vai trò hiển thị trạng thái thanh toán trước đây nằm ở cột \"Phí ship\" trong danh sách Đơn hàng — xem SHOP-ORDER-44 (đã bỏ badge khỏi danh sách đơn).",
-            "PROTOTYPE THUẦN cho phần số liệu (đọc trực tiếp orderStore.ts) nhưng nút \"Tải file excel\" xuất file THẬT (dùng thư viện xlsx, không phải mock).",
+            "PROTOTYPE THUẦN cho phần số liệu (đọc trực tiếp dữ liệu mẫu) nhưng nút \"Tải file excel\" xuất file THẬT, không phải nút giả.",
             "Xem SHOP-ORDER-43 (vì sao MoMo/CK gần như luôn \"Đã thanh toán\" ngay), SHOP-ORDER-45 (Chi tiết đơn vẫn còn dòng \"Trạng thái {kênh}\" riêng, không bị ảnh hưởng).",
-            "Tách story (meta): effectiveFee()/rowAmounts() ở đây là 1 ĐIỂM DUY NHẤT mà SHOP-ORDER-57/58/59/60 đều phụ thuộc vào — sửa công thức ở story này (nếu cần) sẽ ảnh hưởng tới cả 4 story kia, cần test lại toàn bộ khi đổi.",
-            "Xem AGA-PAYMENT-1/6 (Agency Admin) — bảng tương đương bên phía đại lý, dùng chung công thức effectiveFee()/rowAmounts()."
+            "Tách story (meta): công thức tính 3 cột tiền ở đây là 1 ĐIỂM DUY NHẤT mà SHOP-ORDER-57/58/59/60/61 đều phụ thuộc vào — sửa công thức ở story này (nếu cần) sẽ ảnh hưởng tới cả các story kia, cần test lại toàn bộ khi đổi.",
+            "Xem AGA-PAYMENT-1/6 (Agency Admin) — bảng tương đương bên phía đại lý, dùng chung công thức tính phí/đã thanh toán/chưa thanh toán."
           ]
         },
         {
@@ -1849,7 +1882,7 @@
             "Thêm mới (badge cảnh báo phát sinh chưa duyệt): trước đây, đơn confirmed có phí hoàn hàng/đổi địa chỉ phát sinh thêm chỉ lộ ra ở cột \"Chưa thanh toán\" bằng 1 con số thường (cùng màu/cỡ chữ các số khác) — Shop dễ bỏ sót nếu không tự bấm vào breakdown từng đơn (SHOP-ORDER-58). Đã thêm badge vàng \"⚠️ ...\" ngay dưới mã vận đơn để báo trước, không cần đổi màu cột số tiền (giữ nguyên theo yêu cầu, chỉ thêm badge).",
             "Thêm mới (chiều ngược — \"Đại lý sẽ hoàn\"): fee không chỉ TĂNG (phí hoàn hàng/đổi địa chỉ) mà còn có thể GIẢM sau khi đã duyệt (VD: phúc tra phát hiện phí thật thấp hơn). Trước đây chiều này hoàn toàn chưa được xử lý — rowAmounts() kẹp \"Chưa thanh toán\" về 0, khiến Shop không biết đại lý đang nợ lại mình 1 khoản. Đã bỏ kẹp, cho \"Chưa thanh toán\" hiện số DƯƠNG đúng khoản đó, kèm badge xanh dương \"💙 Đại lý sẽ hoàn {X}đ\".",
             "Mở rộng (đơn huỷ-đã-thanh-toán dùng CHUNG đúng nhánh này, không tách riêng): đơn cancelled mà confirmed chưa hoàn (xem AGA-ORDER-29) CŨNG cần đại lý hoàn tiền — ban đầu định làm badge/nhãn riêng (\"(đơn huỷ)\"), nhưng theo phản hồi trực tiếp đã sửa lại: dùng NGAY nhánh \"Đại lý sẽ hoàn\" sẵn có thông qua effectiveFee() (SHOP-ORDER-55) — không viết thêm nhãn/màu riêng nào. Nhờ vậy badge cho đơn huỷ và đơn-phí-giảm trông Y HỆT nhau, đúng tinh thần \"đồng bộ UI\" đã yêu cầu.",
-            "Xem AGA-PAYMENT-9 (Agency Admin xác nhận đã hoàn khi phí giảm), AGA-ORDER-29 (Agency Admin xác nhận đã hoàn khi huỷ đơn), SHOP-ORDER-56 (nguồn gốc phụ phí đổi địa chỉ), SHOP-ORDER-55 (bảng chính + effectiveFee()/rowAmounts() mà badge này phụ thuộc vào)."
+            "Xem AGA-PAYMENT-9 (Agency Admin xác nhận đã hoàn khi phí giảm), AGA-ORDER-29 (Agency Admin xác nhận đã hoàn khi huỷ đơn), SHOP-ORDER-56 (nguồn gốc phụ phí đổi địa chỉ), SHOP-ORDER-55 (bảng chính + công thức tính phí mà badge này phụ thuộc vào)."
           ]
         },
         {
@@ -1916,78 +1949,83 @@
         {
           "id": "SHOP-ORDER-60",
           "jiraKey": "",
-          "title": "[WEB SHOP] Báo cáo dòng tiền: Nút \"Thanh toán cho đại lý\" (khai đã chuyển tiền mặt)",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Thanh toán phí dịch vụ cho đại lý (QR chuyển khoản)",
           "status": "draft",
-          "userStory": "Là chủ shop, sau khi đã chuyển tiền mặt phí ship cho đại lý ngoài hệ thống, tôi muốn khai lại trong hệ thống, để đại lý tiện đối chiếu và để các đơn từng bị từ chối có cơ hội được duyệt lại thay vì kẹt vĩnh viễn.",
+          "userStory": "Là chủ shop, sau khi đã chuyển khoản/chuyển tiền mặt phí ship cho đại lý, tôi muốn khai lại trong hệ thống qua màn hình quét QR quen thuộc, để đại lý tiện đối chiếu và để các đơn từng bị từ chối có cơ hội được duyệt lại thay vì kẹt vĩnh viễn.",
           "userFlow": [
-            "Góc phải trang: nút \"Thanh toán cho đại lý (Xđ)\" (nền xanh navy) — X là tổng phí ship các đơn TIỀN MẶT đang pending_review HOẶC rejected (\"Nợ tồn\") của shop này, CHƯA từng khai. Không có đơn nào cần chuyển → nút disabled, label \"Không có đơn cần chuyển\".",
-            "Bấm nút → mở modal \"Thanh toán hạn mức đã dùng\", cột TRÁI (cột phải \"Lịch sử thanh toán\" xem SHOP-ORDER-61): chip trạng thái \"⏱ Chưa thanh toán\" (xám); dòng \"Phí giao hàng (Đơn hàng đã bàn giao/ Hoàn tất) [Tải danh sách đơn]\" (link cam, xuất file riêng danh sách đơn cần trả) = tổng đơn pending_review; dòng \"Nợ tồn\" = tổng đơn rejected; \"Tổng tiền cần thanh toán\" (cam, đậm, to) = 2 dòng trên cộng lại; ghi chú nhắc đọc kỹ; checkbox \"Tôi đã đọc, hiểu và chấp nhận điều khoản thanh toán của GHN\" (BẮT BUỘC tick mới bấm được nút); nút \"Xác nhận thanh toán\" (cam, disabled nếu chưa tick hoặc tổng = 0).",
-            "Bấm \"Xác nhận thanh toán\" → gọi declareCashRemittance(), hiện banner xanh \"✓ Đã gửi yêu cầu thanh toán Xđ cho đại lý — mã ...\" ngay trong modal; đơn đang rejected (\"Nợ tồn\") được ĐƯA VỀ pending_review để Agency duyệt lại được (không kẹt mãi).",
-            "Đóng rồi mở lại modal (hoặc nhìn nút ngoài trang): các đơn vừa khai KHÔNG được tính lại vào khoản cần thanh toán nữa — không khai trùng được cùng 1 lô đơn.",
-            "Nếu Agency sau đó từ chối lại 1 đơn đã từng khai → đơn quay về \"chưa khai\", xuất hiện LẠI trong \"Nợ tồn\" ở lần mở modal tiếp theo để Shop khai lại.",
-            "Agency Admin (trang \"Duyệt thanh toán\") KHÔNG hiện thêm bất kỳ gợi ý nào về việc Shop đã khai hay chưa — Agency tự dựa vào số ngày trễ rồi tự đối chiếu sổ quỹ thật trước khi duyệt, không dựa vào lời khai này để tin."
+            "Toolbar góc phải trang: 2 nút TÁCH BIỆT — \"Lịch sử thanh toán\" (trắng, viền, xem SHOP-ORDER-61) và \"Thanh toán phí dịch vụ cho đại lý\" (nền cam) ngay cạnh. Nút thanh toán bị khoá khi không còn đơn tiền mặt nào đang chờ duyệt hoặc đã bị từ chối mà chưa khai, kèm chú thích \"Không có đơn tiền mặt nào cần chuyển\".",
+            "Bấm nút → mở màn hình \"Thanh toán phí dịch vụ cho đại lý\": nếu tổng tiền = 0 → \"Không có khoản nào cần thanh toán\"; ngược lại hiện: \"Phương thức thanh toán: Chuyển khoản ngân hàng\" (chữ xanh, CỐ ĐỊNH — chỉ 1 lựa chọn, không cho đổi), \"Số tiền: Xđ\" (= tổng phí các đơn đang chờ duyệt + đã bị từ chối, chưa khai), QR code bên phải, \"Mã QR sẽ hết hạn sau: mm:ss\" (đếm ngược từ 15:00), \"Quét mã để thanh toán\", link \"Tải danh sách đơn cần thanh toán\" (xuất Excel riêng).",
+            "Màn hình TỰ ĐỘNG xác nhận sau vài giây (mô phỏng ngân hàng báo giao dịch thành công — Shop KHÔNG cần tự bấm \"Tôi đã thanh toán\") → hiện banner xanh \"✓ Đã gửi yêu cầu thanh toán Xđ cho đại lý — mã ...\" thay cho nội dung QR; đơn đang bị từ chối (\"Nợ tồn\") được ĐƯA VỀ trạng thái chờ duyệt để đại lý duyệt lại được (không kẹt mãi).",
+            "Nếu đếm ngược về 0 TRƯỚC KHI tự xác nhận xong (hiếm) → QR mờ đi, hiện \"Mã QR đã hết hạn\" + nút \"Tạo mã mới\" để reset đếm ngược và thử lại.",
+            "Đóng rồi mở lại màn hình (hoặc nhìn nút ngoài trang): các đơn vừa khai KHÔNG được tính lại vào khoản cần thanh toán nữa — không khai trùng được cùng 1 lô đơn.",
+            "Nếu đại lý sau đó từ chối lại 1 đơn đã từng khai → đơn quay về \"chưa khai\", xuất hiện LẠI ở lần mở màn hình tiếp theo để Shop khai lại.",
+            "Đại lý (trang \"Duyệt thanh toán\") KHÔNG thấy thêm bất kỳ gợi ý nào về việc Shop đã khai hay chưa — đại lý tự dựa vào số ngày trễ rồi tự đối chiếu sổ quỹ thật trước khi duyệt, không dựa vào lời khai này để tin."
           ],
           "systemFlow": [
-            "declareCashRemittance(shopId, declaredBy) (orderStore.ts): trả về 1 CashRemittanceBatch (hoặc null nếu không có gì để khai) — đánh dấu cashRemittanceDeclaredAt (ISO timestamp) trên MỌI đơn paymentMethod === 'cash' đang pending_review HOẶC rejected của shop đó; đơn rejected được ĐỔI NGƯỢC về pending_review (xoá paymentApprovalRejectedReason) vì approveOrderPayment() chỉ nhận đơn pending_review — nếu không reset, đơn rejected sẽ kẹt vĩnh viễn không bao giờ duyệt lại được; ghi 1 dòng \"Báo đã chuyển tiền mặt cho đại lý\" vào Lịch sử thao tác của TỪNG đơn liên quan.",
-            "CashRemittanceBatch (orderStore.ts, kiểu dữ liệu riêng): { id, shopId, declaredAt, declaredBy, totalAmount, orderIds } — id sinh kiểu YYMMDD + 5 ký tự ngẫu nhiên (generateRemittanceCode()), lưu vào localStorage key ghn_cash_remittance_batches_v1 qua saveRemittanceBatch(). Đây là bản ghi mà SHOP-ORDER-61 đọc lại để liệt kê lịch sử.",
-            "RemittanceModal (CashFlowReport.tsx): tự tính phiGiaoHang/noTon/tongTien từ dữ liệu LIVE (không nhận props số liệu) để luôn khớp đúng lúc mở modal; handleConfirm() gọi declareCashRemittance(), lưu kết quả vào state justDeclared để hiện banner xanh NGAY TRONG modal (không cần đóng/mở lại).",
-            "unpaidOrders/overdueOrders (và unremittedCashOrders ở component cha) đều lọc thêm && !o.cashRemittanceDeclaredAt — đơn đã khai rồi (đang chờ Agency đối chiếu) KHÔNG được tính lại vào khoản cần thanh toán, tránh khai trùng lặp vô hạn lần.",
-            "rejectOrderPayment() (Agency Admin) XOÁ cashRemittanceDeclaredAt khi từ chối 1 đơn đã từng được khai — nếu không xoá, đơn bị từ chối sau khi đã khai 1 lần sẽ bị loại vĩnh viễn khỏi \"cần thanh toán\" dù Agency chưa thực sự nhận tiền.",
-            "Bên Agency Admin (CashRemittance.tsx): StatusCell KHÔNG hiện bất kỳ dòng \"Shop báo đã chuyển...\" nào dù order.cashRemittanceDeclaredAt có giá trị hay không — Agency không dựa vào lời khai này để tin, chỉ dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật trước khi duyệt (xem AGA-PAYMENT-1 Notes)."
+            "Số tiền cần thanh toán được tính lại MỖI LẦN mở màn hình (không dùng số liệu cũ) — luôn khớp đúng thời điểm hiện tại.",
+            "Đồng hồ đếm ngược 15 phút bắt đầu chạy ngay khi mở màn hình.",
+            "Sau một khoảng thời gian ngẫu nhiên vài giây (mô phỏng thời gian ngân hàng xử lý giao dịch thật), hệ thống tự động ghi nhận lời khai thanh toán của Shop, không cần thao tác xác nhận thủ công nào thêm.",
+            "Mã QR hiển thị chỉ là hình minh hoạ, không mã hoá thông tin tài khoản ngân hàng thật.",
+            "Quy tắc nghiệp vụ nền — ghi nhận lời khai, chuyển đơn bị từ chối về trạng thái chờ duyệt lại, không cho khai trùng cùng 1 lô đơn đang chờ đại lý đối chiếu — GIỮ NGUYÊN hoàn toàn như bản trước; lần đổi này chỉ đổi giao diện và cách kích hoạt hành động, không đổi logic nghiệp vụ nền.",
+            "Nút \"Lịch sử thanh toán\" giờ mở một màn hình ĐỘC LẬP, không còn là cột bên cạnh màn hình thanh toán nữa — xem SHOP-ORDER-61."
           ],
           "crossPlatformImpact": [
             "Lời khai của Shop ảnh hưởng trực tiếp tới danh sách đơn pending_review/rejected bên Agency Admin (AGA-PAYMENT-1/2) — đơn rejected được đưa về pending_review khi Shop khai lại."
           ],
           "acceptanceCriteria": [
-            "AC1: Nút \"Thanh toán cho đại lý\" hiện đúng tổng phí ship các đơn TIỀN MẶT pending_review HOẶC rejected (CHƯA có cashRemittanceDeclaredAt) của shop; disabled \"Không có đơn cần chuyển\" khi không còn đơn nào thoả điều kiện đó.",
-            "AC2: Modal \"Thanh toán hạn mức đã dùng\" (cột trái) hiện đúng \"Phí giao hàng\" (= tổng đơn pending_review chưa khai), \"Nợ tồn\" (= tổng đơn rejected chưa khai), \"Tổng tiền cần thanh toán\" = 2 dòng cộng lại; nút \"Xác nhận thanh toán\" disabled khi chưa tick checkbox HOẶC tổng = 0.",
-            "AC3: Sau khi bấm \"Xác nhận thanh toán\": banner xanh hiện NGAY trong modal (không cần đóng/mở lại); đơn rejected trong lô vừa khai được ĐƯA VỀ pending_review (xoá lý do từ chối) để Agency duyệt lại được.",
-            "AC4: Đóng rồi mở lại modal (hoặc nhìn nút ngoài trang) SAU KHI đã khai: các đơn vừa khai KHÔNG được tính lại vào \"Phí giao hàng\"/\"Nợ tồn\"/tổng tiền cần thanh toán nữa (dù vẫn đang pending_review, chưa được Agency duyệt) — Shop KHÔNG bấm \"Xác nhận thanh toán\" lặp lại được cho cùng 1 lô đơn.",
-            "AC5: Sau khi Shop khai, Agency Admin (/agency-admin/cash-remittance) KHÔNG hiện thêm bất kỳ dòng \"Shop báo đã chuyển...\" nào — badge trạng thái (Chờ duyệt/⚠ Trễ N ngày) giữ nguyên như khi chưa khai, Agency vẫn phải tự đối chiếu sổ quỹ rồi bấm \"Duyệt shop này\" mới chuyển \"✓ Đã nhận tiền\".",
-            "AC6: Nếu Agency từ chối (rejectOrderPayment) 1 đơn đã từng được Shop khai trước đó → đơn quay về trạng thái \"chưa khai\" (cashRemittanceDeclaredAt bị xoá), xuất hiện LẠI trong \"Nợ tồn\" ở lần mở modal tiếp theo để Shop khai lại — không bị loại vĩnh viễn."
+            "AC1: 2 nút \"Lịch sử thanh toán\" và \"Thanh toán phí dịch vụ cho đại lý\" hiện tách biệt trên toolbar, mở 2 màn hình độc lập. Nút thanh toán bị khoá khi không còn đơn tiền mặt đang chờ duyệt/đã bị từ chối mà chưa khai.",
+            "AC2: Màn hình thanh toán hiện đúng \"Chuyển khoản ngân hàng\" + Số tiền = tổng phí đơn tiền mặt đang chờ duyệt/đã bị từ chối, chưa khai; tổng = 0 → hiện \"Không có khoản nào cần thanh toán\", không có QR/đếm ngược.",
+            "AC3: Đếm ngược chạy đúng từ 15:00 xuống 0; màn hình tự động ghi nhận lời khai sau vài giây mô phỏng — KHÔNG cần Shop bấm bất kỳ nút xác nhận nào.",
+            "AC4: Sau khi tự xác nhận: banner xanh hiện NGAY trong màn hình (không cần đóng/mở lại); đơn bị từ chối trong lô vừa khai được ĐƯA VỀ trạng thái chờ duyệt (xoá lý do từ chối).",
+            "AC5: Nếu hết 15 phút mà chưa tự xác nhận xong → QR mờ, hiện \"Mã QR đã hết hạn\" + nút \"Tạo mã mới\" reset lại đếm ngược.",
+            "AC6: Đóng rồi mở lại màn hình (hoặc nhìn nút ngoài trang) SAU KHI đã khai: các đơn vừa khai KHÔNG được tính lại vào tổng tiền nữa — Shop KHÔNG khai trùng được cùng 1 lô đơn.",
+            "AC7: Sau khi Shop khai, đại lý KHÔNG thấy thêm bất kỳ dòng \"Shop báo đã chuyển...\" nào — badge trạng thái giữ nguyên như khi chưa khai.",
+            "AC8: Nếu đại lý từ chối 1 đơn đã từng được Shop khai trước đó → đơn quay về trạng thái \"chưa khai\", xuất hiện LẠI để Shop khai lại — không bị loại vĩnh viễn."
           ],
           "notes": [
-            "Bug đã phát hiện qua UAT và sửa (v3 — modal \"Thanh toán hạn mức đã dùng\"): bản đầu của unpaidOrders/overdueOrders/unremittedCashOrders chỉ lọc theo paymentApprovalStatus, KHÔNG loại trừ đơn đã có cashRemittanceDeclaredAt — khiến Shop xác nhận thanh toán xong, đóng rồi mở lại modal vẫn thấy y nguyên số tiền cũ và có thể bấm \"Xác nhận thanh toán\" lặp lại vô hạn lần cho cùng 1 lô đơn chưa được Agency duyệt (tạo nhiều CashRemittanceBatch trùng lặp cho cùng 1 khoản nợ). Đã sửa: thêm điều kiện !o.cashRemittanceDeclaredAt vào cả 3 chỗ lọc trên. Đồng thời sửa rejectOrderPayment() để XOÁ cashRemittanceDeclaredAt khi Agency từ chối (cùng dạng lỗi \"kẹt vĩnh viễn\" như bug rejected đã sửa ở AGA-PAYMENT-1).",
-            "Nút \"Thanh toán cho đại lý\" chỉ áp dụng cho TIỀN MẶT — MoMo/Chuyển khoản tự \"Đã nhận\" ngay từ lúc tạo đơn (xem SHOP-ORDER-43), không có gì để Shop \"khai\" thêm, nên không tính vào unremittedCashOrders.",
-            "Đây là lời khai TỰ NGUYỆN, một chiều — không có cơ chế nào bắt Shop phải bấm nút này trước khi Agency duyệt; Agency vẫn có thể tự chủ động \"Duyệt shop này\" (AGA-PAYMENT-2) bất cứ lúc nào mà không cần chờ Shop khai trước.",
-            "Thay đổi (bỏ hint \"Shop báo đã chuyển\" bên Agency Admin): trước đây Agency Admin (CashRemittance.tsx) hiện thêm dòng \"💬 Shop báo đã chuyển lúc...\" khi đơn có cashRemittanceDeclaredAt — đã BỎ theo yêu cầu (xem AGA-PAYMENT-1 Notes): Agency không cần \"thông báo\" kiểu Shop tự khai để tin, mà tự dựa vào số ngày trễ (hệ thống tự track) rồi tự đối chiếu sổ quỹ thật. Cơ chế khai của Shop ở story này KHÔNG đổi gì — Shop vẫn khai bình thường, chỉ là lời khai đó không còn hiển thị gì thêm ở phía Agency Admin nữa.",
-            "Tách story: cột phải \"Lịch sử thanh toán\" trong CÙNG modal này được tách thành story riêng (SHOP-ORDER-61) vì có hành vi/bug riêng (copy mã, xem chi tiết) không phụ thuộc vào luồng khai nộp — 2 story cùng render trong 1 modal nhưng độc lập về mặt code (RemittanceModal 2 cột).",
-            "Xem AGA-PAYMENT-1/2 (Agency Admin) để biết cách Agency nhìn thấy và xử lý lời khai này; SHOP-ORDER-55 (bảng chính nơi nút này nằm)."
+            "Đổi giao diện (v2), KHÔNG đổi bản chất nghiệp vụ: giao diện đổi từ \"checkbox điều khoản + nút Xác nhận thủ công\" sang \"QR + đếm ngược + tự xác nhận\" để nhất quán trải nghiệm với luồng thanh toán online lúc tạo đơn — nhưng hành động xác nhận vẫn chỉ là lời khai một chiều, KHÔNG tích hợp cổng thanh toán ngân hàng thật, KHÔNG tự động chuyển đơn sang trạng thái \"đã duyệt\" — đại lý vẫn bắt buộc tự đối chiếu sổ quỹ rồi duyệt tay.",
+            "Tách nút (v2): trước đây \"Thanh toán cho đại lý\" và \"Lịch sử thanh toán\" là 2 cột trong CÙNG 1 màn hình — nay tách hẳn thành 2 nút + 2 màn hình riêng theo yêu cầu thiết kế mới, không còn phụ thuộc UI vào nhau.",
+            "\"Chuyển khoản ngân hàng\" ở đây ≠ \"Chuyển khoản\" của từng đơn lẻ: nút này chỉ áp dụng cho khoản nợ TIỀN MẶT gộp lại — MoMo/Chuyển khoản của TỪNG ĐƠN (phí ship Shop trả GHN) tự \"Đã nhận\" ngay từ lúc tạo đơn (SHOP-ORDER-43), không có gì để Shop \"khai\" thêm nên không tính vào tổng này. \"Chuyển khoản ngân hàng\" hiển thị ở đây là kênh Shop NỘP TIỀN CHO ĐẠI LÝ (gộp nợ), khác bản chất với \"Chuyển khoản\" là phương thức trả phí ship của 1 đơn riêng lẻ — 2 khái niệm trùng tên, dễ nhầm.",
+            "Phương thức \"Chuyển khoản ngân hàng\" đang CỐ ĐỊNH, chưa gắn với cấu hình kênh nộp tiền nào — nếu sau này có nhiều kênh nộp tiền cho đại lý, cần bổ sung lựa chọn kênh ở bước này.",
+            "Đây là lời khai TỰ NGUYỆN — đại lý vẫn có thể tự chủ động duyệt bất cứ lúc nào mà không cần chờ Shop khai trước.",
+            "Xem AGA-PAYMENT-1/2 (Agency Admin) để biết cách đại lý nhìn thấy và xử lý lời khai này; SHOP-ORDER-55 (bảng chính nơi nút này nằm); SHOP-ORDER-61 (Lịch sử thanh toán, nay là màn hình riêng)."
           ]
         },
         {
           "id": "SHOP-ORDER-61",
           "jiraKey": "",
-          "title": "[WEB SHOP] Báo cáo dòng tiền: Cột \"Lịch sử thanh toán\"",
+          "title": "[WEB SHOP] Báo cáo dòng tiền: Lịch sử thanh toán",
           "status": "draft",
           "userStory": "Là chủ shop, tôi muốn xem lại lịch sử các lần đã khai \"đã chuyển tiền mặt\" cho đại lý (mã, thời gian, tổng tiền, danh sách đơn), để tra cứu lại khi cần đối chiếu mà không phải nhớ hoặc hỏi lại đại lý.",
           "userFlow": [
-            "Trong modal \"Thanh toán hạn mức đã dùng\" (mở từ nút \"Thanh toán cho đại lý\", xem SHOP-ORDER-60), cột PHẢI \"Lịch sử thanh toán\" liệt kê MỌI lần Shop đã bấm \"Xác nhận thanh toán\" trước đó (mới nhất lên đầu).",
-            "Mỗi card: chip xanh \"✓ Đã gửi yêu cầu thanh toán\", \"Mã thanh toán: {code}\" (kèm icon copy), \"Thời gian: dd/mm/yyyy hh:mm:ss\", \"Tổng tiền: Xđ\", nút \"Xem chi tiết\".",
-            "Bấm icon copy cạnh \"Mã thanh toán\" → copy mã vào clipboard.",
-            "Bấm \"Xem chi tiết\" → hiện danh sách mã vận đơn thuộc lô đó.",
-            "Vừa khai xong 1 lượt mới (SHOP-ORDER-60) → card mới xuất hiện NGAY đầu danh sách, không cần đóng/mở lại modal."
+            "Toolbar \"Báo cáo dòng tiền\": nút \"Lịch sử thanh toán\" (trắng, viền) tách biệt với nút \"Thanh toán phí dịch vụ cho đại lý\" (SHOP-ORDER-60) — bấm vào mở màn hình riêng, liệt kê MỌI lần Shop đã khai thanh toán (tự động qua QR, xem SHOP-ORDER-60) trước đó, mới nhất lên đầu.",
+            "Đầu màn hình có ô \"Tìm kiếm\" theo mã thanh toán. Bên dưới là bảng 3 cột: Mã thanh toán (kèm icon copy), Thời gian, Số tiền (đ). Không có lần nào từng khai → bảng rỗng \"Chưa có lần thanh toán nào\"; gõ tìm kiếm mà không khớp lần nào → \"Không tìm thấy mã thanh toán phù hợp\" (khác thông báo rỗng ở trên).",
+            "Bấm icon copy cạnh mã thanh toán → copy mã vào clipboard, KHÔNG mở chi tiết.",
+            "Bấm vào 1 dòng bất kỳ (ngoài icon copy) → hiện danh sách mã vận đơn thuộc lô đó.",
+            "Vừa khai xong 1 lượt mới ở màn hình QR (SHOP-ORDER-60) rồi mở màn hình này ra → thấy NGAY lượt khai mới ở đầu bảng (danh sách luôn đọc dữ liệu mới nhất mỗi lần mở, không cần giữ trạng thái giữa 2 màn hình vì giờ chúng độc lập)."
           ],
           "systemFlow": [
-            "loadRemittanceBatches(shopId) (orderStore.ts) đọc CashRemittanceBatch[] từ localStorage key ghn_cash_remittance_batches_v1 (ghi bởi declareCashRemittance(), xem SHOP-ORDER-60), lọc đúng shopId, sắp xếp declaredAt giảm dần.",
-            "Mỗi card đọc trực tiếp từ 1 CashRemittanceBatch: { id, declaredAt, totalAmount, orderIds } — ĐÂY LÀ LỊCH SỬ LỜI KHAI của Shop, KHÁC với lịch sử Agency đã duyệt (không đọc paymentApprovalStatus ở đây, chỉ hiện đúng những gì Shop đã khai, không phản ánh Agency đã duyệt hay chưa).",
-            "Icon copy: navigator.clipboard.writeText(batch.id).catch(() => {}).",
-            "handleViewDetail(batch): tra trackingCode từng orderId trong batch.orderIds (qua loadOrders()) rồi window.alert liệt kê — PROTOTYPE THUẦN, không mở modal/trang riêng.",
-            "State justDeclared ở RemittanceModal (component cha, SHOP-ORDER-60) khi có giá trị thì được PREPEND vào đầu danh sách batches hiển thị ở cột này — card mới hiện ngay, không cần re-fetch/đóng-mở modal."
+            "Danh sách lịch sử được đọc lại từ dữ liệu lưu trữ mỗi lần mở màn hình, lọc đúng theo shop hiện tại, sắp xếp mới nhất lên đầu.",
+            "Mỗi dòng trong bảng hiện đúng thông tin của 1 lượt khai: mã, thời gian khai, số tiền — ĐÂY LÀ LỊCH SỬ LỜI KHAI của Shop, KHÁC với lịch sử đại lý đã duyệt (không phản ánh đại lý đã duyệt hay chưa, chỉ hiện đúng những gì Shop đã khai).",
+            "Ô tìm kiếm lọc theo mã thanh toán khớp một phần, không phân biệt hoa thường — lọc ngay khi gõ, không cần bấm thêm nút tìm.",
+            "Bấm vào 1 dòng (ngoài icon copy) tra lại danh sách mã vận đơn thuộc lô đó — PROTOTYPE THUẦN, hiện dưới dạng thông báo đơn giản, không mở màn hình chi tiết riêng.",
+            "Màn hình \"Lịch sử thanh toán\" và màn hình \"Thanh toán phí dịch vụ cho đại lý\" (SHOP-ORDER-60) là 2 màn hình ĐỘC LẬP, mỗi màn hình tự đọc lại dữ liệu lúc mở — không còn chia sẻ trạng thái với nhau như bản v1 (lúc đó 2 story còn là 2 cột chung 1 màn hình). Muốn thấy lượt khai vừa xong, Shop chỉ cần mở màn hình \"Lịch sử thanh toán\" SAU KHI màn hình QR đã hiện banner xác nhận xong."
           ],
           "crossPlatformImpact": [],
           "acceptanceCriteria": [
-            "AC1: Cột \"Lịch sử thanh toán\" liệt kê đúng toàn bộ các lần Shop đã khai trước đó, mới nhất lên đầu; shop chưa khai lần nào → danh sách rỗng (không lỗi).",
-            "AC2: Mỗi card hiện đúng mã thanh toán, thời gian, tổng tiền khớp đúng CashRemittanceBatch tương ứng.",
-            "AC3: Bấm icon copy → mã thanh toán được copy vào clipboard, không phát sinh lỗi console (kể cả khi trình duyệt từ chối quyền clipboard).",
-            "AC4: Bấm \"Xem chi tiết\" → hiện đúng danh sách mã vận đơn thuộc lô đó, không thiếu/thừa đơn nào.",
-            "AC5: Sau khi khai 1 lượt mới ở cột trái (SHOP-ORDER-60), card tương ứng xuất hiện NGAY ở đầu cột \"Lịch sử thanh toán\" trong cùng modal, không cần đóng/mở lại."
+            "AC1: Màn hình \"Lịch sử thanh toán\" liệt kê đúng toàn bộ các lần Shop đã khai trước đó, mới nhất lên đầu; shop chưa khai lần nào → danh sách rỗng (không lỗi).",
+            "AC2: Mỗi dòng trong bảng hiện đúng mã thanh toán, thời gian, số tiền khớp đúng lượt khai tương ứng.",
+            "AC3: Bấm icon copy → mã thanh toán được copy vào clipboard, KHÔNG mở chi tiết; không phát sinh lỗi (kể cả khi trình duyệt từ chối quyền clipboard).",
+            "AC4: Bấm vào 1 dòng (ngoài icon copy) → hiện đúng danh sách mã vận đơn thuộc lô đó, không thiếu/thừa đơn nào.",
+            "AC5: Sau khi khai xong 1 lượt mới ở màn hình QR (SHOP-ORDER-60), mở màn hình \"Lịch sử thanh toán\" (nút riêng) → dòng tương ứng đã xuất hiện ở đầu bảng (đọc dữ liệu mới nhất mỗi lần mở).",
+            "AC6: Gõ vào ô tìm kiếm → bảng chỉ còn hiện các lượt khai có mã thanh toán khớp một phần (không phân biệt hoa thường); gõ không khớp lượt nào → hiện \"Không tìm thấy mã thanh toán phù hợp\", khác với thông báo khi chưa từng khai lần nào."
           ],
           "notes": [
-            "Bug đã phát hiện qua UAT và sửa (phát hiện khi làm SHOP-SETTINGS-3, Tem QR): icon copy \"Mã thanh toán\" dùng try { navigator.clipboard.writeText(batch.id) } catch { ... } — writeText() trả về Promise, lỗi quyền clipboard bị từ chối xảy ra BẤT ĐỒNG BỘ nên try/catch đồng bộ không bắt được, rơi thành unhandled promise rejection. Đã sửa thành navigator.clipboard.writeText(batch.id).catch(() => {}).",
-            "PROTOTYPE THUẦN: \"Xem chi tiết\" chỉ window.alert liệt kê mã vận đơn — không có modal/trang chi tiết riêng, không xuất file.",
-            "Dữ liệu này ĐỘC LẬP với trạng thái Agency đã duyệt hay chưa — 1 batch đã khai xong vẫn hiện ở đây dù Agency sau đó duyệt, từ chối, hay chưa xử lý gì; muốn biết Agency đã duyệt chưa phải xem lại bảng chính (SHOP-ORDER-55, cột \"Đã thanh toán\"/\"Chưa thanh toán\"), không phải ở đây.",
-            "Xem SHOP-ORDER-60 (nơi tạo ra các CashRemittanceBatch mà cột này đọc lại), SHOP-ORDER-55 (bảng chính)."
+            "Đổi giao diện (v3): từ dạng danh sách card (mỗi lượt khai 1 khối riêng, có nút \"Xem chi tiết\" riêng) sang bảng đơn giản 3 cột + ô tìm kiếm theo mã thanh toán, theo đúng tham khảo thiết kế mới. Hành vi nghiệp vụ (xem chi tiết, copy mã) giữ nguyên, chỉ đổi cách trình bày: giờ bấm vào DÒNG để xem chi tiết thay vì bấm nút riêng.",
+            "Bug đã phát hiện qua UAT và sửa (phát hiện khi làm SHOP-SETTINGS-3, Tem QR): thao tác copy \"Mã thanh toán\" trước đây bắt lỗi quyền clipboard SAI CÁCH, khiến lỗi bị từ chối quyền không được bắt gọn mà rơi ra ngoài thành lỗi chưa xử lý. Đã sửa để lỗi clipboard luôn được bắt gọn, không còn phát sinh lỗi lạ ở console.",
+            "PROTOTYPE THUẦN: xem chi tiết chỉ hiện 1 thông báo đơn giản liệt kê mã vận đơn — không có màn hình chi tiết riêng, không xuất file.",
+            "Dữ liệu này ĐỘC LẬP với trạng thái đại lý đã duyệt hay chưa — 1 lượt khai xong vẫn hiện ở đây dù đại lý sau đó duyệt, từ chối, hay chưa xử lý gì; muốn biết đại lý đã duyệt chưa phải xem lại bảng chính (SHOP-ORDER-55, cột \"Đã thanh toán\"/\"Chưa thanh toán\"), không phải ở đây.",
+            "Xem SHOP-ORDER-60 (nơi tạo ra các lượt khai mà màn hình này đọc lại), SHOP-ORDER-55 (bảng chính)."
           ]
         },
         {
