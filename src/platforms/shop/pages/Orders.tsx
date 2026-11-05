@@ -4,7 +4,7 @@ import { ConfigProvider } from 'antd'
 import { PlusOutlined, SearchOutlined, CloseOutlined, StopOutlined, PrinterOutlined, ArrowLeftOutlined, CopyOutlined, InboxOutlined, MailOutlined } from '@ant-design/icons'
 import { shopTheme } from '../../../theme/platforms'
 import allShops from '../../../mock-data/shops.json'
-import { loadOrders, addOrder, cancelOrder, updateOrder, appendActionHistory, isOrderCreationBlocked, shopCashOverdueDays, loadRemittanceConfig, ENFORCE_ORDER_CREATION_BLOCK, type Order } from '../../../mock-data/orderStore'
+import { loadOrders, addOrder, cancelOrder, updateOrder, appendActionHistory, isOrderCreationBlocked, shopCashOverdueDays, loadRemittanceConfig, type Order } from '../../../mock-data/orderStore'
 import { printSettings, updatePrintSetting, type PrintKindConfig } from '../../../mock-data/printSettingsStore'
 import { loadPricing } from '../../../mock-data/pricingStore'
 import { findQrCode, recordQrScan, isQrCodeUsable } from '../../../mock-data/qrStore'
@@ -1478,7 +1478,7 @@ function CreateOrderDrawer({ open, onClose, onUpdated, initialNote }: { open: bo
     //  - Tiền mặt: vẫn bắt đầu `pending_review` (Shop chưa chuyển khoản phí dịch vụ lên đại lý) —
     //    khi Shop chuyển khoản ngân hàng qua trang Báo cáo dòng tiền, hệ thống TỰ XÁC NHẬN ngay
     //    (xem confirmCashRemittance, orderStore.ts), không cần Agency Admin duyệt tay nữa (trang
-    //    Đối soát thanh toán giờ chỉ còn theo dõi công nợ + khoá/mở khoá tạo đơn, xem AGA-PAYMENT-1/2).
+    //    Công nợ Shop giờ chỉ còn theo dõi công nợ + khoá/mở khoá tạo đơn, xem AGA-PAYMENT-1/2).
     // "Khách trả ship" (feePayer === 'receiver') không qua cờ này — GHN tự thu COD lúc giao hàng.
     const needsPaymentApproval = effectiveFeePayer === 'sender'
     const isOnlineMethod = paymentMethod === 'momo' || paymentMethod === 'bank_transfer'
@@ -4195,19 +4195,23 @@ export default function ShopOrders() {
   // cashOverdueWarning). Cả 2 ngưỡng do Super Admin cấu hình (Cài đặt → Quy tắc thanh toán tiền mặt,
   // xem GSA-PAYMENT-CONFIG-1) — mặc định 1/3 ngày khi chưa từng lưu cấu hình nào.
   //
-  // Giai đoạn 1 của kế hoạch triển khai thật (ENFORCE_ORDER_CREATION_BLOCK = false): KHÔNG thực sự
-  // khoá — Shop vẫn tạo đơn được dù quá hạn, chỉ hiện banner cảnh báo liên tục (không tự tắt ở mốc
-  // blockDays như trước, vì không còn trạng thái "đã khoá" nào để bàn giao cho). Bật lại khoá thật
-  // bằng cách đổi hằng số đó sang true, không cần sửa gì ở đây.
+  // ENFORCE_ORDER_CREATION_BLOCK = true: khoá THẬT khi quá blockDays. Lỡ khoá nhầm (tính sai ngày
+  // trễ...) thì Agency Admin tự "Mở khoá" ngay ở Công nợ Shop, không cần sửa code. Cần rollback
+  // khẩn (tắt hẳn khoá thật, chỉ còn cảnh báo) thì đổi hằng số đó về false ở orderStore.ts.
   const remittanceConfig = loadRemittanceConfig(shopForLetterCheck.agencyId)
   const cashOverdueDays = shopCashOverdueDays('SHP001')
-  const creationBlocked = ENFORCE_ORDER_CREATION_BLOCK && cashOverdueDays >= remittanceConfig.blockDays
-  const cashOverdueWarning = cashOverdueDays >= remittanceConfig.warningDays
-    && (!ENFORCE_ORDER_CREATION_BLOCK || cashOverdueDays < remittanceConfig.blockDays)
-  // Chỉ có ý nghĩa khi ENFORCE_ORDER_CREATION_BLOCK=false: Shop đã trễ quá mốc đáng lẽ bị khoá,
-  // nhưng giai đoạn này vẫn tạm cho tạo đơn — đổi câu chữ banner cho đúng thực tế, tránh nói "sẽ
-  // khoá nếu quá X ngày" trong khi đã quá X ngày từ lâu rồi.
-  const cashOverduePastBlockThreshold = !ENFORCE_ORDER_CREATION_BLOCK && cashOverdueDays >= remittanceConfig.blockDays
+  // Dùng ĐÚNG isOrderCreationBlocked() làm NGUỒN DUY NHẤT (đã tự tôn trọng khoá thủ công + "Mở khoá
+  // tạm") — KHÔNG tự tính lại công thức riêng ở đây, nếu không nút này sẽ "chặn nhầm" bất chấp Agency
+  // Admin đã mở khoá, vì mất 1 nguồn so với window.alert ở các nơi khác trong cùng file.
+  const creationBlocked = isOrderCreationBlocked('SHP001')
+  // Dựa trên creationBlocked (đã gồm cả trường hợp rollback ENFORCE=false lẫn "Mở khoá tạm" của
+  // Agency Admin) thay vì tự so lại ENFORCE_ORDER_CREATION_BLOCK — nếu không, shop được mở khoá tạm
+  // dù đã quá blockDays sẽ KHÔNG thấy cảnh báo nào nhắc tiếp tục thanh toán.
+  const cashOverdueWarning = cashOverdueDays >= remittanceConfig.warningDays && !creationBlocked
+  // Đã trễ quá mốc đáng lẽ bị khoá, nhưng hiện KHÔNG bị khoá thật (ENFORCE đang rollback về false,
+  // hoặc Agency Admin đã "Mở khoá tạm") — đổi câu chữ banner cho đúng thực tế thay vì nói "sẽ khoá
+  // nếu quá X ngày" trong khi đã quá X ngày từ lâu rồi.
+  const cashOverduePastBlockThreshold = cashOverdueDays >= remittanceConfig.blockDays && !creationBlocked
 
   // Khách quét "Tem QR" (xem Cài đặt → Tem QR) → link đích trỏ về đúng trang này kèm `?qr=<id>` —
   // tự nhận diện, ghi nhận lượt quét, rồi mở sẵn form "Tạo đơn hàng" với ghi chú nguồn gốc. Chỉ

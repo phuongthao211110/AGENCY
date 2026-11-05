@@ -499,11 +499,12 @@ export function saveRemittanceConfig(agencyId: string, config: CashRemittanceCon
   saveAllRemittanceConfigs(list)
 }
 
-// Giai đoạn 1 của kế hoạch triển khai thật: chỉ GHI NHẬN/CẢNH BÁO số ngày trễ, KHÔNG thực sự khoá
-// tạo đơn — vì đây là điểm DUY NHẤT trong toàn hệ thống mà 1 lỗi tính sai sẽ chặn luôn thao tác
-// thật của Shop (mọi chỗ khác chỉ sai số liệu hiển thị). Chỉ bật lại (true) sau khi đã quan sát đủ
-// lâu thấy số ngày trễ luôn tính đúng trong thực tế — xem AgencyOrders.tsx/Orders.tsx.
-export const ENFORCE_ORDER_CREATION_BLOCK = false
+// Khoá tạo đơn THẬT theo ngưỡng "Số ngày khoá tạo đơn" Super Admin cấu hình (Cài đặt → Quy tắc
+// thanh toán tiền mặt, xem GSA-PAYMENT-CONFIG-1) — Shop trễ đủ ngày sẽ không tạo được đơn mới nữa.
+// Van an toàn: nếu khoá nhầm (tính sai số ngày trễ...), Agency Admin luôn có thể tự "Mở khoá" ngay
+// cho shop đó (xem grantTemporaryUnlock bên dưới, nút "Mở khoá" ở Công nợ Shop — CashRemittance.tsx)
+// mà không cần sửa code/deploy lại — khoản nợ không bị xoá, chỉ tạm bỏ qua điều kiện khoá.
+export const ENFORCE_ORDER_CREATION_BLOCK = true
 
 // shopId → agencyId tra qua shopStore (loadShops) — giữ nguyên chữ ký cũ `isOrderCreationBlocked
 // (shopId)` cho mọi call site hiện có (Orders.tsx) không phải sửa gì, chỉ tự đổi NGUỒN ngưỡng bên
@@ -521,44 +522,88 @@ export function isOrderCreationBlocked(shopId: string): boolean {
 }
 
 // Agency Admin chủ động mở khoá tạm cho 1 shop đang bị khoá tạo đơn — KHÔNG xoá khoản nợ, chỉ tạm
-// bỏ qua điều kiện khoá cho đến khi shop thanh toán hết nợ (confirmCashRemittance tự xoá cờ này khi
-// đó — xem clearTemporaryUnlock — tránh để lần trễ nợ HOÀN TOÀN MỚI sau này vô tình được "miễn phí"
-// nhờ cờ mở khoá của lần trễ trước). Dùng CHUNG đúng 1 nguồn (localStorage) cho cả
+// bỏ qua điều kiện khoá. Mở khoá có HẠN: Agency tự nhập số ngày muốn gia hạn ngay lúc bấm "Mở khoá"
+// (xem UnlockDaysModal, CashRemittance.tsx) thay vì luôn dùng cố định `blockDays` Super Admin cấu
+// hình — tính TỪ LÚC MỞ (không phải từ lúc bắt đầu trễ). Quá hạn gia hạn mà vẫn còn nợ thì tự khoá
+// lại, KHÔNG cần Agency can thiệp, tránh gia hạn biến thành miễn khoá vĩnh viễn nếu quên khoá lại.
+// Hết hạn SỚM HƠN thế khi shop thanh toán hết nợ (confirmCashRemittance tự xoá cờ này — xem
+// clearTemporaryUnlock — quay lại mặc định, tránh để lần trễ nợ HOÀN TOÀN MỚI sau này vô tình được
+// "miễn phí" nhờ cờ mở khoá của lần trễ trước). Dùng CHUNG đúng 1 nguồn (localStorage) cho cả
 // isOrderCreationBlocked() (Web Shop) lẫn stats.blocked (Agency Admin, CashRemittance.tsx).
 const TEMP_UNLOCK_KEY = 'ghn_temp_order_unlock_v1'
 
-function loadTempUnlockedShopIds(): string[] {
+interface TempUnlockEntry {
+  grantedAt: string // ISO — thời điểm Agency bấm "Mở khoá"
+  days: number // số ngày Agency tự nhập trong popup — hạn gia hạn, KHÔNG phải blockDays cố định
+}
+
+// shopId → { grantedAt, days }. Bản cũ hơn lưu mảng string[] (không có hạn) hoặc Record<string,
+// string> (hạn cố định = blockDays) — migrate cả 2 sang coi như vừa mở NGAY LÚC ĐỌC với hạn =
+// blockDays hiện tại, để không đột ngột khoá lại ngay những shop đã mở theo cơ chế cũ.
+function loadTempUnlocks(): Record<string, TempUnlockEntry> {
   try {
     const raw = localStorage.getItem(TEMP_UNLOCK_KEY)
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed : []
+    const parsed = raw ? JSON.parse(raw) : {}
+    const now = new Date().toISOString()
+    if (Array.isArray(parsed)) {
+      const migrated: Record<string, TempUnlockEntry> = {}
+      parsed.forEach((id: string) => { migrated[id] = { grantedAt: now, days: DEFAULT_REMITTANCE_CONFIG.blockDays } })
+      saveTempUnlocks(migrated)
+      return migrated
+    }
+    if (parsed && typeof parsed === 'object') {
+      const needsMigration = Object.values(parsed).some(v => typeof v === 'string')
+      if (needsMigration) {
+        const migrated: Record<string, TempUnlockEntry> = {}
+        Object.entries(parsed as Record<string, string | TempUnlockEntry>).forEach(([id, v]) => {
+          migrated[id] = typeof v === 'string' ? { grantedAt: v, days: DEFAULT_REMITTANCE_CONFIG.blockDays } : v
+        })
+        saveTempUnlocks(migrated)
+        return migrated
+      }
+      return parsed
+    }
+    return {}
   } catch {
-    return []
+    return {}
   }
 }
 
-function saveTempUnlockedShopIds(ids: string[]): void {
-  try { localStorage.setItem(TEMP_UNLOCK_KEY, JSON.stringify(ids)) } catch { /* storage unavailable */ }
+function saveTempUnlocks(map: Record<string, TempUnlockEntry>): void {
+  try { localStorage.setItem(TEMP_UNLOCK_KEY, JSON.stringify(map)) } catch { /* storage unavailable */ }
 }
 
 export function isTemporarilyUnlocked(shopId: string): boolean {
-  return loadTempUnlockedShopIds().includes(shopId)
+  const map = loadTempUnlocks()
+  const entry = map[shopId]
+  if (!entry) return false
+  if (daysSinceCalendar(entry.grantedAt) >= entry.days) {
+    // Hết hạn gia hạn — tự khoá lại, xoá cờ luôn để không phải tính lại mỗi lần gọi.
+    delete map[shopId]
+    saveTempUnlocks(map)
+    return false
+  }
+  return true
 }
 
-export function grantTemporaryUnlock(shopId: string, grantedBy: string): void {
-  const ids = loadTempUnlockedShopIds()
-  if (!ids.includes(shopId)) saveTempUnlockedShopIds([...ids, shopId])
+export function grantTemporaryUnlock(shopId: string, grantedBy: string, days: number): void {
+  const map = loadTempUnlocks()
+  map[shopId] = { grantedAt: new Date().toISOString(), days }
+  saveTempUnlocks(map)
   const pendingOrders = loadOrders().filter(
     o => o.shopId === shopId && o.paymentMethod === 'cash' && o.paymentApprovalStatus === 'pending_review'
   )
   pendingOrders.forEach(o =>
-    appendActionHistory(o.id, grantedBy, 'Agency Admin mở khoá tạm thời cho shop', '-', 'Đã mở khoá — khoản nợ chưa được xoá')
+    appendActionHistory(o.id, grantedBy, 'Agency Admin mở khoá tạo đơn cho shop', '-', `Đã mở khoá ${days} ngày — khoản nợ chưa được xoá`)
   )
 }
 
 function clearTemporaryUnlock(shopId: string): void {
-  const ids = loadTempUnlockedShopIds()
-  if (ids.includes(shopId)) saveTempUnlockedShopIds(ids.filter(id => id !== shopId))
+  const map = loadTempUnlocks()
+  if (map[shopId]) {
+    delete map[shopId]
+    saveTempUnlocks(map)
+  }
 }
 
 // Agency Admin chủ động KHOÁ tạo đơn cho 1 shop bất kỳ — độc lập với ngưỡng trễ hạn tự động (có thể

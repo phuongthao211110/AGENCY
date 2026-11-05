@@ -39,7 +39,7 @@ const NAV_ITEMS = [
   },
   { key: '/agency-admin/carrier-setup', icon: <TruckOutlined />, label: 'Thiết lập NVC' },
   { key: '/agency-admin/reconciliation', icon: <AuditOutlined />, label: 'Đối soát NVC' },
-  { key: '/agency-admin/cash-remittance', icon: <WalletOutlined />, label: 'Đối soát thanh toán' },
+  { key: '/agency-admin/cash-remittance', icon: <WalletOutlined />, label: 'Công nợ Shop' },
 ]
 
 // Số đơn tiền mặt đang "Chờ duyệt" của các shop thuộc agency này — Shop khác agency không tính.
@@ -70,7 +70,7 @@ export default function AgencyAdminLayout() {
     }
   }, [])
 
-  // Badge "Đối soát thanh toán" — lắng nghe 'ghn-orders-changed' (phát từ orderStore.ts mỗi
+  // Badge "Công nợ Shop" — lắng nghe 'ghn-orders-changed' (phát từ orderStore.ts mỗi
   // lần ghi, kể cả từ Web Shop tạo đơn tiền mặt mới) để số liệu cập nhật ngay, không cần điều
   // hướng sang trang khác rồi quay lại mới thấy số mới.
   const [, forceOrdersTick] = useState(0)

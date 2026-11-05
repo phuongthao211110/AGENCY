@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { ConfigProvider } from 'antd'
 import { SearchOutlined, DownOutlined, ArrowLeftOutlined, CloseOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons'
 import { agencyAdminTheme } from '../../../theme/platforms'
-import { loadOrders, confirmFeeRefund, confirmCancelRefund, isOrderCreationBlocked, isManuallyLocked, setManualLock, grantTemporaryUnlock, type Order } from '../../../mock-data/orderStore'
+import { loadOrders, confirmFeeRefund, confirmCancelRefund, isOrderCreationBlocked, isManuallyLocked, setManualLock, grantTemporaryUnlock, loadRemittanceConfig, type Order } from '../../../mock-data/orderStore'
 import { loadShops, type Shop } from '../../../mock-data/shopStore'
 import { Pagination } from './AgencyOrders'
 
@@ -58,9 +58,9 @@ function buildShopStats(shop: Shop, relevantOrders: Order[]): ShopCashStats {
   const maxDays = pending.reduce((max, o) => Math.max(max, daysSince(o.paymentPaidAt)), 0)
   const pendingFeeTotal = pending.reduce((sum, o) => sum + o.fee, 0)
   // Dùng ĐÚNG isOrderCreationBlocked() (orderStore.ts) làm NGUỒN DUY NHẤT — hàm đó đã tự tôn trọng
-  // cả ENFORCE_ORDER_CREATION_BLOCK (Giai đoạn 1: false = không khoá thật) lẫn cờ "Mở khoá tạm".
-  // KHÔNG tự tính riêng công thức maxDays >= blockDays ở đây nữa — làm vậy trước đây khiến Agency
-  // Admin thấy "Đã khoá tạo đơn" cho shop thực ra chưa hề bị khoá khi Giai đoạn 1 đang tắt khoá thật.
+  // cả ENFORCE_ORDER_CREATION_BLOCK (đang bật — khoá thật theo ngưỡng Super Admin cấu hình), khoá
+  // thủ công (isManuallyLocked) lẫn cờ "Mở khoá tạm". KHÔNG tự tính riêng công thức maxDays >=
+  // blockDays ở đây nữa, tránh lệch với đúng 1 nguồn khoá thật.
   const blocked = isOrderCreationBlocked(shop.id)
   return { shop, orders, pending, pendingFeeTotal, maxDays, blocked }
 }
@@ -256,6 +256,67 @@ function PaymentBreakdownModal({ order, onClose }: { order: Order; onClose: () =
   )
 }
 
+// Popup nhập số ngày mở khoá — thay cho confirm() cũ (vốn luôn dùng cố định `blockDays` Super Admin
+// cấu hình). Agency tự quyết định gia hạn bao nhiêu ngày cho LẦN MỞ KHOÁ NÀY; mặc định gợi ý =
+// blockDays hiện tại để không bắt buộc Agency phải tự nghĩ ra số, nhưng có thể sửa. Nếu hết số ngày
+// này mà shop vẫn chưa thanh toán, hệ thống tự khoá lại (xem grantTemporaryUnlock, orderStore.ts);
+// nếu thanh toán xong trước đó, khoá được gỡ sớm hơn và trở về mặc định (clearTemporaryUnlock).
+function UnlockDaysModal({ shopName, defaultDays, onConfirm, onClose }: { shopName: string; defaultDays: number; onConfirm: (days: number) => void; onClose: () => void }) {
+  const [daysInput, setDaysInput] = useState(String(defaultDays))
+  const parsedDays = parseInt(daysInput, 10)
+  const valid = Number.isFinite(parsedDays) && parsedDays > 0
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: 400, background: '#fff', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.15)' }}
+      >
+        <div style={{ padding: '16px 24px', background: C_BG_HEADER, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: C_TEXT_PRIMARY }}>Mở khoá tạo đơn</span>
+          <CloseOutlined onClick={onClose} style={{ cursor: 'pointer', color: C_TEXT_SECONDARY, fontSize: 16 }} />
+        </div>
+        <div style={{ padding: '20px 24px' }}>
+          <div style={{ fontSize: 14, color: C_TEXT_PRIMARY, marginBottom: 16 }}>
+            Mở khoá tạo đơn cho shop <b style={{ color: C_LINK }}>{shopName}</b> trong bao nhiêu ngày?
+          </div>
+          <label style={{ fontSize: 13, fontWeight: 600, color: C_TEXT_SECONDARY, display: 'block', marginBottom: 6 }}>Số ngày mở khoá</label>
+          <input
+            type="number"
+            min={1}
+            autoFocus
+            value={daysInput}
+            onChange={e => setDaysInput(e.target.value)}
+            style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', fontSize: 14, color: C_TEXT_PRIMARY, border: `1px solid ${valid ? C_BORDER : '#DC2626'}`, borderRadius: 6, outline: 'none' }}
+          />
+          {!valid && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 6 }}>Nhập số ngày lớn hơn 0</div>}
+          <div style={{ fontSize: 12, color: C_TEXT_SECONDARY, marginTop: 10 }}>
+            Khoản nợ KHÔNG bị xoá. Nếu sau {valid ? parsedDays : '…'} ngày vẫn chưa thanh toán, hệ thống sẽ TỰ KHOÁ LẠI. Nếu thanh toán xong trước đó, shop được mở khoá ngay (trở về mặc định).
+          </div>
+        </div>
+        <div style={{ padding: '0 24px 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button
+            onClick={onClose}
+            style={{ padding: '8px 16px', borderRadius: 6, border: `1px solid ${C_BORDER}`, background: '#fff', color: C_TEXT_PRIMARY, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Huỷ
+          </button>
+          <button
+            onClick={() => valid && onConfirm(parsedDays)}
+            disabled={!valid}
+            style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: valid ? '#16A34A' : '#9CA3AF', color: '#fff', fontSize: 13, fontWeight: 700, cursor: valid ? 'pointer' : 'not-allowed' }}
+          >
+            Mở khoá
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function OrderFeeBreakdownModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const approvedAmount = order.paymentApprovedAmount ?? order.fee
   return (
@@ -331,19 +392,31 @@ function ShopDetailView({ stats, onBack, onChanged }: { stats: ShopCashStats; on
   const [pageSize, setPageSize] = useState(50)
   const [breakdownOrder, setBreakdownOrder] = useState<Order | null>(null)
   const [paymentBreakdownOrder, setPaymentBreakdownOrder] = useState<Order | null>(null)
+  const [showUnlockModal, setShowUnlockModal] = useState(false)
 
   useEffect(() => { setPage(1) }, [tab, search])
 
   const confirmed = stats.orders.filter(o => o.paymentApprovalStatus === 'confirmed')
   const unpaid = stats.orders.filter(o => o.paymentApprovalStatus !== 'confirmed')
 
-  // Gỡ ĐÚNG loại khoá đang áp dụng cho shop này — khoá thủ công (setManualLock) hoặc khoá tự động
-  // theo số ngày trễ (grantTemporaryUnlock) — xem handleToggleLock (danh sách) cho cùng logic.
+  // Gỡ ĐÚNG loại khoá đang áp dụng cho shop này — khoá thủ công (setManualLock, gỡ ngay, không có
+  // khái niệm "số ngày") hoặc khoá tự động theo số ngày trễ (grantTemporaryUnlock, cần hỏi Agency
+  // muốn gia hạn bao nhiêu ngày qua UnlockDaysModal) — xem handleToggleLock (danh sách) cho cùng logic.
   function handleUnlockTemp() {
-    const ok = window.confirm(`Mở khoá tạo đơn cho shop "${stats.shop.name}"? Khoản nợ (nếu có) KHÔNG bị xoá, shop vẫn phải thanh toán như bình thường.`)
-    if (!ok) return
-    if (isManuallyLocked(stats.shop.id)) setManualLock(stats.shop.id, false, CURRENT_AGENT)
-    else grantTemporaryUnlock(stats.shop.id, CURRENT_AGENT)
+    const manuallyLocked = isManuallyLocked(stats.shop.id)
+    if (manuallyLocked) {
+      const ok = window.confirm(`Mở khoá tạo đơn cho shop "${stats.shop.name}"? Khoản nợ (nếu có) KHÔNG bị xoá, shop vẫn phải thanh toán như bình thường.`)
+      if (!ok) return
+      setManualLock(stats.shop.id, false, CURRENT_AGENT)
+      onChanged()
+      return
+    }
+    setShowUnlockModal(true)
+  }
+
+  function handleConfirmUnlock(days: number) {
+    grantTemporaryUnlock(stats.shop.id, CURRENT_AGENT, days)
+    setShowUnlockModal(false)
     onChanged()
   }
 
@@ -535,6 +608,14 @@ function ShopDetailView({ stats, onBack, onChanged }: { stats: ShopCashStats; on
     {paymentBreakdownOrder && (
       <PaymentBreakdownModal order={paymentBreakdownOrder} onClose={() => setPaymentBreakdownOrder(null)} />
     )}
+    {showUnlockModal && (
+      <UnlockDaysModal
+        shopName={stats.shop.name}
+        defaultDays={loadRemittanceConfig(stats.shop.agencyId).blockDays}
+        onConfirm={handleConfirmUnlock}
+        onClose={() => setShowUnlockModal(false)}
+      />
+    )}
     </>
   )
 }
@@ -559,6 +640,7 @@ export default function CashRemittance() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
   const [detailShopId, setDetailShopId] = useState<string | null>(null)
+  const [unlockModalStats, setUnlockModalStats] = useState<ShopCashStats | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
 
@@ -605,15 +687,27 @@ export default function CashRemittance() {
   // nữa — việc còn lại Agency chủ động làm ở đây là khoá/mở khoá tạo đơn cho từng shop.
   function handleToggleLock(stats: ShopCashStats) {
     if (stats.blocked) {
-      const ok = window.confirm(`Mở khoá tạo đơn cho shop "${stats.shop.name}"?`)
-      if (!ok) return
-      if (isManuallyLocked(stats.shop.id)) setManualLock(stats.shop.id, false, CURRENT_AGENT)
-      else grantTemporaryUnlock(stats.shop.id, CURRENT_AGENT)
+      const manuallyLocked = isManuallyLocked(stats.shop.id)
+      if (manuallyLocked) {
+        const ok = window.confirm(`Mở khoá tạo đơn cho shop "${stats.shop.name}"?`)
+        if (!ok) return
+        setManualLock(stats.shop.id, false, CURRENT_AGENT)
+        refresh()
+        return
+      }
+      setUnlockModalStats(stats)
     } else {
       const ok = window.confirm(`Khoá tạo đơn cho shop "${stats.shop.name}"? Shop sẽ KHÔNG tạo được đơn hàng mới cho đến khi được mở khoá lại.`)
       if (!ok) return
       setManualLock(stats.shop.id, true, CURRENT_AGENT)
+      refresh()
     }
+  }
+
+  function handleConfirmUnlock(days: number) {
+    if (!unlockModalStats) return
+    grantTemporaryUnlock(unlockModalStats.shop.id, CURRENT_AGENT, days)
+    setUnlockModalStats(null)
     refresh()
   }
 
@@ -635,7 +729,7 @@ export default function CashRemittance() {
         {/* Page header */}
         <div style={{ padding: '12px 16px', flexShrink: 0 }}>
           <h1 style={{ fontSize: 24, fontWeight: 600, color: C_TEXT_PRIMARY, margin: 0, lineHeight: '28px' }}>
-            Đối soát thanh toán
+            Công nợ Shop
           </h1>
           <p style={{ fontSize: 14, color: C_TEXT_SECONDARY, margin: '4px 0 0', lineHeight: '20px' }}>
             Theo dõi phí dịch vụ shop đã/chưa thanh toán và quản lý khoá tạo đơn
@@ -801,6 +895,14 @@ export default function CashRemittance() {
           onPageSizeChange={s => { setPageSize(s); setPage(1) }}
         />
       </div>
+      {unlockModalStats && (
+        <UnlockDaysModal
+          shopName={unlockModalStats.shop.name}
+          defaultDays={loadRemittanceConfig(unlockModalStats.shop.agencyId).blockDays}
+          onConfirm={handleConfirmUnlock}
+          onClose={() => setUnlockModalStats(null)}
+        />
+      )}
     </ConfigProvider>
   )
 }
